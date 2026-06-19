@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Pre-commit hook: runs ktlintFormat and re-stages formatted Kotlin files.
+# Install with: bash scripts/install-hooks.sh
+
+set -euo pipefail
+
+# Ensure we run from the repository root so ./gradlew resolves correctly.
+cd "$(git rev-parse --show-toplevel)"
+
+# Collect staged Kotlin files into an array (NUL-delimited for safe path handling)
+STAGED_KT_FILES=()
+while IFS= read -r -d '' file; do
+  STAGED_KT_FILES+=("$file")
+done < <(git diff --cached --name-only -z --diff-filter=ACM -- '*.kt' '*.kts')
+
+if [ ${#STAGED_KT_FILES[@]} -eq 0 ]; then
+  exit 0
+fi
+
+echo "🔍 Running ktlintFormat…"
+
+# Stash unstaged changes so the formatter only sees staged content.
+NEEDS_STASH_POP=false
+if ! git diff --quiet; then
+  git stash push --keep-index --quiet
+  NEEDS_STASH_POP=true
+fi
+
+# Ensure the stash is always restored, even on failure.
+restore_stash() {
+  if [ "$NEEDS_STASH_POP" = true ]; then
+    git stash pop --quiet 2>/dev/null || {
+      echo "⚠️  Could not auto-restore stashed changes. Run 'git stash pop' manually." >&2
+    }
+  fi
+}
+trap restore_stash EXIT
+
+# Note: ktlintFormat targets the whole project; the stash above ensures only
+# staged content is visible, and we re-stage only the originally staged files
+# below. Non-staged files remain untouched after the stash is restored.
+./gradlew ktlintFormat --quiet
+
+# Re-stage only the originally staged Kotlin files
+for file in "${STAGED_KT_FILES[@]}"; do
+  if [ -f "$file" ]; then
+    git add -- "$file"
+  fi
+done
+
+echo "✅ ktlintFormat complete"

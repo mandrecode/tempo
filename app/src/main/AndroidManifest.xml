@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <application
+        android:name=".TempoApp"
+        android:allowBackup="true"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:localeConfig="@xml/locales_config"
+        android:theme="@style/Theme.Tempo">
+        <!--
+            tools:ignore="Instantiatable" — false positive: MainActivity extends
+            ComponentActivity (a subclass of Activity), but lint cannot resolve
+            the chain in some setups when Hilt's @AndroidEntryPoint rewrites the
+            generated superclass. Track removal once lint catches up.
+        -->
+        <activity
+            android:name=".MainActivity"
+            android:enableOnBackInvokedCallback="true"
+            android:exported="true"
+            android:theme="@style/Theme.Tempo.Splash"
+            tools:ignore="Instantiatable">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <receiver
+            android:name=".infrastructure.reminders.receivers.TaskReminderReceiver"
+            android:exported="false"
+            android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.HabitReminderReceiver"
+            android:exported="false"
+            android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.MarkAsCompletedReceiver"
+            android:exported="false"
+            android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.MarkHabitAsCompletedReceiver"
+            android:exported="false"
+            android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.StartHabitChainReceiver"
+            android:exported="false"
+            android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.CompleteHabitReceiver"
+            android:exported="false"
+            android:enabled="true" />
+
+        <receiver
+            android:name=".infrastructure.reminders.receivers.BootAndTimeReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- Disable default WorkManager Initializer to use Hilt configuration -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false" >
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
+    </application>
+
+</manifest>

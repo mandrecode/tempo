@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <style name="Theme.Tempo" parent="android:Theme.Material.NoActionBar" />
+
+    <style name="Theme.Tempo.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">#1C1B1F</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="postSplashScreenTheme">@style/Theme.Tempo</item>
+    </style>
+</resources>

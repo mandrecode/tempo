@@ -1,0 +1,55 @@
+# Gradle files
+.gradle/
+build/
+
+# Local configuration file (sdk path, etc)
+local.properties
+.env
+.env.*
+
+# Log/OS Files
+*.log
+
+# Android Studio generated files and folders
+captures/
+.externalNativeBuild/
+.cxx/
+*.aab
+*.apk
+output-metadata.json
+
+# IntelliJ
+*.iml
+.idea/
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+
+# Keystore files
+*.jks
+*.keystore
+*.p12
+*.p8
+*.pem
+*.key
+*.asc
+app/release.keystore
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+firebase*.json
+*service-account*.json
+*service_account*.json
+
+# Android Profiling
+*.hprof
+
+# Test reports and temporary files
+*_REPORT.txt
+TEST_EXECUTION_SUMMARY.md
+settings_override.gradle.kts
+
+# Local GitHub Actions runner
+actions-runner/
+actions-runner-2/
+actions-runner-3/

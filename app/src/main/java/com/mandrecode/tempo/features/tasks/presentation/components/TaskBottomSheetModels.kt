@@ -1,0 +1,78 @@
+package com.mandrecode.tempo.features.tasks.presentation.components
+
+import androidx.compose.ui.focus.FocusManager
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.MonthDayOption
+import com.mandrecode.tempo.core.domain.model.Periodicity
+import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.features.tasks.domain.model.Category
+import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.presentation.TasksContract
+import kotlinx.datetime.LocalDateTime
+
+internal const val MAX_TITLE_LENGTH = 65
+internal const val TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG = "task_bottom_sheet_title_field"
+internal const val AUTO_SAVE_DEBOUNCE_MS = 350L
+internal val PROPERTY_ROW_GAP = 20.dp
+internal val DELETE_BUTTON_CORNER_RADIUS = 24.dp
+
+/**
+ * Subset of [Task] fields the sheet treats as form input. Captured once when
+ * the sheet opens so subsequent live refreshes of [Task] (e.g. periodic
+ * completion archiving the original and stripping recurrence on the archived
+ * copy) do not invalidate the user's in-progress edits or trigger a spurious
+ * "Discard changes?" dialog. Mirrors the [HabitFormSnapshot] pattern in
+ * `HabitBottomSheet`.
+ */
+internal data class TaskFormSnapshot(
+    val title: String,
+    val description: String,
+    val categoryId: Long,
+    val priority: Priority?,
+    val reminderDate: LocalDateTime?,
+    val periodicity: Periodicity?,
+    val periodicityInterval: Int,
+    val repeatDays: Set<DayOfWeek>?,
+    val monthDayOption: MonthDayOption?,
+)
+
+internal data class TaskBottomSheetBodyState(
+    val categories: List<Category>,
+    val formState: TasksContract.TaskFormState,
+    val task: Task?,
+    val taskTitle: String,
+    val taskDescription: TextFieldValue,
+    val selectedCategoryId: Long,
+    val formattedReminder: String?,
+    val isTitleError: Boolean,
+    val autoSaveEnabled: Boolean,
+    val isEditingTask: Boolean,
+)
+
+internal data class TaskBottomSheetBodyActions(
+    val onTaskTitleChanged: (String) -> Unit,
+    val onTaskDescriptionChanged: (TextFieldValue) -> Unit,
+    val onSelectCategory: (Long) -> Unit,
+    val onSetPriority: (Priority) -> Unit,
+    val onClearPriority: () -> Unit,
+    val onSetReminderClicked: () -> Unit,
+    val onClearReminder: () -> Unit,
+    val onSetPeriodicity: (Periodicity) -> Unit,
+    val onClearPeriodicity: () -> Unit,
+    val onSetPeriodicityInterval: (Int) -> Unit,
+    val onSetRepeatDays: (Set<DayOfWeek>?) -> Unit,
+    val onSetMonthDayOption: (MonthDayOption?) -> Unit,
+    val onRequestDismiss: () -> Unit,
+    val onDelete: (() -> Unit)?,
+    val onToggleCompletion: ((Task) -> Unit)?,
+    val onConfirmClick: () -> Unit,
+)
+
+internal data class TaskBottomSheetFocusConfig(
+    val focusManager: FocusManager,
+    val titleFocusRequester: FocusRequester,
+    val descriptionFocusRequester: FocusRequester,
+)

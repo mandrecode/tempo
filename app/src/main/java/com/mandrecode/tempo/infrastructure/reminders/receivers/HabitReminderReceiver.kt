@@ -1,0 +1,312 @@
+package com.mandrecode.tempo.infrastructure.reminders.receivers
+
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import androidx.annotation.VisibleForTesting
+import androidx.core.app.NotificationCompat
+import com.mandrecode.tempo.MainActivity
+import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.di.IoDispatcher
+import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitType
+import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
+import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
+import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
+import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
+import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelManager
+import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
+import com.mandrecode.tempo.infrastructure.notifications.RequestCodeGenerator
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import javax.inject.Inject
+import kotlin.time.Clock
+
+@AndroidEntryPoint
+class HabitReminderReceiver : BroadcastReceiver() {
+    @Inject
+    lateinit var habitRepository: HabitRepository
+
+    @Inject
+    lateinit var habitChainRepository: HabitChainRepository
+
+    @Inject
+    lateinit var habitReminderScheduler: HabitReminderScheduler
+
+    @Inject
+    @IoDispatcher
+    lateinit var ioDispatcher: CoroutineDispatcher
+
+    override fun onReceive(
+        context: Context,
+        intent: Intent,
+    ) {
+        val isChain = intent.getBooleanExtra(EXTRA_IS_CHAIN, false)
+
+        val pendingResult = goAsync()
+        CoroutineScope(ioDispatcher).launch {
+            try {
+                if (isChain) {
+                    val chainId = intent.getLongExtra(EXTRA_HABIT_CHAIN_ID, -1L)
+                    if (chainId != -1L) {
+                        val habitChain = habitChainRepository.getHabitChainById(chainId)
+                        if (habitChain != null) {
+                            val scheduledDate =
+                                habitChain.periodicReminder?.date
+                                    ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
+                            showHabitChainNotification(
+                                context,
+                                habitChain.id,
+                                habitChain.title,
+                                habitChain.description,
+                                scheduledDate,
+                            )
+                            rescheduleHabitChain(habitChain)
+                        }
+                    }
+                } else {
+                    val habitId = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
+                    if (habitId != -1L) {
+                        val habit = habitRepository.getHabitById(habitId)
+                        if (habit != null) {
+                            val scheduledDate =
+                                habit.reminderDate?.date
+                                    ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
+                            showHabitNotification(
+                                context,
+                                habit.id,
+                                habit.title,
+                                habit.description,
+                                scheduledDate,
+                                habit.habitType,
+                            )
+                            rescheduleHabit(habit)
+                        }
+                    }
+                }
+            } finally {
+                pendingResult.finish()
+            }
+        }
+    }
+
+    private suspend fun rescheduleHabit(habit: Habit) {
+        val nextReminderDate =
+            HabitReminderDateUtil.advanceReminderIfNeeded(
+                habit.reminderDate,
+                habit.repeatDays,
+            )
+        if (nextReminderDate != null && nextReminderDate != habit.reminderDate) {
+            val updatedHabit = habit.copy(reminderDate = nextReminderDate)
+            habitRepository.updateHabit(updatedHabit)
+            habitReminderScheduler.scheduleHabit(updatedHabit)
+        }
+    }
+
+    private suspend fun rescheduleHabitChain(habitChain: HabitChain) {
+        val nextReminderDate =
+            HabitReminderDateUtil.advanceReminderIfNeeded(
+                habitChain.periodicReminder,
+                habitChain.repeatDays,
+            )
+        if (nextReminderDate != null && nextReminderDate != habitChain.periodicReminder) {
+            val updatedChain = habitChain.copy(periodicReminder = nextReminderDate)
+            habitChainRepository.updateHabitChain(updatedChain)
+            habitReminderScheduler.scheduleHabitChain(updatedChain)
+        }
+    }
+
+    private fun showHabitNotification(
+        context: Context,
+        habitId: Long,
+        title: String,
+        description: String,
+        scheduledDate: LocalDate,
+        habitType: HabitType = HabitType.BUILD,
+    ) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        NotificationChannelManager.ensureHabitReminderChannel(context, notificationManager)
+
+        if (!NotificationChannelManager.canPostNotifications(context)) {
+            return
+        }
+
+        val id = RequestCodeGenerator.forHabit(habitId)
+
+        val contentIntent =
+            Intent(context, MainActivity::class.java).apply {
+                action = ACTION_OPEN_HABIT
+                putExtra(EXTRA_HABIT_ID, habitId)
+                putExtra(EXTRA_OPEN_ROUTINES, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                id,
+                contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val markAsCompleteIntent =
+            Intent(context, MarkHabitAsCompletedReceiver::class.java).apply {
+                action = ACTION_MARK_HABIT_COMPLETE
+                putExtra(MarkHabitAsCompletedReceiver.EXTRA_HABIT_ID, habitId)
+                putExtra(MarkHabitAsCompletedReceiver.EXTRA_SCHEDULED_DATE, scheduledDate.toString())
+            }
+
+        val markAsCompletePendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                id,
+                markAsCompleteIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val contentText = buildHabitNotificationContentText(context, title, description, habitType)
+
+        val actionLabel = buildHabitNotificationActionLabel(context, habitType)
+
+        val notification =
+            NotificationCompat
+                .Builder(context, NotificationChannelManager.HABIT_REMINDER_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_track_changes)
+                .setContentTitle(title)
+                .setContentText(contentText)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .addAction(
+                    R.drawable.ic_check,
+                    actionLabel,
+                    markAsCompletePendingIntent,
+                ).build()
+
+        notificationManager.notify(NotificationSyncManager.NOTIFICATION_TAG_HABIT, id, notification)
+    }
+
+    private fun showHabitChainNotification(
+        context: Context,
+        chainId: Long,
+        title: String,
+        description: String,
+        scheduledDate: LocalDate,
+    ) {
+        val notificationManager =
+            context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        NotificationChannelManager.ensureHabitReminderChannel(context, notificationManager)
+
+        if (!NotificationChannelManager.canPostNotifications(context)) {
+            return
+        }
+
+        val id = RequestCodeGenerator.forHabitChain(chainId)
+
+        val contentIntent =
+            Intent(context, MainActivity::class.java).apply {
+                action = ACTION_OPEN_CHAIN
+                putExtra(EXTRA_HABIT_CHAIN_ID, chainId)
+                putExtra(EXTRA_OPEN_ROUTINES, true)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            }
+
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                id,
+                contentIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val startChainIntent =
+            Intent(context, StartHabitChainReceiver::class.java).apply {
+                action = ACTION_START_CHAIN
+                putExtra(StartHabitChainReceiver.EXTRA_HABIT_CHAIN_ID, chainId)
+                putExtra(StartHabitChainReceiver.EXTRA_SCHEDULED_DATE, scheduledDate.toString())
+            }
+
+        val startChainPendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                id,
+                startChainIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+
+        val notification =
+            NotificationCompat
+                .Builder(context, NotificationChannelManager.HABIT_REMINDER_CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_track_changes)
+                .setContentTitle(title)
+                .setContentText(description.takeIf { it.isNotEmpty() })
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(pendingIntent)
+                .addAction(
+                    R.drawable.ic_routine,
+                    context.getString(R.string.start_chain),
+                    startChainPendingIntent,
+                ).build()
+
+        notificationManager.notify(NotificationSyncManager.NOTIFICATION_TAG_CHAIN, id, notification)
+    }
+
+    companion object {
+        const val EXTRA_HABIT_ID = "HABIT_ID"
+        const val EXTRA_HABIT_CHAIN_ID = "HABIT_CHAIN_ID"
+        const val EXTRA_IS_CHAIN = "IS_CHAIN"
+        const val EXTRA_OPEN_ROUTINES = "OPEN_ROUTINES"
+
+        const val ACTION_OPEN_HABIT = "com.mandrecode.tempo.ACTION_OPEN_HABIT"
+        const val ACTION_OPEN_CHAIN = "com.mandrecode.tempo.ACTION_OPEN_CHAIN"
+        const val ACTION_MARK_HABIT_COMPLETE = "com.mandrecode.tempo.ACTION_MARK_HABIT_COMPLETE"
+        const val ACTION_START_CHAIN = "com.mandrecode.tempo.ACTION_START_CHAIN"
+
+        /**
+         * Returns the notification content text for a habit reminder.
+         *
+         * For QUIT habits, uses an encouraging "Still going strong?" prompt referencing the
+         * habit title. For BUILD habits, falls back to the user-provided description (or null
+         * when empty, which causes [NotificationCompat] to omit the content text line).
+         */
+        @VisibleForTesting
+        internal fun buildHabitNotificationContentText(
+            context: Context,
+            title: String,
+            description: String,
+            habitType: HabitType,
+        ): String? =
+            if (habitType == HabitType.QUIT) {
+                context.getString(R.string.quit_habit_reminder_text, title)
+            } else {
+                description.takeIf { it.isNotEmpty() }
+            }
+
+        /**
+         * Returns the notification action button label for a habit reminder.
+         *
+         * QUIT habits cannot be "completed" in the same sense as BUILD habits; the action
+         * instead affirms that the user is still abstaining ("Still on track").
+         */
+        @VisibleForTesting
+        internal fun buildHabitNotificationActionLabel(
+            context: Context,
+            habitType: HabitType,
+        ): String =
+            if (habitType == HabitType.QUIT) {
+                context.getString(R.string.still_on_track)
+            } else {
+                context.getString(R.string.mark_as_completed)
+            }
+    }
+}

@@ -1,0 +1,35 @@
+schema: spec-driven
+
+context: |
+  Tempo & Habits is a native Android app in a single :app module using Clean Architecture + MVI,
+  Jetpack Compose, Navigation 3, Room, Hilt, WorkManager, AlarmManager reminders, kotlinx-datetime,
+  JUnit 4, MockK, and Truth.
+
+  Layer rules:
+  - Domain code lives under features/*/domain and must stay pure Kotlin: no android.*, Room, or Compose types.
+  - Data code maps Room entities at repository boundaries using toDomain()/toEntity().
+  - Infrastructure implements Android schedulers, workers, receivers, notification integration, and permission-sensitive APIs.
+  - UI uses Screen/Content split, immutable UI state collections, and no hardcoded composable strings.
+
+  GitHub issue workflow:
+  - Branches with issues use <type>/[ID]-<slug>, for example fix/679-workmanager-reminder-update-skipping-tasks.
+  - Commits and PR titles use <type>(#[ID]): <description> when an issue ID exists.
+  - Pull requests target main and include a summary plus Closes #[ID] when appropriate.
+
+  Verification commands:
+  - ./gradlew testDebugUnitTest for unit tests.
+  - ./gradlew ktlintFormat before commits.
+  - ./gradlew ktlintCheck and ./gradlew :app:detekt for lint/static analysis when relevant.
+  - openspec validate <change-name> before implementation is considered ready.
+
+rules:
+  proposal:
+    - Link the originating GitHub issue when one exists.
+    - Include explicit non-goals for bug fixes to avoid scope creep.
+    - Keep proposals focused on user-visible behavior and affected capabilities.
+  design:
+    - Document data invariants and idempotency rules for reminder or recurrence changes.
+    - Call out transaction boundaries separately from Android scheduler side effects.
+  tasks:
+    - Break work into implementation and verification chunks.
+    - Include OpenSpec validation and relevant Gradle test commands.
