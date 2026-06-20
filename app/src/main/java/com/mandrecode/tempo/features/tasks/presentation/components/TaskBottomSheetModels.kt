@@ -50,6 +50,7 @@ internal data class TaskBottomSheetBodyState(
     val isTitleError: Boolean,
     val autoSaveEnabled: Boolean,
     val isEditingTask: Boolean,
+    val isPriorityReadOnly: Boolean,
 )
 
 internal data class TaskBottomSheetBodyActions(

@@ -248,6 +248,7 @@ internal fun TaskBottomSheetContent(
         }
     val isEditingTask = task != null
     val autoSaveEnabled = isEditingTask && onAutoSave != null
+    val isPriorityReadOnly = task?.isCompleted == true
 
     val currentAutoSaveSnapshot =
         TaskFormSnapshot(
@@ -316,6 +317,7 @@ internal fun TaskBottomSheetContent(
                         isTitleError = isTitleError,
                         autoSaveEnabled = autoSaveEnabled,
                         isEditingTask = isEditingTask,
+                        isPriorityReadOnly = isPriorityReadOnly,
                     ),
                 actions =
                     TaskBottomSheetBodyActions(

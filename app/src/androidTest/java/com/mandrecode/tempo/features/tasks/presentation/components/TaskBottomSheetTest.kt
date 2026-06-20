@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Periodicity
+import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.TASK_COMPLETION_CHECKBOX_TEST_TAG
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
@@ -528,6 +529,79 @@ class TaskBottomSheetTest {
         // and is disabled (proves it is read-only).
         composeTestRule
             .onNodeWithTag("taskPeriodicityChip_WEEKLY")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+    }
+
+    @Test
+    fun completedSubtask_prioritySection_withPriority_remainsVisibleAndDisabled() {
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task =
+                        sampleTask(isCompleted = true).copy(
+                            parentTaskId = 7L,
+                            priority = Priority.HIGH,
+                        ),
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState().copy(priority = Priority.HIGH),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                    onToggleCompletion = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag("taskPriorityChip_HIGH")
+            .performScrollTo()
+            .assertIsDisplayed()
+            .assertIsNotEnabled()
+    }
+
+    @Test
+    fun completedTask_prioritySection_remainsVisibleAndDisabled() {
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task =
+                        sampleTask(isCompleted = true).copy(
+                            priority = Priority.MEDIUM,
+                        ),
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState().copy(priority = Priority.MEDIUM),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                    onToggleCompletion = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithTag("taskPriorityChip_MEDIUM")
             .performScrollTo()
             .assertIsDisplayed()
             .assertIsNotEnabled()

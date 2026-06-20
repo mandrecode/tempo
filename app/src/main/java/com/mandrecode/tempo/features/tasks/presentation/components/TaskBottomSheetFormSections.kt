@@ -337,7 +337,11 @@ private fun TaskPrioritySection(
                     isFirst = index == 0,
                     isLast = index == Priority.priorities.size - 1,
                     height = 48.dp,
+                    enabled = !state.isPriorityReadOnly,
                     onClick = {
+                        if (state.isPriorityReadOnly) {
+                            return@ExpressiveChip
+                        }
                         if (isSelected) {
                             onClearPriority()
                         } else {
@@ -353,6 +357,10 @@ private fun TaskPrioritySection(
                     },
                     selectedContainerColor = priority.color.copy(alpha = 0.2f),
                     selectedContentColor = priority.color,
+                    modifier =
+                        Modifier.testTag(
+                            "taskPriorityChip_${priority.name}",
+                        ),
                 )
             }
         }
