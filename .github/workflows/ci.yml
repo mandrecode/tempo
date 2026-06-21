@@ -297,6 +297,7 @@ jobs:
   android-test:
     name: 📱 Instrumented Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     needs: check-context
     if: >-
       github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -325,7 +326,7 @@ jobs:
           api-level: 31
           arch: x86_64
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
-          script: ./gradlew :app:connectedDebugAndroidTest --scan
+          script: bash scripts/ci/run-instrumented-tests.sh
 
       - name: Upload test results
         if: always()
