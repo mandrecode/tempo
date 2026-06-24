@@ -76,7 +76,7 @@ class HabitReminderReceiver : BroadcastReceiver() {
                     val habitId = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
                     if (habitId != -1L) {
                         val habit = habitRepository.getHabitById(habitId)
-                        if (habit != null) {
+                        if (habit != null && shouldShowHabitReminder(habit)) {
                             val scheduledDate =
                                 habit.reminderDate?.date
                                     ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -271,6 +271,9 @@ class HabitReminderReceiver : BroadcastReceiver() {
         const val ACTION_OPEN_CHAIN = "com.mandrecode.tempo.ACTION_OPEN_CHAIN"
         const val ACTION_MARK_HABIT_COMPLETE = "com.mandrecode.tempo.ACTION_MARK_HABIT_COMPLETE"
         const val ACTION_START_CHAIN = "com.mandrecode.tempo.ACTION_START_CHAIN"
+
+        @VisibleForTesting
+        internal fun shouldShowHabitReminder(habit: Habit): Boolean = !habit.isCompleted
 
         /**
          * Returns the notification content text for a habit reminder.

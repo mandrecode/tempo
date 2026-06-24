@@ -86,6 +86,25 @@ class HabitReminderSchedulerImplTest {
         }
 
     @Test
+    fun `scheduleHabit skips completed habits`() =
+        runTest {
+            val habit =
+                Habit(
+                    id = 77L,
+                    title = "Done",
+                    description = "Already completed today",
+                    reminderDate = LocalDateTime(2030, 1, 20, 8, 0),
+                    isCompleted = true,
+                    createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                )
+
+            val result = scheduler.scheduleHabit(habit)
+
+            assertThat(result).isEqualTo(ScheduleResult.Skipped)
+            verify(exactly = 0) { habitAlarmScheduler.scheduleHabitReminder(any(), any()) }
+        }
+
+    @Test
     fun `scheduleHabitChain delegates to alarm scheduler for future reminders`() =
         runTest {
             val reminderDate = LocalDateTime(2030, 3, 10, 7, 30)
