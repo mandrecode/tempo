@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
@@ -129,54 +130,57 @@ private fun TaskTitleSection(
             )
             Spacer(modifier = Modifier.width(8.dp))
         }
-        TextField(
-            value = state.taskTitle,
-            onValueChange = actions.onTaskTitleChanged,
-            placeholder = {
-                Text(
-                    stringResource(R.string.task_title_placeholder),
-                    style = MaterialTheme.typography.inputTitle,
-                )
-            },
-            textStyle = MaterialTheme.typography.inputTitle,
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                ),
-            modifier =
-                Modifier
-                    .weight(1f)
-                    .testTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
-                    .focusRequester(focusConfig.titleFocusRequester),
-            keyboardOptions =
-                KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                    imeAction = ImeAction.Done,
-                ),
-            keyboardActions =
-                KeyboardActions(
-                    onDone = { focusConfig.focusManager.clearFocus() },
-                ),
-            singleLine = false,
-            maxLines = 3,
-            isError = state.isTitleError || state.formState.titleError != null,
-            supportingText =
-                if (state.isTitleError || state.formState.titleError != null) {
-                    {
-                        Text(
-                            state.formState.titleError?.let { stringResource(it) }
-                                ?: stringResource(R.string.task_title_required),
-                        )
+        Column(modifier = Modifier.weight(1f)) {
+            BasicTextField(
+                value = state.taskTitle,
+                onValueChange = { newValue ->
+                    if (newValue.contains('\n')) {
+                        focusConfig.onTitleDone()
+                    } else {
+                        actions.onTaskTitleChanged(newValue)
                     }
-                } else {
-                    null
                 },
-        )
+                textStyle =
+                    MaterialTheme.typography.inputTitle.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                    ),
+                singleLine = true,
+                keyboardOptions =
+                    KeyboardOptions(
+                        capitalization = KeyboardCapitalization.Sentences,
+                        imeAction = ImeAction.Done,
+                    ),
+                keyboardActions =
+                    KeyboardActions(
+                        onDone = { focusConfig.onTitleDone() },
+                    ),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .testTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+                        .focusRequester(focusConfig.titleFocusRequester),
+                decorationBox = { innerTextField ->
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        if (state.taskTitle.isEmpty()) {
+                            Text(
+                                stringResource(R.string.task_title_placeholder),
+                                style = MaterialTheme.typography.inputTitle,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+            )
+            if (state.isTitleError || state.formState.titleError != null) {
+                Text(
+                    state.formState.titleError?.let { stringResource(it) }
+                        ?: stringResource(R.string.task_title_required),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
     }
 }
 

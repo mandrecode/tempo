@@ -74,6 +74,7 @@ internal data class TaskBottomSheetBodyActions(
 
 internal data class TaskBottomSheetFocusConfig(
     val focusManager: FocusManager,
+    val onTitleDone: () -> Unit,
     val titleFocusRequester: FocusRequester,
     val descriptionFocusRequester: FocusRequester,
 )

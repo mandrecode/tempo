@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -276,59 +279,71 @@ private fun HabitTitleField(
     focusConfig: HabitBottomSheetFocusConfig,
     modifier: Modifier = Modifier,
 ) {
-    TextField(
-        value = state.title,
-        onValueChange = actions.onTitleChanged,
-        placeholder = {
-            Text(
-                when (state.formState.selectedTab) {
-                    HabitSheetTab.HABIT ->
-                        when (state.formState.selectedHabitType) {
-                            HabitType.BUILD -> stringResource(R.string.habit_title_placeholder)
-                            HabitType.QUIT -> stringResource(R.string.habit_title_placeholder_quit)
-                        }
-
-                    HabitSheetTab.HABIT_CHAIN -> stringResource(R.string.habit_chain_title_placeholder)
-                },
-                style = MaterialTheme.typography.inputTitle,
-            )
-        },
-        textStyle = MaterialTheme.typography.inputTitle,
-        colors =
-            TextFieldDefaults.colors(
-                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-            ),
-        modifier = modifier.focusRequester(focusConfig.titleFocusRequester),
-        keyboardOptions =
-            KeyboardOptions(
-                capitalization = KeyboardCapitalization.Sentences,
-                imeAction = ImeAction.Done,
-            ),
-        keyboardActions =
-            androidx.compose.foundation.text.KeyboardActions(
-                onDone = { focusConfig.focusManager.clearFocus() },
-            ),
-        singleLine = false,
-        maxLines = 3,
-        isError = state.isTitleError || state.formState.titleError != null,
-        supportingText =
-            if (state.isTitleError || state.formState.titleError != null) {
-                {
-                    Text(
-                        state.formState.titleError?.let { stringResource(it) }
-                            ?: stringResource(R.string.task_title_required),
-                    )
+    Column(modifier = modifier) {
+        val placeholder = habitTitlePlaceholder(state)
+        BasicTextField(
+            value = state.title,
+            onValueChange = { newValue ->
+                if (newValue.contains('\n')) {
+                    focusConfig.onTitleDone()
+                } else {
+                    actions.onTitleChanged(newValue)
                 }
-            } else {
-                null
             },
-    )
+            textStyle =
+                MaterialTheme.typography.inputTitle.copy(
+                    color = MaterialTheme.colorScheme.onSurface,
+                ),
+            singleLine = true,
+            keyboardOptions =
+                KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done,
+                ),
+            keyboardActions =
+                KeyboardActions(
+                    onDone = { focusConfig.onTitleDone() },
+                ),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .testTag(HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+                    .focusRequester(focusConfig.titleFocusRequester),
+            decorationBox = { innerTextField ->
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (state.title.isEmpty()) {
+                        Text(
+                            placeholder,
+                            style = MaterialTheme.typography.inputTitle,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        if (state.isTitleError || state.formState.titleError != null) {
+            Text(
+                state.formState.titleError?.let { stringResource(it) }
+                    ?: stringResource(R.string.task_title_required),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+    }
 }
+
+@Composable
+private fun habitTitlePlaceholder(state: HabitBottomSheetBodyState): String =
+    when (state.formState.selectedTab) {
+        HabitSheetTab.HABIT ->
+            when (state.formState.selectedHabitType) {
+                HabitType.BUILD -> stringResource(R.string.habit_title_placeholder)
+                HabitType.QUIT -> stringResource(R.string.habit_title_placeholder_quit)
+            }
+
+        HabitSheetTab.HABIT_CHAIN -> stringResource(R.string.habit_chain_title_placeholder)
+    }
 
 @Composable
 private fun HabitDescriptionSection(
