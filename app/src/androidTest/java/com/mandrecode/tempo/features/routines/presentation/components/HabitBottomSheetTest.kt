@@ -4,9 +4,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasImeAction
+import androidx.compose.ui.test.hasPerformImeAction
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -16,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.text.input.ImeAction
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.HABIT_COMPLETION_CHECKBOX_TEST_TAG
@@ -332,6 +336,15 @@ class HabitBottomSheetTest {
         composeTestRule
             .onNodeWithText(overflowPart, substring = true)
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun titleField_usesDoneImeAction() {
+        renderNewHabitSheet()
+
+        composeTestRule
+            .onNodeWithTag(HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+            .assert(hasImeAction(ImeAction.Done) and hasPerformImeAction())
     }
 
     @Test
