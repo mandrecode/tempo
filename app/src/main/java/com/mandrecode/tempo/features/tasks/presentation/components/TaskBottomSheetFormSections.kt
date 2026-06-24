@@ -160,10 +160,9 @@ private fun TaskTitleSection(
                 ),
             keyboardActions =
                 KeyboardActions(
-                    onDone = { focusConfig.focusManager.clearFocus() },
+                    onDone = { focusConfig.onTitleDone() },
                 ),
-            singleLine = false,
-            maxLines = 3,
+            singleLine = true,
             isError = state.isTitleError || state.formState.titleError != null,
             supportingText =
                 if (state.isTitleError || state.formState.titleError != null) {

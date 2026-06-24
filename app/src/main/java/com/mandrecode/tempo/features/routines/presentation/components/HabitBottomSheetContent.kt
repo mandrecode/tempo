@@ -21,6 +21,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -82,6 +83,11 @@ internal fun HabitBottomSheetContent(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val onTitleDone = {
+        keyboardController?.hide()
+        focusManager.clearFocus(force = true)
+    }
 
     var title by remember(formState.selectedTab, formState.editingHabit?.id, formState.editingHabitChain?.id) {
         mutableStateOf(
@@ -457,7 +463,7 @@ internal fun HabitBottomSheetContent(
                         onSetHabitType = onSetHabitType,
                         onTitleChanged = { newValue ->
                             if (newValue.contains("\n")) {
-                                focusManager.clearFocus()
+                                onTitleDone()
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 title = newValue.substring(0, MAX_TITLE_LENGTH)
@@ -508,6 +514,7 @@ internal fun HabitBottomSheetContent(
                 focusConfig =
                     HabitBottomSheetFocusConfig(
                         focusManager = focusManager,
+                        onTitleDone = onTitleDone,
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
                     ),

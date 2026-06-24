@@ -22,6 +22,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -71,6 +72,11 @@ internal fun TaskBottomSheetContent(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val onTitleDone = {
+        keyboardController?.hide()
+        focusManager.clearFocus(force = true)
+    }
     val editingTargetId = task?.id
     var taskTitle by remember(editingTargetId) { mutableStateOf(task?.title ?: "") }
     var taskDescription by remember(editingTargetId) { mutableStateOf(TextFieldValue(task?.description ?: "")) }
@@ -323,7 +329,7 @@ internal fun TaskBottomSheetContent(
                     TaskBottomSheetBodyActions(
                         onTaskTitleChanged = { newValue ->
                             if (newValue.contains("\n")) {
-                                focusManager.clearFocus()
+                                onTitleDone()
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 taskTitle = newValue.substring(0, MAX_TITLE_LENGTH)
@@ -371,6 +377,7 @@ internal fun TaskBottomSheetContent(
                 focusConfig =
                     TaskBottomSheetFocusConfig(
                         focusManager = focusManager,
+                        onTitleDone = onTitleDone,
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
                     ),

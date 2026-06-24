@@ -161,7 +161,7 @@ private fun HabitBottomSheetLongTitlePreview() {
         habit(
             id = 7L,
             title = "Run for at least thirty minutes outside before breakfast",
-            description = "Long-title preview to verify wrapping behavior in the title field.",
+            description = "Long-title preview to verify the title field keeps the full width.",
             icon = "run",
             colorKey = "color_m3_orange",
             reminderHour = 6,

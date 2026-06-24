@@ -108,8 +108,7 @@ private fun TaskBottomSheetEditWithErrorPreview() {
 
 // Regression preview for #683: long title on a completed task. The completedAt
 // badge is intentionally not rendered inside the sheet (it lives in the task
-// list view), so the title field can use the full available width and never
-// needs to scroll.
+// list view), so the title field can use the full available width.
 @Preview(name = "Light", showBackground = true, device = "id:pixel_9")
 @Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
