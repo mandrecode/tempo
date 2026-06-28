@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.6](https://github.com/mandrecode/tempo/compare/v0.8.5...v0.8.6) (2026-06-24)
+
+
+### Bug Fixes
+
+* **#73:** skip completed habit reminders ([2856c80](https://github.com/mandrecode/tempo/commit/2856c80832c1fd03f88e74f72541fde1c0df57d7)), closes [#73](https://github.com/mandrecode/tempo/issues/73)
+
 ## [0.8.5](https://github.com/mandrecode/tempo-public-staging/compare/v0.8.4...v0.8.5) (2026-06-21)
 
 

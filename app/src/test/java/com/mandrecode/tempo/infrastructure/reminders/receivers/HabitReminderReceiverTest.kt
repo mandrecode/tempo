@@ -3,14 +3,50 @@ package com.mandrecode.tempo.infrastructure.reminders.receivers
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.datetime.LocalDateTime
 import org.junit.Test
 
 class HabitReminderReceiverTest {
     private val context: Context = mockk(relaxed = true)
+
+    @Test
+    fun `shouldShowHabitReminder returns false for completed habits`() {
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 1, 8, 0),
+                isCompleted = true,
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitReminder returns true for incomplete habits`() {
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 1, 8, 0),
+                isCompleted = false,
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit)
+
+        assertThat(result).isTrue()
+    }
 
     @Test
     fun `buildHabitNotificationContentText returns quit-specific copy for QUIT habits`() {
