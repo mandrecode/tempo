@@ -43,6 +43,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
@@ -54,6 +55,7 @@ import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.util.color
+import com.mandrecode.tempo.core.ui.util.enhancedDescriptionTextFieldValue
 import com.mandrecode.tempo.core.ui.util.titleResId
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -201,44 +203,69 @@ private fun TaskDescriptionSection(
             )
         }
 
-        TextField(
-            value = state.taskDescription,
-            onValueChange = actions.onTaskDescriptionChanged,
-            placeholder = {
-                Text(
-                    stringResource(R.string.add_details),
-                    style = MaterialTheme.typography.bodyLarge,
-                )
-            },
-            textStyle = MaterialTheme.typography.bodyLarge,
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                ),
+        Column(
             modifier =
                 Modifier
                     .weight(1f)
-                    .padding(start = 4.dp)
-                    .focusRequester(focusConfig.descriptionFocusRequester),
-            maxLines = 5,
-            keyboardOptions =
-                KeyboardOptions(
-                    capitalization = KeyboardCapitalization.Sentences,
-                ),
-            isError = state.formState.descriptionError != null,
-            supportingText =
-                if (state.formState.descriptionError != null) {
-                    { Text(stringResource(state.formState.descriptionError)) }
-                } else {
-                    null
-                },
-        )
+                    .padding(start = 4.dp),
+        ) {
+            TaskDescriptionField(
+                state = state,
+                onDescriptionChange = actions.onTaskDescriptionChanged,
+                focusConfig = focusConfig,
+            )
+        }
     }
+}
+
+@Composable
+private fun TaskDescriptionField(
+    state: TaskBottomSheetBodyState,
+    onDescriptionChange: (TextFieldValue) -> Unit,
+    focusConfig: TaskBottomSheetFocusConfig,
+) {
+    val linkColor = MaterialTheme.colorScheme.primary
+    TextField(
+        value =
+            enhancedDescriptionTextFieldValue(
+                value = state.taskDescription,
+                linkColor = linkColor,
+            ),
+        onValueChange = onDescriptionChange,
+        placeholder = {
+            Text(
+                stringResource(R.string.add_details),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+        },
+        textStyle = MaterialTheme.typography.bodyLarge,
+        colors =
+            TextFieldDefaults.colors(
+                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
+                errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
+            ),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+                .focusRequester(focusConfig.descriptionFocusRequester),
+        maxLines = 5,
+        keyboardOptions =
+            KeyboardOptions(
+                capitalization = KeyboardCapitalization.Sentences,
+            ),
+        isError = state.formState.descriptionError != null,
+        supportingText =
+            if (state.formState.descriptionError != null) {
+                { Text(stringResource(state.formState.descriptionError)) }
+            } else {
+                null
+            },
+    )
 }
 
 @Composable

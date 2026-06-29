@@ -86,6 +86,28 @@ class HabitReminderSchedulerImplTest {
         }
 
     @Test
+    fun `scheduleHabit schedules future reminders for completed habits`() =
+        runTest {
+            val reminderDate = LocalDateTime(2030, 1, 20, 8, 0)
+            val habit =
+                Habit(
+                    id = 77L,
+                    title = "Done",
+                    description = "Already completed today",
+                    reminderDate = reminderDate,
+                    isCompleted = true,
+                    createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                )
+            val expectedTriggerAtMillis =
+                reminderDate.toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+
+            val result = scheduler.scheduleHabit(habit)
+
+            assertThat(result).isEqualTo(ScheduleResult.Success(reminderDate))
+            verify(exactly = 1) { habitAlarmScheduler.scheduleHabitReminder(77L, expectedTriggerAtMillis) }
+        }
+
+    @Test
     fun `scheduleHabitChain delegates to alarm scheduler for future reminders`() =
         runTest {
             val reminderDate = LocalDateTime(2030, 3, 10, 7, 30)

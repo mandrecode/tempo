@@ -3,14 +3,73 @@ package com.mandrecode.tempo.infrastructure.reminders.receivers
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.datetime.LocalDateTime
 import org.junit.Test
 
 class HabitReminderReceiverTest {
     private val context: Context = mockk(relaxed = true)
+
+    @Test
+    fun `shouldShowHabitReminder returns false when scheduled date is completed`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 1, 8, 0),
+                isCompleted = true,
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                completionHistory = "2030-01-01",
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit, scheduledDate)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitReminder returns true when only legacy completed flag is true`() {
+        val scheduledDate = LocalDateTime(2030, 1, 2, 8, 0).date
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 2, 8, 0),
+                isCompleted = true,
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                completionHistory = "2030-01-01",
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit, scheduledDate)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `shouldShowHabitReminder returns false for delayed completed occurrence after reminder advanced`() {
+        val delayedOccurrenceDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 2, 8, 0),
+                isCompleted = true,
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                completionHistory = "2030-01-01",
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit, delayedOccurrenceDate)
+
+        assertThat(result).isFalse()
+    }
 
     @Test
     fun `buildHabitNotificationContentText returns quit-specific copy for QUIT habits`() {

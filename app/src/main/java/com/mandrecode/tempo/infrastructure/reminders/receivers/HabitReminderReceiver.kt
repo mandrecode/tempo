@@ -20,6 +20,7 @@ import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
 import com.mandrecode.tempo.infrastructure.notifications.RequestCodeGenerator
+import com.mandrecode.tempo.util.CompletionHistoryUtil
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -78,16 +79,21 @@ class HabitReminderReceiver : BroadcastReceiver() {
                         val habit = habitRepository.getHabitById(habitId)
                         if (habit != null) {
                             val scheduledDate =
-                                habit.reminderDate?.date
+                                intent
+                                    .getStringExtra(EXTRA_SCHEDULED_DATE)
+                                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                                    ?: habit.reminderDate?.date
                                     ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
-                            showHabitNotification(
-                                context,
-                                habit.id,
-                                habit.title,
-                                habit.description,
-                                scheduledDate,
-                                habit.habitType,
-                            )
+                            if (shouldShowHabitReminder(habit, scheduledDate)) {
+                                showHabitNotification(
+                                    context,
+                                    habit.id,
+                                    habit.title,
+                                    habit.description,
+                                    scheduledDate,
+                                    habit.habitType,
+                                )
+                            }
                             rescheduleHabit(habit)
                         }
                     }
@@ -266,11 +272,18 @@ class HabitReminderReceiver : BroadcastReceiver() {
         const val EXTRA_HABIT_CHAIN_ID = "HABIT_CHAIN_ID"
         const val EXTRA_IS_CHAIN = "IS_CHAIN"
         const val EXTRA_OPEN_ROUTINES = "OPEN_ROUTINES"
+        const val EXTRA_SCHEDULED_DATE = "SCHEDULED_DATE"
 
         const val ACTION_OPEN_HABIT = "com.mandrecode.tempo.ACTION_OPEN_HABIT"
         const val ACTION_OPEN_CHAIN = "com.mandrecode.tempo.ACTION_OPEN_CHAIN"
         const val ACTION_MARK_HABIT_COMPLETE = "com.mandrecode.tempo.ACTION_MARK_HABIT_COMPLETE"
         const val ACTION_START_CHAIN = "com.mandrecode.tempo.ACTION_START_CHAIN"
+
+        @VisibleForTesting
+        internal fun shouldShowHabitReminder(
+            habit: Habit,
+            scheduledDate: LocalDate,
+        ): Boolean = !CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
 
         /**
          * Returns the notification content text for a habit reminder.

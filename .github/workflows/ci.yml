@@ -5,7 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
-    types: [opened, ready_for_review, reopened]
+    types: [opened, synchronize, ready_for_review, reopened]
   workflow_dispatch:
 
 concurrency:
@@ -299,9 +299,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     needs: check-context
-    if: >-
-      github.event_name == 'push' && github.ref == 'refs/heads/main'
-      && needs.check-context.outputs.skip-checks != 'true'
+    if: needs.check-context.outputs.skip-checks != 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -363,7 +361,6 @@ jobs:
             echo "::error::Unit tests failed"
             exit 1
           fi
-          # android-test only runs on push to main; require it when it ran
           if [[ "${{ needs.android-test.result }}" != "success" && "${{ needs.android-test.result }}" != "skipped" ]]; then
             echo "::error::Instrumented tests failed"
             exit 1
