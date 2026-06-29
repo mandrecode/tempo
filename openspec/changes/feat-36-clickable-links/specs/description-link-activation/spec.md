@@ -4,8 +4,8 @@
 Define how links embedded in user-authored descriptions behave when rendered in Tempo cards.
 
 ## ADDED Requirements
-### Requirement: Description links are recognized in cards and task editor
-The system SHALL detect URI-like text in task, habit, and habit-chain descriptions rendered on cards and task editor surfaces.
+### Requirement: Description web links are recognized in cards and task editor
+The system SHALL detect web URL-like text in task, habit, and habit-chain descriptions rendered on cards and task editor surfaces.
 
 #### Scenario: Web URL in a task description
 - **WHEN** a task card displays a description containing `https://example.com`
@@ -17,9 +17,8 @@ The system SHALL detect URI-like text in task, habit, and habit-chain descriptio
 - **THEN** the URL text inside the description field is visually styled as a link
 
 #### Scenario: Non-web URI in a habit description
-- **WHEN** a habit card displays a description containing a supported URI such as `mailto:hello@example.com`, `tel:+34123456789`, `geo:40.4,-3.7`, `content://provider/item`, or `file:///storage/emulated/0/Documents/note.pdf`
-- **THEN** the URI text is visually styled as a link
-- **AND** tapping that URI launches Android external handling for the matching URI
+- **WHEN** a habit card displays a description containing a non-web URI such as `mailto:hello@example.com`, `tel:+34123456789`, `geo:40.4,-3.7`, `content://provider/item`, or `file:///storage/emulated/0/Documents/note.pdf`
+- **THEN** that URI text is not visually styled or activated as a link
 
 ### Requirement: Bare web links normalize to HTTPS
 The system SHALL normalize bare web links that start with `www.` or contain a domain suffix to HTTPS before opening them.

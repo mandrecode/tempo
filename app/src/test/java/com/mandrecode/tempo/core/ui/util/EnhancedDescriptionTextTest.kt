@@ -20,18 +20,15 @@ class EnhancedDescriptionTextTest {
     }
 
     @Test
-    fun givenUriWithScheme_whenNormalizingDescriptionUri_thenPreservesUri() {
-        assertThat(normalizeDescriptionUri("file:///storage/emulated/0/Documents/note.pdf"))
-            .isEqualTo("file:///storage/emulated/0/Documents/note.pdf")
+    fun givenHttpsUri_whenNormalizingDescriptionUri_thenPreservesUri() {
+        assertThat(normalizeDescriptionUri("https://example.com/docs"))
+            .isEqualTo("https://example.com/docs")
     }
 
     @Test
-    fun givenSupportedUris_whenBuildingEnhancedDescriptionText_thenAddsAnnotationsInOrder() {
+    fun givenSupportedWebUrls_whenBuildingEnhancedDescriptionText_thenAddsAnnotationsInOrder() {
         val text =
-            "Open https://example.com, mailto:hello@example.com, " +
-                "tel:+34123456789, geo:40.4,-3.7, content://provider/item, " +
-                "file:///storage/emulated/0/Documents/note.pdf, www.example.org, " +
-                "and google.es."
+            "Open https://example.com, http://example.net, www.example.org, and google.es."
 
         val annotations =
             buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
@@ -41,14 +38,22 @@ class EnhancedDescriptionTextTest {
         assertThat(annotations)
             .containsExactly(
                 "https://example.com",
-                "mailto:hello@example.com",
-                "tel:+34123456789",
-                "geo:40.4,-3.7",
-                "content://provider/item",
-                "file:///storage/emulated/0/Documents/note.pdf",
+                "http://example.net",
                 "https://www.example.org",
                 "https://google.es",
             ).inOrder()
+    }
+
+    @Test
+    fun givenNonWebUris_whenBuildingEnhancedDescriptionText_thenDoesNotAddLinkAnnotations() {
+        val text =
+            "Skip mailto:hello@example.com tel:+34123456789 geo:40.4,-3.7 " +
+                "content://provider/item file:///storage/emulated/0/Documents/note.pdf"
+
+        val enhancedText = buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
+
+        assertThat(enhancedText.getStringAnnotations(start = 0, end = text.length)).isEmpty()
+        assertThat(enhancedText.spanStyles).isEmpty()
     }
 
     @Test

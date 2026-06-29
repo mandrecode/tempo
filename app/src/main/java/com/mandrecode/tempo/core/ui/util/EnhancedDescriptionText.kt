@@ -4,7 +4,6 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.FileUriExposedException
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
@@ -35,9 +34,9 @@ private const val URL_ANNOTATION_TAG = "tempo_url"
 private val LINK_PATTERN =
     Regex(
         pattern =
-            """(?i)\b((?:https?://|file://|content://|mailto:|tel:|geo:)[^\s<>()]+|""" +
+            """(?i)\b((?:https?://)[^\s<>()]+|""" +
                 """www\.[^\s<>()]+|""" +
-                """(?<!@)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?:/[^\s<>()]*)?)""",
+                """(?<![@/:])(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?:/[^\s<>()]*)?)""",
     )
 
 @Composable
@@ -155,9 +154,7 @@ internal fun openExternalUri(
     } catch (_: ActivityNotFoundException) {
         // The system has no app for this URI. Leave the card in place without interrupting the user.
     } catch (_: SecurityException) {
-        // External targets may deny access to content/file URIs.
-    } catch (_: FileUriExposedException) {
-        // Android may block file:// exposure before another app can handle it.
+        // External targets may deny access.
     }
 }
 
