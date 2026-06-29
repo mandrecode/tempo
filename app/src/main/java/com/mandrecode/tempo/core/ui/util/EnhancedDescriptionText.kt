@@ -34,7 +34,10 @@ private const val URL_ANNOTATION_TAG = "tempo_url"
 
 private val LINK_PATTERN =
     Regex(
-        pattern = """(?i)\b((?:https?://|file://|content://|mailto:|tel:|geo:)[^\s<>()]+|www\.[^\s<>()]+)""",
+        pattern =
+            """(?i)\b((?:https?://|file://|content://|mailto:|tel:|geo:)[^\s<>()]+|""" +
+                """www\.[^\s<>()]+|""" +
+                """(?<!@)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}(?:/[^\s<>()]*)?)""",
     )
 
 @Composable
@@ -96,14 +99,11 @@ internal fun buildEnhancedDescriptionText(
 ): AnnotatedString =
     buildAnnotatedString {
         var currentIndex = 0
-        LINK_PATTERN.findAll(text).forEach { match ->
-            val range = trimTrailingPunctuation(text = text, match = match)
-            if (range.isEmpty()) return@forEach
-
+        findDescriptionLinks(text).forEach { link ->
+            val range = link.range
             append(text.substring(currentIndex, range.first))
             val displayText = text.substring(range)
-            val normalizedUri = normalizeDescriptionUri(displayText)
-            pushStringAnnotation(tag = URL_ANNOTATION_TAG, annotation = normalizedUri)
+            pushStringAnnotation(tag = URL_ANNOTATION_TAG, annotation = link.uri)
             withStyle(
                 SpanStyle(
                     color = linkColor,
@@ -136,7 +136,7 @@ internal fun enhancedDescriptionTextFieldValue(
     )
 
 internal fun normalizeDescriptionUri(rawValue: String): String =
-    if (rawValue.startsWith("www.", ignoreCase = true)) {
+    if (rawValue.startsWith("www.", ignoreCase = true) || rawValue.none { it == ':' }) {
         "https://$rawValue"
     } else {
         rawValue
@@ -173,3 +173,22 @@ private fun trimTrailingPunctuation(
 }
 
 private fun textNeedsTrimming(character: Char): Boolean = character in ".,;:!?"
+
+private fun findDescriptionLinks(text: String): Sequence<DescriptionLink> =
+    LINK_PATTERN.findAll(text).mapNotNull { match ->
+        val range = trimTrailingPunctuation(text = text, match = match)
+        if (range.isEmpty()) {
+            null
+        } else {
+            val displayText = text.substring(range)
+            DescriptionLink(
+                range = range,
+                uri = normalizeDescriptionUri(displayText),
+            )
+        }
+    }
+
+private data class DescriptionLink(
+    val range: IntRange,
+    val uri: String,
+)

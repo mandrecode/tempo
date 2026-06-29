@@ -22,12 +22,25 @@ The system SHALL detect URI-like text in task, habit, and habit-chain descriptio
 - **AND** tapping that URI launches Android external handling for the matching URI
 
 ### Requirement: Bare web links normalize to HTTPS
-The system SHALL normalize bare web links that start with `www.` to HTTPS before opening them.
+The system SHALL normalize bare web links that start with `www.` or contain a domain suffix to HTTPS before opening them.
 
 #### Scenario: Bare www link
 - **WHEN** a card description contains `www.example.com`
 - **AND** the user taps that link
 - **THEN** Android external handling is launched for `https://www.example.com`
+
+#### Scenario: Bare domain link
+- **WHEN** a card description contains `google.es`
+- **AND** the user taps that link
+- **THEN** Android external handling is launched for `https://google.es`
+
+#### Scenario: Bare domain in task editor
+- **WHEN** the task bottom sheet description field contains `google.es`
+- **THEN** the domain text inside the description field is visually styled as a link
+
+#### Scenario: Plain word without domain suffix
+- **WHEN** a description contains `google`
+- **THEN** that text is not styled or activated as a link
 
 ### Requirement: Card interactions remain intact
 The system SHALL preserve existing card interactions outside detected link ranges.

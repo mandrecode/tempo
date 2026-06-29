@@ -14,6 +14,12 @@ class EnhancedDescriptionTextTest {
     }
 
     @Test
+    fun givenBareDomain_whenNormalizingDescriptionUri_thenAddsHttpsScheme() {
+        assertThat(normalizeDescriptionUri("google.es"))
+            .isEqualTo("https://google.es")
+    }
+
+    @Test
     fun givenUriWithScheme_whenNormalizingDescriptionUri_thenPreservesUri() {
         assertThat(normalizeDescriptionUri("file:///storage/emulated/0/Documents/note.pdf"))
             .isEqualTo("file:///storage/emulated/0/Documents/note.pdf")
@@ -24,7 +30,8 @@ class EnhancedDescriptionTextTest {
         val text =
             "Open https://example.com, mailto:hello@example.com, " +
                 "tel:+34123456789, geo:40.4,-3.7, content://provider/item, " +
-                "file:///storage/emulated/0/Documents/note.pdf and www.example.org."
+                "file:///storage/emulated/0/Documents/note.pdf, www.example.org, " +
+                "and google.es."
 
         val annotations =
             buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
@@ -40,6 +47,7 @@ class EnhancedDescriptionTextTest {
                 "content://provider/item",
                 "file:///storage/emulated/0/Documents/note.pdf",
                 "https://www.example.org",
+                "https://google.es",
             ).inOrder()
     }
 
@@ -50,6 +58,26 @@ class EnhancedDescriptionTextTest {
         val enhancedText = buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
 
         assertThat(enhancedText.text).isEqualTo(text)
+        assertThat(enhancedText.getStringAnnotations(start = 0, end = text.length)).isEmpty()
+        assertThat(enhancedText.spanStyles).isEmpty()
+    }
+
+    @Test
+    fun givenDescriptionWithoutDomainDot_whenBuildingEnhancedDescriptionText_thenDoesNotAddLinkAnnotations() {
+        val text = "Open google when planning."
+
+        val enhancedText = buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
+
+        assertThat(enhancedText.getStringAnnotations(start = 0, end = text.length)).isEmpty()
+        assertThat(enhancedText.spanStyles).isEmpty()
+    }
+
+    @Test
+    fun givenBareEmailAddress_whenBuildingEnhancedDescriptionText_thenDoesNotLinkDomainSegment() {
+        val text = "Email hello@example.com later."
+
+        val enhancedText = buildEnhancedDescriptionText(text = text, linkColor = Color.Blue)
+
         assertThat(enhancedText.getStringAnnotations(start = 0, end = text.length)).isEmpty()
         assertThat(enhancedText.spanStyles).isEmpty()
     }
