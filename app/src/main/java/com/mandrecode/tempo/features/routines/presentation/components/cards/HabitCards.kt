@@ -58,6 +58,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.theme.subtaskTitle
+import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.util.CompletionHistoryUtil
@@ -265,7 +266,7 @@ internal fun HabitItem(
 
             if (sanitizedDescription.isNotBlank()) {
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
+                EnhancedDescriptionText(
                     text = sanitizedDescription,
                     style = MaterialTheme.typography.bodyMedium,
                     color =
