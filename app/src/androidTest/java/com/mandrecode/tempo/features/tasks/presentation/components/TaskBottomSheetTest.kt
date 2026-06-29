@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertTextContains
@@ -227,6 +228,45 @@ class TaskBottomSheetTest {
         }
 
         composeTestRule.onNodeWithText(addDetailsPlaceholder, substring = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun givenEditingTaskWithUrlDescription_whenRendered_thenDescriptionFieldShowsUrlText() {
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task = sampleTask().copy(description = "Read https://example.com/docs before starting"),
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState(),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                    onToggleCompletion = {},
+                )
+            }
+        }
+
+        val descriptionField =
+            composeTestRule
+                .onNodeWithTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+                .performScrollTo()
+                .fetchSemanticsNode()
+
+        assertTrue(
+            descriptionField.config[SemanticsProperties.EditableText]
+                .text
+                .contains("https://example.com/docs"),
+        )
     }
 
     // --- Regression tests for #398, #424: title overflow and long text ---

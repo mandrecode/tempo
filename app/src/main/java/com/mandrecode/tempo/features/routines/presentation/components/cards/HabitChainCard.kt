@@ -58,6 +58,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
+import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -300,7 +301,7 @@ fun HabitChainCard(
 
                             if (sanitizedChainDescription.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
+                                EnhancedDescriptionText(
                                     text = sanitizedChainDescription,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = contentColor.copy(alpha = 0.7f),
