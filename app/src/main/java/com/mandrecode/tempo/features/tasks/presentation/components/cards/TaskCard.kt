@@ -62,6 +62,7 @@ import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
+import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.tasks.domain.model.Task
@@ -268,7 +269,7 @@ fun TaskItem(
 
                             if (sanitizedDescription.isNotBlank()) {
                                 Spacer(modifier = Modifier.height(4.dp))
-                                Text(
+                                EnhancedDescriptionText(
                                     text = sanitizedDescription,
                                     style = MaterialTheme.typography.bodyMedium,
                                     color =
