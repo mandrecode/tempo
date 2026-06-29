@@ -291,6 +291,21 @@ class TasksContentTest {
 - `.performTouchInput { swipeLeft() }`
 
 ### Running Instrumented Tests
+
+Run automated instrumented checks on an AVD by default, not on a physical device. Create and reuse
+a Pixel 10 AVD for local checks:
+
+```bash
+android emulator create --profile pixel_10 # one-time
+android emulator list
+android emulator start <avd-name>
+./gradlew connectedDebugAndroidTest
+android emulator stop <avd-name>
+```
+
+For manual app smoke testing, prefer the user's real connected Pixel 7 when it appears in
+`adb devices -l`; if no physical Pixel 7 is connected, use the Pixel 10 AVD instead.
+
 ```bash
 ./gradlew connectedAndroidTest
 ./gradlew connectedDebugAndroidTest  # Only debug variant
