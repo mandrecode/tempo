@@ -21,10 +21,6 @@ class HabitReminderSchedulerImpl(
 ) : HabitReminderScheduler {
     override suspend fun scheduleHabit(habit: Habit): ScheduleResult =
         withContext(Dispatchers.IO) {
-            if (habit.isCompleted) {
-                return@withContext ScheduleResult.Skipped
-            }
-
             val reminderDate =
                 habit.reminderDate
                     ?: return@withContext ScheduleResult.Failure(context.getString(R.string.error_habit_no_reminder_date))
