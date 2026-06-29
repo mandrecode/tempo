@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.8](https://github.com/mandrecode/tempo/compare/v0.8.7...v0.8.8) (2026-06-29)
+
+
+### Bug Fixes
+
+* **#95:** restore habit reminder scheduling ([#99](https://github.com/mandrecode/tempo/issues/99)) ([b6cb8a4](https://github.com/mandrecode/tempo/commit/b6cb8a4f385896d1502f478b52119d91687d0fd8))
+
 ## [0.8.7](https://github.com/mandrecode/tempo/compare/v0.8.6...v0.8.7) (2026-06-29)
 
 
