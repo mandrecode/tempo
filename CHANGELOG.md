@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.9](https://github.com/mandrecode/tempo/compare/v0.8.8...v0.8.9) (2026-06-30)
+
+
+### Bug Fixes
+
+* **#72:** suppress delayed completed reminders ([#103](https://github.com/mandrecode/tempo/issues/103)) ([f3fc252](https://github.com/mandrecode/tempo/commit/f3fc25273e2b0d065d853973879d0617151c14f6))
+* **#91:** restore live notification chain date ([#102](https://github.com/mandrecode/tempo/issues/102)) ([4955be0](https://github.com/mandrecode/tempo/commit/4955be007bd79c413f6e58bf55b3a31683641d8d))
+
 ## [0.8.8](https://github.com/mandrecode/tempo/compare/v0.8.7...v0.8.8) (2026-06-29)
 
 
