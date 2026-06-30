@@ -719,6 +719,37 @@ class RoutinesViewModelTest {
             assertThat(viewModel.uiState.value.habitForm.editingHabitChain).isEqualTo(ch)
         }
 
+    @Test
+    fun `openHabitChainFromNotification with scheduled date selects date before opening chain sheet`() =
+        runTest {
+            val ch = chain(5L)
+            val scheduledDate = LocalDate(2026, 5, 8)
+            coEvery { habitChainRepository.getHabitChainById(5L) } returns ch
+
+            viewModel.openHabitChainFromNotification(5L, scheduledDate)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.selectedDate).isEqualTo(scheduledDate)
+            assertThat(viewModel.uiState.value.habitForm.isVisible).isTrue()
+            assertThat(viewModel.uiState.value.habitForm.editingHabitChain).isEqualTo(ch)
+        }
+
+    @Test
+    fun `openHabitChainFromNotification without scheduled date keeps selected date`() =
+        runTest {
+            val ch = chain(5L)
+            val selectedDate = LocalDate(2026, 5, 7)
+            coEvery { habitChainRepository.getHabitChainById(5L) } returns ch
+
+            viewModel.onEvent(RoutinesContract.UiEvent.SelectDate(selectedDate))
+            viewModel.openHabitChainFromNotification(5L)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.selectedDate).isEqualTo(selectedDate)
+            assertThat(viewModel.uiState.value.habitForm.isVisible).isTrue()
+            assertThat(viewModel.uiState.value.habitForm.editingHabitChain).isEqualTo(ch)
+        }
+
     // --- Permissions ---
 
     @Test
