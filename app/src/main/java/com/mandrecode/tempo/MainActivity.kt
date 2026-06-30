@@ -34,6 +34,7 @@ import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderRece
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.TaskReminderReceiver
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 
@@ -189,8 +190,14 @@ class MainActivity : ComponentActivity() {
 
         if (intent.hasExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID)) {
             val chainId = intent.getLongExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID, -1L)
+            val scheduledDate = intent.getHabitChainScheduledDate()
             if (chainId != -1L) {
-                mainViewModel.setPendingNotificationAction(PendingNotificationAction.OpenHabitChain(chainId))
+                mainViewModel.setPendingNotificationAction(
+                    PendingNotificationAction.OpenHabitChain(
+                        chainId = chainId,
+                        scheduledDate = scheduledDate,
+                    ),
+                )
                 routinesNavigationTrigger.longValue++
                 handledRoutineNotificationOpen = true
             }
@@ -213,6 +220,10 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun Intent.getHabitChainScheduledDate(): LocalDate? =
+        getStringExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
+            ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+
     private fun Intent.clearNotificationExtras() {
         removeExtra(TaskReminderReceiver.EXTRA_TASK_ID)
         removeExtra(TaskReminderReceiver.EXTRA_OPEN_TASKS)
@@ -220,5 +231,6 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_HABIT_ID)
         removeExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID)
         removeExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES)
+        removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
     }
 }
