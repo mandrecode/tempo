@@ -111,12 +111,12 @@ fun TasksScreen(
         )
     }
 
-    val isLandscape = isFloatingNavigationRailLayout()
+    val isRailLayout = isFloatingNavigationRailLayout()
     val isSheetVisible =
         uiState.taskForm.isVisible ||
             uiState.categoryForm.isVisible ||
             uiState.showSortBottomSheet
-    val shouldShowFloatingRail = !isLandscape || !isSheetVisible
+    val shouldShowFloatingRail = !isRailLayout || !isSheetVisible
     val hasCompletedTasks =
         remember(uiState.tasks, uiState.selectedCategoryId) {
             uiState.tasks.any {
@@ -153,7 +153,7 @@ fun TasksScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.floatingRailContentPadding(isLandscape),
+            modifier = Modifier.floatingRailContentPadding(isRailLayout),
             topBar = topBar,
         ) {
             Box(
@@ -174,7 +174,7 @@ fun TasksScreen(
                                 top = 20.dp,
                                 end = 16.dp,
                                 bottom =
-                                    if (isLandscape) {
+                                    if (isRailLayout) {
                                         20.dp
                                     } else {
                                         FLOATING_BAR_SNACKBAR_BOTTOM_PADDING

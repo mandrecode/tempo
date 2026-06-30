@@ -66,7 +66,7 @@ internal fun PersistentFloatingBar(
     tasksState: TasksFloatingBarState,
     onRouteChange: (String) -> Unit,
 ) {
-    val isLandscape = isFloatingNavigationRailLayout()
+    val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = currentDestination?.hasRoute(TasksRoute::class) == true
     val visible =
@@ -89,13 +89,13 @@ internal fun PersistentFloatingBar(
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment =
-            if (isLandscape) {
+            if (isRailLayout) {
                 Alignment.CenterStart
             } else {
                 Alignment.BottomCenter
             },
     ) {
-        if (isLandscape) {
+        if (isRailLayout) {
             PersistentLandscapeFloatingBar(
                 isTasksRoute = isTasksRoute,
                 navigationContent = navigationContent,

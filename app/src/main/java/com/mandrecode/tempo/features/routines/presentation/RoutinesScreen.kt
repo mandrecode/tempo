@@ -105,8 +105,8 @@ fun RoutinesScreen(
         }
     }
 
-    val isLandscape = isFloatingNavigationRailLayout()
-    val shouldShowFloatingRail = !isLandscape || !uiState.habitForm.isVisible
+    val isRailLayout = isFloatingNavigationRailLayout()
+    val shouldShowFloatingRail = !isRailLayout || !uiState.habitForm.isVisible
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onShowHabitBottomSheet =
         remember(viewModel) {
@@ -125,7 +125,7 @@ fun RoutinesScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.floatingRailContentPadding(isLandscape),
+            modifier = Modifier.floatingRailContentPadding(isRailLayout),
             topBar = topBar,
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
@@ -216,7 +216,7 @@ fun RoutinesScreen(
 
                 RoutinesSnackbar(
                     snackbarHostState = snackbarHostState,
-                    isLandscape = isLandscape,
+                    isRailLayout = isRailLayout,
                 )
             }
         }
@@ -294,7 +294,7 @@ private fun RoutinesDialogs(
 @Composable
 private fun RoutinesSnackbar(
     snackbarHostState: SnackbarHostState,
-    isLandscape: Boolean,
+    isRailLayout: Boolean,
 ) {
     Box(
         modifier =
@@ -305,7 +305,7 @@ private fun RoutinesSnackbar(
                     top = 16.dp,
                     end = 16.dp,
                     bottom =
-                        if (isLandscape) {
+                        if (isRailLayout) {
                             16.dp
                         } else {
                             FLOATING_BAR_SNACKBAR_BOTTOM_PADDING

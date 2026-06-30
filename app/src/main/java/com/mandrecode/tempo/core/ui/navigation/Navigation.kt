@@ -135,7 +135,7 @@ fun TempoBottomNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    val isLandscape = isFloatingNavigationRailLayout()
+    val isRailLayout = isFloatingNavigationRailLayout()
 
     Surface(
         modifier = modifier,
@@ -144,7 +144,7 @@ fun TempoBottomNavigation(
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
-        if (isLandscape) {
+        if (isRailLayout) {
             Column(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
