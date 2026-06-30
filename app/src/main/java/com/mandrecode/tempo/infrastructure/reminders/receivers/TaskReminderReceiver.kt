@@ -5,6 +5,7 @@ import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.VisibleForTesting
 import androidx.core.app.NotificationCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
@@ -43,12 +44,13 @@ class TaskReminderReceiver : BroadcastReceiver() {
         CoroutineScope(ioDispatcher).launch {
             try {
                 val task = taskRepository.getTaskById(taskId)
-                if (task != null && !task.isCompleted) {
-                    showNotification(context, task)
+                if (shouldProcessTaskReminder(task)) {
+                    val activeTask = requireNotNull(task)
+                    showNotification(context, activeTask)
 
                     // Preserve the overdue occurrence and schedule a linked next instance.
-                    if (task.periodicity != null && task.parentTaskId == null) {
-                        rollOverduePeriodicTaskUseCase(task)
+                    if (activeTask.periodicity != null && activeTask.parentTaskId == null) {
+                        rollOverduePeriodicTaskUseCase(activeTask)
                     }
                 }
             } finally {
@@ -147,5 +149,8 @@ class TaskReminderReceiver : BroadcastReceiver() {
     companion object {
         const val EXTRA_TASK_ID = "TASK_ID"
         const val EXTRA_OPEN_TASKS = "OPEN_TASKS"
+
+        @VisibleForTesting
+        internal fun shouldProcessTaskReminder(task: Task?): Boolean = task != null && !task.isCompleted
     }
 }
