@@ -62,6 +62,7 @@ import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
@@ -71,7 +72,7 @@ internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
 private val SHEET_HANDLE_TOUCH_TARGET_HEIGHT = 48.dp
-private val SHEET_HANDLE_CONTENT_INSET = 24.dp
+private val SHEET_HANDLE_CONTENT_INSET = SHEET_HANDLE_TOUCH_TARGET_HEIGHT
 private val SHEET_HANDLE_EDGE_PADDING = 8.dp
 
 internal enum class TempoModalSheetDirection {
@@ -335,9 +336,11 @@ private fun Modifier.pointerInputForSheetDrag(
     scope: CoroutineScope,
 ): Modifier =
     pointerInput(state.direction, state.currentScreenHeightPx) {
+        var snapJob: Job? = null
         detectSheetVerticalDragGestures(
             direction = state.direction,
             onDragEnd = {
+                snapJob?.cancel()
                 if (
                     state.direction.shouldDismiss(
                         offset = state.offsetY.value,
@@ -346,17 +349,21 @@ private fun Modifier.pointerInputForSheetDrag(
                 ) {
                     state.onRequestDismiss()
                 } else {
-                    scope.launch { state.restore() }
+                    snapJob = scope.launch { state.restore() }
                 }
             },
-            onDragCancel = { scope.launch { state.restore() } },
+            onDragCancel = {
+                snapJob?.cancel()
+                snapJob = scope.launch { state.restore() }
+            },
             onVerticalDrag = { dragAmount ->
                 val newOffset =
                     state.direction.coerceDragOffset(
                         offset = state.offsetY.value + dragAmount,
                         screenHeightPx = state.currentScreenHeightPx,
                     )
-                scope.launch { state.offsetY.snapTo(newOffset) }
+                snapJob?.cancel()
+                snapJob = scope.launch { state.offsetY.snapTo(newOffset) }
             },
         )
     }
