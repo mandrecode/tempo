@@ -9,3 +9,15 @@
 - [x] 2.1 Run `openspec validate fix-89-predictive-back-bottom-sheets`.
 - [x] 2.2 Run focused Kotlin compile or tests for the app UI change.
 - [x] 2.3 Run `./gradlew ktlintFormat` and confirm formatting/static checks relevant to the touched files.
+
+## 3. Material3 Experiment
+
+- [x] 3.1 Replace the custom bottom-sheet internals with a Material3 `ModalBottomSheet` wrapper.
+- [x] 3.2 Preserve the existing `TempoModalBottomSheet` call-site API and unsaved-changes guard.
+- [x] 3.3 Build and run the debug package on the connected Pixel 7 for visual comparison.
+
+## 4. Material3 Tuning
+
+- [x] 4.1 Hide the Material3 bottom-sheet handle while disabling sheet drag gestures that can stick on repeated upward drags.
+- [x] 4.2 Keep initial task/habit title focus immediate so keyboard and sheet animations start together.
+- [x] 4.3 Add a small shared top inset for bottom-sheet content.
