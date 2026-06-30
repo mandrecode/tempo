@@ -2,7 +2,8 @@ package com.mandrecode.tempo.core.ui.components
 
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
-import androidx.activity.compose.BackHandler
+import androidx.activity.ExperimentalActivityApi
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -46,6 +47,8 @@ import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -130,7 +133,19 @@ fun TempoModalBottomSheet(
         offsetY.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS))
     }
 
-    BackHandler { onRequestDismiss() }
+    TempoModalBottomSheetPredictiveBackHandler(
+        currentScreenHeightPx = currentScreenHeightPx,
+        hasUnsavedChanges = currentHasUnsavedChanges,
+        forceDismiss = forceDismissState.value,
+        onProgress = { offsetY.snapTo(it) },
+        onRestore = {
+            offsetY.animateTo(
+                0f,
+                animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS),
+            )
+        },
+        onDismiss = onRequestDismiss,
+    )
 
     Dialog(
         onDismissRequest = onRequestDismiss,
@@ -212,6 +227,34 @@ fun TempoModalBottomSheet(
                     content(onRequestDismiss)
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalActivityApi::class)
+@Composable
+private fun TempoModalBottomSheetPredictiveBackHandler(
+    currentScreenHeightPx: Float,
+    hasUnsavedChanges: Boolean,
+    forceDismiss: Boolean,
+    onProgress: suspend (Float) -> Unit,
+    onRestore: suspend () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+
+    PredictiveBackHandler {
+        try {
+            it.collect { backEvent ->
+                onProgress(currentScreenHeightPx * backEvent.progress)
+            }
+            if (hasUnsavedChanges && !forceDismiss) {
+                onRestore()
+            }
+            onDismiss()
+        } catch (exception: CancellationException) {
+            scope.launch { onRestore() }
+            throw exception
         }
     }
 }
