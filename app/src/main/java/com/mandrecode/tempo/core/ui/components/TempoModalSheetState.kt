@@ -15,7 +15,6 @@ internal class TempoModalSheetState(
     val showDiscardDialog: MutableState<Boolean>,
     val forceDismiss: MutableState<Boolean>,
     val isExpandedToStatusBar: MutableState<Boolean>,
-    val currentHasUnsavedChanges: Boolean,
     val animateDismiss: () -> Unit,
     val onRequestDismiss: () -> Unit,
 ) {

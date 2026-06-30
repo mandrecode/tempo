@@ -292,7 +292,6 @@ private fun rememberTempoModalSheetState(
             showDiscardDialog = showDiscardDialog,
             forceDismiss = forceDismiss,
             isExpandedToStatusBar = isExpandedToStatusBar,
-            currentHasUnsavedChanges = currentHasUnsavedChanges,
             animateDismiss = animateDismiss,
             onRequestDismiss = onRequestDismiss,
         )
