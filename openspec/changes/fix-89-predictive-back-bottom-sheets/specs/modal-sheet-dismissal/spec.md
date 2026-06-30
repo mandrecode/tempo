@@ -37,9 +37,34 @@ Shared modal bottom sheets SHALL expose a drag handle only when drag-to-dismiss 
 - **WHEN** a user drags the bottom sheet downward past the dismiss threshold and releases
 - **THEN** the sheet dismisses through its standard dismiss path
 
+#### Scenario: Downward drag can begin anywhere on the sheet
+- **WHEN** a user starts a downward drag from any non-edge area of a visible bottom sheet
+- **THEN** the sheet follows the drag after vertical touch slop is crossed
+
 ### Requirement: Bottom-sheet keyboard movement remains synchronized
 Shared modal bottom sheets containing an initially focused text field SHALL keep keyboard appearance visually synchronized with sheet opening.
 
 #### Scenario: New task or habit sheet opens with title focus
 - **WHEN** a user opens a new task or habit bottom sheet
 - **THEN** the sheet and keyboard appear without a delayed layout jump
+
+### Requirement: Custom modal sheet behavior is shared by direction
+Shared modal sheets SHALL use one internal primitive for top and bottom presentation, with direction-specific alignment, shape, and dismissal offset.
+
+#### Scenario: Top sheet uses the shared primitive in the opposite direction
+- **WHEN** a top modal sheet is shown
+- **THEN** it uses the same guarded dismiss, scrim, drag threshold, and back handling behavior with top-aligned movement
+
+### Requirement: Tall bottom sheets keep top breathing room
+Shared modal bottom sheets SHALL reserve top breathing room when content is taller than the available display space.
+
+#### Scenario: Large habit chain sheet opens
+- **WHEN** a habit-chain bottom sheet contains enough content to fill the screen
+- **THEN** the sheet top and handle remain below the top system area instead of clashing with it
+
+### Requirement: Predictive back follows Material3 visual language
+Shared modal sheets SHALL ease predictive-back progress and apply subtle sheet scaling during the gesture.
+
+#### Scenario: Predictive back gesture progresses
+- **WHEN** a user progresses a predictive-back gesture on a visible modal sheet
+- **THEN** the sheet moves and scales according to Material3-style predictive-back progress

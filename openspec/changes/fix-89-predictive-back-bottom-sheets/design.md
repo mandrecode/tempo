@@ -50,6 +50,25 @@ Tempo uses a custom `TempoModalBottomSheet` shared by task, habit, and sort flow
     downward from rest and clamp upward movement at the open position, mirroring top sheets'
     one-way dismissal behavior in the opposite direction.
 
+- Share the custom modal-sheet primitive between top and bottom sheets.
+  - Rationale: `TempoModalTopSheet` and `TempoModalBottomSheet` own the same dialog, scrim,
+    dismissal guard, drag threshold, and back behavior. Keeping one internal implementation with
+    opposite directions reduces custom-maintenance risk.
+
+- Mirror Material3's predictive-back transform shape.
+  - Rationale: Material3 eases back progress and applies subtle sheet scaling during predictive
+    back. Tempo should keep that visual language while preserving custom IME placement.
+
+- Let vertical drag start from anywhere on the sheet.
+  - Rationale: the handle communicates drag affordance, but users naturally pull on the visible
+    sheet surface. The sheet steals vertical gestures only after touch slop so normal taps still
+    reach child controls.
+
+- Cap bottom-sheet maximum height below the top system area.
+  - Rationale: large habit chains can make the bottom sheet fill the display and place the handle
+    against the status/top-bar region. Reserving top air keeps the sheet visually modal without
+    pushing content padding into normal-height sheets.
+
 ## Risks / Trade-offs
 
 - Predictive-back APIs are experimental in Activity Compose -> opt in at the component boundary and keep usage narrow.

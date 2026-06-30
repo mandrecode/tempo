@@ -28,3 +28,11 @@
 - [x] 5.2 Move predictive-back handling into the custom dialog and disable default dialog back dismissal.
 - [x] 5.3 Clamp bottom-sheet dragging to downward movement and show the drag handle because drag is supported.
 - [x] 5.4 Re-run formatting, compile, OpenSpec validation, and Pixel 7 smoke verification.
+
+## 6. Shared Sheet Refinement
+
+- [x] 6.1 Extract shared custom modal-sheet behavior for top and bottom sheets with opposite directions.
+- [x] 6.2 Add Material3-style predictive-back easing and scaling.
+- [x] 6.3 Allow vertical drag-to-dismiss from anywhere on the sheet after touch slop.
+- [x] 6.4 Cap tall bottom-sheet height to preserve top breathing room.
+- [x] 6.5 Re-run formatting, compile, static checks, OpenSpec validation, and Pixel 7 smoke verification.
