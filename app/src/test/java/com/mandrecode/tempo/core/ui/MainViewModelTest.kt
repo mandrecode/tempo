@@ -18,6 +18,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.After
 import org.junit.Before
@@ -159,6 +160,62 @@ class MainViewModelTest {
         }
 
     @Test
+    fun `pending habit chain notification action saves scheduled date`() =
+        runTest {
+            val savedStateHandle = SavedStateHandle()
+            val viewModel = createViewModel(savedStateHandle)
+            val scheduledDate = LocalDate(2026, 5, 8)
+
+            viewModel.setPendingNotificationAction(
+                PendingNotificationAction.OpenHabitChain(
+                    chainId = 7L,
+                    scheduledDate = scheduledDate,
+                ),
+            )
+
+            assertThat(viewModel.pendingNotificationAction.value)
+                .isEqualTo(PendingNotificationAction.OpenHabitChain(7L, scheduledDate))
+            assertThat(savedStateHandle.get<String>("pending_scheduled_date"))
+                .isEqualTo("2026-05-08")
+        }
+
+    @Test
+    fun `pending habit chain notification action restores scheduled date from saved state`() =
+        runTest {
+            val savedStateHandle =
+                SavedStateHandle(
+                    mapOf(
+                        "pending_notification_action_type" to "habit_chain",
+                        "pending_notification_action_id" to 7L,
+                        "pending_scheduled_date" to "2026-05-08",
+                    ),
+                )
+
+            val viewModel = createViewModel(savedStateHandle)
+
+            assertThat(viewModel.pendingNotificationAction.value)
+                .isEqualTo(PendingNotificationAction.OpenHabitChain(7L, LocalDate(2026, 5, 8)))
+        }
+
+    @Test
+    fun `invalid pending habit chain scheduled date restores as null`() =
+        runTest {
+            val savedStateHandle =
+                SavedStateHandle(
+                    mapOf(
+                        "pending_notification_action_type" to "habit_chain",
+                        "pending_notification_action_id" to 7L,
+                        "pending_scheduled_date" to "not-a-date",
+                    ),
+                )
+
+            val viewModel = createViewModel(savedStateHandle)
+
+            assertThat(viewModel.pendingNotificationAction.value)
+                .isEqualTo(PendingNotificationAction.OpenHabitChain(7L))
+        }
+
+    @Test
     fun `consumePendingNotificationAction clears pending action`() =
         runTest {
             val viewModel = createViewModel()
@@ -178,6 +235,7 @@ class MainViewModelTest {
                         "pending_notification_action_type" to "unknown",
                         "pending_notification_action_id" to 7L,
                         "pending_original_reminder_date" to "2026-05-08T09:30",
+                        "pending_scheduled_date" to "2026-05-08",
                     ),
                 )
 
@@ -187,6 +245,7 @@ class MainViewModelTest {
             assertThat(savedStateHandle.get<String>("pending_notification_action_type")).isNull()
             assertThat(savedStateHandle.get<Long>("pending_notification_action_id")).isNull()
             assertThat(savedStateHandle.get<String>("pending_original_reminder_date")).isNull()
+            assertThat(savedStateHandle.get<String>("pending_scheduled_date")).isNull()
         }
 
     @Test

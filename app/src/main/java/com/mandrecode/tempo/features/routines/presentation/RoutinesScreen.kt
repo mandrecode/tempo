@@ -65,7 +65,12 @@ fun RoutinesScreen(
     LaunchedEffect(pendingNotificationAction) {
         when (val action = pendingNotificationAction) {
             is PendingNotificationAction.OpenHabit -> viewModel.openHabitFromNotification(action.habitId)
-            is PendingNotificationAction.OpenHabitChain -> viewModel.openHabitChainFromNotification(action.chainId)
+            is PendingNotificationAction.OpenHabitChain ->
+                viewModel.openHabitChainFromNotification(
+                    chainId = action.chainId,
+                    scheduledDate = action.scheduledDate,
+                )
+
             else -> return@LaunchedEffect
         }
         currentOnConsumePendingNotificationAction()
