@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.10](https://github.com/mandrecode/tempo/compare/v0.8.9...v0.8.10) (2026-06-30)
+
+
+### Features
+
+* **#90:** add list bottom scroll clearance ([#109](https://github.com/mandrecode/tempo/issues/109)) ([2d0c5c3](https://github.com/mandrecode/tempo/commit/2d0c5c36315308c85c62ebcd8b881ca69c4209d0))
+
+
+### Bug Fixes
+
+* **#89:** restore predictive back for bottom sheets ([#105](https://github.com/mandrecode/tempo/issues/105)) ([9b86eeb](https://github.com/mandrecode/tempo/commit/9b86eebab3b484b2bab6046477548171daef99ce))
+
 ## [0.8.9](https://github.com/mandrecode/tempo/compare/v0.8.8...v0.8.9) (2026-06-30)
 
 
