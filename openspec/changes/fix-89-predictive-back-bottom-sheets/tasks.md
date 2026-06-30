@@ -53,4 +53,4 @@
 - [x] 8.4 Re-run formatting, compile, static checks, localization validation, and OpenSpec validation.
 - [ ] 8.5 Re-run Pixel 7 smoke verification after the device is unlocked.
 - [x] 8.6 Add focused transform tests and shared modal sheet previews for the split sheet structure.
-- [x] 8.7 Address follow-up Copilot review and verify connected instrumented tests on a Pixel 10 AVD.
+- [x] 8.7 Address follow-up Copilot review and verify `:app:connectedDebugAndroidTest` on a Pixel 10 AVD.
