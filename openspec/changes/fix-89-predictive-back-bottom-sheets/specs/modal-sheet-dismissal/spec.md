@@ -37,9 +37,13 @@ Shared modal bottom sheets SHALL expose a drag handle only when drag-to-dismiss 
 - **WHEN** a user drags the bottom sheet downward past the dismiss threshold and releases
 - **THEN** the sheet dismisses through its standard dismiss path
 
-#### Scenario: Downward drag can begin anywhere on the sheet
-- **WHEN** a user starts a downward drag from any non-edge area of a visible bottom sheet
+#### Scenario: Downward drag begins from the handle
+- **WHEN** a user starts a downward drag from the bottom-sheet handle area
 - **THEN** the sheet follows the drag after vertical touch slop is crossed
+
+#### Scenario: Downward drag in content remains available to content
+- **WHEN** a user starts a downward drag from a scrollable content area of a visible bottom sheet
+- **THEN** the content handles the gesture instead of the sheet dismissing
 
 ### Requirement: Bottom-sheet keyboard movement remains synchronized
 Shared modal bottom sheets containing an initially focused text field SHALL keep keyboard appearance visually synchronized with sheet opening.
@@ -75,3 +79,10 @@ Habit bottom sheets SHALL preserve draft title and description text when switchi
 #### Scenario: User switches habit mode after typing a title
 - **WHEN** a user types a habit title and switches between habit and habit-chain tabs
 - **THEN** the typed title remains visible
+
+### Requirement: Sheet drag handle remains accessible
+Shared modal sheets SHALL expose a 48dp high handle interaction area with a dismiss accessibility action.
+
+#### Scenario: Assistive technology focuses the handle
+- **WHEN** a user focuses the sheet handle with assistive technology
+- **THEN** a localized dismiss action is available

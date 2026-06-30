@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -45,13 +46,17 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.dismiss
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import kotlinx.coroutines.CancellationException
@@ -59,10 +64,14 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import androidx.compose.foundation.layout.Box as LayoutBox
 
 internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
+private val SHEET_HANDLE_TOUCH_TARGET_HEIGHT = 48.dp
+private val SHEET_HANDLE_CONTENT_INSET = 24.dp
+private val SHEET_HANDLE_EDGE_PADDING = 8.dp
 
 internal enum class TempoModalSheetDirection {
     Top,
@@ -157,7 +166,6 @@ private fun BoxScope.TempoModalSheetSurface(
     state: TempoModalSheetState,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
-    val scope = rememberCoroutineScope()
     Surface(
         modifier =
             Modifier
@@ -168,12 +176,7 @@ private fun BoxScope.TempoModalSheetSurface(
                         size.height >= state.currentScreenHeightPx.roundToInt()
                 }.align(state.direction.alignment)
                 .offset { IntOffset(0, state.offsetY.value.roundToInt()) }
-                .then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    onClick = {},
-                ).pointerInputForSheetDrag(state, scope),
+                .then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier),
         shape = state.direction.shape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -191,20 +194,35 @@ private fun TempoModalSheetColumn(
     state: TempoModalSheetState,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
-    Column(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .then(state.statusBarPaddingModifier)
-                .then(state.navigationBarPaddingModifier),
+    LayoutBox(
+        modifier = Modifier.fillMaxWidth(),
     ) {
-        if (state.direction == TempoModalSheetDirection.Bottom) {
-            TempoModalSheetDragHandle()
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(state.statusBarPaddingModifier)
+                    .then(state.navigationBarPaddingModifier),
+        ) {
+            if (state.direction == TempoModalSheetDirection.Bottom) {
+                Spacer(modifier = Modifier.height(SHEET_HANDLE_CONTENT_INSET))
+            }
+            content(state.onRequestDismiss)
+            if (state.direction == TempoModalSheetDirection.Top) {
+                Spacer(modifier = Modifier.height(SHEET_HANDLE_CONTENT_INSET))
+            }
         }
-        content(state.onRequestDismiss)
-        if (state.direction == TempoModalSheetDirection.Top) {
-            TempoModalSheetDragHandle(bottomSpacing = 16.dp)
-        }
+        TempoModalSheetDragHandle(
+            state = state,
+            modifier =
+                Modifier.align(
+                    if (state.direction == TempoModalSheetDirection.Bottom) {
+                        Alignment.TopCenter
+                    } else {
+                        Alignment.BottomCenter
+                    },
+                ),
+        )
     }
 }
 
@@ -344,18 +362,44 @@ private fun TempoModalSheetWindowEffects() {
 }
 
 @Composable
-private fun TempoModalSheetDragHandle(bottomSpacing: Dp = 8.dp) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+private fun TempoModalSheetDragHandle(
+    state: TempoModalSheetState,
+    modifier: Modifier = Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    val dismissSheetLabel = stringResource(R.string.dismiss_sheet)
+    LayoutBox(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .height(SHEET_HANDLE_TOUCH_TARGET_HEIGHT)
+                .semantics {
+                    contentDescription = dismissSheetLabel
+                    dismiss {
+                        state.onRequestDismiss()
+                        true
+                    }
+                }.pointerInputForSheetDrag(state, scope),
+        contentAlignment =
+            if (state.direction == TempoModalSheetDirection.Bottom) {
+                Alignment.TopCenter
+            } else {
+                Alignment.BottomCenter
+            },
     ) {
-        Spacer(modifier = Modifier.height(8.dp))
         Surface(
-            modifier = Modifier.size(width = 32.dp, height = 4.dp),
+            modifier =
+                Modifier
+                    .then(
+                        if (state.direction == TempoModalSheetDirection.Bottom) {
+                            Modifier.padding(top = SHEET_HANDLE_EDGE_PADDING)
+                        } else {
+                            Modifier.padding(bottom = SHEET_HANDLE_EDGE_PADDING)
+                        },
+                    ).size(width = 32.dp, height = 4.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             shape = CircleShape,
         ) {}
-        Spacer(modifier = Modifier.height(bottomSpacing))
     }
 }
 

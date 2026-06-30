@@ -44,3 +44,11 @@
 - [x] 7.3 Let tall bottom-sheet content scroll by only intercepting dismiss-direction drags.
 - [x] 7.4 Preserve habit title and description drafts when switching between habit and chain tabs.
 - [x] 7.5 Re-run formatting, compile, static checks, OpenSpec validation, and Pixel 7 smoke verification.
+
+## 8. Handle-Only Drag
+
+- [x] 8.1 Move drag-to-dismiss from the whole sheet surface to the handle area.
+- [x] 8.2 Make the handle hit area 48dp high while keeping the visual handle small.
+- [x] 8.3 Add localized accessibility semantics for dismissing from the handle.
+- [x] 8.4 Re-run formatting, compile, static checks, localization validation, and OpenSpec validation.
+- [ ] 8.5 Re-run Pixel 7 smoke verification after the device is unlocked.

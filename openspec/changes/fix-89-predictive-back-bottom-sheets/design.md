@@ -65,6 +65,13 @@ Tempo uses a custom `TempoModalBottomSheet` shared by task, habit, and sort flow
     sheet surface. The sheet steals only dismiss-direction vertical gestures after touch slop so
     scrollable content can keep handling normal scroll gestures.
 
+- Use the drag handle as the only drag-to-dismiss start area.
+  - Rationale: making the whole sheet draggable in some cases and handle-only in others creates
+    invisible rules. Keeping drag anchored to the visible handle gives every sheet the same mental
+    model while preserving normal scrolling in sheet content.
+  - Accessibility: keep the visual handle small, but expose a 48dp high interactive handle area
+    with a dismiss semantic action.
+
 - Cap bottom-sheet maximum height below the top system area.
   - Rationale: large habit chains can make the bottom sheet fill the display and place the handle
     against the status/top-bar region. Reserving modest top air keeps the sheet visually modal without

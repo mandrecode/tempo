@@ -14,6 +14,7 @@
     <string name="completed">Completado</string>
     <string name="expand">Expandir</string>
     <string name="collapse">Contraer</string>
+    <string name="dismiss_sheet">Cerrar hoja</string>
 
     <!-- TASKS FEATURE -->
     <string name="tasks">Tareas</string>
