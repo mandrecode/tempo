@@ -83,7 +83,7 @@ internal fun HabitBottomSheetContent(
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
 
-    var title by remember(formState.selectedTab, formState.editingHabit?.id, formState.editingHabitChain?.id) {
+    var title by remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
         mutableStateOf(
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.title ?: ""
@@ -91,7 +91,7 @@ internal fun HabitBottomSheetContent(
             },
         )
     }
-    var description by remember(formState.selectedTab, formState.editingHabit?.id, formState.editingHabitChain?.id) {
+    var description by remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
         mutableStateOf(
             TextFieldValue(
                 when (formState.selectedTab) {
