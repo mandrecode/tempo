@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -146,7 +147,13 @@ fun RoutinesContent(
                             Modifier
                                 .fillMaxSize()
                                 .weight(1f),
-                        contentPadding = PaddingValues(16.dp),
+                        contentPadding =
+                            PaddingValues(
+                                start = 16.dp,
+                                end = 16.dp,
+                                top = 16.dp,
+                                bottom = TempoSpacing.bottomNavHeight + 16.dp,
+                            ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         items(
