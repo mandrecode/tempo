@@ -31,7 +31,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -106,7 +105,6 @@ private val navigationItems =
         ),
     )
 
-private const val MEDIUM_WIDTH_BREAKPOINT_DP = 600
 internal val FloatingToolbarItemSize = 48.dp
 internal val FloatingToolbarActionButtonSize = 52.dp
 internal val FloatingToolbarItemSpacing = 8.dp
@@ -137,7 +135,7 @@ fun TempoBottomNavigation(
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = navBackStackEntry?.destination
 
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= MEDIUM_WIDTH_BREAKPOINT_DP
+    val isLandscape = isFloatingNavigationRailLayout()
 
     Surface(
         modifier = modifier,

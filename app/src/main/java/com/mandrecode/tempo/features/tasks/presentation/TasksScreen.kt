@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -31,6 +30,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
+import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
@@ -111,7 +111,7 @@ fun TasksScreen(
         )
     }
 
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= 600
+    val isLandscape = isFloatingNavigationRailLayout()
     val isSheetVisible =
         uiState.taskForm.isVisible ||
             uiState.categoryForm.isVisible ||

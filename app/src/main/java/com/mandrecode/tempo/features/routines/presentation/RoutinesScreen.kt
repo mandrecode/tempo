@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -31,6 +30,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
+import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.ClearRemindersConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitChainConfirmDialog
@@ -105,7 +105,7 @@ fun RoutinesScreen(
         }
     }
 
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= 600
+    val isLandscape = isFloatingNavigationRailLayout()
     val shouldShowFloatingRail = !isLandscape || !uiState.habitForm.isVisible
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onShowHabitBottomSheet =
