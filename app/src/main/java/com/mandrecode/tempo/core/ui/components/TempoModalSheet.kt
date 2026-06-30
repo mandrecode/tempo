@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -64,7 +63,6 @@ import kotlin.math.roundToInt
 internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
-private val PredictiveBackEasing = CubicBezierEasing(0.1f, 0.1f, 0f, 1f)
 
 internal enum class TempoModalSheetDirection {
     Top,
@@ -171,11 +169,7 @@ private fun BoxScope.TempoModalSheetSurface(
                 }.align(state.direction.alignment)
                 .offset { IntOffset(0, state.offsetY.value.roundToInt()) }
                 .then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier)
-                .tempoSheetPredictiveBackScaling(
-                    direction = state.direction,
-                    predictiveBackProgress = state.predictiveBackProgress.floatValue,
-                    offsetY = state.offsetY.value,
-                ).clickable(
+                .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {},
@@ -201,7 +195,6 @@ private fun TempoModalSheetColumn(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .tempoSheetContentPredictiveBackScaling(state.predictiveBackProgress.floatValue)
                 .then(state.statusBarPaddingModifier)
                 .then(state.navigationBarPaddingModifier),
     ) {
@@ -305,6 +298,7 @@ private fun Modifier.pointerInputForSheetDrag(
 ): Modifier =
     pointerInput(state.direction, state.currentScreenHeightPx) {
         detectSheetVerticalDragGestures(
+            direction = state.direction,
             onDragEnd = {
                 if (
                     state.direction.shouldDismiss(
@@ -350,12 +344,12 @@ private fun TempoModalSheetWindowEffects() {
 }
 
 @Composable
-private fun TempoModalSheetDragHandle(bottomSpacing: Dp = 12.dp) {
+private fun TempoModalSheetDragHandle(bottomSpacing: Dp = 8.dp) {
     Column(
         modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Surface(
             modifier = Modifier.size(width = 32.dp, height = 4.dp),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
@@ -379,7 +373,7 @@ private fun TempoModalSheetPredictiveBackHandler(
     PredictiveBackHandler {
         try {
             it.collect { backEvent ->
-                onProgress(PredictiveBackEasing.transform(backEvent.progress))
+                onProgress(backEvent.progress)
             }
             if (hasUnsavedChanges && !forceDismiss) {
                 onRestore()

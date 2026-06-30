@@ -62,9 +62,16 @@ Shared modal bottom sheets SHALL reserve top breathing room when content is tall
 - **WHEN** a habit-chain bottom sheet contains enough content to fill the screen
 - **THEN** the sheet top and handle remain below the top system area instead of clashing with it
 
-### Requirement: Predictive back follows Material3 visual language
-Shared modal sheets SHALL ease predictive-back progress and apply subtle sheet scaling during the gesture.
+### Requirement: Predictive back remains visually restrained
+Shared modal sheets SHALL use offset-only predictive-back progress without additional sheet scaling.
 
 #### Scenario: Predictive back gesture progresses
 - **WHEN** a user progresses a predictive-back gesture on a visible modal sheet
-- **THEN** the sheet moves and scales according to Material3-style predictive-back progress
+- **THEN** the sheet moves toward its dismissed position without additional scale transforms
+
+### Requirement: Habit sheet text survives tab switching
+Habit bottom sheets SHALL preserve draft title and description text when switching between habit and habit-chain tabs in the same creation flow.
+
+#### Scenario: User switches habit mode after typing a title
+- **WHEN** a user types a habit title and switches between habit and habit-chain tabs
+- **THEN** the typed title remains visible

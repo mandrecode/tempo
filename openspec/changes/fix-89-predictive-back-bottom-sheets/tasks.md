@@ -36,3 +36,11 @@
 - [x] 6.3 Allow vertical drag-to-dismiss from anywhere on the sheet after touch slop.
 - [x] 6.4 Cap tall bottom-sheet height to preserve top breathing room.
 - [x] 6.5 Re-run formatting, compile, static checks, OpenSpec validation, and Pixel 7 smoke verification.
+
+## 7. Interaction Tuning
+
+- [x] 7.1 Revert predictive-back visuals to offset-only movement while keeping the split sheet structure.
+- [x] 7.2 Reduce bottom-sheet top air and handle spacing.
+- [x] 7.3 Let tall bottom-sheet content scroll by only intercepting dismiss-direction drags.
+- [x] 7.4 Preserve habit title and description drafts when switching between habit and chain tabs.
+- [x] 7.5 Re-run formatting, compile, static checks, OpenSpec validation, and Pixel 7 smoke verification.

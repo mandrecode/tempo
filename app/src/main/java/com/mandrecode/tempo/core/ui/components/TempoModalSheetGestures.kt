@@ -6,6 +6,7 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import kotlin.math.abs
 
 internal suspend fun PointerInputScope.detectSheetVerticalDragGestures(
+    direction: TempoModalSheetDirection,
     onDragEnd: () -> Unit,
     onDragCancel: () -> Unit,
     onVerticalDrag: (dragAmount: Float) -> Unit,
@@ -41,7 +42,10 @@ internal suspend fun PointerInputScope.detectSheetVerticalDragGestures(
                     }
                     else -> {
                         accumulatedDrag += change.verticalDelta
-                        if (abs(accumulatedDrag) > viewConfiguration.touchSlop) {
+                        if (
+                            abs(accumulatedDrag) > viewConfiguration.touchSlop &&
+                            direction.isDismissDrag(accumulatedDrag)
+                        ) {
                             pastTouchSlop = true
                             change.consume()
                             onVerticalDrag(accumulatedDrag)
@@ -67,3 +71,9 @@ private suspend fun androidx.compose.ui.input.pointer.AwaitPointerEventScope.awa
 
 private val PointerInputChange.verticalDelta: Float
     get() = position.y - previousPosition.y
+
+private fun TempoModalSheetDirection.isDismissDrag(dragAmount: Float): Boolean =
+    when (this) {
+        TempoModalSheetDirection.Top -> dragAmount < 0f
+        TempoModalSheetDirection.Bottom -> dragAmount > 0f
+    }
