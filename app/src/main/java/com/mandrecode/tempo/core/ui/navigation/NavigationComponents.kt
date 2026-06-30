@@ -39,8 +39,8 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 internal val FloatingRailContentStartPadding = 96.dp
 private val FloatingRailLandscapeStartPadding = 56.dp
 
-fun Modifier.floatingRailContentPadding(isLandscape: Boolean): Modifier =
-    if (isLandscape) {
+fun Modifier.floatingRailContentPadding(isRailLayout: Boolean): Modifier =
+    if (isRailLayout) {
         padding(start = FloatingRailContentStartPadding)
     } else {
         this
@@ -63,7 +63,7 @@ fun TempoBottomRail(
     modifier: Modifier = Modifier,
     actionButton: (@Composable () -> Unit)? = null,
     soloActionContent: (@Composable () -> Unit)? = null,
-    isLandscape: Boolean = false,
+    isRailLayout: Boolean = false,
 ) {
     val navContent = remember(navigationContent) { movableContentOf(navigationContent) }
     val actionContent = remember(actionButton) { actionButton?.let { movableContentOf(it) } }
@@ -75,13 +75,15 @@ fun TempoBottomRail(
                 modifier = modifier,
             )
         }
-        isLandscape -> {
+
+        isRailLayout -> {
             LandscapeBottomRail(
                 navigationContent = navContent,
                 actionContent = actionContent,
                 modifier = modifier,
             )
         }
+
         else -> {
             PortraitBottomRail(
                 navigationContent = navContent,
