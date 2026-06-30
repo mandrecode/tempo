@@ -137,6 +137,11 @@ private fun TempoModalSheetDialogContent(
     TempoModalSheetWindowEffects()
 
     val focusManager = LocalFocusManager.current
+    LaunchedEffect(state.showDiscardDialog.value) {
+        if (state.showDiscardDialog.value) {
+            focusManager.clearFocus()
+        }
+    }
     LaunchedEffect(state.dismissing.value) {
         if (state.dismissing.value) {
             focusManager.clearFocus()
