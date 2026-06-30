@@ -21,10 +21,13 @@ internal val TempoModalSheetDirection.shape: RoundedCornerShape
             TempoModalSheetDirection.Bottom -> RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
         }
 
-internal fun TempoModalSheetDirection.maxHeight(screenHeight: Dp): Dp =
+internal fun TempoModalSheetDirection.maxHeight(
+    screenHeight: Dp,
+    topInset: Dp = 0.dp,
+): Dp =
     when (this) {
         TempoModalSheetDirection.Top -> screenHeight
-        TempoModalSheetDirection.Bottom -> screenHeight - BOTTOM_SHEET_TOP_AIR
+        TempoModalSheetDirection.Bottom -> screenHeight - maxOf(BOTTOM_SHEET_TOP_AIR, topInset)
     }
 
 internal fun TempoModalSheetDirection.hiddenOffset(screenHeightPx: Float): Float =

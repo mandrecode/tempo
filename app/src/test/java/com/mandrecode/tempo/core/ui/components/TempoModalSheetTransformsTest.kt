@@ -21,6 +21,13 @@ class TempoModalSheetTransformsTest {
     }
 
     @Test
+    fun maxHeight_usesLargerTopInsetForBottomSheets() {
+        val screenHeight = 800.dp
+
+        assertThat(TempoModalSheetDirection.Bottom.maxHeight(screenHeight, topInset = 72.dp)).isEqualTo(728.dp)
+    }
+
+    @Test
     fun hiddenOffset_movesTopAndBottomSheetsInOppositeDirections() {
         val screenHeightPx = 1_000f
 

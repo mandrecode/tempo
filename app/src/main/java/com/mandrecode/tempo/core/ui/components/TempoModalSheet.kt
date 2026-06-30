@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -49,6 +50,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -127,8 +129,6 @@ private fun TempoModalSheetDialogContent(
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     TempoModalSheetPredictiveBackHandler(
-        hasUnsavedChanges = state.currentHasUnsavedChanges,
-        forceDismiss = state.forceDismiss.value,
         onProgress = state::handlePredictiveBackProgress,
         onRestore = state::restore,
         onDismiss = state.onRequestDismiss,
@@ -246,6 +246,7 @@ private fun rememberTempoModalSheetState(
     val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
     val screenHeightPx = with(LocalDensity.current) { screenHeightDp.toPx() }
     val currentScreenHeightPx by rememberUpdatedState(screenHeightPx)
+    val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, screenHeightDp)
     val offsetY = remember { Animatable(direction.hiddenOffset(screenHeightPx)) }
     val dismissing = remember { mutableStateOf(false) }
     val showDiscardDialog = remember { mutableStateOf(false) }
@@ -283,7 +284,7 @@ private fun rememberTempoModalSheetState(
     state =
         TempoModalSheetState(
             direction = direction,
-            maxSheetHeight = remember(direction, screenHeightDp) { direction.maxHeight(screenHeightDp) },
+            maxSheetHeight = maxSheetHeight,
             currentScreenHeightPx = currentScreenHeightPx,
             offsetY = offsetY,
             dismissing = dismissing,
@@ -295,6 +296,20 @@ private fun rememberTempoModalSheetState(
             onRequestDismiss = onRequestDismiss,
         )
     return state
+}
+
+@Composable
+private fun rememberTempoModalSheetMaxHeight(
+    direction: TempoModalSheetDirection,
+    screenHeightDp: Dp,
+): Dp {
+    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    return remember(direction, screenHeightDp, statusBarTopPadding) {
+        direction.maxHeight(
+            screenHeight = screenHeightDp,
+            topInset = statusBarTopPadding,
+        )
+    }
 }
 
 private val TempoModalSheetState.statusBarPaddingModifier: Modifier
@@ -411,8 +426,6 @@ private fun TempoModalSheetDragHandle(
 @OptIn(ExperimentalActivityApi::class)
 @Composable
 private fun TempoModalSheetPredictiveBackHandler(
-    hasUnsavedChanges: Boolean,
-    forceDismiss: Boolean,
     onProgress: suspend (Float) -> Unit,
     onRestore: suspend () -> Unit,
     onDismiss: () -> Unit,
@@ -423,9 +436,6 @@ private fun TempoModalSheetPredictiveBackHandler(
         try {
             it.collect { backEvent ->
                 onProgress(backEvent.progress)
-            }
-            if (hasUnsavedChanges && !forceDismiss) {
-                onRestore()
             }
             onDismiss()
         } catch (exception: CancellationException) {
