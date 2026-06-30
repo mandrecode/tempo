@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 
@@ -55,18 +56,25 @@ class MainViewModel
                     savedStateHandle[KEY_PENDING_ACTION_TYPE] = ACTION_TYPE_TASK
                     savedStateHandle[KEY_PENDING_ACTION_ID] = action.taskId
                     savedStateHandle[KEY_PENDING_ORIGINAL_REMINDER_DATE] = action.originalReminderDate?.toString()
+                    savedStateHandle.remove<String>(KEY_PENDING_SCHEDULED_DATE)
                 }
 
                 is PendingNotificationAction.OpenHabit -> {
                     savedStateHandle[KEY_PENDING_ACTION_TYPE] = ACTION_TYPE_HABIT
                     savedStateHandle[KEY_PENDING_ACTION_ID] = action.habitId
                     savedStateHandle.remove<String>(KEY_PENDING_ORIGINAL_REMINDER_DATE)
+                    savedStateHandle.remove<String>(KEY_PENDING_SCHEDULED_DATE)
                 }
 
                 is PendingNotificationAction.OpenHabitChain -> {
                     savedStateHandle[KEY_PENDING_ACTION_TYPE] = ACTION_TYPE_HABIT_CHAIN
                     savedStateHandle[KEY_PENDING_ACTION_ID] = action.chainId
                     savedStateHandle.remove<String>(KEY_PENDING_ORIGINAL_REMINDER_DATE)
+                    if (action.scheduledDate != null) {
+                        savedStateHandle[KEY_PENDING_SCHEDULED_DATE] = action.scheduledDate.toString()
+                    } else {
+                        savedStateHandle.remove<String>(KEY_PENDING_SCHEDULED_DATE)
+                    }
                 }
             }
             _pendingNotificationAction.value = action
@@ -81,6 +89,7 @@ class MainViewModel
             savedStateHandle.remove<String>(KEY_PENDING_ACTION_TYPE)
             savedStateHandle.remove<Long>(KEY_PENDING_ACTION_ID)
             savedStateHandle.remove<String>(KEY_PENDING_ORIGINAL_REMINDER_DATE)
+            savedStateHandle.remove<String>(KEY_PENDING_SCHEDULED_DATE)
         }
 
         private fun readPendingNotificationAction(): PendingNotificationAction? {
@@ -96,7 +105,12 @@ class MainViewModel
                             )
 
                         ACTION_TYPE_HABIT -> PendingNotificationAction.OpenHabit(id)
-                        ACTION_TYPE_HABIT_CHAIN -> PendingNotificationAction.OpenHabitChain(id)
+                        ACTION_TYPE_HABIT_CHAIN ->
+                            PendingNotificationAction.OpenHabitChain(
+                                chainId = id,
+                                scheduledDate = readPendingScheduledDate(),
+                            )
+
                         else -> null
                     }
                 } else {
@@ -114,10 +128,16 @@ class MainViewModel
             return reminderDate?.let { runCatching { LocalDateTime.parse(it) }.getOrNull() }
         }
 
+        private fun readPendingScheduledDate(): LocalDate? {
+            val scheduledDate = savedStateHandle.get<String>(KEY_PENDING_SCHEDULED_DATE)
+            return scheduledDate?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+        }
+
         private companion object {
             const val KEY_PENDING_ACTION_TYPE = "pending_notification_action_type"
             const val KEY_PENDING_ACTION_ID = "pending_notification_action_id"
             const val KEY_PENDING_ORIGINAL_REMINDER_DATE = "pending_original_reminder_date"
+            const val KEY_PENDING_SCHEDULED_DATE = "pending_scheduled_date"
 
             const val ACTION_TYPE_TASK = "task"
             const val ACTION_TYPE_HABIT = "habit"

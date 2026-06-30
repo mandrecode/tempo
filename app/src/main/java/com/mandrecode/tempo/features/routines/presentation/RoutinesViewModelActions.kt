@@ -903,10 +903,16 @@ internal fun RoutinesViewModel.openHabitFromNotificationInternal(habitId: Long) 
     }
 }
 
-internal fun RoutinesViewModel.openHabitChainFromNotificationInternal(chainId: Long) {
+internal fun RoutinesViewModel.openHabitChainFromNotificationInternal(
+    chainId: Long,
+    scheduledDate: LocalDate?,
+) {
     viewModelScope.launch {
         val habitChain = habitChainRepository.getHabitChainById(chainId)
         if (habitChain != null) {
+            if (scheduledDate != null) {
+                selectDate(scheduledDate)
+            }
             showHabitChainBottomSheet(habitChain)
         }
     }

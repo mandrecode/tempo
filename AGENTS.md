@@ -49,17 +49,21 @@ JDK 21 required. Version is read from `version.txt` at repo root.
 
 ## Local Instrumented Tests
 
-CI runs `connectedDebugAndroidTest` only on push to `main`. To smoke-test locally before merge, use the `android` CLI:
+CI runs `connectedDebugAndroidTest` only on push to `main`. For local automated
+instrumented checks, default to an AVD instead of a physical device so results are
+reproducible. Create and reuse a Pixel 10 AVD for this purpose:
 
 ```bash
-android emulator create --profile phone   # one-time; creates a default AVD
-android emulator list                      # find the AVD name
+android emulator create --profile pixel_10 # one-time; creates a Pixel 10 AVD
+android emulator list                       # find the AVD name
 android emulator start <avd-name>
 ./gradlew connectedDebugAndroidTest
 android emulator stop <avd-name>
 ```
 
 The created AVD uses the CLI's default API level, which may differ from CI (API 31). For exact CI parity, follow the `android-cli` skill documentation (in your agent skills registry) to set up an API 31 emulator; if that documentation is unavailable, use `android --help` and manually choose an API 31 system image.
+
+For manual app smoke testing, prefer the user's real connected Pixel 7 when it is visible in `adb devices -l`; if no physical Pixel 7 is connected, fall back to the Pixel 10 AVD. Do not rely on the physical device as the default target for automated instrumented test checks.
 
 ## Architecture Constraints
 

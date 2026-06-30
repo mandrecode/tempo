@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -127,8 +128,11 @@ class RoutinesViewModel
             openHabitFromNotificationInternal(habitId)
         }
 
-        fun openHabitChainFromNotification(chainId: Long) {
-            openHabitChainFromNotificationInternal(chainId)
+        fun openHabitChainFromNotification(
+            chainId: Long,
+            scheduledDate: LocalDate? = null,
+        ) {
+            openHabitChainFromNotificationInternal(chainId, scheduledDate)
         }
 
         fun checkPermissionsAndSyncReminders() {

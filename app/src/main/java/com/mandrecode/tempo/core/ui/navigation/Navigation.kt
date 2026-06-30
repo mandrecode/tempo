@@ -50,6 +50,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
@@ -74,6 +75,7 @@ sealed interface PendingNotificationAction {
 
     data class OpenHabitChain(
         val chainId: Long,
+        val scheduledDate: LocalDate? = null,
     ) : PendingNotificationAction
 }
 

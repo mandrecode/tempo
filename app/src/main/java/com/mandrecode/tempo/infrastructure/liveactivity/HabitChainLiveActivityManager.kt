@@ -98,6 +98,9 @@ class HabitChainLiveActivityManager
                     Intent(context, MainActivity::class.java).apply {
                         putExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID, chain.id)
                         putExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES, true)
+                        scheduledDate?.let {
+                            putExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE, it.toString())
+                        }
                         flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                     }
 
