@@ -45,6 +45,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
@@ -446,19 +447,13 @@ private fun RouteTopBar(
     TempoTopBar(
         title = title,
         actions = {
-            IconButton(
+            SettingsButton(
                 onClick = {
                     navController.navigate(SettingsRoute) {
                         launchSingleTop = true
                     }
                 },
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = stringResource(R.string.settings),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+            )
         },
     )
 }
