@@ -180,7 +180,11 @@ private fun BoxScope.TempoModalSheetSurface(
                         size.height >= state.currentScreenHeightPx.roundToInt()
                 }.align(state.direction.alignment)
                 .offset { IntOffset(0, state.offsetY.value.roundToInt()) }
-                .then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier),
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    onClick = {},
+                ).then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier),
         shape = state.direction.shape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
