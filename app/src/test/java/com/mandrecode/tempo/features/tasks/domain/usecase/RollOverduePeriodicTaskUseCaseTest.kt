@@ -208,6 +208,21 @@ class RollOverduePeriodicTaskUseCaseTest {
         }
 
     @Test
+    fun `given completed overdue periodic task when invoked then returns not applicable without rollover`() =
+        runTest {
+            val now = LocalDateTime(2026, 4, 25, 10, 0)
+            val completedTask = overdueTask().copy(isCompleted = true)
+
+            val result = useCase(completedTask, now)
+
+            assertThat(result).isEqualTo(RollOverduePeriodicTaskUseCase.Result.NotApplicable)
+            coVerify(exactly = 0) { taskRepository.runInTransaction<Any?>(any()) }
+            coVerify(exactly = 0) { taskRepository.insertTask(any()) }
+            coVerify(exactly = 0) { taskRepository.updateTask(any()) }
+            coVerify(exactly = 0) { taskReminderScheduler.schedule(any()) }
+        }
+
+    @Test
     fun `given overdue periodic task with subtasks when invoked then clones inactive subtasks under next instance`() =
         runTest {
             val now = LocalDateTime(2026, 4, 25, 10, 0)
