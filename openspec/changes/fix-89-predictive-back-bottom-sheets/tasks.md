@@ -21,3 +21,10 @@
 - [x] 4.1 Hide the Material3 bottom-sheet handle while disabling sheet drag gestures that can stick on repeated upward drags.
 - [x] 4.2 Keep initial task/habit title focus immediate so keyboard and sheet animations start together.
 - [x] 4.3 Add a small shared top inset for bottom-sheet content.
+
+## 5. Custom Sheet Follow-up
+
+- [x] 5.1 Restore the custom bottom-sheet implementation after the Material3 wrapper experiment showed a keyboard jump.
+- [x] 5.2 Move predictive-back handling into the custom dialog and disable default dialog back dismissal.
+- [x] 5.3 Clamp bottom-sheet dragging to downward movement and show the drag handle because drag is supported.
+- [x] 5.4 Re-run formatting, compile, OpenSpec validation, and Pixel 7 smoke verification.

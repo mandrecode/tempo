@@ -25,3 +25,21 @@ Shared modal bottom sheets with unsaved changes SHALL continue to require discar
 #### Scenario: Dirty sheet stays open when confirmation is cancelled
 - **WHEN** a discard-changes confirmation opened by predictive back is cancelled
 - **THEN** the sheet remains fully visible with its content intact
+
+### Requirement: Bottom-sheet drag is constrained to valid dismissal movement
+Shared modal bottom sheets SHALL expose a drag handle only when drag-to-dismiss is enabled and SHALL prevent upward drag from moving the sheet beyond its fully visible resting position.
+
+#### Scenario: Repeated upward handle drags keep the sheet stable
+- **WHEN** a user drags the bottom-sheet handle upward multiple times while the sheet is fully visible
+- **THEN** the sheet remains at its fully visible resting position
+
+#### Scenario: Downward drag dismisses past threshold
+- **WHEN** a user drags the bottom sheet downward past the dismiss threshold and releases
+- **THEN** the sheet dismisses through its standard dismiss path
+
+### Requirement: Bottom-sheet keyboard movement remains synchronized
+Shared modal bottom sheets containing an initially focused text field SHALL keep keyboard appearance visually synchronized with sheet opening.
+
+#### Scenario: New task or habit sheet opens with title focus
+- **WHEN** a user opens a new task or habit bottom sheet
+- **THEN** the sheet and keyboard appear without a delayed layout jump
