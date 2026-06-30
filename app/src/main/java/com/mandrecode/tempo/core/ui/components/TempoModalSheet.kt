@@ -72,7 +72,7 @@ internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
 private val SHEET_HANDLE_TOUCH_TARGET_HEIGHT = 48.dp
-private val SHEET_HANDLE_CONTENT_INSET = SHEET_HANDLE_TOUCH_TARGET_HEIGHT
+private val SHEET_HANDLE_CONTENT_INSET = 24.dp
 private val SHEET_HANDLE_EDGE_PADDING = 8.dp
 
 internal enum class TempoModalSheetDirection {
