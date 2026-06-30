@@ -9,6 +9,9 @@ import android.os.Build
 import com.mandrecode.tempo.infrastructure.notifications.RequestCodeGenerator
 import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderReceiver
 import com.mandrecode.tempo.infrastructure.reminders.scheduler.HabitAlarmScheduler
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 class AndroidHabitAlarmScheduler(
     private val context: Context,
@@ -30,6 +33,7 @@ class AndroidHabitAlarmScheduler(
             Intent(context, HabitReminderReceiver::class.java).apply {
                 putExtra(HabitReminderReceiver.EXTRA_HABIT_ID, habitId)
                 putExtra(HabitReminderReceiver.EXTRA_IS_CHAIN, false)
+                putExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE, triggerAtMillis.toScheduledDateString())
             }
         val pendingIntent =
             PendingIntent.getBroadcast(
@@ -91,4 +95,11 @@ class AndroidHabitAlarmScheduler(
             )
         alarmManager.cancel(pendingIntent)
     }
+
+    private fun Long.toScheduledDateString(): String =
+        Instant
+            .fromEpochMilliseconds(this)
+            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .date
+            .toString()
 }
