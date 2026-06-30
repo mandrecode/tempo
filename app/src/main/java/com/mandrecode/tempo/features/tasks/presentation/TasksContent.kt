@@ -43,9 +43,11 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
@@ -78,6 +80,7 @@ private const val ACTIVE_GROUP_FALLBACK_RANK = 3
 private const val COMPLETED_GROUP_DATED_RANK = 0
 private const val COMPLETED_GROUP_NO_DATE_RANK = 1
 private const val COMPLETED_GROUP_FALLBACK_RANK = 2
+private const val MEDIUM_WIDTH_BREAKPOINT_DP = 600
 
 @Composable
 fun TasksContent(
@@ -88,6 +91,7 @@ fun TasksContent(
 ) {
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
+    val listBottomPadding = bottomNavigationClearancePadding(defaultPadding = 16.dp)
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -181,7 +185,7 @@ fun TasksContent(
                                     start = 20.dp,
                                     end = 20.dp,
                                     top = 8.dp,
-                                    bottom = TempoSpacing.bottomNavHeight + 16.dp,
+                                    bottom = listBottomPadding,
                                 ),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize(),
@@ -493,6 +497,14 @@ fun TasksContent(
         }
     }
 }
+
+@Composable
+private fun bottomNavigationClearancePadding(defaultPadding: Dp): Dp =
+    if (LocalConfiguration.current.screenWidthDp < MEDIUM_WIDTH_BREAKPOINT_DP) {
+        TempoSpacing.bottomNavHeight + defaultPadding
+    } else {
+        defaultPadding
+    }
 
 @Composable
 internal fun CompletedTasksSeparator(

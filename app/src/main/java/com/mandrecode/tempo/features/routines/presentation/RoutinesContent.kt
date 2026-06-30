@@ -38,9 +38,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
@@ -59,6 +61,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
+private const val MEDIUM_WIDTH_BREAKPOINT_DP = 600
+
 @Composable
 fun RoutinesContent(
     uiState: RoutinesContract.UiState,
@@ -69,6 +73,7 @@ fun RoutinesContent(
 ) {
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
+    val listBottomPadding = bottomNavigationClearancePadding(defaultPadding = 16.dp)
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -152,7 +157,7 @@ fun RoutinesContent(
                                 start = 16.dp,
                                 end = 16.dp,
                                 top = 16.dp,
-                                bottom = TempoSpacing.bottomNavHeight + 16.dp,
+                                bottom = listBottomPadding,
                             ),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
@@ -231,6 +236,14 @@ fun RoutinesContent(
         }
     }
 }
+
+@Composable
+private fun bottomNavigationClearancePadding(defaultPadding: Dp): Dp =
+    if (LocalConfiguration.current.screenWidthDp < MEDIUM_WIDTH_BREAKPOINT_DP) {
+        TempoSpacing.bottomNavHeight + defaultPadding
+    } else {
+        defaultPadding
+    }
 
 @Composable
 @Suppress("LongMethod")
