@@ -33,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -244,7 +243,6 @@ private fun rememberTempoModalSheetState(
     val screenHeightPx = with(LocalDensity.current) { screenHeightDp.toPx() }
     val currentScreenHeightPx by rememberUpdatedState(screenHeightPx)
     val offsetY = remember { Animatable(direction.hiddenOffset(screenHeightPx)) }
-    val predictiveBackProgress = remember { mutableFloatStateOf(0f) }
     val dismissing = remember { mutableStateOf(false) }
     val showDiscardDialog = remember { mutableStateOf(false) }
     val forceDismiss = remember { mutableStateOf(false) }
@@ -259,7 +257,6 @@ private fun rememberTempoModalSheetState(
             dismissing.value = true
             scope.launch {
                 try {
-                    predictiveBackProgress.floatValue = 0f
                     offsetY.animateTo(
                         direction.hiddenOffset(currentScreenHeightPx),
                         animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS),
@@ -285,7 +282,6 @@ private fun rememberTempoModalSheetState(
             maxSheetHeight = remember(direction, screenHeightDp) { direction.maxHeight(screenHeightDp) },
             currentScreenHeightPx = currentScreenHeightPx,
             offsetY = offsetY,
-            predictiveBackProgress = predictiveBackProgress,
             dismissing = dismissing,
             showDiscardDialog = showDiscardDialog,
             forceDismiss = forceDismiss,
