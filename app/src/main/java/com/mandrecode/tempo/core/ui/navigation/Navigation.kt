@@ -444,11 +444,11 @@ private fun RouteTopBar(
     navController: NavHostController,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
-    val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
+    val topBarInsetPadding = horizontalPadding - MaterialTheme.spacing.default
 
     TempoTopBar(
         title = title,
-        titleModifier = Modifier.padding(start = titleStartPadding),
+        titleModifier = Modifier.padding(start = topBarInsetPadding),
         actions = {
             SettingsButton(
                 onClick = {
@@ -456,7 +456,7 @@ private fun RouteTopBar(
                         launchSingleTop = true
                     }
                 },
-                modifier = Modifier.padding(end = horizontalPadding),
+                modifier = Modifier.padding(end = topBarInsetPadding),
             )
         },
     )
