@@ -1,20 +1,19 @@
 package com.mandrecode.tempo.features.settings.presentation
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -39,13 +38,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
-import com.mandrecode.tempo.BuildConfig
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
@@ -63,6 +62,21 @@ fun SettingsContent(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val isDarkTheme = LocalIsDarkTheme.current
+    val isPreview = LocalInspectionMode.current
+    val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val dynamicDotColor =
+        remember(context, isDarkTheme, isPreview) {
+            if (!isPreview && supportsDynamicColor) {
+                dynamicColorScheme(context, isDark = isDarkTheme).primary
+            } else {
+                if (isDarkTheme) darkColorScheme().primary else lightColorScheme().primary
+            }
+        }
+    val tempoDotColor =
+        remember(isDarkTheme) {
+            if (isDarkTheme) TempoDarkPrimary else TempoLightPrimary
+        }
 
     Column(
         modifier =
@@ -70,21 +84,15 @@ fun SettingsContent(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
-                .padding(top = 24.dp, bottom = 24.dp),
-        verticalArrangement = Arrangement.spacedBy(32.dp),
+                .padding(top = 24.dp, bottom = 24.dp + navigationBarBottomPadding),
+        verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
-        // Theme Section
-        SettingsSection(
-            title = stringResource(R.string.theme),
-        ) {
+        SettingsSection(title = stringResource(R.string.theme)) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(SettingsSectionContentPadding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                ) {
+                SettingsSegmentedRow {
                     uiState.availableThemeModes.forEachIndexed { index, themeMode ->
                         val themeLabel =
                             when (themeMode) {
@@ -93,7 +101,7 @@ fun SettingsContent(
                                 ThemeMode.SYSTEM -> stringResource(R.string.theme_system)
                             }
 
-                        ExpressiveChip(
+                        SettingsSegment(
                             label = themeLabel,
                             isSelected = uiState.selectedThemeMode == themeMode,
                             onClick = { onEvent(SettingsContract.UiEvent.ThemeModeSelected(themeMode)) },
@@ -121,7 +129,7 @@ fun SettingsContent(
                 if (uiState.selectedThemeMode == ThemeMode.SYSTEM) {
                     Text(
                         text = stringResource(R.string.theme_description),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 4.dp),
                     )
@@ -129,35 +137,11 @@ fun SettingsContent(
             }
         }
 
-        // Color Scheme Section
-        val isDarkTheme = LocalIsDarkTheme.current
-        val dynamicDotColor =
-            remember(context, isDarkTheme) {
-                if (supportsDynamicColor) {
-                    dynamicColorScheme(context, isDark = isDarkTheme).primary
-                } else {
-                    if (isDarkTheme) darkColorScheme().primary else lightColorScheme().primary
-                }
-            }
-        val tempoDotColor =
-            remember(isDarkTheme) {
-                if (isDarkTheme) TempoDarkPrimary else TempoLightPrimary
-            }
-
-        Column(
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.settings_color_scheme),
-                style = MaterialTheme.typography.settingsSectionTitle,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+        SettingsSection(title = stringResource(R.string.settings_color_scheme)) {
+            SettingsSegmentedRow(
+                modifier = Modifier.padding(SettingsSectionContentPadding),
             ) {
-                ExpressiveChip(
+                SettingsSegment(
                     label = stringResource(R.string.settings_color_scheme_dynamic),
                     isSelected = !uiState.useTempoColors,
                     onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(false)) },
@@ -175,7 +159,7 @@ fun SettingsContent(
                         )
                     },
                 )
-                ExpressiveChip(
+                SettingsSegment(
                     label = stringResource(R.string.settings_color_scheme_tempo),
                     isSelected = uiState.useTempoColors,
                     onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(true)) },
@@ -196,78 +180,42 @@ fun SettingsContent(
             }
         }
 
-        // Notifications Section
-        SettingsSection(
-            title = stringResource(R.string.settings_notifications),
-        ) {
-            SettingsItem(
+        SettingsSection(title = stringResource(R.string.settings_notifications)) {
+            SettingsActionRow(
                 icon = R.drawable.ic_notifications,
                 title = stringResource(R.string.settings_notifications_subtitle),
                 subtitle = stringResource(R.string.settings_notifications_description),
                 trailingIcon = R.drawable.ic_open_in_new,
-                onClick = {
-                    val intent =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-                            }
-                        } else {
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        }
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        Log.e("SettingsScreen", "Unable to open notification settings", e)
-                    }
-                },
+                onClick = { openNotificationSettings(context) },
             )
         }
 
-        // Tabs & Navigation Section
-        SettingsSection(
-            title = stringResource(R.string.tabs_and_navigation),
-        ) {
-            Column {
-                // Routines Toggle
-                TabToggleItem(
+        SettingsSection(title = stringResource(R.string.tabs_and_navigation)) {
+            Column(
+                modifier = Modifier.padding(vertical = 4.dp),
+            ) {
+                SettingsSwitchRow(
                     icon = R.drawable.ic_routine_outlined,
-                    label = stringResource(R.string.routines_tab),
+                    title = stringResource(R.string.routines_tab),
                     isEnabled = uiState.isRoutinesTabEnabled,
                     onToggle = { onEvent(SettingsContract.UiEvent.RoutinesTabToggled(it)) },
                 )
-
-                HorizontalDivider(
-                    modifier = Modifier.padding(start = 56.dp, end = 16.dp),
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                )
-
-                // Tasks Toggle
-                TabToggleItem(
+                SettingsItemDivider()
+                SettingsSwitchRow(
                     icon = R.drawable.ic_tasks_outlined,
-                    label = stringResource(R.string.tasks_tab),
+                    title = stringResource(R.string.tasks_tab),
                     isEnabled = uiState.isTasksTabEnabled,
                     onToggle = { onEvent(SettingsContract.UiEvent.TasksTabToggled(it)) },
                 )
             }
         }
 
-        // Default Tab — only shown when both tabs are enabled
         if (uiState.isRoutinesTabEnabled && uiState.isTasksTabEnabled) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.default_tab),
-                    style = MaterialTheme.typography.settingsSectionTitle,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+            SettingsSection(title = stringResource(R.string.default_tab)) {
+                SettingsSegmentedRow(
+                    modifier = Modifier.padding(SettingsSectionContentPadding),
                 ) {
-                    ExpressiveChip(
+                    SettingsSegment(
                         label = stringResource(R.string.routines),
                         isSelected = uiState.defaultTab == SettingsContract.DefaultTab.ROUTINES,
                         onClick = {
@@ -288,7 +236,7 @@ fun SettingsContent(
                             )
                         },
                     )
-                    ExpressiveChip(
+                    SettingsSegment(
                         label = stringResource(R.string.tasks),
                         isSelected = uiState.defaultTab == SettingsContract.DefaultTab.TASKS,
                         onClick = {
@@ -313,108 +261,42 @@ fun SettingsContent(
             }
         }
 
-        // Language Section
-        SettingsSection(
-            title = stringResource(R.string.settings_language),
-        ) {
+        SettingsSection(title = stringResource(R.string.settings_language)) {
             val currentLocale = LocalLocale.current.platformLocale
             val languageName = currentLocale.getDisplayName(currentLocale).replaceFirstChar { it.titlecase(currentLocale) }
 
-            SettingsItem(
+            SettingsActionRow(
                 icon = R.drawable.ic_language,
                 title = stringResource(R.string.settings_language_subtitle),
                 subtitle = languageName,
                 trailingIcon = R.drawable.ic_open_in_new,
-                onClick = {
-                    val intent =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            Intent(Settings.ACTION_APP_LOCALE_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        } else {
-                            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                                data = Uri.fromParts("package", context.packageName, null)
-                            }
-                        }
-                    try {
-                        context.startActivity(intent)
-                    } catch (e: ActivityNotFoundException) {
-                        Log.e("SettingsScreen", "Unable to open language settings", e)
-                    }
-                },
+                onClick = { openLanguageSettings(context) },
             )
         }
 
-        // About Section + Version
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            SettingsSection(
-                title = stringResource(R.string.about),
-            ) {
-                Column {
-                    // Review App
-                    SettingsItem(
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            SettingsSection(title = stringResource(R.string.about)) {
+                Column(
+                    modifier = Modifier.padding(vertical = 4.dp),
+                ) {
+                    SettingsActionRow(
                         icon = R.drawable.ic_star,
                         title = stringResource(R.string.review_app),
                         subtitle = stringResource(R.string.review_app_description),
                         trailingIcon = R.drawable.ic_chevron_right,
-                        onClick = {
-                            val intent =
-                                Intent(
-                                    Intent.ACTION_VIEW,
-                                    "market://details?id=${context.packageName}".toUri(),
-                                )
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                // Play Store app not installed, try browser
-                                val webIntent =
-                                    Intent(
-                                        Intent.ACTION_VIEW,
-                                        "https://play.google.com/store/apps/details?id=${context.packageName}".toUri(),
-                                    )
-                                try {
-                                    context.startActivity(webIntent)
-                                } catch (e: ActivityNotFoundException) {
-                                    Log.e("SettingsScreen", "Unable to open Play Store", e)
-                                }
-                            }
-                        },
+                        onClick = { openReview(context) },
                     )
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = 88.dp, end = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant,
-                    )
-
-                    // Send Feedback
-                    SettingsItem(
+                    SettingsItemDivider()
+                    SettingsActionRow(
                         icon = R.drawable.ic_feedback,
                         title = stringResource(R.string.send_feedback),
                         subtitle = stringResource(R.string.send_feedback_description),
                         trailingIcon = R.drawable.ic_chevron_right,
-                        onClick = {
-                            val version = uiState.appVersion
-                            val url =
-                                "${BuildConfig.FEEDBACK_FORM_URL}&${BuildConfig.FEEDBACK_VERSION_ENTRY}=${Uri.encode(version)}"
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            try {
-                                context.startActivity(intent)
-                            } catch (e: ActivityNotFoundException) {
-                                Log.e("SettingsScreen", "Unable to open feedback form", e)
-                                @Suppress("LocalContextGetResourceValueCall")
-                                Toast
-                                    .makeText(
-                                        context,
-                                        context.getString(R.string.no_browser_app),
-                                        Toast.LENGTH_SHORT,
-                                    ).show()
-                            }
-                        },
+                        onClick = { openFeedback(context, uiState.appVersion) },
                     )
                 }
             }
 
-            // Version info
             if (uiState.appVersion.isNotEmpty()) {
                 Text(
                     text = stringResource(R.string.version_format, uiState.appVersion),
@@ -436,29 +318,76 @@ private fun SettingsSection(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Text(
             text = title,
             style = MaterialTheme.typography.settingsSectionTitle,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors =
-                CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-        ) {
-            content()
-        }
+        SettingsCard(content = content)
     }
 }
 
 @Composable
-private fun SettingsItem(
+private fun SettingsCard(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun SettingsSegmentedRow(
+    modifier: Modifier = Modifier,
+    content: @Composable RowScope.() -> Unit,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun SettingsSegment(
+    label: String,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    isFirst: Boolean,
+    isLast: Boolean,
+    modifier: Modifier = Modifier,
+    icon: @Composable (() -> Unit)? = null,
+) {
+    ExpressiveChip(
+        label = label,
+        isSelected = isSelected,
+        onClick = onClick,
+        isFirst = isFirst,
+        isLast = isLast,
+        modifier = modifier,
+        height = 48.dp,
+        horizontalPadding = 8.dp,
+        icon = icon,
+        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+        selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        unselectedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+    )
+}
+
+@Composable
+private fun SettingsActionRow(
     icon: Int,
     title: String,
     subtitle: String,
@@ -466,80 +395,25 @@ private fun SettingsItem(
     modifier: Modifier = Modifier,
     trailingIcon: Int? = null,
 ) {
-    Card(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-            ),
-        elevation =
-            CardDefaults.cardElevation(
-                defaultElevation = 0.dp,
-            ),
+    Box(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick),
     ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // Icon container
-            Box(
-                modifier =
-                    Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainerHighest),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(id = icon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurface,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            // Text content
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-
-            // Trailing icon
-            trailingIcon?.let {
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    painter = painterResource(id = it),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
+        SettingsRowFrame(
+            icon = icon,
+            title = title,
+            subtitle = subtitle,
+            trailingIcon = trailingIcon,
+        )
     }
 }
 
 @Composable
-private fun TabToggleItem(
+private fun SettingsSwitchRow(
     icon: Int,
-    label: String,
+    title: String,
     isEnabled: Boolean,
     onToggle: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -548,27 +422,101 @@ private fun TabToggleItem(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(SettingsItemPadding),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Icon(
-            painter = painterResource(id = icon),
-            contentDescription = null,
-            modifier = Modifier.size(24.dp),
-            tint = MaterialTheme.colorScheme.onSurface,
-        )
+        SettingsIconContainer(icon = icon, contentDescription = title)
         Text(
-            text = label,
+            text = title,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.SemiBold,
         )
         Switch(
             checked = isEnabled,
             onCheckedChange = onToggle,
         )
     }
+}
+
+@Composable
+private fun SettingsRowFrame(
+    icon: Int,
+    title: String,
+    subtitle: String,
+    modifier: Modifier = Modifier,
+    trailingIcon: Int? = null,
+) {
+    Row(
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(SettingsItemPadding),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingsIconContainer(icon = icon, contentDescription = title)
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        trailingIcon?.let {
+            Spacer(modifier = Modifier.width(12.dp))
+            Icon(
+                painter = painterResource(id = it),
+                contentDescription = title,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsIconContainer(
+    icon: Int,
+    contentDescription: String,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier =
+            modifier.size(44.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(id = icon),
+            contentDescription = contentDescription,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(28.dp),
+        )
+    }
+}
+
+private val SettingsSectionContentPadding = PaddingValues(horizontal = 12.dp, vertical = 16.dp)
+private val SettingsItemPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
+
+@Composable
+private fun SettingsItemDivider(modifier: Modifier = Modifier) {
+    HorizontalDivider(
+        modifier = modifier.padding(start = 76.dp, end = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
+    )
 }
 
 @Composable
