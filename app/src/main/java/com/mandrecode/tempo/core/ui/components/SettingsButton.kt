@@ -62,22 +62,20 @@ fun SettingsButton(
         label = "settingsButtonBorderColor",
     )
 
-    Box(modifier = modifier) {
-        Surface(
-            onClick = onClick,
-            shape = RoundedCornerShape(cornerRadius),
-            color = containerColor,
-            contentColor = contentColor,
-            border = BorderStroke(1.dp, borderColor),
-            interactionSource = interactionSource,
-            modifier = Modifier.size(40.dp),
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = stringResource(R.string.settings),
-                )
-            }
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(cornerRadius),
+        color = containerColor,
+        contentColor = contentColor,
+        border = BorderStroke(1.dp, borderColor),
+        interactionSource = interactionSource,
+        modifier = modifier.size(40.dp),
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = stringResource(R.string.settings),
+            )
         }
     }
 }
