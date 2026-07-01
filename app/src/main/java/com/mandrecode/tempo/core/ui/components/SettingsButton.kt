@@ -1,10 +1,7 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
@@ -15,13 +12,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -29,13 +26,14 @@ fun SettingsButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
+    val (interactionSource, cornerRadiusState) =
+        rememberPressableButtonAnimation(
+            baseRadius = 20.dp,
+            pressedRadius = 14.dp,
+            animationDuration = 220,
+        )
     val isPressed by interactionSource.collectIsPressedAsState()
-    val cornerRadius by animateDpAsState(
-        targetValue = if (isPressed) 14.dp else 20.dp,
-        animationSpec = tween(durationMillis = 220),
-        label = "settingsButtonCornerRadius",
-    )
+    val cornerRadius by cornerRadiusState
     val containerColor by animateColorAsState(
         targetValue =
             if (isPressed) {
@@ -64,20 +62,22 @@ fun SettingsButton(
         label = "settingsButtonBorderColor",
     )
 
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(cornerRadius),
-        color = containerColor,
-        contentColor = contentColor,
-        border = BorderStroke(1.dp, borderColor),
-        interactionSource = interactionSource,
-        modifier = Modifier.size(40.dp).then(modifier),
-    ) {
-        Box(contentAlignment = Alignment.Center) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = stringResource(R.string.settings),
-            )
+    Box(modifier = modifier) {
+        Surface(
+            onClick = onClick,
+            shape = RoundedCornerShape(cornerRadius),
+            color = containerColor,
+            contentColor = contentColor,
+            border = BorderStroke(1.dp, borderColor),
+            interactionSource = interactionSource,
+            modifier = Modifier.size(40.dp),
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.ic_settings),
+                    contentDescription = stringResource(R.string.settings),
+                )
+            }
         }
     }
 }

@@ -1,11 +1,11 @@
 ## ADDED Requirements
 
 ### Requirement: Animated Settings Entry Button
-The system SHALL present route top-bar Settings entry points as a shaped 40dp icon surface with animated pressed and unpressed states.
+The system SHALL present route top-bar Settings entry points as a 40dp icon surface with animated pressed and unpressed shape and color states.
 
 #### Scenario: Settings entry is visible
 - **WHEN** a route top bar includes the Settings action
-- **THEN** the action is shown as a 40dp rounded Settings icon surface with a visible border and the localized Settings content description
+- **THEN** the action is shown as a 40dp circular Settings icon surface with a visible border and the localized Settings content description
 
 #### Scenario: Settings entry responds to press
 - **WHEN** the user presses the Settings action

@@ -32,5 +32,5 @@ Tempo's route top bars currently expose Settings through a plain `IconButton` in
 
 ## Risks / Trade-offs
 
-- [Risk] The button is 40.dp, slightly under the typical 48.dp touch target guidance. → Mitigation: match the approved Tempo visual size for this issue and keep the action isolated to the top bar where surrounding spacing remains generous.
+- [Risk] The button surface is 40.dp, slightly under the typical 48.dp touch target guidance. → Mitigation: match the approved Tempo visual size for this issue and keep route padding outside the animated surface so surrounding spacing remains generous.
 - [Risk] Compose UI tests do not directly assert animated colors. → Mitigation: cover click/navigation behavior and rely on static analysis plus manual/preview inspection for the visual animation.
