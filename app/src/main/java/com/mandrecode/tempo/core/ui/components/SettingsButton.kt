@@ -1,27 +1,27 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsButton(
     onClick: () -> Unit,
@@ -62,24 +62,27 @@ fun SettingsButton(
             },
         label = "settingsButtonBorderColor",
     )
+    val shape = RoundedCornerShape(cornerRadius)
 
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(cornerRadius),
-        color = containerColor,
-        contentColor = contentColor,
-        border = BorderStroke(1.dp, borderColor),
-        interactionSource = interactionSource,
-        modifier = modifier.size(40.dp),
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier =
+            modifier
+                .size(40.dp)
+                .clip(shape)
+                .background(containerColor)
+                .border(1.dp, borderColor, shape)
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                ),
     ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier.fillMaxSize(),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = stringResource(R.string.settings),
-            )
-        }
+        Icon(
+            painter = painterResource(id = R.drawable.ic_settings),
+            contentDescription = stringResource(R.string.settings),
+            tint = contentColor,
+        )
     }
 }
