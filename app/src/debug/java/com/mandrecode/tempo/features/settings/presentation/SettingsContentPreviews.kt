@@ -44,7 +44,7 @@ private val systemState =
         appVersion = "1.0",
     )
 
-@Preview(name = "Light – Default", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - Didi Default", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightDefaultPreview() {
     TempoTheme(useTempoColors = false) {
@@ -52,7 +52,7 @@ private fun SettingsContentLightDefaultPreview() {
     }
 }
 
-@Preview(name = "Dark – Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - Didi Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkDefaultPreview() {
     TempoTheme(useTempoColors = false) {
@@ -60,7 +60,7 @@ private fun SettingsContentDarkDefaultPreview() {
     }
 }
 
-@Preview(name = "Light – Tempo", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - Tempo Colors", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightTempoPreview() {
     TempoTheme(useTempoColors = true) {
@@ -68,7 +68,7 @@ private fun SettingsContentLightTempoPreview() {
     }
 }
 
-@Preview(name = "Dark – Tempo", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - Tempo Colors", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkTempoPreview() {
     TempoTheme(useTempoColors = true) {
@@ -76,7 +76,7 @@ private fun SettingsContentDarkTempoPreview() {
     }
 }
 
-@Preview(name = "Light – System", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - System Partial Tabs", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightSystemPreview() {
     TempoTheme {
@@ -84,7 +84,7 @@ private fun SettingsContentLightSystemPreview() {
     }
 }
 
-@Preview(name = "Dark – System", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - System Partial Tabs", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkSystemPreview() {
     TempoTheme {
