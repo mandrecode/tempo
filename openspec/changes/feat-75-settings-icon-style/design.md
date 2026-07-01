@@ -20,8 +20,8 @@ Tempo's route top bars currently expose Settings through a plain `IconButton` in
   - Rationale: the Settings affordance belongs to route chrome and can be reused wherever a top bar needs the same action.
   - Alternative considered: inline the animation inside `RouteTopBar`; rejected because the interaction details are easy to duplicate incorrectly.
 
-- Use Didi's interaction values as the visual contract.
-  - Unpressed radius: `22.dp`; pressed radius: `16.dp`; shape tween duration: `220ms`.
+- Use Didi's interaction model as the visual contract, tuned to Tempo's top-bar proportions.
+  - Visual size: `40.dp`; unpressed radius: `20.dp`; pressed radius: `14.dp`; shape tween duration: `220ms`.
   - Unpressed colors: `surfaceContainerLow` container, `primary` content, `primary.copy(alpha = 0.48f)` border.
   - Pressed colors: `primaryContainer` container, `onPrimaryContainer` content, `primary` border.
   - Rationale: this directly satisfies the request to replicate the style, shape, and color animation.
@@ -32,5 +32,5 @@ Tempo's route top bars currently expose Settings through a plain `IconButton` in
 
 ## Risks / Trade-offs
 
-- [Risk] The button is 44.dp in Didi, slightly under the typical 48.dp touch target guidance. → Mitigation: match Didi's 44.dp visual size for this issue and keep the action isolated to the top bar where surrounding spacing remains generous.
+- [Risk] The button is 40.dp, slightly under the typical 48.dp touch target guidance. → Mitigation: match the approved Tempo visual size for this issue and keep the action isolated to the top bar where surrounding spacing remains generous.
 - [Risk] Compose UI tests do not directly assert animated colors. → Mitigation: cover click/navigation behavior and rely on static analysis plus manual/preview inspection for the visual animation.

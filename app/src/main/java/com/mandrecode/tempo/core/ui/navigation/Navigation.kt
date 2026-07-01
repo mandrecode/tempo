@@ -444,7 +444,7 @@ private fun RouteTopBar(
     navController: NavHostController,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
-    val titleStartPadding = horizontalPadding - 16.dp
+    val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
 
     TempoTopBar(
         title = title,

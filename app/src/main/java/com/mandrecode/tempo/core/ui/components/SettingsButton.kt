@@ -71,7 +71,7 @@ fun SettingsButton(
         contentColor = contentColor,
         border = BorderStroke(1.dp, borderColor),
         interactionSource = interactionSource,
-        modifier = modifier.size(40.dp),
+        modifier = Modifier.size(40.dp).then(modifier),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
