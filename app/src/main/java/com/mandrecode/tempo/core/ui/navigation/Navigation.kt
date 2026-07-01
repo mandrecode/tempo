@@ -445,7 +445,7 @@ private fun RouteTopBar(
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
     val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
-    val settingsEndPadding = horizontalPadding + MaterialTheme.spacing.small
+    val settingsEndPadding = horizontalPadding - MaterialTheme.spacing.extraSmall
 
     TempoTopBar(
         title = title,
