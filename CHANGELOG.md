@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.11](https://github.com/mandrecode/tempo/compare/v0.8.10...v0.8.11) (2026-07-01)
+
+
+### Features
+
+* **#75:** add animated settings button ([#111](https://github.com/mandrecode/tempo/issues/111)) ([b9d5539](https://github.com/mandrecode/tempo/commit/b9d5539a26a1daa8737b77c418eda3e9aecedee3))
+
 ## [0.8.10](https://github.com/mandrecode/tempo/compare/v0.8.9...v0.8.10) (2026-06-30)
 
 
