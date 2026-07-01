@@ -7,9 +7,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -44,8 +46,10 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
+import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
@@ -441,22 +445,22 @@ private fun RouteTopBar(
     title: String,
     navController: NavHostController,
 ) {
+    val horizontalPadding = MaterialTheme.spacing.large
+    val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
+    val settingsEndPadding = horizontalPadding - MaterialTheme.spacing.extraSmall
+
     TempoTopBar(
         title = title,
+        titleModifier = Modifier.padding(start = titleStartPadding),
         actions = {
-            IconButton(
+            SettingsButton(
                 onClick = {
                     navController.navigate(SettingsRoute) {
                         launchSingleTop = true
                     }
                 },
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.ic_settings),
-                    contentDescription = stringResource(R.string.settings),
-                    tint = MaterialTheme.colorScheme.primary,
-                )
-            }
+            )
+            Spacer(modifier = Modifier.width(settingsEndPadding))
         },
     )
 }
