@@ -48,6 +48,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
+import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
@@ -444,8 +445,12 @@ private fun RouteTopBar(
     title: String,
     navController: NavHostController,
 ) {
+    val horizontalPadding = MaterialTheme.spacing.large
+    val titleStartPadding = horizontalPadding - 16.dp
+
     TempoTopBar(
         title = title,
+        titleModifier = Modifier.padding(start = titleStartPadding),
         actions = {
             SettingsButton(
                 onClick = {
@@ -453,6 +458,7 @@ private fun RouteTopBar(
                         launchSingleTop = true
                     }
                 },
+                modifier = Modifier.padding(end = horizontalPadding),
             )
         },
     )

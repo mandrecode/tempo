@@ -32,7 +32,7 @@ fun SettingsButton(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val cornerRadius by animateDpAsState(
-        targetValue = if (isPressed) 16.dp else 22.dp,
+        targetValue = if (isPressed) 14.dp else 20.dp,
         animationSpec = tween(durationMillis = 220),
         label = "settingsButtonCornerRadius",
     )
@@ -71,7 +71,7 @@ fun SettingsButton(
         contentColor = contentColor,
         border = BorderStroke(1.dp, borderColor),
         interactionSource = interactionSource,
-        modifier = modifier.size(48.dp),
+        modifier = modifier.size(40.dp),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

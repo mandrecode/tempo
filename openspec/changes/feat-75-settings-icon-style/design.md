@@ -32,5 +32,5 @@ Tempo's route top bars currently expose Settings through a plain `IconButton` in
 
 ## Risks / Trade-offs
 
-- [Risk] The button is 44.dp in Didi, slightly under the typical 48.dp touch target guidance. → Mitigation: use a 48.dp touch target while preserving Didi's visual 44.dp surface if layout allows, or verify the chosen size remains accessible in the top bar.
+- [Risk] The button is 44.dp in Didi, slightly under the typical 48.dp touch target guidance. → Mitigation: match Didi's 44.dp visual size for this issue and keep the action isolated to the top bar where surrounding spacing remains generous.
 - [Risk] Compose UI tests do not directly assert animated colors. → Mitigation: cover click/navigation behavior and rely on static analysis plus manual/preview inspection for the visual animation.

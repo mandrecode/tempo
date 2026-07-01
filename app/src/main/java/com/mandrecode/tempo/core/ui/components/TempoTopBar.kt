@@ -15,6 +15,7 @@ import com.mandrecode.tempo.core.ui.theme.topBarTitle
 fun TempoTopBar(
     title: String,
     modifier: Modifier = Modifier,
+    titleModifier: Modifier = Modifier,
     navigationIcon: @Composable () -> Unit = {},
     actions: @Composable RowScope.() -> Unit = {},
 ) {
@@ -23,6 +24,7 @@ fun TempoTopBar(
             Text(
                 text = title,
                 style = MaterialTheme.typography.topBarTitle,
+                modifier = titleModifier,
             )
         },
         navigationIcon = navigationIcon,
