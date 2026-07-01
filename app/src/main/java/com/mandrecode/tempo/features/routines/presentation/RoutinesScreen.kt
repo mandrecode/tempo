@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -31,6 +30,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
+import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.ClearRemindersConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitChainConfirmDialog
@@ -105,8 +105,8 @@ fun RoutinesScreen(
         }
     }
 
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= 600
-    val shouldShowFloatingRail = !isLandscape || !uiState.habitForm.isVisible
+    val isRailLayout = isFloatingNavigationRailLayout()
+    val shouldShowFloatingRail = !isRailLayout || !uiState.habitForm.isVisible
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onShowHabitBottomSheet =
         remember(viewModel) {
@@ -125,7 +125,7 @@ fun RoutinesScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.floatingRailContentPadding(isLandscape),
+            modifier = Modifier.floatingRailContentPadding(isRailLayout),
             topBar = topBar,
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
@@ -216,7 +216,7 @@ fun RoutinesScreen(
 
                 RoutinesSnackbar(
                     snackbarHostState = snackbarHostState,
-                    isLandscape = isLandscape,
+                    isRailLayout = isRailLayout,
                 )
             }
         }
@@ -294,7 +294,7 @@ private fun RoutinesDialogs(
 @Composable
 private fun RoutinesSnackbar(
     snackbarHostState: SnackbarHostState,
-    isLandscape: Boolean,
+    isRailLayout: Boolean,
 ) {
     Box(
         modifier =
@@ -305,7 +305,7 @@ private fun RoutinesSnackbar(
                     top = 16.dp,
                     end = 16.dp,
                     bottom =
-                        if (isLandscape) {
+                        if (isRailLayout) {
                             16.dp
                         } else {
                             FLOATING_BAR_SNACKBAR_BOTTOM_PADDING

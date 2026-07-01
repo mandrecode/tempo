@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.tasks.domain.model.Task
@@ -87,6 +88,7 @@ fun TasksContent(
 ) {
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
+    val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
 
     LaunchedEffect(listState) {
         snapshotFlow {
@@ -180,7 +182,7 @@ fun TasksContent(
                                     start = 20.dp,
                                     end = 20.dp,
                                     top = 8.dp,
-                                    bottom = 16.dp,
+                                    bottom = listBottomPadding,
                                 ),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize(),

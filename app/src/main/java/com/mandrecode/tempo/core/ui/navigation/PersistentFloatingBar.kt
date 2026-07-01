@@ -29,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -67,7 +66,7 @@ internal fun PersistentFloatingBar(
     tasksState: TasksFloatingBarState,
     onRouteChange: (String) -> Unit,
 ) {
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= 600
+    val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = currentDestination?.hasRoute(TasksRoute::class) == true
     val visible =
@@ -90,13 +89,13 @@ internal fun PersistentFloatingBar(
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment =
-            if (isLandscape) {
+            if (isRailLayout) {
                 Alignment.CenterStart
             } else {
                 Alignment.BottomCenter
             },
     ) {
-        if (isLandscape) {
+        if (isRailLayout) {
             PersistentLandscapeFloatingBar(
                 isTasksRoute = isTasksRoute,
                 navigationContent = navigationContent,

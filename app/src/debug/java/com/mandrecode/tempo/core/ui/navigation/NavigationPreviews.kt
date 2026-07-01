@@ -34,13 +34,13 @@ private const val LANDSCAPE_DEVICE = "spec:parent=pixel_9,orientation=landscape"
 @Composable
 private fun NavBarPillPreviewStub(
     routinesSelected: Boolean,
-    isLandscape: Boolean,
+    isRailLayout: Boolean,
 ) {
     Surface(
         shape = RoundedCornerShape(36.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
     ) {
-        if (isLandscape) {
+        if (isRailLayout) {
             Column(
                 modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
@@ -125,7 +125,7 @@ private fun NavBarPillItem(
 private fun BothTabsPortraitPreview() {
     TempoTheme {
         TempoBottomRail(
-            navigationContent = { NavBarPillPreviewStub(routinesSelected = false, isLandscape = false) },
+            navigationContent = { NavBarPillPreviewStub(routinesSelected = false, isRailLayout = false) },
             actionButton = {
                 TempoBottomRailActionButton(
                     iconRes = R.drawable.ic_add,
@@ -134,7 +134,7 @@ private fun BothTabsPortraitPreview() {
                 )
             },
             soloActionContent = null,
-            isLandscape = false,
+            isRailLayout = false,
         )
     }
 }
@@ -159,7 +159,7 @@ private fun RoutinesOnlyPortraitPreview() {
                     expanded = true,
                 )
             },
-            isLandscape = false,
+            isRailLayout = false,
         )
     }
 }
@@ -184,7 +184,7 @@ private fun TasksOnlyPortraitPreview() {
                     expanded = true,
                 )
             },
-            isLandscape = false,
+            isRailLayout = false,
         )
     }
 }
@@ -209,7 +209,7 @@ private fun TasksOnlyCollapsedPreview() {
                     expanded = false,
                 )
             },
-            isLandscape = false,
+            isRailLayout = false,
         )
     }
 }
@@ -225,7 +225,7 @@ private fun TasksOnlyCollapsedPreview() {
 private fun BothTabsLandscapePreview() {
     TempoTheme {
         TempoBottomRail(
-            navigationContent = { NavBarPillPreviewStub(routinesSelected = true, isLandscape = true) },
+            navigationContent = { NavBarPillPreviewStub(routinesSelected = true, isRailLayout = true) },
             actionButton = {
                 TempoBottomRailActionButton(
                     iconRes = R.drawable.ic_add,
@@ -234,7 +234,7 @@ private fun BothTabsLandscapePreview() {
                 )
             },
             soloActionContent = null,
-            isLandscape = true,
+            isRailLayout = true,
         )
     }
 }
@@ -259,7 +259,7 @@ private fun TasksOnlyLandscapePreview() {
                     expanded = true,
                 )
             },
-            isLandscape = true,
+            isRailLayout = true,
         )
     }
 }

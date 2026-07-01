@@ -16,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -31,6 +30,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
+import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
@@ -111,12 +111,12 @@ fun TasksScreen(
         )
     }
 
-    val isLandscape = LocalConfiguration.current.screenWidthDp >= 600
+    val isRailLayout = isFloatingNavigationRailLayout()
     val isSheetVisible =
         uiState.taskForm.isVisible ||
             uiState.categoryForm.isVisible ||
             uiState.showSortBottomSheet
-    val shouldShowFloatingRail = !isLandscape || !isSheetVisible
+    val shouldShowFloatingRail = !isRailLayout || !isSheetVisible
     val hasCompletedTasks =
         remember(uiState.tasks, uiState.selectedCategoryId) {
             uiState.tasks.any {
@@ -153,7 +153,7 @@ fun TasksScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.floatingRailContentPadding(isLandscape),
+            modifier = Modifier.floatingRailContentPadding(isRailLayout),
             topBar = topBar,
         ) {
             Box(
@@ -174,7 +174,7 @@ fun TasksScreen(
                                 top = 20.dp,
                                 end = 16.dp,
                                 bottom =
-                                    if (isLandscape) {
+                                    if (isRailLayout) {
                                         20.dp
                                     } else {
                                         FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
