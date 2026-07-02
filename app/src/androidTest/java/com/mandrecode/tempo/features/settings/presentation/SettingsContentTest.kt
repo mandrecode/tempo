@@ -23,6 +23,7 @@ class SettingsContentTest {
                 SettingsContent(
                     uiState = SettingsContract.UiState(appVersion = "1.0.0"),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -38,6 +39,7 @@ class SettingsContentTest {
                 SettingsContent(
                     uiState = SettingsContract.UiState(),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -60,6 +62,7 @@ class SettingsContentTest {
                             isTasksTabEnabled = true,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -87,6 +90,7 @@ class SettingsContentTest {
                             selectedMode = event.mode
                         }
                     },
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -112,6 +116,7 @@ class SettingsContentTest {
                             isTasksTabEnabled = true,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -135,6 +140,7 @@ class SettingsContentTest {
                             defaultTab = SettingsContract.DefaultTab.ROUTINES,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -163,6 +169,7 @@ class SettingsContentTest {
                             selectedTab = event.defaultTab
                         }
                     },
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -176,5 +183,29 @@ class SettingsContentTest {
 
         composeTestRule.waitForIdle()
         assertThat(selectedTab).isEqualTo(SettingsContract.DefaultTab.TASKS)
+    }
+
+    @Test
+    fun onboardingSelectionTriggersCallback() {
+        var onboardingClicked = false
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(),
+                    onEvent = {},
+                    onOnboardingClick = { onboardingClicked = true },
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithText("View onboarding", ignoreCase = true)
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        assertThat(onboardingClicked).isTrue()
     }
 }
