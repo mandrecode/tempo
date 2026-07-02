@@ -49,15 +49,16 @@ fun SettingsContent(
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val navigationBarBottomPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val navigationBarPadding = WindowInsets.navigationBars.asPaddingValues()
 
     Column(
         modifier =
             modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(navigationBarPadding)
                 .padding(horizontal = 16.dp)
-                .padding(top = 24.dp, bottom = 24.dp + navigationBarBottomPadding),
+                .padding(top = 24.dp, bottom = 24.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         ThemeSection(uiState = uiState, onEvent = onEvent)

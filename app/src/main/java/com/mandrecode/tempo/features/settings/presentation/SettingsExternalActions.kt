@@ -88,7 +88,6 @@ internal fun openFeedback(
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         Log.e(LOG_TAG, "Unable to open feedback form", e)
-        @Suppress("LocalContextGetResourceValueCall")
         Toast
             .makeText(
                 context,
