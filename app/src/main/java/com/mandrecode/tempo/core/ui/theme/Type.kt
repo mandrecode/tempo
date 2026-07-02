@@ -187,7 +187,7 @@ val Typography.metadataLabel: TextStyle
 
 /** Settings section title. */
 val Typography.settingsSectionTitle: TextStyle
-    get() = titleMedium.copy(fontWeight = FontWeight.SemiBold)
+    get() = titleSmall.copy(fontWeight = FontWeight.Medium)
 
 /** Empty-state headline. */
 val Typography.emptyStateTitle: TextStyle
