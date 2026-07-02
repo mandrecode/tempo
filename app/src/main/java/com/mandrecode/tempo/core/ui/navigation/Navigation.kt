@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,6 +29,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -460,10 +462,18 @@ private fun RouteTopBar(
 
 @Composable
 private fun SettingsDestination(navController: NavHostController) {
+    val context = LocalContext.current
+    val onboardingNotLiveMessage = stringResource(R.string.onboarding_not_live)
+
     SettingsScreen(
         onBackClick = { navController.popBackStack() },
         onOnboardingClick = {
-            // Prepared for the upcoming onboarding destination.
+            Toast
+                .makeText(
+                    context,
+                    onboardingNotLiveMessage,
+                    Toast.LENGTH_SHORT,
+                ).show()
         },
     )
 }

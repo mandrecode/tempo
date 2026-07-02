@@ -419,6 +419,7 @@
     <string name="about">About</string>
     <string name="view_onboarding">View onboarding</string>
     <string name="view_onboarding_description">Learn how Tempo helps you build habits and manage tasks</string>
+    <string name="onboarding_not_live">Onboarding is still not live</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
