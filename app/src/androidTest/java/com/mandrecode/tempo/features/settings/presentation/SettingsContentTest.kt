@@ -6,7 +6,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Rule
@@ -188,6 +190,8 @@ class SettingsContentTest {
     @Test
     fun onboardingSelectionTriggersCallback() {
         var onboardingClicked = false
+        val viewOnboardingText =
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.view_onboarding)
 
         composeTestRule.setContent {
             TempoTheme {
@@ -201,7 +205,7 @@ class SettingsContentTest {
 
         composeTestRule.waitForIdle()
         composeTestRule
-            .onNodeWithText("View onboarding", ignoreCase = true)
+            .onNodeWithText(viewOnboardingText, ignoreCase = true)
             .performScrollTo()
             .performClick()
 
