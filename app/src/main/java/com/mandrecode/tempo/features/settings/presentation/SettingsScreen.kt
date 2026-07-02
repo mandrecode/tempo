@@ -51,9 +51,10 @@ internal fun SettingsScaffold(
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val settingsContainerColor = MaterialTheme.colorScheme.surfaceContainer
 
     Scaffold(
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = settingsContainerColor,
         contentWindowInsets = WindowInsets(0),
         modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
@@ -79,8 +80,8 @@ internal fun SettingsScaffold(
                 },
                 colors =
                     TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.background,
-                        scrolledContainerColor = MaterialTheme.colorScheme.background,
+                        containerColor = settingsContainerColor,
+                        scrolledContainerColor = settingsContainerColor,
                     ),
                 collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
                 expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,

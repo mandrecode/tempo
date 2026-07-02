@@ -9,7 +9,7 @@ This is a presentation-only Settings change. The screen is explicitly allowed to
 **Goals:**
 
 - Match the Didi Settings reference with a large page title, section labels, rounded cards, and component-led rows.
-- Match Didi's page/card surface contrast by remapping theme surfaces in `TempoTheme`.
+- Match Didi's page/card surface contrast locally in Settings, using the muted surface for the screen and the whitest/lightest surface for cards.
 - Prepare a Settings onboarding row and click callback for the upcoming onboarding destination.
 - Preserve all current Settings actions and persisted state updates.
 - Keep strings resource-backed and previews in `src/debug/`.
@@ -17,7 +17,7 @@ This is a presentation-only Settings change. The screen is explicitly allowed to
 
 **Non-Goals:**
 
-- No full app-wide color-system rollout for issue #50 beyond the Didi page-surface contrast mapping required by this Settings design.
+- No full app-wide color-system rollout for issue #50.
 - No changes to settings persistence, navigation, repositories, or domain models.
 - No new dependencies or design-system migration.
 - No changes to available Settings options beyond their layout and visual treatment.

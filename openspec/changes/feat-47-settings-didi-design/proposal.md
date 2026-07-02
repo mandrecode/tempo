@@ -5,7 +5,7 @@ GitHub issue [#47](https://github.com/mandrecode/tempo/issues/47) asks for the S
 ## What Changes
 
 - Redesign Settings around the Didi reference: oversized page title, section labels, rounded cards, and component-centered setting rows.
-- Apply Didi's page-surface contrast theme treatment so the muted surface becomes the screen background and the whitest/lightest surface becomes card background.
+- Apply Didi's page-surface contrast locally in Settings so the muted surface becomes the Settings screen background and the whitest/lightest surface becomes the Settings card background.
 - Add the Settings onboarding row and callback flow so the future onboarding destination can be enabled without redesigning Settings again.
 - Keep theme, color scheme, notification, language, tab/navigation, default-tab, feedback, review, and version behavior intact.
 - Add or update previews for the redesigned Settings content and new internal presentation components.
@@ -22,7 +22,7 @@ GitHub issue [#47](https://github.com/mandrecode/tempo/issues/47) asks for the S
 
 ## Impact
 
-- Affected code: Settings presentation, shared theme surface mapping, and matching debug previews.
+- Affected code: Settings presentation and matching debug previews.
 - Affected resources: Settings strings or drawables only if required by the redesign.
 - Affected dependencies: pin Compose Material3 to the same version Didi uses so `TwoRowsTopAppBar` is available.
 - No domain, data, persistence, or navigation route changes are planned.
