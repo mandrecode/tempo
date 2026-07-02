@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.12](https://github.com/mandrecode/tempo/compare/v0.8.11...v0.8.12) (2026-07-02)
+
+
+### Features
+
+* **#47:** redesign Settings from Didi reference ([#112](https://github.com/mandrecode/tempo/issues/112)) ([4257053](https://github.com/mandrecode/tempo/commit/4257053477e97111b3114d4948a6789120758d2a))
+
 ## [0.8.11](https://github.com/mandrecode/tempo/compare/v0.8.10...v0.8.11) (2026-07-01)
 
 
