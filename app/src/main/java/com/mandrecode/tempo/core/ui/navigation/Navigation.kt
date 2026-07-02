@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,15 +15,12 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +31,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -467,22 +466,18 @@ private fun RouteTopBar(
 
 @Composable
 private fun SettingsDestination(navController: NavHostController) {
-    Scaffold(
-        topBar = {
-            TempoTopBar(
-                title = stringResource(R.string.settings),
-                navigationIcon = {
-                    IconButton(onClick = { navController.popBackStack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                },
-            )
+    val context = LocalContext.current
+    val onboardingNotLiveMessage = stringResource(R.string.onboarding_not_live)
+
+    SettingsScreen(
+        onBackClick = { navController.popBackStack() },
+        onOnboardingClick = {
+            Toast
+                .makeText(
+                    context,
+                    onboardingNotLiveMessage,
+                    Toast.LENGTH_SHORT,
+                ).show()
         },
-    ) { padding ->
-        SettingsScreen(modifier = Modifier.padding(padding))
-    }
+    )
 }

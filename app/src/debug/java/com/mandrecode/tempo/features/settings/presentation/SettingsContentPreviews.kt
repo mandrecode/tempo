@@ -44,51 +44,59 @@ private val systemState =
         appVersion = "1.0",
     )
 
-@Preview(name = "Light – Default", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - Default", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightDefaultPreview() {
     TempoTheme(useTempoColors = false) {
-        SettingsContent(uiState = defaultLightState, onEvent = {})
+        SettingsContent(uiState = defaultLightState, onEvent = {}, onOnboardingClick = {})
     }
 }
 
-@Preview(name = "Dark – Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkDefaultPreview() {
     TempoTheme(useTempoColors = false) {
-        SettingsContent(uiState = defaultLightState.copy(selectedThemeMode = ThemeMode.DARK), onEvent = {})
+        SettingsContent(
+            uiState = defaultLightState.copy(selectedThemeMode = ThemeMode.DARK),
+            onEvent = {},
+            onOnboardingClick = {},
+        )
     }
 }
 
-@Preview(name = "Light – Tempo", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - Tempo Colors", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightTempoPreview() {
     TempoTheme(useTempoColors = true) {
-        SettingsContent(uiState = tempoColorsState.copy(selectedThemeMode = ThemeMode.LIGHT), onEvent = {})
+        SettingsContent(
+            uiState = tempoColorsState.copy(selectedThemeMode = ThemeMode.LIGHT),
+            onEvent = {},
+            onOnboardingClick = {},
+        )
     }
 }
 
-@Preview(name = "Dark – Tempo", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - Tempo Colors", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkTempoPreview() {
     TempoTheme(useTempoColors = true) {
-        SettingsContent(uiState = tempoColorsState, onEvent = {})
+        SettingsContent(uiState = tempoColorsState, onEvent = {}, onOnboardingClick = {})
     }
 }
 
-@Preview(name = "Light – System", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - System Partial Tabs", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightSystemPreview() {
     TempoTheme {
-        SettingsContent(uiState = systemState, onEvent = {})
+        SettingsContent(uiState = systemState, onEvent = {}, onOnboardingClick = {})
     }
 }
 
-@Preview(name = "Dark – System", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - System Partial Tabs", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkSystemPreview() {
     TempoTheme {
-        SettingsContent(uiState = systemState, onEvent = {})
+        SettingsContent(uiState = systemState, onEvent = {}, onOnboardingClick = {})
     }
 }
 

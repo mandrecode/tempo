@@ -43,6 +43,7 @@ fun ExpressiveChip(
     height: Dp = 52.dp,
     enabled: Boolean = true,
     icon: @Composable (() -> Unit)? = null,
+    horizontalPadding: Dp = 16.dp,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primary,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
     unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -144,7 +145,7 @@ fun ExpressiveChip(
                 },
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp),
+                modifier = Modifier.padding(horizontal = horizontalPadding),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = horizontalArrangement,
             ) {

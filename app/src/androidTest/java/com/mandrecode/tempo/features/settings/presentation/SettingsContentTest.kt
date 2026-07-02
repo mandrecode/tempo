@@ -6,7 +6,9 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Rule
@@ -16,6 +18,8 @@ class SettingsContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
+    private fun localizedString(id: Int): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(id)
+
     @Test
     fun displaysAppVersion() {
         composeTestRule.setContent {
@@ -23,6 +27,7 @@ class SettingsContentTest {
                 SettingsContent(
                     uiState = SettingsContract.UiState(appVersion = "1.0.0"),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -33,11 +38,14 @@ class SettingsContentTest {
 
     @Test
     fun displaysThemeModes() {
+        val themeText = localizedString(R.string.theme)
+
         composeTestRule.setContent {
             TempoTheme {
                 SettingsContent(
                     uiState = SettingsContract.UiState(),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -45,12 +53,15 @@ class SettingsContentTest {
         composeTestRule.waitForIdle()
         // Theme section should be visible
         composeTestRule
-            .onNodeWithText("Theme", substring = true, ignoreCase = true)
+            .onNodeWithText(themeText, ignoreCase = true)
             .assertIsDisplayed()
     }
 
     @Test
     fun displaysTabToggleSettings() {
+        val routinesText = localizedString(R.string.routines_tab)
+        val tasksText = localizedString(R.string.tasks_tab)
+
         composeTestRule.setContent {
             TempoTheme {
                 SettingsContent(
@@ -60,6 +71,7 @@ class SettingsContentTest {
                             isTasksTabEnabled = true,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -67,15 +79,18 @@ class SettingsContentTest {
         composeTestRule.waitForIdle()
         // Both toggle items should be displayed (labels come from R.string.routines_tab / tasks_tab)
         composeTestRule
-            .onAllNodesWithText("Routines", ignoreCase = true)[0]
+            .onAllNodesWithText(routinesText, ignoreCase = true)[0]
+            .performScrollTo()
             .assertIsDisplayed()
         composeTestRule
-            .onAllNodesWithText("Tasks", ignoreCase = true)[0]
+            .onAllNodesWithText(tasksText, ignoreCase = true)[0]
+            .performScrollTo()
             .assertIsDisplayed()
     }
 
     @Test
     fun themeModeSelectionTriggersEvent() {
+        val darkText = localizedString(R.string.theme_dark)
         var selectedMode: ThemeMode? = null
 
         composeTestRule.setContent {
@@ -87,6 +102,7 @@ class SettingsContentTest {
                             selectedMode = event.mode
                         }
                     },
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -94,7 +110,7 @@ class SettingsContentTest {
         composeTestRule.waitForIdle()
         // Try clicking the dark mode option
         composeTestRule
-            .onNodeWithText("Dark", substring = true, ignoreCase = true)
+            .onNodeWithText(darkText, substring = true, ignoreCase = true)
             .performClick()
 
         composeTestRule.waitForIdle()
@@ -103,6 +119,8 @@ class SettingsContentTest {
 
     @Test
     fun displaysDefaultTabSectionWhenBothTabsEnabled() {
+        val defaultTabText = localizedString(R.string.default_tab)
+
         composeTestRule.setContent {
             TempoTheme {
                 SettingsContent(
@@ -112,19 +130,22 @@ class SettingsContentTest {
                             isTasksTabEnabled = true,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
 
         composeTestRule.waitForIdle()
         composeTestRule
-            .onNodeWithText("Default Tab", ignoreCase = true)
+            .onNodeWithText(defaultTabText, ignoreCase = true)
             .performScrollTo()
             .assertIsDisplayed()
     }
 
     @Test
     fun hidesDefaultTabSectionWhenOnlyOneTabEnabled() {
+        val defaultTabText = localizedString(R.string.default_tab)
+
         composeTestRule.setContent {
             TempoTheme {
                 SettingsContent(
@@ -135,18 +156,20 @@ class SettingsContentTest {
                             defaultTab = SettingsContract.DefaultTab.ROUTINES,
                         ),
                     onEvent = {},
+                    onOnboardingClick = {},
                 )
             }
         }
 
         composeTestRule.waitForIdle()
         composeTestRule
-            .onNodeWithText("Default Tab", ignoreCase = true)
+            .onNodeWithText(defaultTabText, ignoreCase = true)
             .assertDoesNotExist()
     }
 
     @Test
     fun defaultTabSelectionTriggersEvent() {
+        val tasksText = localizedString(R.string.tasks)
         var selectedTab: SettingsContract.DefaultTab? = null
 
         composeTestRule.setContent {
@@ -163,6 +186,7 @@ class SettingsContentTest {
                             selectedTab = event.defaultTab
                         }
                     },
+                    onOnboardingClick = {},
                 )
             }
         }
@@ -170,11 +194,36 @@ class SettingsContentTest {
         composeTestRule.waitForIdle()
         // There are two "Tasks" nodes (tab toggle + default tab chip), target the second one
         composeTestRule
-            .onAllNodesWithText("Tasks", ignoreCase = true)[1]
+            .onAllNodesWithText(tasksText, ignoreCase = true)[1]
             .performScrollTo()
             .performClick()
 
         composeTestRule.waitForIdle()
         assertThat(selectedTab).isEqualTo(SettingsContract.DefaultTab.TASKS)
+    }
+
+    @Test
+    fun onboardingSelectionTriggersCallback() {
+        var onboardingClicked = false
+        val viewOnboardingText = localizedString(R.string.view_onboarding)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(),
+                    onEvent = {},
+                    onOnboardingClick = { onboardingClicked = true },
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithText(viewOnboardingText, ignoreCase = true)
+            .performScrollTo()
+            .performClick()
+
+        composeTestRule.waitForIdle()
+        assertThat(onboardingClicked).isTrue()
     }
 }

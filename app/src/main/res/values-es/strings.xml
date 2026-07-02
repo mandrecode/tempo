@@ -421,6 +421,9 @@
 
     <!-- ABOUT SECTION -->
     <string name="about">Acerca de</string>
+    <string name="view_onboarding">Ver introducción</string>
+    <string name="view_onboarding_description">Aprende cómo Tempo te ayuda a crear hábitos y gestionar tareas</string>
+    <string name="onboarding_not_live">La introducción aún no está disponible</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
