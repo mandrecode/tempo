@@ -44,7 +44,7 @@ private val systemState =
         appVersion = "1.0",
     )
 
-@Preview(name = "Light - Didi Default", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Light - Default", showBackground = true, device = "id:pixel_9")
 @Composable
 private fun SettingsContentLightDefaultPreview() {
     TempoTheme(useTempoColors = false) {
@@ -52,7 +52,7 @@ private fun SettingsContentLightDefaultPreview() {
     }
 }
 
-@Preview(name = "Dark - Didi Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(name = "Dark - Default", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun SettingsContentDarkDefaultPreview() {
     TempoTheme(useTempoColors = false) {
