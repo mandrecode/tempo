@@ -126,7 +126,7 @@ private fun ColorDotTempoPreview() {
 @Composable
 private fun CompletedTaskRetentionSectionPreview() {
     TempoTheme {
-        CompletedTasksSection(
+        CompletedTaskRetentionSection(
             uiState =
                 SettingsContract.UiState(
                     autoRemoveCompletedTasksEnabled = true,

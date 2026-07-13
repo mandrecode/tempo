@@ -32,7 +32,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 
 @Composable
-internal fun CompletedTasksSection(
+internal fun CompletedTaskRetentionSection(
     uiState: SettingsContract.UiState,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
