@@ -62,6 +62,8 @@ interface TaskRepository {
 
     suspend fun deleteCompletedTasksByCategoryId(categoryId: Long)
 
+    suspend fun deleteCompletedTasksAtOrBefore(cutoff: LocalDateTime)
+
     /**
      * Updates the `nextInstanceId` link on an archived periodic task pointing at its
      * spawned next-occurrence id. Set to `null` to clear a stale link.

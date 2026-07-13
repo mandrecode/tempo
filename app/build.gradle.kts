@@ -36,6 +36,7 @@ kover {
                     "com.mandrecode.tempo.features.*.presentation.*Screen*",
                     "com.mandrecode.tempo.features.*.presentation.*Contract*",
                     "com.mandrecode.tempo.features.*.presentation.*Components*",
+                    "com.mandrecode.tempo.features.settings.presentation.CompletedTaskRetentionSection*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",
                     "com.mandrecode.tempo.*.presentation.*Content*",
                     "com.mandrecode.tempo.*.presentation.*Screen*",

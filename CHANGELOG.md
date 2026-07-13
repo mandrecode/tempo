@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.8.14](https://github.com/mandrecode/tempo/compare/v0.8.13...v0.8.14) (2026-07-13)
+
+
+### Features
+
+* **#14:** autoremove completed tasks ([#124](https://github.com/mandrecode/tempo/issues/124)) ([eb32888](https://github.com/mandrecode/tempo/commit/eb32888b0fc39d136ace90a957bb6207e943ff0d))
+
+
+### Bug Fixes
+
+* **#37:** dismiss keyboard from title fields ([#123](https://github.com/mandrecode/tempo/issues/123)) ([a85ab23](https://github.com/mandrecode/tempo/commit/a85ab23f2d6acdbfab611b14b5b78ac331cee0dc))
+* **#49:** align empty habit chain selector ([#126](https://github.com/mandrecode/tempo/issues/126)) ([e1a732b](https://github.com/mandrecode/tempo/commit/e1a732bfd68985b7164a1eab32356dafb4b42279))
+* soften neutral card backgrounds ([#127](https://github.com/mandrecode/tempo/issues/127)) ([6aa8987](https://github.com/mandrecode/tempo/commit/6aa8987f1ec8409e55f256c03a4e0d525ca47c31))
+
 ## [0.8.13](https://github.com/mandrecode/tempo/compare/v0.8.12...v0.8.13) (2026-07-13)
 
 
