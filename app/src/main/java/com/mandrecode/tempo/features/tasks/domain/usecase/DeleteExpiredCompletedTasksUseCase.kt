@@ -2,10 +2,10 @@ package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import jakarta.inject.Inject
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
-import javax.inject.Inject
 
 class DeleteExpiredCompletedTasksUseCase
     @Inject

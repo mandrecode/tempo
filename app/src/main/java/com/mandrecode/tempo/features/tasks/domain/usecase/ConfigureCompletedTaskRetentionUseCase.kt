@@ -2,7 +2,7 @@ package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.CompletedTaskCleanupScheduler
-import javax.inject.Inject
+import jakarta.inject.Inject
 
 class ConfigureCompletedTaskRetentionUseCase
     @Inject

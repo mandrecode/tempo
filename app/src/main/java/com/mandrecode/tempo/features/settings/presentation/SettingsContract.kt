@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.settings.presentation
 
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
@@ -25,7 +26,7 @@ object SettingsContract {
         val isTasksTabEnabled: Boolean = true,
         val defaultTab: DefaultTab = DefaultTab.ROUTINES,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
-        val completedTaskRetentionDays: Int = 30,
+        val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
     )
 
     /**
