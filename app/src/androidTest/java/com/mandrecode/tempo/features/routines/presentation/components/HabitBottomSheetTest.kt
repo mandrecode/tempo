@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -59,6 +60,12 @@ class HabitBottomSheetTest {
             title = "Push-ups",
             description = "Do 20 push-ups",
             createdDate = now,
+        )
+
+    private fun secondHabitInChain() =
+        habitInChain().copy(
+            id = 2L,
+            title = "Read",
         )
 
     private fun chainContainingHabit() =
@@ -501,7 +508,7 @@ class HabitBottomSheetTest {
                 .boundsInRoot
         val selectorBounds =
             composeTestRule
-                .onNodeWithTag(selectorTestTag, useUnmergedTree = true)
+                .onAllNodesWithTag(selectorTestTag, useUnmergedTree = true)[0]
                 .fetchSemanticsNode()
                 .boundsInRoot
         val iconCenterY = (iconBounds.top + iconBounds.bottom) / 2f
@@ -520,7 +527,7 @@ class HabitBottomSheetTest {
 
     @Test
     fun habitSelectorIcon_alignedWithAvailableHabit_whenNoHabitsSelected() {
-        renderNewHabitChainSheet()
+        renderNewHabitChainSheet(habits = listOf(habitInChain(), secondHabitInChain()))
 
         assertHabitSelectorVerticalAlignment(
             selectorTestTag = AVAILABLE_HABIT_CHIP_TEST_TAG,
@@ -530,7 +537,11 @@ class HabitBottomSheetTest {
 
     @Test
     fun habitSelectorIcon_remainsAlignedWithFirstSelectedHabit() {
-        renderEditHabitChainSheet(onToggleHabitCompletion = { _, _ -> })
+        renderEditHabitChainSheet(
+            chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L)),
+            habits = listOf(habitInChain(), secondHabitInChain()),
+            onToggleHabitCompletion = { _, _ -> },
+        )
 
         assertHabitSelectorVerticalAlignment(
             selectorTestTag = SELECTED_HABIT_ROW_TEST_TAG,
