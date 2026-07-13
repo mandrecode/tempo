@@ -1,0 +1,55 @@
+package com.mandrecode.tempo.core.ui.navigation
+
+import androidx.compose.ui.unit.dp
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+
+class FloatingNavigationLayoutTest {
+    @Test
+    fun givenPortraitLayoutWithoutNavigationInset_whenCalculatingClearance_thenIncludesFloatingBar() {
+        val clearance =
+            calculateFloatingNavigationBottomClearancePadding(
+                defaultPadding = 16.dp,
+                navigationBarPadding = 0.dp,
+                isRailLayout = false,
+            )
+
+        assertThat(clearance).isEqualTo(96.dp)
+    }
+
+    @Test
+    fun givenPortraitLayoutWithNavigationInset_whenCalculatingClearance_thenIncludesBothInsets() {
+        val clearance =
+            calculateFloatingNavigationBottomClearancePadding(
+                defaultPadding = 16.dp,
+                navigationBarPadding = 24.dp,
+                isRailLayout = false,
+            )
+
+        assertThat(clearance).isEqualTo(120.dp)
+    }
+
+    @Test
+    fun givenRailLayoutWithoutNavigationInset_whenCalculatingClearance_thenUsesContentPadding() {
+        val clearance =
+            calculateFloatingNavigationBottomClearancePadding(
+                defaultPadding = 16.dp,
+                navigationBarPadding = 0.dp,
+                isRailLayout = true,
+            )
+
+        assertThat(clearance).isEqualTo(16.dp)
+    }
+
+    @Test
+    fun givenRailLayoutWithNavigationInset_whenCalculatingClearance_thenIncludesSystemInset() {
+        val clearance =
+            calculateFloatingNavigationBottomClearancePadding(
+                defaultPadding = 16.dp,
+                navigationBarPadding = 24.dp,
+                isRailLayout = true,
+            )
+
+        assertThat(clearance).isEqualTo(40.dp)
+    }
+}
