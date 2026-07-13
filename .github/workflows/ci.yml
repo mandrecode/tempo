@@ -135,7 +135,7 @@ jobs:
         run: |
           # The detekt baseline is frozen and may only shrink.
           # See AGENTS.md > CI / Quality Gates. Lower MAX when you fix issues.
-          MAX=189
+          MAX=188
           COUNT=$(grep -c '<ID>' app/detekt-baseline.xml)
           echo "detekt baseline entries: $COUNT (ceiling: $MAX)"
           if [ "$COUNT" -gt "$MAX" ]; then

@@ -29,6 +29,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -51,6 +53,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
+
+internal const val HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG = "habit_bottom_sheet_title_field"
 
 @Composable
 internal fun HabitBottomSheetBody(
@@ -276,6 +280,7 @@ private fun HabitTitleField(
     focusConfig: HabitBottomSheetFocusConfig,
     modifier: Modifier = Modifier,
 ) {
+    val focusManager = LocalFocusManager.current
     TextField(
         value = state.title,
         onValueChange = actions.onTitleChanged,
@@ -303,7 +308,10 @@ private fun HabitTitleField(
                 errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
                 errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
             ),
-        modifier = modifier.focusRequester(focusConfig.titleFocusRequester),
+        modifier =
+            modifier
+                .testTag(HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+                .focusRequester(focusConfig.titleFocusRequester),
         keyboardOptions =
             KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
@@ -311,7 +319,10 @@ private fun HabitTitleField(
             ),
         keyboardActions =
             androidx.compose.foundation.text.KeyboardActions(
-                onDone = { focusConfig.focusManager.clearFocus() },
+                onDone = {
+                    defaultKeyboardAction(ImeAction.Done)
+                    focusManager.clearFocus()
+                },
             ),
         singleLine = false,
         maxLines = 3,

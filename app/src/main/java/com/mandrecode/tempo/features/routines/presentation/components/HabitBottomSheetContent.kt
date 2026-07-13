@@ -81,7 +81,6 @@ internal fun HabitBottomSheetContent(
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
 
     var title by remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
         mutableStateOf(
@@ -426,6 +425,7 @@ internal fun HabitBottomSheetContent(
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && title.isNotBlank()) false else hasUnsavedChanges,
     ) { onRequestDismiss ->
+        val focusManager = LocalFocusManager.current
         Column(
             modifier =
                 Modifier
@@ -507,7 +507,6 @@ internal fun HabitBottomSheetContent(
                     ),
                 focusConfig =
                     HabitBottomSheetFocusConfig(
-                        focusManager = focusManager,
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
                     ),

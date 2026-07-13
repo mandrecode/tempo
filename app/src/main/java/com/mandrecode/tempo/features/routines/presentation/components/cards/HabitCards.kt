@@ -376,7 +376,7 @@ fun HabitCard(
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainerLow
+                    ?: MaterialTheme.colorScheme.surfaceContainer
             },
         animationSpec = tween(300),
         label = "habit_card_color",
