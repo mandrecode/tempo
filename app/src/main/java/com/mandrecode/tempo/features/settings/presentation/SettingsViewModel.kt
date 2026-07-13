@@ -6,6 +6,8 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,6 +25,8 @@ class SettingsViewModel
         private val themePreferencesRepository: ThemePreferencesRepository,
         private val navigationPreferencesRepository: NavigationPreferencesRepository,
         private val appVersionProvider: AppVersionProvider,
+        private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
+        private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
         val uiState: StateFlow<SettingsContract.UiState> = _uiState.asStateFlow()
@@ -32,6 +36,7 @@ class SettingsViewModel
             observeTempoColors()
             loadVersionInfo()
             observeTabPreferences()
+            observeCompletedTaskRetention()
         }
 
         private fun observeThemeMode() {
@@ -102,6 +107,51 @@ class SettingsViewModel
                 is SettingsContract.UiEvent.DefaultTabSelected -> {
                     handleDefaultTabSelection(event.defaultTab)
                 }
+
+                is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled -> {
+                    updateCompletedTaskRetention(
+                        enabled = event.enabled,
+                        days = _uiState.value.completedTaskRetentionDays,
+                    )
+                }
+
+                is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged -> {
+                    updateCompletedTaskRetention(
+                        enabled = _uiState.value.autoRemoveCompletedTasksEnabled,
+                        days = event.days,
+                    )
+                }
+            }
+        }
+
+        private fun observeCompletedTaskRetention() {
+            viewModelScope.launch {
+                combine(
+                    completedTaskRetentionPreferences.isEnabled,
+                    completedTaskRetentionPreferences.retentionDays,
+                ) { enabled, days -> enabled to days }
+                    .collect { (enabled, days) ->
+                        _uiState.update {
+                            it.copy(
+                                autoRemoveCompletedTasksEnabled = enabled,
+                                completedTaskRetentionDays =
+                                    CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
+                            )
+                        }
+                    }
+            }
+        }
+
+        private fun updateCompletedTaskRetention(
+            enabled: Boolean,
+            days: Int,
+        ) {
+            configureCompletedTaskRetention(enabled, days)
+            _uiState.update {
+                it.copy(
+                    autoRemoveCompletedTasksEnabled = enabled,
+                    completedTaskRetentionDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
+                )
             }
         }
 

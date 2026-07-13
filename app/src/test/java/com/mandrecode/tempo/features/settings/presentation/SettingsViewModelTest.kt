@@ -6,14 +6,18 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.util.AppVersionInfo
 import com.mandrecode.tempo.util.AppVersionProvider
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,6 +34,8 @@ class SettingsViewModelTest {
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
     private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var appVersionProvider: AppVersionProvider
+    private lateinit var completedTaskRetentionPreferences: CompletedTaskRetentionPreferences
+    private lateinit var configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -41,14 +47,18 @@ class SettingsViewModelTest {
             mockk {
                 every { getVersionInfo() } returns AppVersionInfo("1.0", 1)
             }
+        completedTaskRetentionPreferences = mockk(relaxed = true)
+        configureCompletedTaskRetention = mockk(relaxed = true)
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
         coEvery { navigationPreferencesRepository.isRoutinesTabEnabled() } returns flowOf(true)
         coEvery { navigationPreferencesRepository.isTasksTabEnabled() } returns flowOf(true)
         coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
+        every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(false)
+        every { completedTaskRetentionPreferences.retentionDays } returns MutableStateFlow(30)
 
-        viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+        viewModel = createViewModel()
     }
 
     @After
@@ -89,7 +99,7 @@ class SettingsViewModelTest {
             coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(true)
 
             // Re-init VM
-            viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.useTempoColors).isTrue()
@@ -109,7 +119,7 @@ class SettingsViewModelTest {
             coEvery { navigationPreferencesRepository.isTasksTabEnabled() } returns flowOf(false)
 
             // Re-init VM
-            viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(SettingsContract.UiEvent.RoutinesTabToggled(false))
@@ -130,7 +140,7 @@ class SettingsViewModelTest {
             coEvery { navigationPreferencesRepository.isRoutinesTabEnabled() } returns flowOf(false)
 
             // Re-init VM
-            viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(SettingsContract.UiEvent.TasksTabToggled(false))
@@ -151,7 +161,7 @@ class SettingsViewModelTest {
             coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(DEFAULT_TAB_TASKS)
 
             // Re-init VM
-            viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(SettingsContract.UiEvent.TasksTabToggled(false))
@@ -180,7 +190,7 @@ class SettingsViewModelTest {
             coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.LIGHT)
 
             // Re-init VM
-            viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)
+            viewModel = createViewModel()
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.selectedThemeMode).isEqualTo(ThemeMode.LIGHT)
@@ -206,4 +216,48 @@ class SettingsViewModelTest {
 
             assertThat(state.appVersion).isNotEmpty()
         }
+
+    @Test
+    fun `retention preferences update settings state`() =
+        runTest {
+            every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(true)
+            every { completedTaskRetentionPreferences.retentionDays } returns MutableStateFlow(45)
+            viewModel = createViewModel()
+
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.autoRemoveCompletedTasksEnabled).isTrue()
+            assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(45)
+        }
+
+    @Test
+    fun `auto removal toggle configures current retention`() =
+        runTest {
+            advanceUntilIdle()
+
+            viewModel.onEvent(SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled(true))
+
+            verify { configureCompletedTaskRetention(true, 30) }
+            assertThat(viewModel.uiState.value.autoRemoveCompletedTasksEnabled).isTrue()
+        }
+
+    @Test
+    fun `retention day change is normalized and configured`() =
+        runTest {
+            advanceUntilIdle()
+
+            viewModel.onEvent(SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged(44))
+
+            verify { configureCompletedTaskRetention(false, 44) }
+            assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(45)
+        }
+
+    private fun createViewModel(): SettingsViewModel =
+        SettingsViewModel(
+            themePreferencesRepository,
+            navigationPreferencesRepository,
+            appVersionProvider,
+            completedTaskRetentionPreferences,
+            configureCompletedTaskRetention,
+        )
 }

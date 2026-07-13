@@ -2,6 +2,7 @@ package com.mandrecode.tempo.core.di
 
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepositoryImpl
+import com.mandrecode.tempo.core.data.preferences.CompletedTaskRetentionPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
@@ -15,6 +16,7 @@ import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImpl
 import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import dagger.Binds
 import dagger.Module
@@ -47,4 +49,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindTasksScreenPreferencesRepository(impl: TasksScreenPreferencesRepositoryImpl): TasksScreenPreferencesRepository
+
+    @Binds
+    abstract fun bindCompletedTaskRetentionPreferences(impl: CompletedTaskRetentionPreferencesImpl): CompletedTaskRetentionPreferences
 }

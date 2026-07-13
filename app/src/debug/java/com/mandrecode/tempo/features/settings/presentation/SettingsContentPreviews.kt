@@ -23,6 +23,8 @@ private val defaultLightState =
         isTasksTabEnabled = true,
         defaultTab = SettingsContract.DefaultTab.ROUTINES,
         appVersion = "1.0",
+        autoRemoveCompletedTasksEnabled = true,
+        completedTaskRetentionDays = 30,
     )
 
 private val tempoColorsState =
@@ -117,6 +119,21 @@ private fun ColorDotTempoPreview() {
             ColorDot(color = TempoDarkPrimary)
             ColorDot(color = Color.White)
         }
+    }
+}
+
+@Preview(name = "Completed task retention", showBackground = true, device = "id:pixel_9")
+@Composable
+private fun CompletedTaskRetentionSectionPreview() {
+    TempoTheme {
+        CompletedTaskRetentionSection(
+            uiState =
+                SettingsContract.UiState(
+                    autoRemoveCompletedTasksEnabled = true,
+                    completedTaskRetentionDays = 30,
+                ),
+            onEvent = {},
+        )
     }
 }
 
