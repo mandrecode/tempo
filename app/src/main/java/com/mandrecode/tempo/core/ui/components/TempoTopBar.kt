@@ -32,6 +32,7 @@ fun TempoTopBar(
         colors =
             TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.background,
+                scrolledContainerColor = MaterialTheme.colorScheme.background,
                 titleContentColor = MaterialTheme.colorScheme.primary,
             ),
         modifier = modifier,
