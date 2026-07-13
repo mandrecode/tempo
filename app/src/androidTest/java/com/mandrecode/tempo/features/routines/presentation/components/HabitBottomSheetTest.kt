@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -37,10 +38,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.math.abs
 import kotlin.time.Clock
 
 private val markHabitNotCompleted: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.mark_as_not_completed)
+
+private val selectHabits: String
+    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.select_habits)
 
 class HabitBottomSheetTest {
     @get:Rule
@@ -58,6 +63,12 @@ class HabitBottomSheetTest {
             title = "Push-ups",
             description = "Do 20 push-ups",
             createdDate = now,
+        )
+
+    private fun secondHabitInChain() =
+        habitInChain().copy(
+            id = 2L,
+            title = "Read",
         )
 
     private fun chainContainingHabit() =
@@ -494,6 +505,85 @@ class HabitBottomSheetTest {
                 )
             }
         }
+    }
+
+    private fun renderNewHabitChainSheet(habits: List<Habit> = listOf(habitInChain())) {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(selectedTab = HabitSheetTab.HABIT_CHAIN),
+                    selectedDate = today(),
+                    habits = habits,
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                )
+            }
+        }
+    }
+
+    private fun assertHabitSelectorVerticalAlignment(
+        selectorTestTag: String,
+        maxDifferenceDp: Float,
+    ) {
+        val iconNode =
+            composeTestRule
+                .onNodeWithContentDescription(selectHabits, useUnmergedTree = true)
+        val selectorNode =
+            composeTestRule
+                .onAllNodesWithTag(selectorTestTag, useUnmergedTree = true)[0]
+
+        iconNode.assertIsDisplayed()
+        selectorNode.assertIsDisplayed()
+
+        val iconBounds = iconNode.fetchSemanticsNode().boundsInRoot
+        val selectorBounds = selectorNode.fetchSemanticsNode().boundsInRoot
+        val iconCenterY = (iconBounds.top + iconBounds.bottom) / 2f
+        val selectorCenterY = (selectorBounds.top + selectorBounds.bottom) / 2f
+        val density =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext.resources.displayMetrics.density
+
+        assertTrue(
+            "Expected habits icon and first selector row to be vertically aligned; " +
+                "icon=$iconBounds selector=$selectorBounds",
+            abs(iconCenterY - selectorCenterY) <= maxDifferenceDp * density,
+        )
+    }
+
+    @Test
+    fun habitSelectorIcon_alignedWithAvailableHabit_whenNoHabitsSelected() {
+        renderNewHabitChainSheet(habits = listOf(habitInChain(), secondHabitInChain()))
+
+        assertHabitSelectorVerticalAlignment(
+            selectorTestTag = AVAILABLE_HABIT_CHIP_TEST_TAG,
+            maxDifferenceDp = 1f,
+        )
+    }
+
+    @Test
+    fun habitSelectorIcon_remainsAlignedWithFirstSelectedHabit() {
+        renderEditHabitChainSheet(
+            chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L)),
+            habits = listOf(habitInChain(), secondHabitInChain()),
+            onToggleHabitCompletion = { _, _ -> },
+        )
+
+        assertHabitSelectorVerticalAlignment(
+            selectorTestTag = SELECTED_HABIT_ROW_TEST_TAG,
+            maxDifferenceDp = 4f,
+        )
     }
 
     @Test

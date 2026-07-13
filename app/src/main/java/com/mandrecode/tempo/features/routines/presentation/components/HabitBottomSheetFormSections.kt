@@ -507,12 +507,17 @@ private fun HabitChainSelectionSection(
     selectedDate: kotlinx.datetime.LocalDate,
     onToggleHabitCompletion: ((habitId: Long, isCompleted: Boolean) -> Unit)?,
 ) {
+    val iconTopPadding = if (selectedHabitIds.isEmpty()) 12.dp else 16.dp
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier.width(48.dp).padding(top = 16.dp),
+            modifier =
+                Modifier
+                    .width(48.dp)
+                    .padding(top = iconTopPadding),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
