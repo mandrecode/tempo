@@ -72,9 +72,9 @@ fun QuickTaskEntryBar(
         if (taskTitle.isNotBlank()) {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onAddTask(taskTitle)
-            focusManager.clearFocus()
             taskTitle = ""
         }
+        focusManager.clearFocus()
     }
 
     // Match the tonal elevation of the Bottom Navigation Bar (usually 3.dp or 8.dp)
@@ -165,7 +165,10 @@ fun QuickTaskEntryBar(
                         ),
                     keyboardActions =
                         KeyboardActions(
-                            onDone = { submitTask() },
+                            onDone = {
+                                defaultKeyboardAction(ImeAction.Done)
+                                submitTask()
+                            },
                         ),
                 )
 

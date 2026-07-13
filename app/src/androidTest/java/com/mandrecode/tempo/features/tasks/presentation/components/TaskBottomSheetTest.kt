@@ -6,7 +6,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
@@ -88,6 +91,38 @@ class TaskBottomSheetTest {
         }
 
         composeTestRule.onNodeWithTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun givenFocusedTaskTitle_whenDoneIsPerformed_thenFocusIsCleared() {
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task = null,
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState(),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                )
+            }
+        }
+
+        val titleField = composeTestRule.onNodeWithTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+        titleField.performClick()
+        titleField.assertIsFocused()
+        titleField.performImeAction()
+        titleField.assertIsNotFocused()
     }
 
     @Test

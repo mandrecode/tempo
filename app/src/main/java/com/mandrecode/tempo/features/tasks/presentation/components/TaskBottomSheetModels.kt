@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.tasks.presentation.components
 
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -74,7 +73,6 @@ internal data class TaskBottomSheetBodyActions(
 )
 
 internal data class TaskBottomSheetFocusConfig(
-    val focusManager: FocusManager,
     val titleFocusRequester: FocusRequester,
     val descriptionFocusRequester: FocusRequester,
 )

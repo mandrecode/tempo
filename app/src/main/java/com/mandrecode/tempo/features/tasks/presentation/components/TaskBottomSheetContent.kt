@@ -70,7 +70,6 @@ internal fun TaskBottomSheetContent(
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
-    val focusManager = LocalFocusManager.current
     val editingTargetId = task?.id
     var taskTitle by remember(editingTargetId) { mutableStateOf(task?.title ?: "") }
     var taskDescription by remember(editingTargetId) { mutableStateOf(TextFieldValue(task?.description ?: "")) }
@@ -296,6 +295,7 @@ internal fun TaskBottomSheetContent(
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && taskTitle.isNotBlank()) false else hasUnsavedChanges,
     ) { onRequestDismiss ->
+        val focusManager = LocalFocusManager.current
         Column(
             modifier =
                 Modifier
@@ -370,7 +370,6 @@ internal fun TaskBottomSheetContent(
                     ),
                 focusConfig =
                     TaskBottomSheetFocusConfig(
-                        focusManager = focusManager,
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
                     ),

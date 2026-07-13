@@ -1,14 +1,21 @@
 package com.mandrecode.tempo.features.tasks.presentation.components.sections
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsFocused
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performTextInput
 import androidx.test.platform.app.InstrumentationRegistry
+import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.test.RecordingSoftwareKeyboardController
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import org.junit.Assert.assertEquals
@@ -32,16 +39,19 @@ class QuickTaskEntryBarTest {
         onSortClick: () -> Unit = {},
         showClearCompleted: Boolean = false,
         onClearCompletedClick: () -> Unit = {},
+        keyboardController: RecordingSoftwareKeyboardController = RecordingSoftwareKeyboardController(),
     ) {
         composeTestRule.setContent {
-            TempoTheme {
-                QuickTaskEntryBar(
-                    onAddTask = onAddTask,
-                    sortOption = sortOption,
-                    onSortClick = onSortClick,
-                    showClearCompleted = showClearCompleted,
-                    onClearCompletedClick = onClearCompletedClick,
-                )
+            CompositionLocalProvider(LocalSoftwareKeyboardController provides keyboardController) {
+                TempoTheme {
+                    QuickTaskEntryBar(
+                        onAddTask = onAddTask,
+                        sortOption = sortOption,
+                        onSortClick = onSortClick,
+                        showClearCompleted = showClearCompleted,
+                        onClearCompletedClick = onClearCompletedClick,
+                    )
+                }
             }
         }
     }
@@ -125,6 +135,45 @@ class QuickTaskEntryBarTest {
         composeTestRule
             .onNodeWithTag(QUICK_TASK_ENTRY_TITLE_FIELD_TEST_TAG)
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun givenNonBlankTitle_whenDoneIsPerformed_thenTaskIsSubmittedAndKeyboardIsHidden() {
+        val submittedTitles = mutableListOf<String>()
+        val keyboardController = RecordingSoftwareKeyboardController()
+        renderBar(
+            onAddTask = submittedTitles::add,
+            keyboardController = keyboardController,
+        )
+
+        val titleField = composeTestRule.onNodeWithTag(QUICK_TASK_ENTRY_TITLE_FIELD_TEST_TAG)
+        titleField.performClick()
+        titleField.performTextInput("Buy groceries")
+        titleField.assertIsFocused()
+        titleField.performImeAction()
+        titleField.assertIsNotFocused()
+
+        assertThat(submittedTitles).containsExactly("Buy groceries")
+        assertThat(keyboardController.hideCalls).isEqualTo(1)
+    }
+
+    @Test
+    fun givenBlankTitle_whenDoneIsPerformed_thenTaskIsNotSubmittedAndKeyboardIsHidden() {
+        val submittedTitles = mutableListOf<String>()
+        val keyboardController = RecordingSoftwareKeyboardController()
+        renderBar(
+            onAddTask = submittedTitles::add,
+            keyboardController = keyboardController,
+        )
+
+        val titleField = composeTestRule.onNodeWithTag(QUICK_TASK_ENTRY_TITLE_FIELD_TEST_TAG)
+        titleField.performClick()
+        titleField.assertIsFocused()
+        titleField.performImeAction()
+        titleField.assertIsNotFocused()
+
+        assertThat(submittedTitles).isEmpty()
+        assertThat(keyboardController.hideCalls).isEqualTo(1)
     }
 
     @Test

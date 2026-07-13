@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -120,6 +121,7 @@ private fun TaskTitleSection(
 ) {
     val task = state.task
     val onToggleCompletion = actions.onToggleCompletion
+    val focusManager = LocalFocusManager.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
@@ -162,7 +164,10 @@ private fun TaskTitleSection(
                 ),
             keyboardActions =
                 KeyboardActions(
-                    onDone = { focusConfig.focusManager.clearFocus() },
+                    onDone = {
+                        defaultKeyboardAction(ImeAction.Done)
+                        focusManager.clearFocus()
+                    },
                 ),
             singleLine = false,
             maxLines = 3,
