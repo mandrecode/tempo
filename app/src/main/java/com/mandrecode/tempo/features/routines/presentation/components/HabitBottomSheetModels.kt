@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.routines.presentation.components
 
 import androidx.compose.material3.ColorScheme
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
@@ -86,7 +85,6 @@ internal data class HabitBottomSheetBodyActions(
 )
 
 internal data class HabitBottomSheetFocusConfig(
-    val focusManager: FocusManager,
     val titleFocusRequester: FocusRequester,
     val descriptionFocusRequester: FocusRequester,
 )

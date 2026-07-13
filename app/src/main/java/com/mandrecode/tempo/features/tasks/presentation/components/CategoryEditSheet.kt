@@ -43,6 +43,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
@@ -68,6 +69,8 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableIconButtonAnimation
 import com.mandrecode.tempo.core.ui.util.selectRandomColor
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 
+internal const val CATEGORY_EDIT_SHEET_NAME_FIELD_TEST_TAG = "category_edit_sheet_name_field"
+
 @Composable
 fun CategoryEditSheet(
     category: Category?,
@@ -80,7 +83,6 @@ fun CategoryEditSheet(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
-    val focusManager = LocalFocusManager.current
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
     val isDarkTheme = isSystemInDarkTheme()
@@ -179,6 +181,7 @@ fun CategoryEditSheet(
         modifier = modifier,
         hasUnsavedChanges = hasChanges,
     ) { onRequestDismiss ->
+        val focusManager = LocalFocusManager.current
         Column(
             modifier =
                 Modifier
@@ -218,6 +221,7 @@ fun CategoryEditSheet(
                 modifier =
                     Modifier
                         .fillMaxWidth()
+                        .testTag(CATEGORY_EDIT_SHEET_NAME_FIELD_TEST_TAG)
                         .focusRequester(nameFocusRequester),
                 singleLine = true,
                 keyboardOptions =
@@ -227,7 +231,10 @@ fun CategoryEditSheet(
                     ),
                 keyboardActions =
                     KeyboardActions(
-                        onDone = { focusManager.clearFocus() },
+                        onDone = {
+                            defaultKeyboardAction(ImeAction.Done)
+                            focusManager.clearFocus()
+                        },
                     ),
                 isError = nameError != null,
                 supportingText =

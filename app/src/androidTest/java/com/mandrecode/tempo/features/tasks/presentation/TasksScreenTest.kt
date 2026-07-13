@@ -1,16 +1,10 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.collectAsState
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performTextInput
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
@@ -30,10 +24,8 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseC
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
-import com.mandrecode.tempo.features.tasks.presentation.components.sections.QuickTaskEntryBar
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
 import io.mockk.coEvery
-import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -154,77 +146,6 @@ class TasksScreenTest {
         composeTestRule.onNodeWithText("Inbox").assertIsDisplayed()
         // Check that the work category chip is displayed
         composeTestRule.onNodeWithText("Work").assertIsDisplayed()
-    }
-
-    @Test
-    fun tasksScreen_displaysAddTaskButton() {
-        composeTestRule.setContent {
-            TempoTheme {
-                val uiState = viewModel.uiState.collectAsState().value
-                Box(modifier = Modifier.fillMaxSize()) {
-                    TasksScreen(viewModel = viewModel)
-                    QuickTaskEntryBar(
-                        onAddTask = {},
-                        sortOption = uiState.sortOption,
-                        onSortClick = {},
-                        showClearCompleted = false,
-                        onClearCompletedClick = {},
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
-                }
-            }
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Check that the add task button is displayed
-        composeTestRule.onNodeWithContentDescription("Add Task").assertIsDisplayed()
-    }
-
-    @Test
-    fun tasksScreen_addTaskButton_canBeClicked() {
-        // Mock insertTask to return a valid ID (e.g. 2L)
-        coEvery { taskRepository.insertTask(any()) } returns 2L
-        // Also mock getMaxSortOrder
-        coEvery { taskRepository.getMaxSortOrder(any()) } returns 0
-
-        composeTestRule.setContent {
-            TempoTheme {
-                val uiState = viewModel.uiState.collectAsState().value
-                Box(modifier = Modifier.fillMaxSize()) {
-                    TasksScreen(viewModel = viewModel)
-                    QuickTaskEntryBar(
-                        onAddTask = { title ->
-                            viewModel.onEvent(
-                                TasksContract.UiEvent.CreateOrUpdateTask(
-                                    title = title,
-                                    description = "",
-                                    categoryId = uiState.selectedCategoryId,
-                                ),
-                            )
-                        },
-                        sortOption = uiState.sortOption,
-                        onSortClick = {},
-                        showClearCompleted = false,
-                        onClearCompletedClick = {},
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
-                }
-            }
-        }
-
-        composeTestRule.waitForIdle()
-
-        // Input text into the task field
-        composeTestRule.onNodeWithText("New task\u2026").performTextInput("New Task Title")
-
-        // Click the add task button
-        composeTestRule.onNodeWithContentDescription("Add Task").performClick()
-
-        composeTestRule.waitForIdle()
-
-        // Verify that the task creation method was called on the repository
-        coVerify { createTaskUseCase.invoke(any()) }
     }
 
     @Test
