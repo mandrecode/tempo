@@ -51,7 +51,7 @@ internal fun SettingsScaffold(
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val settingsContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    val settingsContainerColor = MaterialTheme.colorScheme.background
 
     Scaffold(
         containerColor = settingsContainerColor,

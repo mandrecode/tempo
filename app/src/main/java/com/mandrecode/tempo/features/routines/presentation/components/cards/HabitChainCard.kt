@@ -136,7 +136,7 @@ fun HabitChainCard(
                 resolvedChainColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedChainColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainerHigh
+                    ?: MaterialTheme.colorScheme.surfaceContainerLow
             },
         animationSpec = tween(300),
         label = "habit_chain_card_color",
