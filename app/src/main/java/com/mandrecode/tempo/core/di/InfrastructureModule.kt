@@ -2,7 +2,9 @@ package com.mandrecode.tempo.core.di
 
 import android.app.NotificationManager
 import android.content.Context
+import androidx.work.WorkManager
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
+import com.mandrecode.tempo.features.tasks.domain.scheduler.CompletedTaskCleanupScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManagerImpl
@@ -14,6 +16,7 @@ import com.mandrecode.tempo.infrastructure.reminders.scheduler.TaskAlarmSchedule
 import com.mandrecode.tempo.infrastructure.reminders.scheduler.TaskReminderSchedulerImpl
 import com.mandrecode.tempo.infrastructure.reminders.scheduler.android.AndroidHabitAlarmScheduler
 import com.mandrecode.tempo.infrastructure.reminders.scheduler.android.AndroidTaskAlarmScheduler
+import com.mandrecode.tempo.infrastructure.tasks.CompletedTaskCleanupSchedulerImpl
 import com.mandrecode.tempo.util.AppVersionProvider
 import com.mandrecode.tempo.util.AppVersionProviderImpl
 import dagger.Module
@@ -76,4 +79,14 @@ object InfrastructureModule {
     @Provides
     @Singleton
     fun provideClock(): Clock = Clock.System
+
+    @Provides
+    @Singleton
+    fun provideWorkManager(
+        @ApplicationContext context: Context,
+    ): WorkManager = WorkManager.getInstance(context)
+
+    @Provides
+    @Singleton
+    fun provideCleanupScheduler(impl: CompletedTaskCleanupSchedulerImpl): CompletedTaskCleanupScheduler = impl
 }

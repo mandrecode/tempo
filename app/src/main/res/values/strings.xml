@@ -411,6 +411,15 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_subtitle">Notification Settings</string>
     <string name="settings_notifications_description">Manage permissions and alerts</string>
+    <string name="settings_completed_tasks">Completed tasks</string>
+    <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
+    <string name="settings_remove_completed_after">Remove after</string>
+    <string name="settings_decrease_retention_days">Decrease retention days</string>
+    <string name="settings_increase_retention_days">Increase retention days</string>
+    <plurals name="settings_retention_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
     <string name="settings_language">Language</string>
     <string name="settings_language_subtitle">App Language</string>
     <string name="settings_language_description">Change the app\'s language in system settings</string>

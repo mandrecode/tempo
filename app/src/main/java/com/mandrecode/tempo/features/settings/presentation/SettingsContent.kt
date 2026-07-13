@@ -64,6 +64,7 @@ fun SettingsContent(
         ThemeSection(uiState = uiState, onEvent = onEvent)
         ColorSchemeSection(uiState = uiState, onEvent = onEvent)
         NotificationsSection()
+        CompletedTasksSection(uiState = uiState, onEvent = onEvent)
         TabsAndNavigationSection(uiState = uiState, onEvent = onEvent)
         DefaultTabSection(uiState = uiState, onEvent = onEvent)
         LanguageSection()

@@ -115,4 +115,70 @@ class TaskRepositoryRoomIntegrationTest {
             assertThat(repository.getTaskById(completedParentId)).isNull()
             assertThat(repository.getSubtasksSync(completedParentId)).isEmpty()
         }
+
+    @Test
+    fun deleteCompletedTasksAtOrBefore_removesOnlyEligibleTaskTrees() =
+        runTest {
+            val oldParentId =
+                repository.insertTask(
+                    Task(
+                        title = "Old completed parent",
+                        description = "",
+                        isCompleted = true,
+                        completedAt = LocalDateTime(2026, 6, 1, 12, 0),
+                    ),
+                )
+            val oldChildId =
+                repository.insertTask(
+                    Task(
+                        title = "Old child",
+                        description = "",
+                        parentTaskId = oldParentId,
+                        isCompleted = true,
+                        completedAt = LocalDateTime(2026, 6, 1, 12, 0),
+                    ),
+                )
+            val nextOccurrenceId =
+                repository.insertTask(
+                    Task(
+                        title = "Next periodic occurrence",
+                        description = "",
+                    ),
+                )
+            repository.updateTaskNextInstanceId(oldParentId, nextOccurrenceId)
+            val recentId =
+                repository.insertTask(
+                    Task(
+                        title = "Recent completed",
+                        description = "",
+                        isCompleted = true,
+                        completedAt = LocalDateTime(2026, 7, 1, 12, 1),
+                    ),
+                )
+            val incompleteId =
+                repository.insertTask(
+                    Task(
+                        title = "Incomplete",
+                        description = "",
+                        isCompleted = false,
+                    ),
+                )
+            val missingTimestampId =
+                repository.insertTask(
+                    Task(
+                        title = "Missing timestamp",
+                        description = "",
+                        isCompleted = true,
+                    ),
+                )
+
+            repository.deleteCompletedTasksAtOrBefore(LocalDateTime(2026, 7, 1, 12, 0))
+
+            assertThat(repository.getTaskById(oldParentId)).isNull()
+            assertThat(repository.getTaskById(oldChildId)).isNull()
+            assertThat(repository.getTaskById(nextOccurrenceId)).isNotNull()
+            assertThat(repository.getTaskById(recentId)).isNotNull()
+            assertThat(repository.getTaskById(incompleteId)).isNotNull()
+            assertThat(repository.getTaskById(missingTimestampId)).isNotNull()
+        }
 }
