@@ -48,7 +48,6 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
-import com.mandrecode.tempo.core.ui.theme.primaryScreenContainer
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
@@ -144,7 +143,7 @@ fun TempoBottomNavigation(
     Surface(
         modifier = modifier,
         shape = FloatingToolbarShape,
-        color = MaterialTheme.colorScheme.primaryScreenContainer,
+        color = MaterialTheme.colorScheme.surfaceContainer,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {

@@ -32,7 +32,6 @@ import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
-import com.mandrecode.tempo.core.ui.theme.primaryScreenContainer
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.ClearRemindersConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitChainConfirmDialog
@@ -128,7 +127,7 @@ fun RoutinesScreen(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.floatingRailContentPadding(isRailLayout),
-            containerColor = MaterialTheme.colorScheme.primaryScreenContainer,
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = topBar,
         ) { innerPadding ->
             Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {

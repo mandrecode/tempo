@@ -32,7 +32,6 @@ import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
-import com.mandrecode.tempo.core.ui.theme.primaryScreenContainer
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
@@ -156,7 +155,7 @@ fun TasksScreen(
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
             modifier = Modifier.floatingRailContentPadding(isRailLayout),
-            containerColor = MaterialTheme.colorScheme.primaryScreenContainer,
+            containerColor = MaterialTheme.colorScheme.background,
             topBar = topBar,
         ) {
             Box(

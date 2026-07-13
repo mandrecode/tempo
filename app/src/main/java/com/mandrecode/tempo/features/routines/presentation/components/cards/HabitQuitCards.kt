@@ -24,7 +24,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
-import com.mandrecode.tempo.core.ui.theme.neutralCardContainer
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.util.CompletionHistoryUtil
@@ -164,7 +163,7 @@ private fun rememberQuitHabitCardColors(
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.neutralCardContainer
+                    ?: MaterialTheme.colorScheme.surfaceContainerLow
             },
         animationSpec = tween(300),
         label = "quit_card_color",

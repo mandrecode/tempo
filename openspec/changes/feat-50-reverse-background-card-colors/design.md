@@ -1,30 +1,32 @@
 ## Context
 
-Settings already demonstrates the desired hierarchy by using `surfaceContainer` for its scaffold and `surfaceContainerLowest` for grouped cards. Tasks and Routines still rely on default scaffold surfaces and higher container roles for cards. In Material 3 schemes, `surfaceContainerLowest` is the lightest container in a light scheme and the darkest container in a dark scheme, including platform dynamic color schemes, so it directly expresses issue #50 without theme-specific branching.
+Didi implements the desired hierarchy at the theme boundary: after selecting its brand or dynamic palette, it remaps the native Material page and container roles with `ColorScheme.copy`. Screens and components then consume standard roles such as `background` and `surfaceContainerLow`; they do not depend on Didi-specific page/card aliases. Tempo currently selects among Tempo, dynamic, and fallback schemes but exposes the selected scheme unchanged, which leaves Material's default elevation direction in control.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Apply one semantic surface hierarchy to the primary Tasks, Routines, and Settings screens.
+- Make the reverse surface hierarchy a first-class property of Tempo's app-wide theme.
 - Keep the hierarchy correct for Tempo colors, platform dynamic colors, and Material fallback colors.
+- Keep screens and reusable components expressed through standard Material color roles.
 - Preserve existing item-state animations and category/accent color overrides.
 
 **Non-Goals:**
 
-- Redesign dialogs, modal sheets, chips, buttons, or navigation selection states.
+- Add feature-specific page/card aliases or theme exceptions.
+- Redesign component shape, spacing, typography, or navigation selection states.
 - Change brand/accent palette values or add a new setting.
 - Change screen structure, navigation, or business behavior.
 
 ## Decisions
 
-1. Primary screens and matching top-level chrome use `surfaceContainer` as the muted background. This matches the completed Settings design and avoids custom color arithmetic. Using `background` was rejected because its extreme tone produces the opposite hierarchy with lowest containers.
-2. Neutral content cards use `surfaceContainerLowest`. Material 3 defines this role at the correct extreme in both brightness modes, so no `LocalIsDarkTheme` branch or hardcoded color is needed. Using `surfaceContainerHighest`/`surfaceContainerHigh` was rejected because those roles reverse the requested relationship.
-3. Existing state overlays remain layered on the new card role. Completed tasks retain their alpha treatment, while explicitly category-colored habit cards continue to use the category color; only their neutral fallback changes.
-4. Verification covers semantic role selection and both light/dark rendered relationships. Existing previews remain the main visual inspection surface, while focused tests guard against role regressions.
+1. Apply `withPageSurfaceContrast(darkTheme)` to the selected `ColorScheme` inside `TempoTheme`, following Didi's theme architecture. Both modes map `background` to the palette's original `surfaceContainer` and `surface`/`surfaceContainerLow` toward the original `surfaceContainerLowest`. The remaining low-to-high container roles are shifted using original palette values to retain a coherent elevation ladder. Mapping happens after palette selection so Tempo, dynamic, and fallback schemes behave identically without hardcoded colors.
+2. Screens and continuous chrome use the canonical `background` role; neutral cards use `surfaceContainerLow`. App-specific accessors were rejected because they would make the core visual language look optional and force every future component to learn a Tempo-only exception.
+3. Existing state overlays remain layered on the normalized card role. Completed tasks retain their alpha treatment, while explicitly category-colored habit cards continue to use the category color; only their neutral fallback changes.
+4. Verification exercises the normalized role ladder for both light and dark base schemes, including luminance direction and preservation of non-surface palette roles. Existing previews remain the main visual inspection surface.
 
 ## Risks / Trade-offs
 
-- [Risk] Dynamic palettes can have subtler tonal contrast than the bundled schemes. → Use Material's ordered surface-container roles rather than calculated luminance offsets.
-- [Risk] Applying the lowest role to modal surfaces could flatten or confuse elevation. → Limit the change to primary content cards and screen chrome identified in the requirement.
+- [Risk] Dynamic palettes can have subtler tonal contrast than the bundled schemes. → Derive every normalized role from the selected palette's existing ordered surface roles rather than calculated or hardcoded colors.
+- [Risk] Theme-wide remapping changes every component that already uses surface roles. → Preserve the full role ladder instead of replacing all surfaces with one page/card pair, and validate representative light/dark schemes.
 - [Risk] Category-colored cards do not necessarily follow the neutral hierarchy. → Preserve them as intentional accent exceptions and change only neutral fallbacks.

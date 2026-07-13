@@ -4,10 +4,11 @@ The app currently follows Material's default surface elevation direction on its 
 
 ## What Changes
 
-- Use a muted surface-container role for primary app screen backgrounds and their top-level chrome.
-- Use the lowest surface-container role for task, habit, and settings cards so cards are lighter than the surrounding background in light mode and darker in dark mode.
+- Normalize Tempo's native Material color-scheme surface roles after selecting the Tempo, dynamic, or fallback palette so the reverse hierarchy is part of the app theme.
+- Use the canonical `background` role for app pages and continuous top-level chrome.
+- Use the canonical low surface-container role for neutral content cards so cards are lighter than the surrounding background in light mode and darker in dark mode.
 - Preserve state and accent treatments, including completed-item transparency, category colors, and Material You/custom/default color schemes.
-- Keep dialogs, sheets, controls, and navigation emphasis on their existing semantic roles unless they form part of the primary screen background or card hierarchy.
+- Keep components on standard Material roles so dialogs, sheets, controls, navigation, and future screens inherit one coherent surface ladder without feature-specific aliases.
 
 ## Capabilities
 
@@ -21,5 +22,5 @@ None.
 
 ## Impact
 
-- Affects Compose theme-role usage in shared top-level chrome and the Tasks, Routines, and Settings presentation components.
+- Affects the Compose theme's app-wide surface-role mapping plus standard role usage in shared top-level chrome and content cards.
 - Adds focused theme/color hierarchy verification without changing domain, data, navigation behavior, persistence, or dependencies.
