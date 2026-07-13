@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: User-controlled automatic removal
-The system SHALL let the user enable or disable automatic removal of completed tasks and SHALL keep it disabled by default.
+The system SHALL present completed-task retention as an opt-in preference that is disabled by default.
 
 #### Scenario: Existing or new installation uses the default
 - **WHEN** the user has not configured completed-task retention
@@ -12,15 +12,15 @@ The system SHALL let the user enable or disable automatic removal of completed t
 - **THEN** the system persists the disabled state and cancels scheduled cleanup work
 
 ### Requirement: Configurable retention period
-The system SHALL let the user configure a completed-task retention period from 1 through 365 days, SHALL default the value to 30 days, and SHALL persist the value across process restarts.
+The system SHALL let the user step through retention periods of 1, 3, 5, 7, 14, 21, 30, 45, 90, 180, or 365 days, SHALL retain 30 days as the stored default interval, and SHALL persist the selected value across process restarts.
 
 #### Scenario: User changes the retention period
-- **WHEN** the user selects a valid number of retention days
+- **WHEN** the user presses plus or minus in the retention control
 - **THEN** the system persists that value and displays it after the settings screen is recreated
 
-#### Scenario: Stored value is outside the supported range
-- **WHEN** the system reads a retention value below 1 or above 365
-- **THEN** it uses the nearest supported boundary
+#### Scenario: User reaches a retention boundary
+- **WHEN** the selected retention period is the first or last preset
+- **THEN** the control disables the action that would move beyond the supported range
 
 ### Requirement: Prompt and periodic cleanup
 The system SHALL request cleanup promptly after an enabled retention policy is saved and SHALL continue requesting cleanup approximately once per day while the policy remains enabled.

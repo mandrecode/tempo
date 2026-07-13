@@ -38,4 +38,11 @@ class ConfigureCompletedTaskRetentionUseCaseTest {
         verify { scheduler.cancel() }
         verify(exactly = 0) { scheduler.schedule() }
     }
+
+    @Test
+    fun `unsupported retention uses nearest supported option`() {
+        useCase(enabled = true, retentionDays = 31)
+
+        verify { preferences.setRetentionDays(30) }
+    }
 }

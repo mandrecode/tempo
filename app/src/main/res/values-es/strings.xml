@@ -418,8 +418,8 @@
     <string name="settings_completed_tasks">Tareas completadas</string>
     <string name="settings_auto_remove_completed_tasks">Eliminar automáticamente</string>
     <string name="settings_remove_completed_after">Eliminar después de</string>
-    <string name="settings_decrease_retention_days">Reducir días de retención</string>
-    <string name="settings_increase_retention_days">Aumentar días de retención</string>
+    <string name="settings_decrease_retention_days">Usar un período de retención más corto</string>
+    <string name="settings_increase_retention_days">Usar un período de retención más largo</string>
     <plurals name="settings_retention_days">
         <item quantity="one">%d día</item>
         <item quantity="other">%d días</item>

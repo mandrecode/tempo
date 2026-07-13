@@ -246,7 +246,7 @@ class SettingsContentTest {
     }
 
     @Test
-    fun incrementRetentionEmitsUpdatedDayValue() {
+    fun incrementRetentionEmitsNextPreset() {
         val increaseDescription = localizedString(R.string.settings_increase_retention_days)
         var selectedDays: Int? = null
 
@@ -273,6 +273,6 @@ class SettingsContentTest {
             .performScrollTo()
             .performClick()
 
-        assertThat(selectedDays).isEqualTo(31)
+        assertThat(selectedDays).isEqualTo(45)
     }
 }

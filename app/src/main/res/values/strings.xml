@@ -414,8 +414,8 @@
     <string name="settings_completed_tasks">Completed tasks</string>
     <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
     <string name="settings_remove_completed_after">Remove after</string>
-    <string name="settings_decrease_retention_days">Decrease retention days</string>
-    <string name="settings_increase_retention_days">Increase retention days</string>
+    <string name="settings_decrease_retention_days">Use a shorter retention period</string>
+    <string name="settings_increase_retention_days">Use a longer retention period</string>
     <plurals name="settings_retention_days">
         <item quantity="one">%d day</item>
         <item quantity="other">%d days</item>

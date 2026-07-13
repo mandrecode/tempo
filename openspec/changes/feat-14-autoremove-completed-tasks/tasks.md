@@ -24,3 +24,11 @@
 - [x] 4.2 Run `./gradlew ktlintFormat` and `./gradlew testDebugUnitTest`
 - [x] 4.3 Run `./gradlew ktlintCheck`, `./gradlew :app:detekt`, and `./gradlew lintDebug`
 - [x] 4.4 Build and smoke-test the settings and cleanup flow on the connected Pixel 7 when available, otherwise the Pixel 10 AVD
+
+## 5. Retention Picker Refinement
+
+- [x] 5.1 Restore the opt-in switch and make the minus/value/plus control step through useful presets
+- [x] 5.2 Model the supported preset intervals through the settings MVI contract and configuration flow
+- [x] 5.3 Update English/Spanish resources, previews, ViewModel tests, and Compose tests
+- [x] 5.4 Run OpenSpec validation, formatting, focused tests, static analysis, lint, and a Pixel 10 AVD smoke test
+- [x] 5.5 Refine stepper alignment and animation, and move Notifications immediately before Language

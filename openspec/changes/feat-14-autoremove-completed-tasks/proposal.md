@@ -4,7 +4,7 @@ Completed tasks currently remain in Tempo until the user deletes them manually, 
 
 ## What Changes
 
-- Add an opt-in setting for automatically removing completed tasks after a configurable number of days.
+- Add an opt-in retention preference with a compact stepper for choosing a supported cleanup interval.
 - Persist the enabled state and retention period across app restarts.
 - Run background cleanup daily while the feature is enabled and reschedule cleanup when the setting changes.
 - Delete only completed top-level tasks whose completion time is at or before the configured cutoff, including their subtasks; preserve incomplete tasks and recently completed tasks.

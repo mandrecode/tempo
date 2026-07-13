@@ -15,10 +15,7 @@ class ConfigureCompletedTaskRetentionUseCase
             retentionDays: Int,
         ) {
             preferences.setRetentionDays(
-                retentionDays.coerceIn(
-                    CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
-                    CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
-                ),
+                CompletedTaskRetentionPreferences.normalizeRetentionDays(retentionDays),
             )
             preferences.setEnabled(enabled)
 

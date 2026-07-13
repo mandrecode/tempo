@@ -8,7 +8,7 @@ This change crosses presentation, domain, data, and Android infrastructure. It m
 
 **Goals:**
 
-- Let users enable or disable automatic completed-task removal and choose a retention period from 1 through 365 days.
+- Let users keep completed tasks forever or choose a retention period from focused short-day and longer-period options.
 - Persist a default retention value of 30 days while leaving automatic removal disabled by default.
 - Remove eligible completed top-level tasks and their subtasks atomically.
 - Run cleanup promptly after enabling or changing the policy and continue attempting cleanup daily.
@@ -53,9 +53,13 @@ The DAO selects eligible top-level task IDs. The repository deletes subtasks for
 
 The operation is idempotent: rerunning with the same cutoff finds no already-deleted IDs. A periodic task's active next occurrence is not a subtask and is therefore preserved even when its archived completed predecessor is removed.
 
-### Present a switch and bounded numeric input
+### Present an opt-in preset stepper
 
-Settings adds a task-cleanup section containing a switch and, while enabled, a numeric day input with decrement/increment controls. The UI prevents values outside 1..365 and emits policy changes through the settings contract. All copy is localized in English and Spanish, and preview coverage remains under `src/debug`.
+Settings adds a task-cleanup switch that is disabled by default. Enabling it reveals a compact minus/value/plus control whose taps move through 1, 3, 5, 7, 14, 21, 30, 45, 90, 180, and 365 days. The controls stop at the first and last preset rather than producing unsupported values.
+
+The displayed interval animates horizontally in the direction of travel while the control keeps stable dimensions. The Notifications section appears with the other system-setting links immediately before Language.
+
+The disabled switch represents keeping completed tasks forever, so the scheduler and worker contracts remain unchanged. All copy is localized in English and Spanish, and preview coverage remains under `src/debug`.
 
 ## Risks / Trade-offs
 

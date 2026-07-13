@@ -1,10 +1,15 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -65,8 +70,16 @@ private fun RetentionDaysStepper(
     days: Int,
     onDaysChange: (Int) -> Unit,
 ) {
+    val presets = CompletedTaskRetentionPreferences.supportedRetentionDays
+    val selectedDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(days)
+    val selectedIndex = presets.indexOf(selectedDays)
+
     Row(
-        modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(SettingsSectionContentPadding)
+                .padding(start = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -76,8 +89,8 @@ private fun RetentionDaysStepper(
             modifier = Modifier.weight(1f),
         )
         IconButton(
-            onClick = { onDaysChange(days - 1) },
-            enabled = days > CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
+            onClick = { onDaysChange(presets[selectedIndex - 1]) },
+            enabled = selectedIndex > 0,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_remove),
@@ -85,17 +98,29 @@ private fun RetentionDaysStepper(
             )
         }
         Spacer(modifier = Modifier.width(4.dp))
-        Text(
-            text = pluralStringResource(R.plurals.settings_retention_days, days, days),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
-            textAlign = TextAlign.Center,
+        AnimatedContent(
+            targetState = selectedDays,
+            transitionSpec = {
+                val direction = if (targetState > initialState) 1 else -1
+                (slideInHorizontally { width -> direction * width } + fadeIn()) togetherWith
+                    (slideOutHorizontally { width -> -direction * width } + fadeOut()) using
+                    SizeTransform(clip = false)
+            },
+            contentAlignment = Alignment.Center,
+            label = "retentionDays",
             modifier = Modifier.width(72.dp),
-        )
+        ) { animatedDays ->
+            Text(
+                text = pluralStringResource(R.plurals.settings_retention_days, animatedDays, animatedDays),
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(modifier = Modifier.width(4.dp))
         IconButton(
-            onClick = { onDaysChange(days + 1) },
-            enabled = days < CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
+            onClick = { onDaysChange(presets[selectedIndex + 1]) },
+            enabled = selectedIndex < presets.lastIndex,
         ) {
             Icon(
                 painter = painterResource(R.drawable.ic_add),

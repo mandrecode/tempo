@@ -134,7 +134,8 @@ class SettingsViewModel
                         _uiState.update {
                             it.copy(
                                 autoRemoveCompletedTasksEnabled = enabled,
-                                completedTaskRetentionDays = days,
+                                completedTaskRetentionDays =
+                                    CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
                             )
                         }
                     }
@@ -149,11 +150,7 @@ class SettingsViewModel
             _uiState.update {
                 it.copy(
                     autoRemoveCompletedTasksEnabled = enabled,
-                    completedTaskRetentionDays =
-                        days.coerceIn(
-                            CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
-                            CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
-                        ),
+                    completedTaskRetentionDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
                 )
             }
         }

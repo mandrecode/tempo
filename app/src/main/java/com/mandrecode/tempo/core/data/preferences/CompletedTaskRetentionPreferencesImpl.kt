@@ -29,11 +29,7 @@ class CompletedTaskRetentionPreferencesImpl
         }
 
         override fun setRetentionDays(days: Int) {
-            val safeDays =
-                days.coerceIn(
-                    CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
-                    CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
-                )
+            val safeDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(days)
             prefs.edit { putInt(KEY_RETENTION_DAYS, safeDays) }
             retentionDaysFlow.value = safeDays
         }
@@ -43,10 +39,7 @@ class CompletedTaskRetentionPreferencesImpl
                 .getInt(
                     KEY_RETENTION_DAYS,
                     CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
-                ).coerceIn(
-                    CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
-                    CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
-                )
+                ).let(CompletedTaskRetentionPreferences::normalizeRetentionDays)
 
         companion object {
             private const val PREFS_NAME = "completed_task_retention_prefs"

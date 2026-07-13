@@ -16,11 +16,7 @@ class DeleteExpiredCompletedTasksUseCase
             now: LocalDateTime,
             retentionDays: Int,
         ) {
-            val safeRetentionDays =
-                retentionDays.coerceIn(
-                    CompletedTaskRetentionPreferences.MIN_RETENTION_DAYS,
-                    CompletedTaskRetentionPreferences.MAX_RETENTION_DAYS,
-                )
+            val safeRetentionDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(retentionDays)
             val cutoff = LocalDateTime(now.date.minus(safeRetentionDays, DateTimeUnit.DAY), now.time)
             taskRepository.deleteCompletedTasksAtOrBefore(cutoff)
         }

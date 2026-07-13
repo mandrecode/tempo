@@ -242,14 +242,14 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `retention day change is clamped and configured`() =
+    fun `retention day change is normalized and configured`() =
         runTest {
             advanceUntilIdle()
 
-            viewModel.onEvent(SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged(500))
+            viewModel.onEvent(SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged(44))
 
-            verify { configureCompletedTaskRetention(false, 500) }
-            assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(365)
+            verify { configureCompletedTaskRetention(false, 44) }
+            assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(45)
         }
 
     private fun createViewModel(): SettingsViewModel =

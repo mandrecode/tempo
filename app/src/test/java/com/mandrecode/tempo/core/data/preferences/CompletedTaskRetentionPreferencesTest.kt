@@ -61,6 +61,15 @@ class CompletedTaskRetentionPreferencesTest {
         verify { editor.putInt("retention_days", 1) }
     }
 
+    @Test
+    fun `unsupported retention value uses nearest supported option`() {
+        every { sharedPreferences.getInt(any(), any()) } returns 31
+
+        val preferences = createPreferences()
+
+        assertThat(preferences.retentionDays.value).isEqualTo(30)
+    }
+
     private fun createPreferences(): CompletedTaskRetentionPreferencesImpl {
         val context =
             mockk<Context> {
