@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -156,6 +157,7 @@ fun TasksScreen(
         Scaffold(
             modifier = Modifier.floatingRailContentPadding(isRailLayout),
             containerColor = MaterialTheme.colorScheme.background,
+            contentWindowInsets = WindowInsets(0),
             topBar = topBar,
         ) {
             Box(
