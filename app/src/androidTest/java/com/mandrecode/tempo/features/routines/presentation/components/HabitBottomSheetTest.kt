@@ -6,13 +6,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotFocused
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
@@ -225,6 +228,38 @@ class HabitBottomSheetTest {
         }
 
         composeTestRule.onNodeWithText("Go for a walk").assertIsDisplayed()
+    }
+
+    @Test
+    fun givenFocusedHabitTitle_whenDoneIsPerformed_thenFocusIsCleared() {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState(),
+                    selectedDate = today(),
+                    habits = emptyList(),
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                )
+            }
+        }
+
+        val titleField = composeTestRule.onNodeWithTag(HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+        titleField.performClick()
+        titleField.assertIsFocused()
+        titleField.performImeAction()
+        titleField.assertIsNotFocused()
     }
 
     @Test

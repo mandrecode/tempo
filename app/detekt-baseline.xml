@@ -62,7 +62,6 @@
     <ID>LongMethod:MainActivity.kt:MainActivity$override fun onCreate</ID>
     <ID>LongMethod:Navigation.kt:@Composable fun TempoBottomNavigation</ID>
     <ID>LongMethod:PermissionRevokedDialog.kt:@Composable fun PermissionRevokedDialog</ID>
-    <ID>LongMethod:QuickTaskEntryBar.kt:@Composable fun QuickTaskEntryBar</ID>
     <ID>LongMethod:RoutinesContent.kt:@Composable fun RoutinesContent</ID>
     <ID>LongMethod:RoutinesScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutinesScreen</ID>
     <ID>LongMethod:SettingsContent.kt:@Composable fun SettingsContent</ID>

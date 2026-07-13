@@ -104,9 +104,9 @@ fun TaskItem(
     val cardColor by animateColorAsState(
         targetValue =
             if (task.isCompleted) {
-                MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.4f)
+                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
             } else {
-                MaterialTheme.colorScheme.surfaceContainerLow
+                MaterialTheme.colorScheme.surfaceContainer
             },
         animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS),
         label = "card_color",
