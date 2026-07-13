@@ -18,6 +18,7 @@ class PageSurfaceContrastTest {
         assertThat(colorScheme.surfaceContainerLow).isEqualTo(baseColorScheme.surfaceContainerLowest)
         assertThat(colorScheme.surfaceContainer).isEqualTo(baseColorScheme.surface)
         assertThat(colorScheme.surfaceContainerHigh).isEqualTo(baseColorScheme.surfaceContainerLow)
+        assertThat(colorScheme.surfaceContainerHighest).isEqualTo(baseColorScheme.surfaceContainerHigh)
         assertThat(colorScheme.surfaceContainerLow.luminance()).isGreaterThan(colorScheme.background.luminance())
         assertThat(colorScheme.primary).isEqualTo(baseColorScheme.primary)
     }

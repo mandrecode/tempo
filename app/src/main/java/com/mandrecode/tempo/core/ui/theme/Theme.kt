@@ -193,5 +193,6 @@ internal fun ColorScheme.withPageSurfaceContrast(darkTheme: Boolean): ColorSchem
             surfaceContainerLow = surfaceContainerLowest,
             surfaceContainer = surface,
             surfaceContainerHigh = surfaceContainerLow,
+            surfaceContainerHighest = surfaceContainerHigh,
         )
     }
