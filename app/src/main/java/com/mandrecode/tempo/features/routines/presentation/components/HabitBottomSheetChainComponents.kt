@@ -49,6 +49,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -84,6 +85,9 @@ private val ChainHabitFallbackItemHeight = 68.dp
 // Visual feedback alphas while dragging chain habit rows.
 private const val DRAG_ITEM_ALPHA = 0.8f
 private const val DRAG_TARGET_ALPHA = 0.5f
+
+internal const val AVAILABLE_HABIT_CHIP_TEST_TAG = "available_habit_chip"
+internal const val SELECTED_HABIT_ROW_TEST_TAG = "selected_habit_row"
 
 @Composable
 fun HabitMultiSelector(
@@ -129,6 +133,7 @@ fun HabitMultiSelector(
                         )
 
                     FilterChip(
+                        modifier = Modifier.testTag(AVAILABLE_HABIT_CHIP_TEST_TAG),
                         selected = false,
                         onClick = {
                             onSelectHabits(selectedHabitIds + habit.id)
@@ -402,6 +407,7 @@ private fun SelectedHabitItem(
     Row(
         modifier =
             modifier
+                .testTag(SELECTED_HABIT_ROW_TEST_TAG)
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(20.dp))
                 .background(rowBackground)
