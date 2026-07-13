@@ -34,10 +34,14 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import kotlin.math.abs
 import kotlin.time.Clock
 
 private val markHabitNotCompleted: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.mark_as_not_completed)
+
+private val selectHabits: String
+    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.select_habits)
 
 class HabitBottomSheetTest {
     @get:Rule
@@ -459,6 +463,79 @@ class HabitBottomSheetTest {
                 )
             }
         }
+    }
+
+    private fun renderNewHabitChainSheet(habits: List<Habit> = listOf(habitInChain())) {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(selectedTab = HabitSheetTab.HABIT_CHAIN),
+                    selectedDate = today(),
+                    habits = habits,
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                )
+            }
+        }
+    }
+
+    private fun assertHabitSelectorVerticalAlignment(
+        selectorTestTag: String,
+        maxDifferenceDp: Float,
+    ) {
+        val iconBounds =
+            composeTestRule
+                .onNodeWithContentDescription(selectHabits, useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val selectorBounds =
+            composeTestRule
+                .onNodeWithTag(selectorTestTag, useUnmergedTree = true)
+                .fetchSemanticsNode()
+                .boundsInRoot
+        val iconCenterY = (iconBounds.top + iconBounds.bottom) / 2f
+        val selectorCenterY = (selectorBounds.top + selectorBounds.bottom) / 2f
+        val density =
+            InstrumentationRegistry
+                .getInstrumentation()
+                .targetContext.resources.displayMetrics.density
+
+        assertTrue(
+            "Expected habits icon and first selector row to be vertically aligned; " +
+                "icon=$iconBounds selector=$selectorBounds",
+            abs(iconCenterY - selectorCenterY) <= maxDifferenceDp * density,
+        )
+    }
+
+    @Test
+    fun habitSelectorIcon_alignedWithAvailableHabit_whenNoHabitsSelected() {
+        renderNewHabitChainSheet()
+
+        assertHabitSelectorVerticalAlignment(
+            selectorTestTag = AVAILABLE_HABIT_CHIP_TEST_TAG,
+            maxDifferenceDp = 1f,
+        )
+    }
+
+    @Test
+    fun habitSelectorIcon_remainsAlignedWithFirstSelectedHabit() {
+        renderEditHabitChainSheet(onToggleHabitCompletion = { _, _ -> })
+
+        assertHabitSelectorVerticalAlignment(
+            selectorTestTag = SELECTED_HABIT_ROW_TEST_TAG,
+            maxDifferenceDp = 4f,
+        )
     }
 
     @Test

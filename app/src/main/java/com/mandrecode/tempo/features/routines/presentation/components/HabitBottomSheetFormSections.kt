@@ -501,7 +501,10 @@ private fun HabitChainSelectionSection(
         verticalAlignment = Alignment.Top,
     ) {
         Box(
-            modifier = Modifier.width(48.dp).padding(top = 16.dp),
+            modifier =
+                Modifier
+                    .width(48.dp)
+                    .padding(top = if (selectedHabitIds.isEmpty()) 12.dp else 16.dp),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
