@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.15](https://github.com/mandrecode/tempo/compare/v0.8.14...v0.8.15) (2026-07-13)
+
+
+### Bug Fixes
+
+* **#51:** make main screens edge to edge ([#128](https://github.com/mandrecode/tempo/issues/128)) ([8ebbe74](https://github.com/mandrecode/tempo/commit/8ebbe74ad02488a762f5628b2e599b9426041089))
+
 ## [0.8.14](https://github.com/mandrecode/tempo/compare/v0.8.13...v0.8.14) (2026-07-13)
 
 
