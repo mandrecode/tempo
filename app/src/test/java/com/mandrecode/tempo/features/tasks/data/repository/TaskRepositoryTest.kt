@@ -1,14 +1,22 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
+import androidx.room.withTransaction
+import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.data.entity.TaskEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
-import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
+import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
@@ -22,8 +30,72 @@ class TaskRepositoryTest {
     fun setup() {
         taskDao = mockk(relaxed = true)
         database = mockk(relaxed = true)
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        @Suppress("UNCHECKED_CAST")
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            (args[1] as (suspend () -> Any?)).invoke()
+        }
         repository = TaskRepositoryImpl(taskDao, database)
     }
+
+    @After
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
+
+    @Test
+    fun `deleteTaskWithSnapshot captures root and subtasks before deleting`() =
+        runTest {
+            val root = TaskEntity(id = 10L, title = "Root", description = "")
+            val child = TaskEntity(id = 11L, title = "Child", description = "", parentTaskId = 10L)
+            coEvery { taskDao.getTaskById(10L) } returns root
+            coEvery { taskDao.getSubtasksSync(10L) } returns listOf(child)
+
+            val result = repository.deleteTaskWithSnapshot(10L)
+
+            assertThat(result.rootTaskId).isEqualTo(10L)
+            assertThat(result.tasks.map(Task::id)).containsExactly(10L, 11L).inOrder()
+            coVerifyOrder {
+                taskDao.deleteSubtasks(10L)
+                taskDao.deleteTaskById(10L)
+            }
+        }
+
+    @Test
+    fun `deleteCompletedTasksWithSnapshot captures completed trees`() =
+        runTest {
+            val root = TaskEntity(id = 20L, title = "Done", description = "", isCompleted = true, categoryId = 2L)
+            val child = TaskEntity(id = 21L, title = "Child", description = "", categoryId = 2L, parentTaskId = 20L)
+            val incomplete = TaskEntity(id = 22L, title = "Open", description = "", categoryId = 2L)
+            coEvery { taskDao.getCompletedTopLevelTaskIds(2L) } returns listOf(20L)
+            coEvery { taskDao.getTasksByCategoryId(2L) } returns listOf(root, child, incomplete)
+
+            val result = repository.deleteCompletedTasksWithSnapshot(2L)
+
+            assertThat(result.tasks.map(Task::id)).containsExactly(20L, 21L)
+            coVerify { taskDao.deleteSubtasksByParentIds(listOf(20L)) }
+            coVerify { taskDao.deleteTasksByIds(listOf(20L)) }
+        }
+
+    @Test
+    fun `restoreDeletedTasks inserts missing tasks and updates existing tasks parent first`() =
+        runTest {
+            val root = Task(id = 30L, title = "Root", description = "")
+            val child = Task(id = 31L, title = "Child", description = "", parentTaskId = 30L)
+            coEvery { taskDao.getTaskById(30L) } returns null
+            coEvery { taskDao.getTaskById(31L) } returns TaskEntity(id = 31L, title = "Old", description = "")
+
+            repository.restoreDeletedTasks(
+                TaskDeletionSnapshot.TaskTree(rootTaskId = 30L, tasks = listOf(child, root)),
+            )
+
+            coVerifyOrder {
+                taskDao.insertTask(TaskEntity(id = 30L, title = "Root", description = "", categoryId = 0L))
+                taskDao.updateTask(
+                    TaskEntity(id = 31L, title = "Child", description = "", categoryId = 0L, parentTaskId = 30L),
+                )
+            }
+        }
 
     @Test
     fun `deleteCompletedTasksByCategoryId deletes top level tasks and subtasks`() =

@@ -3,9 +3,11 @@ package com.mandrecode.tempo.features.routines.presentation
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.RestoreResult
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
@@ -14,6 +16,8 @@ import com.mandrecode.tempo.features.routines.domain.usecase.CreateHabitUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.CreateOrUpdateHabitChainUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.DeleteHabitChainUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.DeleteHabitUseCase
+import com.mandrecode.tempo.features.routines.domain.usecase.RestoreDeletedHabitChainUseCase
+import com.mandrecode.tempo.features.routines.domain.usecase.RestoreDeletedHabitUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.UpdateHabitUseCase
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
@@ -55,6 +59,8 @@ class RoutinesViewModelTest {
     private lateinit var deleteHabitChainUseCase: DeleteHabitChainUseCase
     private lateinit var clearAllHabitRemindersUseCase: ClearAllHabitRemindersUseCase
     private lateinit var permissionChecker: PermissionChecker
+    private lateinit var restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase
+    private lateinit var restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase
     private val testDispatcher = StandardTestDispatcher()
 
     private val createdDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -72,6 +78,8 @@ class RoutinesViewModelTest {
         deleteHabitChainUseCase = mockk(relaxed = true)
         clearAllHabitRemindersUseCase = mockk(relaxed = true)
         permissionChecker = mockk(relaxed = true)
+        restoreDeletedHabitUseCase = mockk(relaxed = true)
+        restoreDeletedHabitChainUseCase = mockk(relaxed = true)
 
         coEvery { habitRepository.getAllHabits() } returns flowOf(emptyList())
         coEvery { habitChainRepository.getAllHabitChains() } returns flowOf(emptyList())
@@ -96,9 +104,32 @@ class RoutinesViewModelTest {
             deleteHabitChainUseCase,
             clearAllHabitRemindersUseCase,
             permissionChecker,
+            restoreDeletedHabitUseCase,
+            restoreDeletedHabitChainUseCase,
         )
 
     // --- Loading ---
+
+    @Test
+    fun `delete habit stores token and undo restores matching snapshot`() =
+        runTest {
+            val habit = habit(5L)
+            val snapshot = HabitDeletionSnapshot(habit, emptyList())
+            coEvery { deleteHabitUseCase(habit) } returns snapshot
+            coEvery { restoreDeletedHabitUseCase(snapshot) } returns RestoreResult(emptyList())
+            viewModel.mutableUiState.value =
+                viewModel.uiState.value.copy(habitToDelete = habit, showDeleteHabitConfirmationDialog = true)
+
+            viewModel.onEvent(RoutinesContract.UiEvent.DeleteHabit)
+            advanceUntilIdle()
+            val token = viewModel.pendingDeletionSnapshots.keys.single()
+
+            viewModel.onEvent(RoutinesContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            coVerify { restoreDeletedHabitUseCase(snapshot) }
+            assertThat(viewModel.pendingDeletionSnapshots).isEmpty()
+        }
 
     @Test
     fun `loadData sets habits and chains and stops loading`() =

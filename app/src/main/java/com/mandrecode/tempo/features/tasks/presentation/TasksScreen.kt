@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -95,7 +97,22 @@ fun TasksScreen(
                         } else {
                             context.getString(effect.messageResId)
                         }
-                    snackbarHostState.showSnackbar(message)
+                    val actionLabel = effect.actionResId?.let(context::getString)
+                    val result =
+                        snackbarHostState.showSnackbar(
+                            message = message,
+                            actionLabel = actionLabel,
+                            duration = if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Long,
+                        )
+                    effect.deletionToken?.let { token ->
+                        viewModel.onEvent(
+                            if (result == SnackbarResult.ActionPerformed) {
+                                TasksContract.UiEvent.UndoDeletion(token)
+                            } else {
+                                TasksContract.UiEvent.DismissDeletionUndo(token)
+                            },
+                        )
+                    }
                 }
             }
         }

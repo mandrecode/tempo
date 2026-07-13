@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.routines.data.repository
 
 import androidx.room.withTransaction
+import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainWithMembers
@@ -9,6 +10,9 @@ import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
+import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.infrastructure.liveactivity.HabitChainLiveActivityManager
 import io.mockk.coEvery
@@ -68,6 +72,42 @@ class HabitRepositoryTest {
     fun tearDown() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
     }
+
+    @Test
+    fun `deleteHabitWithSnapshot captures affected chains before deleting`() =
+        runTest {
+            val habit = HabitEntity(id = 7L, title = "Read", description = "", createdDate = now)
+            val chain =
+                HabitChainWithMembers(
+                    chain = HabitChainEntity(id = 8L, title = "Evening", createdDate = now),
+                    members = listOf(HabitChainMemberEntity(chainId = 8L, habitId = 7L, sortOrder = 0)),
+                )
+            coEvery { habitDao.getHabitById(7L) } returns habit
+            coEvery { habitChainMemberDao.getChainIdsForHabit(7L) } returns listOf(8L)
+            coEvery { habitChainDao.getHabitChainsWithMembersByIds(listOf(8L)) } returns listOf(chain)
+
+            val result = repository.deleteHabitWithSnapshot(7L)
+
+            assertThat(result.habit.id).isEqualTo(7L)
+            assertThat(result.affectedChains.map(HabitChain::id)).containsExactly(8L)
+            coVerify { habitDao.deleteHabit(habit) }
+        }
+
+    @Test
+    fun `restoreDeletedHabit upserts habit chain and memberships`() =
+        runTest {
+            val habit = Habit(id = 9L, title = "Read", description = "", createdDate = now)
+            val chain = HabitChain(id = 10L, title = "Evening", habitIds = listOf(9L), createdDate = now)
+            coEvery { habitDao.getHabitById(9L) } returns null
+            coEvery { habitChainDao.getHabitChainById(10L) } returns HabitChainEntity(id = 10L, title = "Old")
+
+            repository.restoreDeletedHabit(HabitDeletionSnapshot(habit, listOf(chain)))
+
+            coVerify { habitDao.insertHabit(match { it.id == 9L }) }
+            coVerify { habitChainDao.updateHabitChain(match { it.id == 10L }) }
+            coVerify { habitChainMemberDao.deleteByChainId(10L) }
+            coVerify { habitChainMemberDao.insertMembers(match { it.single().habitId == 9L }) }
+        }
 
     @Test
     fun `toggleHabitCompletion uses optimized query and avoids unnecessary fetches`() =

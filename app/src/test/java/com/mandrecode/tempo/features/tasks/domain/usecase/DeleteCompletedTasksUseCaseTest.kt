@@ -22,6 +22,6 @@ class DeleteCompletedTasksUseCaseTest {
         runTest {
             useCase(categoryId = 42L)
 
-            coVerify { taskRepository.deleteCompletedTasksByCategoryId(42L) }
+            coVerify { taskRepository.deleteCompletedTasksWithSnapshot(42L) }
         }
 }

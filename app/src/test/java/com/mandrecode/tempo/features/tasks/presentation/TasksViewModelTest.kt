@@ -7,11 +7,13 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.domain.model.RestoreResult
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
@@ -22,6 +24,8 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteCompletedTasksUs
 import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderCategoriesUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
@@ -74,6 +78,8 @@ class TasksViewModelTest {
     private lateinit var reorderTasksUseCase: ReorderTasksUseCase
     private lateinit var permissionChecker: PermissionChecker
     private lateinit var tasksScreenPreferencesRepository: TasksScreenPreferencesRepository
+    private lateinit var restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase
+    private lateinit var restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -95,6 +101,8 @@ class TasksViewModelTest {
         reorderTasksUseCase = mockk(relaxed = true)
         permissionChecker = mockk(relaxed = true)
         tasksScreenPreferencesRepository = mockk(relaxed = true)
+        restoreDeletedTasksUseCase = mockk(relaxed = true)
+        restoreDeletedCategoryUseCase = mockk(relaxed = true)
 
         coEvery { taskRepository.getAllTasks() } returns flowOf(emptyList())
         coEvery { categoryRepository.getAllCategories() } returns flowOf(emptyList())
@@ -120,6 +128,8 @@ class TasksViewModelTest {
                 permissionChecker,
                 tasksScreenPreferencesRepository,
                 testDispatcher,
+                restoreDeletedTasksUseCase,
+                restoreDeletedCategoryUseCase,
             )
     }
 
@@ -133,6 +143,39 @@ class TasksViewModelTest {
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.CategorySelected(5L))
             assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(5L)
+        }
+
+    @Test
+    fun `delete task stores tokenized snapshot and undo restores matching deletion`() =
+        runTest {
+            val task = Task(id = 9, title = "Delete", description = "")
+            val snapshot = TaskDeletionSnapshot.TaskTree(task.id, listOf(task))
+            coEvery { deleteTaskUseCase(task) } returns snapshot
+            coEvery { restoreDeletedTasksUseCase(snapshot) } returns RestoreResult(emptyList())
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteTask(task))
+            advanceUntilIdle()
+            val token = viewModel.pendingDeletionSnapshots.keys.single()
+
+            viewModel.onEvent(TasksContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            coVerify { restoreDeletedTasksUseCase(snapshot) }
+            assertThat(viewModel.pendingDeletionSnapshots).isEmpty()
+        }
+
+    @Test
+    fun `dismiss undo removes only matching deletion token`() =
+        runTest {
+            val first = TaskDeletionSnapshot.TaskTree(1, listOf(Task(id = 1, title = "One", description = "")))
+            val second = TaskDeletionSnapshot.TaskTree(2, listOf(Task(id = 2, title = "Two", description = "")))
+            val firstToken = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(first))
+            val secondToken = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(second))
+
+            viewModel.onEvent(TasksContract.UiEvent.DismissDeletionUndo(firstToken))
+
+            assertThat(viewModel.pendingDeletionSnapshots).containsKey(secondToken)
+            assertThat(viewModel.pendingDeletionSnapshots).doesNotContainKey(firstToken)
         }
 
     @Test
@@ -1503,7 +1546,10 @@ class TasksViewModelTest {
             val catB = Category(id = 2L, name = "B")
             coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(catA, catB))
             coEvery { deleteCategoryUseCase.invoke(catB) } returns
-                DeleteCategoryUseCase.Result.Success
+                DeleteCategoryUseCase.Result.Success(
+                    com.mandrecode.tempo.features.tasks.domain.model
+                        .CategoryDeletionSnapshot(catB, emptyList()),
+                )
 
             // Recreate ViewModel with categories available
             viewModel =

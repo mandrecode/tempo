@@ -6,6 +6,7 @@ import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
 import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -54,6 +55,49 @@ class TaskRepositoryImpl
             // Delete all subtasks first
             taskDao.deleteSubtasks(entity.id)
             taskDao.deleteTask(entity)
+        }
+
+        override suspend fun deleteTaskWithSnapshot(taskId: Long): TaskDeletionSnapshot.TaskTree =
+            database.withTransaction {
+                val root = requireNotNull(taskDao.getTaskById(taskId))
+                val tasks = listOf(root) + taskDao.getSubtasksSync(taskId)
+                taskDao.deleteSubtasks(taskId)
+                taskDao.deleteTaskById(taskId)
+                TaskDeletionSnapshot.TaskTree(
+                    rootTaskId = taskId,
+                    tasks = tasks.toDomain(),
+                )
+            }
+
+        override suspend fun deleteCompletedTasksWithSnapshot(categoryId: Long): TaskDeletionSnapshot.CompletedTasks =
+            database.withTransaction {
+                val completedParentIds = taskDao.getCompletedTopLevelTaskIds(categoryId)
+                val tasks =
+                    taskDao
+                        .getTasksByCategoryId(categoryId)
+                        .filter { it.id in completedParentIds || it.parentTaskId in completedParentIds }
+                if (completedParentIds.isNotEmpty()) {
+                    taskDao.deleteSubtasksByParentIds(completedParentIds)
+                    taskDao.deleteTasksByIds(completedParentIds)
+                }
+                TaskDeletionSnapshot.CompletedTasks(
+                    categoryId = categoryId,
+                    tasks = tasks.toDomain(),
+                )
+            }
+
+        override suspend fun restoreDeletedTasks(snapshot: TaskDeletionSnapshot) {
+            database.withTransaction {
+                snapshot.tasks
+                    .sortedBy { it.parentTaskId != null }
+                    .forEach { task ->
+                        if (taskDao.getTaskById(task.id) == null) {
+                            taskDao.insertTask(task.toEntity())
+                        } else {
+                            taskDao.updateTask(task.toEntity())
+                        }
+                    }
+            }
         }
 
         override suspend fun toggleTaskCompletion(

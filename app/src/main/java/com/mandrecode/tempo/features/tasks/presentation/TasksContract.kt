@@ -229,6 +229,14 @@ object TasksContract {
         data object ConfirmClearAllReminders : UiEvent
 
         data object OnPermissionsGranted : UiEvent
+
+        data class UndoDeletion(
+            val token: Long,
+        ) : UiEvent
+
+        data class DismissDeletionUndo(
+            val token: Long,
+        ) : UiEvent
     }
 
     /**
@@ -238,6 +246,8 @@ object TasksContract {
         data class ShowSnackbar(
             @StringRes val messageResId: Int,
             val formatArgs: List<Any> = emptyList(),
+            @StringRes val actionResId: Int? = null,
+            val deletionToken: Long? = null,
         ) : UiEffect
     }
 }

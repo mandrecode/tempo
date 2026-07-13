@@ -8,6 +8,7 @@ import com.mandrecode.tempo.core.data.entity.HabitChainWithMembers
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
+import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import io.mockk.coEvery
@@ -29,6 +30,7 @@ class HabitChainRepositoryTest {
     private lateinit var habitChainDao: HabitChainDao
     private lateinit var habitChainMemberDao: HabitChainMemberDao
     private lateinit var database: TempoDatabase
+    private lateinit var habitDao: HabitDao
     private lateinit var repository: HabitChainRepository
 
     private val fixedDate = LocalDateTime(2024, 1, 1, 12, 0, 0)
@@ -68,6 +70,7 @@ class HabitChainRepositoryTest {
         habitChainDao = mockk(relaxed = true)
         habitChainMemberDao = mockk(relaxed = true)
         database = mockk(relaxed = true)
+        habitDao = mockk(relaxed = true)
 
         mockkStatic("androidx.room.RoomDatabaseKt")
         @Suppress("UNCHECKED_CAST")
@@ -75,7 +78,7 @@ class HabitChainRepositoryTest {
             (args[1] as (suspend () -> Any?)).invoke()
         }
 
-        repository = HabitChainRepositoryImpl(habitChainDao, habitChainMemberDao, database)
+        repository = HabitChainRepositoryImpl(habitChainDao, habitChainMemberDao, habitDao, database)
     }
 
     @After

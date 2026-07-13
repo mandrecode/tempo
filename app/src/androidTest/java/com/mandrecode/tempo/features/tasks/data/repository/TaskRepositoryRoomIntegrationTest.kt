@@ -87,6 +87,27 @@ class TaskRepositoryRoomIntegrationTest {
         }
 
     @Test
+    fun deleteTaskWithSnapshot_restorePreservesIdsAndHierarchy() =
+        runTest {
+            val parentId = repository.insertTask(Task(title = "Parent", description = "", categoryId = 1))
+            val childId =
+                repository.insertTask(
+                    Task(title = "Child", description = "", categoryId = 1, parentTaskId = parentId, sortOrder = 3),
+                )
+
+            val snapshot = repository.deleteTaskWithSnapshot(parentId)
+            assertThat(repository.getTaskById(parentId)).isNull()
+            assertThat(repository.getTaskById(childId)).isNull()
+
+            repository.restoreDeletedTasks(snapshot)
+            repository.restoreDeletedTasks(snapshot)
+
+            assertThat(repository.getTaskById(parentId)).isNotNull()
+            assertThat(repository.getTaskById(childId)!!.parentTaskId).isEqualTo(parentId)
+            assertThat(repository.getTaskById(childId)!!.sortOrder).isEqualTo(3)
+        }
+
+    @Test
     fun deleteCompletedTasksByCategoryId_deletesParentsAndSubtasks() =
         runTest {
             val completedParentId =

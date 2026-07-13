@@ -1,12 +1,15 @@
 package com.mandrecode.tempo.features.routines.presentation
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -91,18 +94,7 @@ fun RoutinesScreen(
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
-            when (effect) {
-                is RoutinesContract.UiEffect.ShowSnackbar -> {
-                    @Suppress("LocalContextGetResourceValueCall")
-                    val message =
-                        if (effect.formatArgs.isNotEmpty()) {
-                            context.getString(effect.messageResId, *effect.formatArgs.toTypedArray())
-                        } else {
-                            context.getString(effect.messageResId)
-                        }
-                    snackbarHostState.showSnackbar(message)
-                }
-            }
+            showRoutinesSnackbar(effect, context, snackbarHostState, viewModel::onEvent)
         }
     }
 
@@ -222,6 +214,39 @@ fun RoutinesScreen(
                 )
             }
         }
+    }
+}
+
+@Suppress("LocalContextGetResourceValueCall")
+private suspend fun showRoutinesSnackbar(
+    effect: RoutinesContract.UiEffect,
+    context: Context,
+    snackbarHostState: SnackbarHostState,
+    onEvent: (RoutinesContract.UiEvent) -> Unit,
+) {
+    val snackbar = effect as RoutinesContract.UiEffect.ShowSnackbar
+
+    val message =
+        if (snackbar.formatArgs.isNotEmpty()) {
+            context.getString(snackbar.messageResId, *snackbar.formatArgs.toTypedArray())
+        } else {
+            context.getString(snackbar.messageResId)
+        }
+    val actionLabel = snackbar.actionResId?.let(context::getString)
+    val result =
+        snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = actionLabel,
+            duration = if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Long,
+        )
+    snackbar.deletionToken?.let { token ->
+        onEvent(
+            if (result == SnackbarResult.ActionPerformed) {
+                RoutinesContract.UiEvent.UndoDeletion(token)
+            } else {
+                RoutinesContract.UiEvent.DismissDeletionUndo(token)
+            },
+        )
     }
 }
 

@@ -1,30 +1,92 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
+import androidx.room.withTransaction
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.CategoryEntity
+import com.mandrecode.tempo.core.data.entity.TaskEntity
+import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
-import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImpl
+import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.features.tasks.domain.model.Category
+import com.mandrecode.tempo.features.tasks.domain.model.CategoryDeletionSnapshot
+import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 
 class CategoryRepositoryTest {
     private lateinit var categoryDao: CategoryDao
+    private lateinit var taskDao: TaskDao
+    private lateinit var database: TempoDatabase
     private lateinit var repository: CategoryRepository
 
     @Before
     fun setUp() {
         categoryDao = mockk(relaxed = true)
-        repository = CategoryRepositoryImpl(categoryDao)
+        taskDao = mockk(relaxed = true)
+        database = mockk(relaxed = true)
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        @Suppress("UNCHECKED_CAST")
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            (args[1] as (suspend () -> Any?)).invoke()
+        }
+        repository = CategoryRepositoryImpl(categoryDao, taskDao, database)
     }
+
+    @After
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
+
+    @Test
+    fun `deleteCategoryWithSnapshot captures category and tasks before deleting`() =
+        runTest {
+            val category = Category(id = 4L, name = "Work")
+            val task = TaskEntity(id = 40L, title = "Task", description = "", categoryId = 4L)
+            coEvery { categoryDao.getCategoryById(4L) } returns CategoryEntity(id = 4L, name = "Work")
+            coEvery { taskDao.getTasksByCategoryId(4L) } returns listOf(task)
+
+            val result = repository.deleteCategoryWithSnapshot(category)
+
+            assertThat(result.category).isEqualTo(category)
+            assertThat(result.tasks.map(Task::id)).containsExactly(40L)
+            coVerifyOrder {
+                taskDao.deleteTasksByCategoryId(4L)
+                categoryDao.deleteCategoryById(4L)
+            }
+        }
+
+    @Test
+    fun `restoreDeletedCategory inserts missing category and upserts tasks parent first`() =
+        runTest {
+            val category = Category(id = 5L, name = "Restored")
+            val root = Task(id = 50L, title = "Root", description = "", categoryId = 5L)
+            val child = Task(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L)
+            coEvery { categoryDao.getCategoryById(5L) } returns null
+            coEvery { taskDao.getTaskById(50L) } returns null
+            coEvery { taskDao.getTaskById(51L) } returns TaskEntity(id = 51L, title = "Old", description = "")
+
+            repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(child, root)))
+
+            coVerify { categoryDao.insertCategory(CategoryEntity(id = 5L, name = "Restored")) }
+            coVerifyOrder {
+                taskDao.insertTask(TaskEntity(id = 50L, title = "Root", description = "", categoryId = 5L))
+                taskDao.updateTask(
+                    TaskEntity(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L),
+                )
+            }
+        }
 
     @Test
     fun `getAllCategories delegates to dao`() =
