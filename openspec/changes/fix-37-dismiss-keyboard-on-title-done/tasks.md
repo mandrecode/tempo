@@ -1,12 +1,11 @@
 ## 1. Keyboard Behavior
 
 - [x] 1.1 Invoke Compose's default Done action and clear focus in task, habit, habit-chain, and category editor fields
-- [x] 1.2 Preserve quick-task submission while invoking the default Done action to dismiss the keyboard
+- [x] 1.2 Remove the orphaned quick-task entry component, its tests, and its detekt suppression
 
 ## 2. Regression Coverage
 
 - [x] 2.1 Add Compose UI coverage for Done-action focus clearing in task, habit, and category editors
-- [x] 2.2 Add Compose UI coverage for quick-task Done submission, focus clearing, and empty-title behavior
 
 ## 3. Verification
 

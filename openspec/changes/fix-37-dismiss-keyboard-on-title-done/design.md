@@ -1,8 +1,8 @@
 ## Context
 
-The affected Compose fields set `ImeAction.Done` and provide custom `KeyboardActions.onDone` callbacks. Those callbacks clear focus or submit data, which replaces Compose's default Done implementation; the default implementation that hides the software keyboard is therefore never invoked. Didi handles the same interaction by explicitly hiding the keyboard and clearing focus.
+The affected Compose fields set `ImeAction.Done` and provide custom `KeyboardActions.onDone` callbacks. Those callbacks clear focus, which replaces Compose's default Done implementation; the default implementation that hides the software keyboard is therefore never invoked. Didi handles the same interaction by explicitly hiding the keyboard and clearing focus.
 
-Tempo's task and habit titles intentionally support up to three visual lines, and quick task Done intentionally submits the current title. The fix must preserve those behaviors while making keyboard dismissal explicit and consistent.
+Tempo's task and habit titles intentionally support up to three visual lines. The fix must preserve that behavior while making keyboard dismissal explicit and consistent.
 
 ## Goals / Non-Goals
 
@@ -10,7 +10,6 @@ Tempo's task and habit titles intentionally support up to three visual lines, an
 
 - Hide the software keyboard when Done is invoked on every active primary title/name field.
 - Clear focus after Done so the editor visibly exits text-entry mode.
-- Preserve quick-task submission and all validation behavior.
 - Keep the implementation local to Compose presentation code and cover it with focused UI tests.
 
 **Non-Goals:**
@@ -29,17 +28,19 @@ Task, habit, and category fields will obtain `LocalFocusManager` from inside `Te
 
 This is preferred over obtaining and passing `LocalSoftwareKeyboardController` because the keyboard action scope already exposes the platform default behavior. It also shrinks the existing focus configuration models and avoids coupling field call sites to an additional controller.
 
-Removing the custom callbacks was rejected because default Done hides the keyboard but does not express Tempo's desired focus clearing or quick-task submission. Changing the fields to `singleLine = true` was rejected because it would alter long-title presentation.
+Removing the custom callbacks was rejected because default Done hides the keyboard but does not express Tempo's desired focus clearing. Changing the fields to `singleLine = true` was rejected because it would alter long-title presentation.
 
 ### Keep handling at the affected call sites
 
-The task, habit, category, and quick-task fields have distinct state and submission flows. Two explicit statements per callback are clearer than a shared helper whose only purpose would be forwarding Compose APIs.
+The task, habit, and category fields have distinct state flows. Two explicit statements per callback are clearer than a shared helper whose only purpose would be forwarding Compose APIs.
 
-For quick task entry, Done will run the existing submission path and invoke the default Done action. Focus clearing remains part of successful submission; an empty title still dismisses the keyboard through the default action without creating a task.
+### Remove the orphaned quick-task entry component
+
+`QuickTaskEntryBar` lost its only production integration when the floating navigation replaced the old task bottom bar. Its remaining screen tests mounted it manually, so they did not describe reachable app behavior. Delete the component, its dedicated tests, and those artificial screen tests instead of preserving speculative behavior. Git history remains the source if a future product decision reintroduces quick entry.
 
 ### Verify behavior through Compose UI semantics and a device smoke test
 
-Instrumented Compose tests will perform the IME action and verify focus clearing and, for quick entry, single submission. A manual Pixel 7 smoke test will confirm the real IME closes smoothly because keyboard visibility can vary with emulator keyboard configuration.
+Instrumented Compose tests will perform the IME action and verify focus clearing. A manual Pixel 7 smoke test will confirm the real IME closes smoothly because keyboard visibility can vary with emulator keyboard configuration.
 
 ## Risks / Trade-offs
 
@@ -49,7 +50,7 @@ Instrumented Compose tests will perform the IME action and verify focus clearing
 
 ## Migration Plan
 
-No data or API migration is required. Deploy as a presentation-only behavior fix. Rollback consists of reverting the four callback changes and their tests.
+No data or API migration is required. Deploy as a presentation-only behavior fix. Rollback consists of reverting the editor callback changes and their tests.
 
 ## Open Questions
 
