@@ -501,16 +501,18 @@ class HabitBottomSheetTest {
         selectorTestTag: String,
         maxDifferenceDp: Float,
     ) {
-        val iconBounds =
+        val iconNode =
             composeTestRule
                 .onNodeWithContentDescription(selectHabits, useUnmergedTree = true)
-                .fetchSemanticsNode()
-                .boundsInRoot
-        val selectorBounds =
+        val selectorNode =
             composeTestRule
                 .onAllNodesWithTag(selectorTestTag, useUnmergedTree = true)[0]
-                .fetchSemanticsNode()
-                .boundsInRoot
+
+        iconNode.assertIsDisplayed()
+        selectorNode.assertIsDisplayed()
+
+        val iconBounds = iconNode.fetchSemanticsNode().boundsInRoot
+        val selectorBounds = selectorNode.fetchSemanticsNode().boundsInRoot
         val iconCenterY = (iconBounds.top + iconBounds.bottom) / 2f
         val selectorCenterY = (selectorBounds.top + selectorBounds.bottom) / 2f
         val density =
