@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.theme.primaryScreenContainer
 
 @Composable
 fun SettingsScreen(
@@ -51,7 +52,7 @@ internal fun SettingsScaffold(
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    val settingsContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    val settingsContainerColor = MaterialTheme.colorScheme.primaryScreenContainer
 
     Scaffold(
         containerColor = settingsContainerColor,

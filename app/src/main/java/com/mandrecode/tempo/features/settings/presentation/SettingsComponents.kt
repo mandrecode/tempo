@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.theme.neutralCardContainer
 import com.mandrecode.tempo.core.ui.theme.settingsSectionTitle
 
 @Composable
@@ -48,7 +49,7 @@ internal fun SettingsSection(
         Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(28.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.neutralCardContainer),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
             content()

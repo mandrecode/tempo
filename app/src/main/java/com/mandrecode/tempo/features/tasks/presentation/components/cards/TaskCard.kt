@@ -62,6 +62,7 @@ import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
+import com.mandrecode.tempo.core.ui.theme.neutralCardContainer
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
@@ -104,9 +105,9 @@ fun TaskItem(
     val cardColor by animateColorAsState(
         targetValue =
             if (task.isCompleted) {
-                MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.4f)
+                MaterialTheme.colorScheme.neutralCardContainer.copy(alpha = 0.4f)
             } else {
-                MaterialTheme.colorScheme.surfaceContainerHighest
+                MaterialTheme.colorScheme.neutralCardContainer
             },
         animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS),
         label = "card_color",

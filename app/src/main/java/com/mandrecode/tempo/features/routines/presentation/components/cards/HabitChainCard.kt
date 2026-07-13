@@ -57,6 +57,7 @@ import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
+import com.mandrecode.tempo.core.ui.theme.neutralCardContainer
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
@@ -136,7 +137,7 @@ fun HabitChainCard(
                 resolvedChainColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedChainColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainerHigh
+                    ?: MaterialTheme.colorScheme.neutralCardContainer
             },
         animationSpec = tween(300),
         label = "habit_chain_card_color",
