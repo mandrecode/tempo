@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.13](https://github.com/mandrecode/tempo/compare/v0.8.12...v0.8.13) (2026-07-13)
+
+
+### Features
+
+* **#50:** restyle background and card colors ([#121](https://github.com/mandrecode/tempo/issues/121)) ([2f78f77](https://github.com/mandrecode/tempo/commit/2f78f7732a6988f46b860268b24690af5fdc7044))
+
 ## [0.8.12](https://github.com/mandrecode/tempo/compare/v0.8.11...v0.8.12) (2026-07-02)
 
 
