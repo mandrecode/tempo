@@ -40,12 +40,12 @@ The task, habit, and category fields have distinct state flows. Two explicit sta
 
 ### Verify behavior through Compose UI semantics and a device smoke test
 
-Instrumented Compose tests will perform the IME action and verify focus clearing. A manual Pixel 7 smoke test will confirm the real IME closes smoothly because keyboard visibility can vary with emulator keyboard configuration.
+Instrumented Compose tests will perform the IME action and verify focus clearing. A manual Pixel 7 smoke test will confirm the real IME closes smoothly because keyboard visibility can vary with emulator keyboard configuration. Injecting `LocalSoftwareKeyboardController` was rejected as a keyboard-dismissal assertion because Compose's `defaultKeyboardAction` uses the text field's internal keyboard action runner rather than the ambient controller, producing a false negative.
 
 ## Risks / Trade-offs
 
 - [Some third-party keyboards may render a newline key for multiline fields despite `ImeAction.Done`] → Preserve the current multiline UX and verify the supported Pixel/Gboard path; do not force a single-line regression.
-- [Compose tests cannot reliably observe a real software keyboard in every test environment] → Assert the app-owned focus/submission results automatically and verify actual IME visibility on the physical Pixel 7.
+- [Compose tests cannot reliably observe a real software keyboard in every test environment] → Assert focus clearing automatically and verify actual IME visibility on the physical Pixel 7.
 - [A future custom Done callback could again omit the default action] → Add focused regression tests and keep the two-step callback pattern obvious at each active call site.
 
 ## Migration Plan
