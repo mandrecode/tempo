@@ -36,3 +36,9 @@
 - [x] 5.3 Run `./gradlew testDebugUnitTest` and relevant Room/Compose instrumented tests on the default AVD.
 - [x] 5.4 Run `./gradlew lintDebug`, `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, and `./gradlew :app:detekt`.
 - [x] 5.5 Manually smoke-test each deletion/Undo flow, queued deletion snackbars, timeout behavior, and future-reminder restoration on the connected Pixel 7 when available.
+
+## 6. Pixel-equivalent Didi snackbar refinement
+
+- [x] 6.1 Replace the stock Material snackbar composition with a Didi-equivalent custom surface, layout, typography, border, filled action, and pressed-corner animation, using Tempo-calibrated elevation.
+- [x] 6.2 Update previews and Compose UI assertions for the Didi-equivalent actionable and message-only states without changing Undo behavior or accessibility.
+- [x] 6.3 Run formatting, static analysis, unit/UI checks, and compare the resulting snackbar on the connected Pixel 7 against the Didi reference.

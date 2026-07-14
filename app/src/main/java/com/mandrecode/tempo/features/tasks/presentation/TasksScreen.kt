@@ -41,7 +41,7 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteTaskConfirmDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortBottomSheet
 
-private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 84.dp
+private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -189,9 +189,6 @@ fun TasksScreen(
                         Modifier
                             .fillMaxSize()
                             .padding(
-                                start = 16.dp,
-                                top = 20.dp,
-                                end = 16.dp,
                                 bottom =
                                     if (isRailLayout) {
                                         20.dp

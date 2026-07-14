@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarVisuals
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
@@ -17,7 +18,9 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 @Composable
 private fun MessageSnackbarPreview() {
     TempoTheme {
-        ExpressiveSnackbar(snackbarData = previewSnackbarData("Task saved"))
+        Surface {
+            ExpressiveSnackbar(snackbarData = previewSnackbarData("Task saved"))
+        }
     }
 }
 
@@ -30,7 +33,9 @@ private fun MessageSnackbarPreview() {
 @Composable
 private fun UndoSnackbarPreview() {
     TempoTheme {
-        ExpressiveSnackbar(snackbarData = previewSnackbarData("Task deleted", "Undo"))
+        Surface {
+            ExpressiveSnackbar(snackbarData = previewSnackbarData("Task deleted", "Undo"))
+        }
     }
 }
 

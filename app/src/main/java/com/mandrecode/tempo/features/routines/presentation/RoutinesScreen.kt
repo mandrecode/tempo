@@ -41,7 +41,7 @@ import com.mandrecode.tempo.features.routines.presentation.components.dialogs.De
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.EmptyHabitChainConfirmDialog
 
-private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 84.dp
+private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -328,9 +328,6 @@ private fun RoutinesSnackbar(
             Modifier
                 .fillMaxSize()
                 .padding(
-                    start = 16.dp,
-                    top = 16.dp,
-                    end = 16.dp,
                     bottom =
                         if (isRailLayout) {
                             16.dp

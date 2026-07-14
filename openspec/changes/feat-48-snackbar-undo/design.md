@@ -60,6 +60,12 @@ If an alarm operation fails after data restoration, the restored data remains au
 
 No Didi-specific colors or hardcoded user-facing strings will be introduced. The shared host accepts Material `SnackbarData`, so informational, error, and Undo snackbars use the same structure without duplicating feature UI.
 
+### 6. Match Didi's snackbar component exactly
+
+The visual reference is Didi's `DidiSnackbar` implementation in the sibling `Git/didi` checkout. Tempo's shared renderer will mirror that component's Compose structure and values: a custom `Surface` with 24dp horizontal and 8dp vertical outer padding, 560dp maximum width, 28dp corners, and a 1dp `outlineVariant` border. Its row uses 24dp horizontal and 16dp vertical content padding with 16dp spacing. The message uses `titleMedium`; the action uses a filled `primaryContainer` surface, `labelLarge` bold text, 24dp by 16dp padding, and Didi's spring-driven pressed-corner transition from 20dp to 12dp.
+
+The package name, active Tempo theme, and elevation are adapted. Tempo uses 3dp shadow and tonal elevation instead of Didi's 6dp so the snackbar remains consistent with Tempo's existing elevated surfaces. All component geometry, typography roles, border, action treatment, and interaction animation remain source-equivalent to Didi. Using the active theme keeps Tempo's brand and dynamic colors while reproducing Didi's design system rather than importing Didi-specific color constants.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

@@ -19,6 +19,11 @@ The app SHALL render task and routine feedback through one shared snackbar prese
 - **WHEN** a snackbar is displayed while Tempo's floating navigation is visible
 - **THEN** the snackbar remains fully visible above the navigation surface
 
+#### Scenario: Didi source parity
+
+- **WHEN** the shared snackbar is rendered
+- **THEN** its container, content row, message, action surface, outline, spacing, and pressed-corner animation use the same Compose structure and values as Didi's reference snackbar, with elevation calibrated to Tempo's existing surfaces
+
 ### Requirement: Accessible localized snackbar action
 
 An actionable snackbar SHALL show a localized action label with a minimum 48dp interactive target and SHALL report whether the action was performed or the snackbar was dismissed.
