@@ -22,7 +22,7 @@ Tempo's route top bars currently expose Settings through a plain `IconButton` in
 
 - Use Didi's interaction model as the visual contract, tuned to Tempo's top-bar proportions.
   - Visual size: `40.dp`; unpressed radius: `20.dp`; pressed radius: `14.dp`; shape tween duration: `220ms`.
-  - Unpressed colors: `surfaceContainerLow` container, `primary` content, `primary.copy(alpha = 0.48f)` border.
+  - Unpressed colors: `surfaceContainer` container, `primary` content, `primary.copy(alpha = 0.48f)` border. The container follows the softened neutral card role so it avoids near-white and near-black extremes across themes.
   - Pressed colors: `primaryContainer` container, `onPrimaryContainer` content, `primary` border.
   - Rationale: this directly satisfies the request to replicate the style, shape, and color animation.
 
