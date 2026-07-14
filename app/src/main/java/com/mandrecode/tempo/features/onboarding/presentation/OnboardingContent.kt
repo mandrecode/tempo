@@ -75,7 +75,7 @@ fun OnboardingContent(
             OnboardingProgress(
                 currentPage = uiState.currentPage,
                 pageCount = OnboardingContract.PAGE_COUNT,
-                modifier = Modifier.fillMaxWidth().widthIn(max = layout.footerMaxWidth),
+                modifier = Modifier.widthIn(max = layout.footerMaxWidth).fillMaxWidth(),
             )
             OnboardingPage(
                 uiState = uiState,
@@ -97,8 +97,8 @@ private fun OnboardingSkip(
     Row(
         modifier =
             Modifier
-                .fillMaxWidth()
                 .widthIn(max = layout.pageMaxWidth)
+                .fillMaxWidth()
                 .heightIn(min = 48.dp),
         horizontalArrangement = Arrangement.End,
     ) {
@@ -192,7 +192,7 @@ private fun OnboardingFooter(
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().widthIn(max = layout.footerMaxWidth),
+        modifier = Modifier.widthIn(max = layout.footerMaxWidth).fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (uiState.isFirstPage) {

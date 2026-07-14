@@ -62,8 +62,8 @@ internal fun AdaptiveOnboardingPage(
             Row(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
                         .widthIn(max = layout.pageMaxWidth)
+                        .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                         .padding(vertical = layout.pageVerticalPadding)
                         .testTag(OnboardingTestTags.TWO_PANE),
@@ -86,8 +86,8 @@ internal fun AdaptiveOnboardingPage(
             Column(
                 modifier =
                     Modifier
-                        .fillMaxWidth()
                         .widthIn(max = layout.pageMaxWidth)
+                        .fillMaxWidth()
                         .verticalScroll(rememberScrollState())
                         .padding(vertical = layout.pageVerticalPadding)
                         .testTag(OnboardingTestTags.SINGLE_PANE),
