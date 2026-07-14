@@ -16,7 +16,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 @Composable
 private fun SettingsButtonPreview() {
     TempoTheme {
-        Surface(color = MaterialTheme.colorScheme.surface) {
+        Surface(color = MaterialTheme.colorScheme.background) {
             Box(modifier = Modifier.padding(24.dp)) {
                 SettingsButton(onClick = {})
             }

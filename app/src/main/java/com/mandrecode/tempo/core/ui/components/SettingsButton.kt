@@ -40,7 +40,7 @@ fun SettingsButton(
             if (isPressed) {
                 MaterialTheme.colorScheme.primaryContainer
             } else {
-                MaterialTheme.colorScheme.surfaceContainerLow
+                MaterialTheme.colorScheme.surfaceContainer
             },
         label = "settingsButtonContainerColor",
     )
