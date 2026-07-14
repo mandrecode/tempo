@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +28,7 @@ class SettingsViewModel
         private val appVersionProvider: AppVersionProvider,
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
+        private val taskReminderPreferences: TaskReminderPreferences,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
         val uiState: StateFlow<SettingsContract.UiState> = _uiState.asStateFlow()
@@ -37,6 +39,7 @@ class SettingsViewModel
             loadVersionInfo()
             observeTabPreferences()
             observeCompletedTaskRetention()
+            observeDefaultTaskReminderTime()
         }
 
         private fun observeThemeMode() {
@@ -120,6 +123,18 @@ class SettingsViewModel
                         enabled = _uiState.value.autoRemoveCompletedTasksEnabled,
                         days = event.days,
                     )
+                }
+
+                is SettingsContract.UiEvent.DefaultTaskReminderTimeChanged -> {
+                    taskReminderPreferences.setDefaultTime(event.time)
+                }
+            }
+        }
+
+        private fun observeDefaultTaskReminderTime() {
+            viewModelScope.launch {
+                taskReminderPreferences.defaultTime.collect { time ->
+                    _uiState.update { it.copy(defaultTaskReminderTime = time) }
                 }
             }
         }

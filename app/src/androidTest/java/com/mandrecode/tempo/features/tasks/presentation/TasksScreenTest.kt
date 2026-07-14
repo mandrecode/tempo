@@ -11,6 +11,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateCategoryUseCase
@@ -29,7 +30,9 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.datetime.LocalTime
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -54,6 +57,7 @@ class TasksScreenTest {
     private lateinit var reorderTasksUseCase: ReorderTasksUseCase
     private lateinit var permissionChecker: PermissionChecker
     private lateinit var tasksScreenPreferencesRepository: TasksScreenPreferencesRepository
+    private lateinit var taskReminderPreferences: TaskReminderPreferences
     private lateinit var viewModel: TasksViewModel
 
     private val testTask =
@@ -88,11 +92,13 @@ class TasksScreenTest {
         reorderTasksUseCase = mockk(relaxed = true)
         permissionChecker = mockk(relaxed = true)
         tasksScreenPreferencesRepository = mockk(relaxed = true)
+        taskReminderPreferences = mockk(relaxed = true)
 
         coEvery { taskRepository.getAllTasks() } returns flowOf(listOf(testTask))
         coEvery { categoryRepository.getAllCategories() } returns
             flowOf(listOf(inboxCategory, testCategory))
         every { tasksScreenPreferencesRepository.getSelectedCategoryId() } returns testCategory.id
+        every { taskReminderPreferences.defaultTime } returns MutableStateFlow(LocalTime(9, 0))
 
         val testDispatcher = Dispatchers.Unconfined
         viewModel =
@@ -116,6 +122,7 @@ class TasksScreenTest {
                 testDispatcher,
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                taskReminderPreferences,
             )
     }
 
@@ -176,6 +183,7 @@ class TasksScreenTest {
                 testDispatcher,
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                taskReminderPreferences,
             )
 
         composeTestRule.setContent {

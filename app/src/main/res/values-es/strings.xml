@@ -190,6 +190,8 @@
     <string name="add_reminder_time">Añadir hora de recordatorio</string>
     <string name="clear_reminder">Borrar recordatorio</string>
     <string name="select_time">Seleccionar hora</string>
+    <string name="choose_time">Elegir hora</string>
+    <string name="use_default_time">Usar %1$s</string>
     <string name="mark_as_completed">Marcar como completado</string>
     <string name="mark_as_not_completed">Marcar como no completado</string>
     <string name="habit_reminder_default_text">¡Hora de trabajar en tu hábito!</string>
@@ -418,6 +420,8 @@
     <string name="settings_notifications">Notificaciones</string>
     <string name="settings_notifications_subtitle">Ajustes de notificaciones</string>
     <string name="settings_notifications_description">Gestionar permisos y alertas</string>
+    <string name="settings_default_task_reminder_time">Hora predeterminada de recordatorio</string>
+    <string name="settings_default_task_reminder_time_description">%1$s · Se usa cuando no se elige una hora exacta</string>
     <string name="settings_completed_tasks">Tareas completadas</string>
     <string name="settings_auto_remove_completed_tasks">Eliminar automáticamente</string>
     <string name="settings_remove_completed_after">Eliminar después de</string>

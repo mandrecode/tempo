@@ -13,6 +13,7 @@ import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import kotlinx.datetime.LocalTime
 
 // region SettingsContent Previews
 
@@ -132,6 +133,17 @@ private fun CompletedTaskRetentionSectionPreview() {
                     autoRemoveCompletedTasksEnabled = true,
                     completedTaskRetentionDays = 30,
                 ),
+            onEvent = {},
+        )
+    }
+}
+
+@Preview(name = "Default task reminder time", showBackground = true, device = "id:pixel_9")
+@Composable
+private fun NotificationsSectionPreview() {
+    TempoTheme {
+        NotificationsSection(
+            uiState = SettingsContract.UiState(defaultTaskReminderTime = LocalTime(9, 0)),
             onEvent = {},
         )
     }

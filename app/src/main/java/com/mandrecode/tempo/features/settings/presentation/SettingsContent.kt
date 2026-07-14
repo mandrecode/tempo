@@ -24,7 +24,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -36,11 +39,14 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
+import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
+import com.mandrecode.tempo.util.DateTimeFormatter
 import com.mandrecode.tempo.util.dynamicColorScheme
 import com.mandrecode.tempo.util.supportsDynamicColor
+import kotlinx.datetime.LocalTime
 
 @Composable
 fun SettingsContent(
@@ -66,7 +72,7 @@ fun SettingsContent(
         CompletedTaskRetentionSection(uiState = uiState, onEvent = onEvent)
         TabsAndNavigationSection(uiState = uiState, onEvent = onEvent)
         DefaultTabSection(uiState = uiState, onEvent = onEvent)
-        NotificationsSection()
+        NotificationsSection(uiState = uiState, onEvent = onEvent)
         LanguageSection()
         AboutSection(
             appVersion = uiState.appVersion,
@@ -183,16 +189,52 @@ private fun ColorSchemeSection(
 }
 
 @Composable
-private fun NotificationsSection() {
+internal fun NotificationsSection(
+    uiState: SettingsContract.UiState,
+    onEvent: (SettingsContract.UiEvent) -> Unit,
+) {
     val context = LocalContext.current
-    SettingsSection(title = stringResource(R.string.settings_notifications)) {
-        SettingsItem(
-            icon = R.drawable.ic_notifications,
-            title = stringResource(R.string.settings_notifications_subtitle),
-            subtitle = stringResource(R.string.settings_notifications_description),
-            trailingIcon = R.drawable.ic_open_in_new,
-            onClick = { openNotificationSettings(context) },
+    var showDefaultTimePicker by remember { mutableStateOf(false) }
+    val formattedDefaultTime = DateTimeFormatter.formatTime(uiState.defaultTaskReminderTime, context)
+
+    if (showDefaultTimePicker) {
+        TempoTimePickerDialog(
+            initialHour = uiState.defaultTaskReminderTime.hour,
+            initialMinute = uiState.defaultTaskReminderTime.minute,
+            onConfirm = { hour, minute ->
+                onEvent(
+                    SettingsContract.UiEvent.DefaultTaskReminderTimeChanged(
+                        LocalTime(hour, minute),
+                    ),
+                )
+                showDefaultTimePicker = false
+            },
+            onDismiss = { showDefaultTimePicker = false },
         )
+    }
+
+    SettingsSection(title = stringResource(R.string.settings_notifications)) {
+        Column {
+            SettingsItem(
+                icon = R.drawable.ic_reminder,
+                title = stringResource(R.string.settings_default_task_reminder_time),
+                subtitle =
+                    stringResource(
+                        R.string.settings_default_task_reminder_time_description,
+                        formattedDefaultTime,
+                    ),
+                trailingIcon = R.drawable.ic_chevron_right,
+                onClick = { showDefaultTimePicker = true },
+            )
+            SettingsItemDivider()
+            SettingsItem(
+                icon = R.drawable.ic_notifications,
+                title = stringResource(R.string.settings_notifications_subtitle),
+                subtitle = stringResource(R.string.settings_notifications_description),
+                trailingIcon = R.drawable.ic_open_in_new,
+                onClick = { openNotificationSettings(context) },
+            )
+        }
     }
 }
 

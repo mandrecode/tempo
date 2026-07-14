@@ -237,6 +237,7 @@ fun TasksScreen(
             categories = uiState.categories,
             selectedCategoryIdFromFilter = categoryIdFromContext,
             formState = uiState.taskForm,
+            defaultReminderTime = uiState.defaultReminderTime,
             onSetPriority = { priority -> viewModel.onEvent(TasksContract.UiEvent.SetPriority(priority)) },
             onClearPriority = { viewModel.onEvent(TasksContract.UiEvent.ClearPriority) },
             onSetReminder = { year, month, day, hour, minute ->

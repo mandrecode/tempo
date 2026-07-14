@@ -15,6 +15,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateCategoryUseCase
@@ -42,6 +43,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -52,6 +54,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
@@ -80,6 +83,7 @@ class TasksViewModelTest {
     private lateinit var tasksScreenPreferencesRepository: TasksScreenPreferencesRepository
     private lateinit var restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase
     private lateinit var restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase
+    private lateinit var taskReminderPreferences: TaskReminderPreferences
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -103,11 +107,13 @@ class TasksViewModelTest {
         tasksScreenPreferencesRepository = mockk(relaxed = true)
         restoreDeletedTasksUseCase = mockk(relaxed = true)
         restoreDeletedCategoryUseCase = mockk(relaxed = true)
+        taskReminderPreferences = mockk(relaxed = true)
 
         coEvery { taskRepository.getAllTasks() } returns flowOf(emptyList())
         coEvery { categoryRepository.getAllCategories() } returns flowOf(emptyList())
         every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.MANUAL
         every { tasksScreenPreferencesRepository.getShowCompletedTasks() } returns true
+        every { taskReminderPreferences.defaultTime } returns MutableStateFlow(LocalTime(9, 0))
 
         viewModel =
             createViewModel()
@@ -134,6 +140,7 @@ class TasksViewModelTest {
             testDispatcher,
             restoreDeletedTasksUseCase,
             restoreDeletedCategoryUseCase,
+            taskReminderPreferences,
         )
 
     @After
@@ -146,6 +153,19 @@ class TasksViewModelTest {
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.CategorySelected(5L))
             assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(5L)
+        }
+
+    @Test
+    fun `given reminder preference changes when observed then state uses latest time`() =
+        runTest {
+            val defaultTime = MutableStateFlow(LocalTime(9, 0))
+            every { taskReminderPreferences.defaultTime } returns defaultTime
+            viewModel = createViewModel()
+
+            defaultTime.value = LocalTime(14, 30)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.defaultReminderTime).isEqualTo(LocalTime(14, 30))
         }
 
     @Test

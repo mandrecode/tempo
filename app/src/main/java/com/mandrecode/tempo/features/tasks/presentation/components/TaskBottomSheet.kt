@@ -9,7 +9,9 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 
 @OptIn(ExperimentalMaterial3Api::class, FormatStringsInDatetimeFormats::class)
@@ -31,6 +33,7 @@ fun TaskBottomSheet(
     onClearErrors: () -> Unit,
     onConfirm: (title: String, description: String, categoryId: Long) -> Unit,
     modifier: Modifier = Modifier,
+    defaultReminderTime: LocalTime = TaskReminderPreferences.DEFAULT_TIME,
     onAutoSave: ((title: String, description: String, categoryId: Long) -> Unit)? = null,
     task: Task? = null,
     onDelete: (() -> Unit)? = null,
@@ -40,6 +43,7 @@ fun TaskBottomSheet(
         categories = categories,
         selectedCategoryIdFromFilter = selectedCategoryIdFromFilter,
         formState = formState,
+        defaultReminderTime = defaultReminderTime,
         onSetPriority = onSetPriority,
         onClearPriority = onClearPriority,
         onSetReminder = onSetReminder,

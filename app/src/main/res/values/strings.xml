@@ -175,6 +175,8 @@
     <string name="add_reminder_time">Add reminder time</string>
     <string name="clear_reminder">Clear Reminder</string>
     <string name="select_time">Select time</string>
+    <string name="choose_time">Choose time</string>
+    <string name="use_default_time">Use %1$s</string>
     <string name="mark_as_completed">Mark as completed</string>
     <string name="mark_as_not_completed">Mark as not completed</string>
     <string name="habit_reminder_default_text">Time to work on your habit!</string>
@@ -414,6 +416,8 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_subtitle">Notification Settings</string>
     <string name="settings_notifications_description">Manage permissions and alerts</string>
+    <string name="settings_default_task_reminder_time">Default task reminder time</string>
+    <string name="settings_default_task_reminder_time_description">%1$s · Used when no exact time is chosen</string>
     <string name="settings_completed_tasks">Completed tasks</string>
     <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
     <string name="settings_remove_completed_after">Remove after</string>

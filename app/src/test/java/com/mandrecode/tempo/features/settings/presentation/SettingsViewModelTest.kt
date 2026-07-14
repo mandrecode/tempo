@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.util.AppVersionInfo
 import com.mandrecode.tempo.util.AppVersionProvider
@@ -24,6 +25,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,6 +38,7 @@ class SettingsViewModelTest {
     private lateinit var appVersionProvider: AppVersionProvider
     private lateinit var completedTaskRetentionPreferences: CompletedTaskRetentionPreferences
     private lateinit var configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase
+    private lateinit var taskReminderPreferences: TaskReminderPreferences
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -49,6 +52,7 @@ class SettingsViewModelTest {
             }
         completedTaskRetentionPreferences = mockk(relaxed = true)
         configureCompletedTaskRetention = mockk(relaxed = true)
+        taskReminderPreferences = mockk(relaxed = true)
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
@@ -57,6 +61,7 @@ class SettingsViewModelTest {
         coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
         every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(false)
         every { completedTaskRetentionPreferences.retentionDays } returns MutableStateFlow(30)
+        every { taskReminderPreferences.defaultTime } returns MutableStateFlow(LocalTime(9, 0))
 
         viewModel = createViewModel()
     }
@@ -252,6 +257,25 @@ class SettingsViewModelTest {
             assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(45)
         }
 
+    @Test
+    fun `default task reminder preference updates settings state`() =
+        runTest {
+            every { taskReminderPreferences.defaultTime } returns MutableStateFlow(LocalTime(13, 45))
+            viewModel = createViewModel()
+
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.defaultTaskReminderTime).isEqualTo(LocalTime(13, 45))
+        }
+
+    @Test
+    fun `default task reminder time change calls preference`() =
+        runTest {
+            viewModel.onEvent(SettingsContract.UiEvent.DefaultTaskReminderTimeChanged(LocalTime(7, 20)))
+
+            verify { taskReminderPreferences.setDefaultTime(LocalTime(7, 20)) }
+        }
+
     private fun createViewModel(): SettingsViewModel =
         SettingsViewModel(
             themePreferencesRepository,
@@ -259,5 +283,6 @@ class SettingsViewModelTest {
             appVersionProvider,
             completedTaskRetentionPreferences,
             configureCompletedTaskRetention,
+            taskReminderPreferences,
         )
 }

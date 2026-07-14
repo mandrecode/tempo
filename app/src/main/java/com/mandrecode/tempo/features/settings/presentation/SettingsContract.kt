@@ -2,8 +2,10 @@ package com.mandrecode.tempo.features.settings.presentation
 
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.LocalTime
 
 /**
  * Contract for Settings screen following MVI pattern.
@@ -27,6 +29,7 @@ object SettingsContract {
         val defaultTab: DefaultTab = DefaultTab.ROUTINES,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
+        val defaultTaskReminderTime: LocalTime = TaskReminderPreferences.DEFAULT_TIME,
     )
 
     /**
@@ -59,6 +62,10 @@ object SettingsContract {
 
         data class CompletedTaskRetentionDaysChanged(
             val days: Int,
+        ) : UiEvent
+
+        data class DefaultTaskReminderTimeChanged(
+            val time: LocalTime,
         ) : UiEvent
     }
 

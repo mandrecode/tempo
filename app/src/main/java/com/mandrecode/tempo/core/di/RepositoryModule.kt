@@ -5,6 +5,7 @@ import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.CompletedTaskRetentionPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositoryImpl
+import com.mandrecode.tempo.core.data.preferences.TaskReminderPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
@@ -17,6 +18,7 @@ import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImp
 import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import dagger.Binds
 import dagger.Module
@@ -52,4 +54,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCompletedTaskRetentionPreferences(impl: CompletedTaskRetentionPreferencesImpl): CompletedTaskRetentionPreferences
+
+    @Binds
+    abstract fun bindTaskReminderPreferences(impl: TaskReminderPreferencesImpl): TaskReminderPreferences
 }

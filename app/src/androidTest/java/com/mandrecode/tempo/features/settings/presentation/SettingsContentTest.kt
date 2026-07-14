@@ -12,6 +12,8 @@ import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.util.DateTimeFormatter
+import kotlinx.datetime.LocalTime
 import org.junit.Rule
 import org.junit.Test
 
@@ -274,5 +276,55 @@ class SettingsContentTest {
             .performClick()
 
         assertThat(selectedDays).isEqualTo(45)
+    }
+
+    @Test
+    fun displaysDefaultTaskReminderTime() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val formattedTime = DateTimeFormatter.formatTime(LocalTime(14, 35), context)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(defaultTaskReminderTime = LocalTime(14, 35)),
+                    onEvent = {},
+                    onOnboardingClick = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText(formattedTime, substring = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun confirmingDefaultTaskReminderTimeEmitsEvent() {
+        val settingTitle = localizedString(R.string.settings_default_task_reminder_time)
+        val ok = localizedString(R.string.ok)
+        var selectedTime: LocalTime? = null
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(defaultTaskReminderTime = LocalTime(14, 35)),
+                    onEvent = { event ->
+                        if (event is SettingsContract.UiEvent.DefaultTaskReminderTimeChanged) {
+                            selectedTime = event.time
+                        }
+                    },
+                    onOnboardingClick = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithText(settingTitle)
+            .performScrollTo()
+            .performClick()
+        composeTestRule.onNodeWithText(ok).performClick()
+
+        assertThat(selectedTime).isEqualTo(LocalTime(14, 35))
     }
 }

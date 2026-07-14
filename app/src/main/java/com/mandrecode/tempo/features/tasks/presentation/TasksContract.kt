@@ -8,6 +8,7 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
@@ -18,6 +19,7 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 
 /**
  * Contract for Tasks screen following MVI pattern.
@@ -50,6 +52,7 @@ object TasksContract {
         val activeTasks: ImmutableMap<ActiveGroupKey, ImmutableList<Task>> = persistentMapOf(),
         val completedTaskGroups: ImmutableMap<CompletedGroupKey, ImmutableList<Task>> = persistentMapOf(),
         val subtasksMap: ImmutableMap<Long, ImmutableList<Task>> = persistentMapOf(),
+        val defaultReminderTime: LocalTime = TaskReminderPreferences.DEFAULT_TIME,
     )
 
     data class TaskFormState(

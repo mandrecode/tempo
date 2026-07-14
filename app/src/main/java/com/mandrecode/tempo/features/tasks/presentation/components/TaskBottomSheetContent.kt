@@ -22,9 +22,11 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
@@ -35,8 +37,11 @@ import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import com.mandrecode.tempo.infrastructure.permissions.hasNotificationPermissions
+import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
@@ -50,6 +55,7 @@ internal fun TaskBottomSheetContent(
     categories: List<Category>,
     selectedCategoryIdFromFilter: Long?,
     formState: TasksContract.TaskFormState,
+    defaultReminderTime: LocalTime,
     onSetPriority: (Priority) -> Unit,
     onClearPriority: () -> Unit,
     onSetReminder: (Int, Int, Int, Int, Int) -> Unit,
@@ -111,6 +117,8 @@ internal fun TaskBottomSheetContent(
     }
 
     if (showDatePicker) {
+        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        val formattedDefaultTime = DateTimeFormatter.formatTime(defaultReminderTime, context)
         val futureDatesOnly =
             remember {
                 object : SelectableDates {
@@ -135,6 +143,25 @@ internal fun TaskBottomSheetContent(
                 tempSelectedDate = date
                 showDatePicker = false
                 showTimePicker = true
+            },
+            confirmLabel = stringResource(R.string.choose_time),
+            alternativeConfirmLabel = stringResource(R.string.use_default_time, formattedDefaultTime),
+            onAlternativeConfirm = { date ->
+                onSetReminder(
+                    date.year,
+                    date.month.number,
+                    date.day,
+                    defaultReminderTime.hour,
+                    defaultReminderTime.minute,
+                )
+                showDatePicker = false
+            },
+            isAlternativeConfirmEnabled = { date ->
+                isFutureDefaultReminder(
+                    date = date,
+                    defaultTime = defaultReminderTime,
+                    now = now,
+                )
             },
             onDismiss = { showDatePicker = false },
             selectableDates = futureDatesOnly,
@@ -377,3 +404,9 @@ internal fun TaskBottomSheetContent(
         }
     }
 }
+
+internal fun isFutureDefaultReminder(
+    date: LocalDate,
+    defaultTime: LocalTime,
+    now: LocalDateTime,
+): Boolean = LocalDateTime(date, defaultTime) > now

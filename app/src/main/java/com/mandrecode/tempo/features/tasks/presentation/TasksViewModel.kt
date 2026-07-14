@@ -2,10 +2,12 @@ package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.di.DefaultDispatcher
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateCategoryUseCase
@@ -31,6 +33,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
 @HiltViewModel
@@ -56,6 +60,7 @@ class TasksViewModel
         @DefaultDispatcher internal val defaultDispatcher: CoroutineDispatcher,
         internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
         internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
+        internal val taskReminderPreferences: TaskReminderPreferences,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
 
@@ -103,6 +108,15 @@ class TasksViewModel
 
         init {
             loadData()
+            observeDefaultReminderTime()
+        }
+
+        private fun observeDefaultReminderTime() {
+            viewModelScope.launch {
+                taskReminderPreferences.defaultTime.collect { defaultTime ->
+                    _uiState.update { it.copy(defaultReminderTime = defaultTime) }
+                }
+            }
         }
 
         fun onEvent(event: TasksContract.UiEvent) {
