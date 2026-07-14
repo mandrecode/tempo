@@ -83,7 +83,7 @@ internal fun HabitBottomSheetContent(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
 
-    var title by remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+    var title by remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
         mutableStateOf(
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.title ?: ""
@@ -92,18 +92,18 @@ internal fun HabitBottomSheetContent(
         )
     }
     val initialDescription =
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.description.orEmpty()
                 HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.description.orEmpty()
             }
         }
     val descriptionState =
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
             DescriptionEditorState(TextFieldValue(initialDescription))
         }
     var isDescriptionDirty by
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
             mutableStateOf(false)
         }
     var selectedHabitIds by remember(formState.editingHabitChain?.id) {
@@ -372,12 +372,15 @@ internal fun HabitBottomSheetContent(
     val autoSaveEnabled = autoSaveHabitEnabled || autoSaveHabitChainEnabled
 
     var lastDispatchedSnapshot by
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
             mutableStateOf<Any?>(null)
         }
     DebouncedSnapshotEffect(
         enabled = autoSaveEnabled,
-        key = formState.editingHabit?.id ?: formState.editingHabitChain?.id,
+        key = when (formState.selectedTab) {
+            HabitSheetTab.HABIT -> formState.editingHabit?.id
+            HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.id
+        },
         debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
         snapshotProvider = {
             when (formState.selectedTab) {
@@ -405,7 +408,10 @@ internal fun HabitBottomSheetContent(
             }
         },
         onSnapshot = { snapshot ->
-            val initialSnapshot = editingHabitSnapshot ?: editingChainSnapshot
+            val initialSnapshot = when (formState.selectedTab) {
+                HabitSheetTab.HABIT -> editingHabitSnapshot
+                HabitSheetTab.HABIT_CHAIN -> editingChainSnapshot
+            }
             if (snapshot != initialSnapshot && lastDispatchedSnapshot != snapshot) {
                 when (snapshot) {
                     is HabitFormSnapshot -> {
@@ -452,7 +458,10 @@ internal fun HabitBottomSheetContent(
                         periodicReminder = formState.reminderDate,
                     )
             }
-        val initialSnapshot = editingHabitSnapshot ?: editingChainSnapshot
+        val initialSnapshot = when (formState.selectedTab) {
+            HabitSheetTab.HABIT -> editingHabitSnapshot
+            HabitSheetTab.HABIT_CHAIN -> editingChainSnapshot
+        }
         if (autoSaveEnabled && title.isNotBlank()) {
             if (currentSnapshot != initialSnapshot && currentSnapshot != lastDispatchedSnapshot) {
                 when (currentSnapshot) {
