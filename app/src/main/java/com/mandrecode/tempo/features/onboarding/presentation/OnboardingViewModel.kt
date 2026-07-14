@@ -76,11 +76,13 @@ class OnboardingViewModel
                     Triple(routinesEnabled, tasksEnabled, defaultTab)
                 }.collect { (routinesEnabled, tasksEnabled, defaultTab) ->
                     mutableUiState.update {
-                        it.copy(
-                            isRoutinesTabEnabled = routinesEnabled,
-                            isTasksTabEnabled = tasksEnabled,
-                            defaultTab = defaultTab.toDefaultTab(),
-                        )
+                        val preferenceState =
+                            it.copy(
+                                isRoutinesTabEnabled = routinesEnabled,
+                                isTasksTabEnabled = tasksEnabled,
+                                defaultTab = defaultTab.toDefaultTab(),
+                            )
+                        preferenceState.copy(defaultTab = preferenceState.resolvedDefaultTab())
                     }
                 }
             }

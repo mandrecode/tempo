@@ -34,6 +34,8 @@ Alternative: implement a one-off composable in `MainActivity`. Rejected because 
 
 The pages are: (1) the benefits of tasks and categories, (2) the benefits of routines and reminders, (3) light/dark/system mode plus Tempo versus dynamic colors, (4) tab visibility and default tab, and (5) a centered final welcome with the unmodified default Tempo launcher logo and app name. The welcome renders the launcher resource directly so Compose does not replace or augment its background. The appearance and setup pages reuse the same section composables as Settings so behavior and styling cannot drift. Completed-task retention remains exclusively in Settings, keeping the first-run configuration focused and avoiding an advanced destructive control before the user has completed a task. Preference edits are persisted as the user makes them, matching Settings behavior and allowing the global theme to preview appearance changes immediately. The completion action appears on the welcome page so configuration and celebration remain distinct steps; Skip is omitted there because it would duplicate completion behavior.
 
+Navigation preference emissions are resolved against the simultaneously observed enabled-tab flags before entering UI state. This keeps the displayed default valid even when independent preference writes emit the disabled-tab value before the replacement default-tab value.
+
 Alternative: stage all choices and commit only on Finish. Rejected because replay would need a parallel draft model and appearance could not provide an immediate whole-app preview. Skip therefore preserves any explicit edits already made.
 
 ### Persist only completion as new onboarding data

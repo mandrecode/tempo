@@ -38,3 +38,5 @@
 - [x] 4.17 Match onboarding concept-card contrast to the app's neutral `surfaceContainer` card role
 - [x] 4.18 Keep a stable top-level back-stack anchor after first-run onboarding removes the graph start destination
 - [x] 4.19 Commit onboarding completion synchronously before the navigation handoff
+- [x] 4.20 Resolve independently emitted navigation preferences to an enabled default before updating onboarding UI state
+- [x] 4.21 Keep completed-task retention default tests tied to production constants

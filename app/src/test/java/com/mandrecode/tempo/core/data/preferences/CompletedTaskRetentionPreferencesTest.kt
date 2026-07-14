@@ -24,21 +24,26 @@ class CompletedTaskRetentionPreferencesTest {
         sharedPreferences =
             mockk {
                 every { getBoolean(any(), any()) } returns false
-                every { getInt(any(), any()) } returns 30
+                every { getInt(any(), any()) } returns CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS
                 every { edit() } returns editor
             }
     }
 
     @Test
-    fun `defaults to disabled with thirty day retention`() {
+    fun `defaults to disabled with default retention`() {
         val preferences = createPreferences()
 
         assertThat(preferences.isEnabled.value).isEqualTo(CompletedTaskRetentionPreferences.DEFAULT_ENABLED)
-        assertThat(preferences.retentionDays.value).isEqualTo(30)
+        assertThat(preferences.retentionDays.value)
+            .isEqualTo(CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS)
         verify {
             sharedPreferences.getBoolean(
                 "enabled",
                 CompletedTaskRetentionPreferences.DEFAULT_ENABLED,
+            )
+            sharedPreferences.getInt(
+                "retention_days",
+                CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
             )
         }
     }

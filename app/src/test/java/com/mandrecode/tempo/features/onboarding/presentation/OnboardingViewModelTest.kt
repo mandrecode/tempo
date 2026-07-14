@@ -128,6 +128,19 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun givenRoutinesDefault_whenDisabledPreferenceEmitsBeforeDefaultUpdate_thenUiUsesTasks() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            routinesEnabled.value = false
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isRoutinesTabEnabled).isFalse()
+            assertThat(viewModel.uiState.value.defaultTab).isEqualTo(OnboardingContract.DefaultTab.TASKS)
+        }
+
+    @Test
     fun givenOnlyTasksEnabled_whenTasksDisabled_thenInvariantPreventsWrite() =
         runTest {
             routinesEnabled.value = false

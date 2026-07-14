@@ -98,6 +98,10 @@ The onboarding flow SHALL allow the user to choose an enabled default tab and SH
 - **WHEN** the user disables the current default tab while the other tab is enabled
 - **THEN** the app enables no additional tab and persists the other tab as the default
 
+#### Scenario: Preference updates arrive independently
+- **WHEN** the disabled-tab preference emits before its replacement default-tab preference
+- **THEN** onboarding displays the enabled tab as the default throughout the update
+
 ### Requirement: Advanced retention remains in Settings
 The onboarding flow SHALL NOT expose automatic completed-task removal or retention-duration controls.
 
