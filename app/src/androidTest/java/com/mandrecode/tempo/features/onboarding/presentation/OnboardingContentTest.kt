@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -207,6 +208,7 @@ class OnboardingContentTest {
         val appName = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.app_name)
         composeTestRule.onNodeWithTag(OnboardingTestTags.WELCOME_LOGO).assertIsDisplayed()
         composeTestRule.onNodeWithText(appName).assertIsDisplayed()
+        composeTestRule.onAllNodesWithContentDescription(appName).assertCountEquals(0)
     }
 
     private fun setContent(

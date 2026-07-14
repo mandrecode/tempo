@@ -155,7 +155,6 @@ internal fun OnboardingWelcomePage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        val appName = stringResource(R.string.app_name)
         AndroidView(
             factory = { context ->
                 ImageView(context).apply {
@@ -163,7 +162,7 @@ internal fun OnboardingWelcomePage(
                     scaleType = ImageView.ScaleType.FIT_CENTER
                 }
             },
-            update = { imageView -> imageView.contentDescription = appName },
+            update = { imageView -> imageView.contentDescription = null },
             modifier =
                 Modifier
                     .size(if (layout.isShort) 96.dp else 144.dp)
