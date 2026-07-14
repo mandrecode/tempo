@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -44,13 +45,7 @@ fun TempoDatePickerDialog(
             initialSelectedDateMillis = initialMillis,
             selectableDates = selectableDates,
         )
-    val selectedDate =
-        datePickerState.selectedDateMillis?.let { millis ->
-            Instant
-                .fromEpochMilliseconds(millis)
-                .toLocalDateTime(TimeZone.UTC)
-                .date
-        }
+    val selectedDate = datePickerState.selectedDateMillis?.toUtcLocalDate()
 
     // Add haptic feedback when date picker values change
     LaunchedEffect(datePickerState, haptic) {
@@ -67,27 +62,29 @@ fun TempoDatePickerDialog(
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            if (alternativeConfirmLabel != null && onAlternativeConfirm != null) {
+            Row {
+                if (alternativeConfirmLabel != null && onAlternativeConfirm != null) {
+                    TextButton(
+                        enabled = selectedDate?.let(isAlternativeConfirmEnabled) == true,
+                        onClick = {
+                            selectedDate?.let(onAlternativeConfirm)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        },
+                    ) {
+                        Text(alternativeConfirmLabel)
+                    }
+                }
                 TextButton(
-                    enabled = selectedDate?.let(isAlternativeConfirmEnabled) == true,
+                    enabled = selectedDate != null,
                     onClick = {
-                        selectedDate?.let(onAlternativeConfirm)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        selectedDate?.let { date ->
+                            onConfirm(date)
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        }
                     },
                 ) {
-                    Text(alternativeConfirmLabel)
+                    Text(confirmLabel ?: stringResource(R.string.ok))
                 }
-            }
-            TextButton(
-                enabled = selectedDate != null,
-                onClick = {
-                    selectedDate?.let { date ->
-                        onConfirm(date)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    }
-                },
-            ) {
-                Text(confirmLabel ?: stringResource(R.string.ok))
             }
         },
         dismissButton = {
@@ -99,3 +96,9 @@ fun TempoDatePickerDialog(
         DatePicker(state = datePickerState)
     }
 }
+
+private fun Long.toUtcLocalDate(): LocalDate =
+    Instant
+        .fromEpochMilliseconds(this)
+        .toLocalDateTime(TimeZone.UTC)
+        .date
