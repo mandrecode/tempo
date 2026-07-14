@@ -52,6 +52,12 @@ The NavHost start destination is captured only when the successful app compositi
 
 Alternative: render onboarding outside the NavHost. Rejected because Settings replay and back-stack behavior would require a second routing mechanism.
 
+### Match established expressive motion
+
+Onboarding actions use Tempo's existing press-driven shape and color animation language. The progress indicator follows Didi's segmented pill treatment: one segment per page, completed and current segments use the primary color, future segments use a muted surface color, and segment colors animate when the page changes.
+
+Alternative: keep the stock linear progress indicator and static Material buttons. Rejected because they visually diverge from the interaction feedback used throughout Tempo and make discrete onboarding steps less legible.
+
 ### Keep permission education contextual
 
 The reminder page explains that reminders can notify at useful times, but it does not request permission. Existing notification permission education remains the sole permission-sensitive entry point, so onboarding copy cannot get ahead of the user's first reminder action.

@@ -15,26 +15,20 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,12 +78,12 @@ private fun OnboardingSkip(onEvent: (OnboardingContract.UiEvent) -> Unit) {
         modifier = Modifier.fillMaxWidth().widthIn(max = OnboardingMaxWidth),
         horizontalArrangement = Arrangement.End,
     ) {
-        TextButton(
+        AnimatedOnboardingButton(
+            label = stringResource(R.string.onboarding_skip),
             onClick = { onEvent(OnboardingContract.UiEvent.SkipClicked) },
+            style = OnboardingButtonStyle.Text,
             modifier = Modifier.testTag(OnboardingTestTags.SKIP),
-        ) {
-            Text(stringResource(R.string.onboarding_skip))
-        }
+        )
     }
 }
 
@@ -130,9 +124,9 @@ private fun OnboardingFooter(
         modifier = Modifier.fillMaxWidth().widthIn(max = OnboardingMaxWidth),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        LinearProgressIndicator(
-            progress = { (uiState.currentPage + 1f) / OnboardingContract.PAGE_COUNT },
-            modifier = Modifier.fillMaxWidth().height(4.dp).clip(CircleShape),
+        OnboardingProgress(
+            currentPage = uiState.currentPage,
+            pageCount = OnboardingContract.PAGE_COUNT,
         )
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -141,14 +135,21 @@ private fun OnboardingFooter(
             if (uiState.isFirstPage) {
                 Spacer(modifier = Modifier.weight(1f))
             } else {
-                OutlinedButton(
+                AnimatedOnboardingButton(
+                    label = stringResource(R.string.back),
                     onClick = { onEvent(OnboardingContract.UiEvent.BackClicked) },
+                    style = OnboardingButtonStyle.Outlined,
                     modifier = Modifier.weight(1f).testTag(OnboardingTestTags.BACK),
-                ) {
-                    Text(stringResource(R.string.back))
-                }
+                )
             }
-            Button(
+            val label =
+                if (uiState.isLastPage) {
+                    R.string.onboarding_start
+                } else {
+                    R.string.onboarding_next
+                }
+            AnimatedOnboardingButton(
+                label = stringResource(label),
                 onClick = {
                     val event =
                         if (uiState.isLastPage) {
@@ -158,16 +159,9 @@ private fun OnboardingFooter(
                         }
                     onEvent(event)
                 },
+                style = OnboardingButtonStyle.Primary,
                 modifier = Modifier.weight(1f).testTag(OnboardingTestTags.FORWARD),
-            ) {
-                val label =
-                    if (uiState.isLastPage) {
-                        R.string.onboarding_start
-                    } else {
-                        R.string.onboarding_next
-                    }
-                Text(stringResource(label))
-            }
+            )
         }
     }
 }
@@ -334,6 +328,7 @@ internal object OnboardingTestTags {
     const val SKIP = "onboarding_skip"
     const val BACK = "onboarding_back"
     const val FORWARD = "onboarding_forward"
+    const val PROGRESS_SEGMENT = "onboarding_progress_segment"
 }
 
 internal val OnboardingMaxWidth = 600.dp

@@ -1,9 +1,14 @@
 package com.mandrecode.tempo.features.onboarding.presentation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,8 +25,20 @@ class OnboardingContentTest {
 
     @Test
     fun givenAnyPage_whenRendered_thenSkipIsAvailable() {
+        var uiState by mutableStateOf(OnboardingContract.UiState())
+        composeTestRule.setContent {
+            TempoTheme {
+                OnboardingContent(
+                    uiState = uiState,
+                    onEvent = {},
+                )
+            }
+        }
+
         repeat(OnboardingContract.PAGE_COUNT) { page ->
-            setContent(OnboardingContract.UiState(currentPage = page))
+            composeTestRule.runOnIdle {
+                uiState = uiState.copy(currentPage = page)
+            }
 
             composeTestRule.onNodeWithTag(OnboardingTestTags.SKIP).assertIsDisplayed().assertIsEnabled()
         }
@@ -35,6 +52,15 @@ class OnboardingContentTest {
         composeTestRule.onNodeWithTag(OnboardingTestTags.FORWARD).performClick()
 
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.NextClicked)
+    }
+
+    @Test
+    fun givenAnyPage_whenRendered_thenProgressHasOneSegmentPerPage() {
+        setContent(OnboardingContract.UiState(currentPage = 1))
+
+        composeTestRule
+            .onAllNodesWithTag(OnboardingTestTags.PROGRESS_SEGMENT)
+            .assertCountEquals(OnboardingContract.PAGE_COUNT)
     }
 
     @Test
