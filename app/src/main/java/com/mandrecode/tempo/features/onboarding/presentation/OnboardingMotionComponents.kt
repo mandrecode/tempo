@@ -38,12 +38,13 @@ internal fun OnboardingProgress(
     modifier: Modifier = Modifier,
 ) {
     val lastPage = (pageCount - 1).coerceAtLeast(0)
+    val clampedCurrentPage = currentPage.coerceIn(0, lastPage)
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .progressSemantics(
-                    value = currentPage.coerceIn(0, lastPage).toFloat(),
+                    value = clampedCurrentPage.toFloat(),
                     valueRange = 0f..lastPage.toFloat(),
                     steps = (pageCount - 2).coerceAtLeast(0),
                 ).testTag(OnboardingTestTags.PROGRESS),
@@ -52,7 +53,7 @@ internal fun OnboardingProgress(
     ) {
         repeat(pageCount) { index ->
             val color by animateColorAsState(
-                targetValue = progressColor(isComplete = index <= currentPage),
+                targetValue = progressColor(isComplete = index <= clampedCurrentPage),
                 animationSpec = tween(durationMillis = PROGRESS_ANIMATION_DURATION),
                 label = "onboardingProgressColor",
             )
