@@ -65,6 +65,11 @@ fun OnboardingContent(
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             OnboardingSkip(layout = layout, onEvent = onEvent)
+            OnboardingProgress(
+                currentPage = uiState.currentPage,
+                pageCount = OnboardingContract.PAGE_COUNT,
+                modifier = Modifier.fillMaxWidth().widthIn(max = layout.footerMaxWidth),
+            )
             OnboardingPage(
                 uiState = uiState,
                 onEvent = onEvent,
@@ -110,7 +115,7 @@ private fun OnboardingPage(
                 SizeTransform(clip = false)
         },
         label = "onboardingPage",
-        modifier = modifier,
+        modifier = modifier.testTag(OnboardingTestTags.PAGE),
     ) { page ->
         Box(
             modifier = Modifier.fillMaxSize().clipToBounds(),
@@ -132,49 +137,40 @@ private fun OnboardingFooter(
     layout: OnboardingLayout,
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
-    Column(
+    Row(
         modifier = Modifier.fillMaxWidth().widthIn(max = layout.footerMaxWidth),
-        verticalArrangement = Arrangement.spacedBy(if (layout.isShort) 8.dp else 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        OnboardingProgress(
-            currentPage = uiState.currentPage,
-            pageCount = OnboardingContract.PAGE_COUNT,
-        )
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            if (uiState.isFirstPage) {
-                Spacer(modifier = Modifier.weight(1f))
-            } else {
-                AnimatedOnboardingButton(
-                    label = stringResource(R.string.back),
-                    onClick = { onEvent(OnboardingContract.UiEvent.BackClicked) },
-                    style = OnboardingButtonStyle.Outlined,
-                    modifier = Modifier.weight(1f).testTag(OnboardingTestTags.BACK),
-                )
-            }
-            val label =
-                if (uiState.isLastPage) {
-                    R.string.onboarding_start
-                } else {
-                    R.string.onboarding_next
-                }
+        if (uiState.isFirstPage) {
+            Spacer(modifier = Modifier.weight(1f))
+        } else {
             AnimatedOnboardingButton(
-                label = stringResource(label),
-                onClick = {
-                    val event =
-                        if (uiState.isLastPage) {
-                            OnboardingContract.UiEvent.FinishClicked
-                        } else {
-                            OnboardingContract.UiEvent.NextClicked
-                        }
-                    onEvent(event)
-                },
-                style = OnboardingButtonStyle.Primary,
-                modifier = Modifier.weight(1f).testTag(OnboardingTestTags.FORWARD),
+                label = stringResource(R.string.back),
+                onClick = { onEvent(OnboardingContract.UiEvent.BackClicked) },
+                style = OnboardingButtonStyle.Outlined,
+                modifier = Modifier.weight(1f).testTag(OnboardingTestTags.BACK),
             )
         }
+        val label =
+            if (uiState.isLastPage) {
+                R.string.onboarding_start
+            } else {
+                R.string.onboarding_next
+            }
+        AnimatedOnboardingButton(
+            label = stringResource(label),
+            onClick = {
+                val event =
+                    if (uiState.isLastPage) {
+                        OnboardingContract.UiEvent.FinishClicked
+                    } else {
+                        OnboardingContract.UiEvent.NextClicked
+                    }
+                onEvent(event)
+            },
+            style = OnboardingButtonStyle.Primary,
+            modifier = Modifier.weight(1f).testTag(OnboardingTestTags.FORWARD),
+        )
     }
 }
 
@@ -385,7 +381,9 @@ internal object OnboardingTestTags {
     const val SKIP = "onboarding_skip"
     const val BACK = "onboarding_back"
     const val FORWARD = "onboarding_forward"
+    const val PROGRESS = "onboarding_progress"
     const val PROGRESS_SEGMENT = "onboarding_progress_segment"
+    const val PAGE = "onboarding_page"
     const val SINGLE_PANE = "onboarding_single_pane"
     const val TWO_PANE = "onboarding_two_pane"
 }

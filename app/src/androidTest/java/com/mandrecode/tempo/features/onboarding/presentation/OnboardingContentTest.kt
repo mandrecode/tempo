@@ -64,6 +64,24 @@ class OnboardingContentTest {
     }
 
     @Test
+    fun givenAnyPage_whenRendered_thenProgressIsAbovePageContent() {
+        setContent(OnboardingContract.UiState())
+
+        val progressBottom =
+            composeTestRule
+                .onNodeWithTag(OnboardingTestTags.PROGRESS)
+                .fetchSemanticsNode()
+                .boundsInRoot.bottom
+        val pageTop =
+            composeTestRule
+                .onNodeWithTag(OnboardingTestTags.PAGE)
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+
+        assertThat(progressBottom).isAtMost(pageTop)
+    }
+
+    @Test
     fun givenAppearancePage_whenDynamicColorsClicked_thenSelectionEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(

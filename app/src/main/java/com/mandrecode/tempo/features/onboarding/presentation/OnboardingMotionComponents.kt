@@ -35,9 +35,10 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 internal fun OnboardingProgress(
     currentPage: Int,
     pageCount: Int,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().testTag(OnboardingTestTags.PROGRESS),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
