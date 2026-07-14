@@ -1,8 +1,10 @@
 package com.mandrecode.tempo.features.routines.domain.usecase
 
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
@@ -27,11 +29,13 @@ class DeleteHabitUseCaseTest {
     fun `deleting habit removes from repository and cancels reminder`() =
         runTest {
             val habit = habit()
+            coEvery { habitRepository.deleteHabitWithSnapshot(habit.id) } returns
+                HabitDeletionSnapshot(habit, emptyList())
 
             useCase(habit)
 
             coVerifyOrder {
-                habitRepository.deleteHabit(habit)
+                habitRepository.deleteHabitWithSnapshot(habit.id)
                 habitReminderScheduler.cancelHabit(habit)
             }
         }
@@ -40,10 +44,12 @@ class DeleteHabitUseCaseTest {
     fun `deleting habit without reminder still cancels scheduler`() =
         runTest {
             val habit = habit(reminderDate = null)
+            coEvery { habitRepository.deleteHabitWithSnapshot(habit.id) } returns
+                HabitDeletionSnapshot(habit, emptyList())
 
             useCase(habit)
 
-            coVerify { habitRepository.deleteHabit(habit) }
+            coVerify { habitRepository.deleteHabitWithSnapshot(habit.id) }
             coVerify { habitReminderScheduler.cancelHabit(habit) }
         }
 

@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.routines.domain.repository
 
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -24,6 +25,10 @@ interface HabitRepository {
     suspend fun updateHabit(habit: Habit)
 
     suspend fun deleteHabit(habit: Habit)
+
+    suspend fun deleteHabitWithSnapshot(habitId: Long): HabitDeletionSnapshot
+
+    suspend fun restoreDeletedHabit(snapshot: HabitDeletionSnapshot)
 
     suspend fun deleteHabitsByIds(habitIds: List<Long>)
 

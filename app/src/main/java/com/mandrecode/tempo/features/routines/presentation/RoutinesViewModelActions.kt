@@ -672,10 +672,15 @@ internal fun RoutinesViewModel.deleteHabit() {
     val habit = mutableUiState.value.habitToDelete ?: return
     viewModelScope.launch {
         try {
-            deleteHabitUseCase(habit)
+            val snapshot = deleteHabitUseCase(habit)
             hideDeleteHabitConfirmation()
             hideHabitBottomSheet()
-            showSnackbar(R.string.msg_habit_deleted_success)
+            val token = storePendingDeletion(PendingRoutineDeletion.Habit(snapshot))
+            showSnackbar(
+                messageResId = R.string.msg_habit_deleted_success,
+                actionResId = R.string.undo,
+                deletionToken = token,
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
@@ -712,10 +717,15 @@ internal fun RoutinesViewModel.deleteHabitChain(deleteHabits: Boolean = false) {
     val habitChain = mutableUiState.value.habitChainToDelete ?: return
     viewModelScope.launch {
         try {
-            deleteHabitChainUseCase(habitChain, deleteHabits)
+            val snapshot = deleteHabitChainUseCase(habitChain, deleteHabits)
             hideDeleteHabitChainConfirmation()
             hideHabitBottomSheet()
-            showSnackbar(R.string.msg_habit_chain_deleted_success)
+            val token = storePendingDeletion(PendingRoutineDeletion.HabitChain(snapshot))
+            showSnackbar(
+                messageResId = R.string.msg_habit_chain_deleted_success,
+                actionResId = R.string.undo,
+                deletionToken = token,
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
@@ -747,10 +757,15 @@ internal fun RoutinesViewModel.confirmDeleteEmptyHabitChain() {
     if (habitChain != null) {
         viewModelScope.launch {
             try {
-                deleteHabitChainUseCase(habitChain, deleteHabits = false)
+                val snapshot = deleteHabitChainUseCase(habitChain, deleteHabits = false)
                 hideEmptyHabitChainConfirmation()
                 hideHabitBottomSheet()
-                showSnackbar(R.string.msg_habit_chain_deleted_success)
+                val token = storePendingDeletion(PendingRoutineDeletion.HabitChain(snapshot))
+                showSnackbar(
+                    messageResId = R.string.msg_habit_chain_deleted_success,
+                    actionResId = R.string.undo,
+                    deletionToken = token,
+                )
             } catch (e: CancellationException) {
                 throw e
             } catch (e: IOException) {

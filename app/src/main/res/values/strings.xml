@@ -138,7 +138,7 @@
     <string name="discard_changes_message">You have unsaved changes. Are you sure you want to discard them?</string>
     <string name="confirm_deletion">Confirm Deletion</string>
     <string name="delete_task_message_prefix">Are you sure you want to delete task </string>
-    <string name="delete_task_message_suffix">\u003F This action cannot be undone.</string>
+    <string name="delete_task_message_suffix">\u003F You can undo this briefly afterward.</string>
     <string name="delete_task_with_subtasks_message"> and its %1$d %2$s</string>
     <string name="this_task">this task</string>
     <string name="subtask">subtask</string>
@@ -148,9 +148,13 @@
         <item quantity="other">subtasks</item>
     </plurals>
     <string name="delete_all_completed_tasks">Delete all completed tasks</string>
-    <string name="delete_completed_tasks_confirm_message">Are you sure you want to delete all completed tasks? This action cannot be undone.</string>
+    <string name="delete_completed_tasks_confirm_message">Are you sure you want to delete all completed tasks? You can undo this briefly afterward.</string>
     <string name="delete_category_message_prefix">Are you sure you want to delete category </string>
-    <string name="delete_category_message_suffix">\u003F This will also delete all tasks within it. This action cannot be undone.</string>
+    <string name="delete_category_message_suffix">\u003F This will also delete all tasks within it. You can undo this briefly afterward.</string>
+    <string name="undo">Undo</string>
+    <string name="msg_undo_success">Deletion undone</string>
+    <string name="msg_undo_failed">Couldn’t undo deletion</string>
+    <string name="msg_undo_restored_reminder_warning">Restored, but some reminders need attention</string>
     <string name="habit_chain_select_at_least_one">Please select at least one habit for the habit chain</string>
     <string name="habit_chain_deleted_success">Habit chain deleted successfully</string>
     <string name="empty_habit_chain_title">Empty Habit Chain</string>

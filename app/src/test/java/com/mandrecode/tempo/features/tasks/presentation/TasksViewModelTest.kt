@@ -7,11 +7,13 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.domain.model.RestoreResult
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
@@ -22,6 +24,8 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteCompletedTasksUs
 import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderCategoriesUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
@@ -74,6 +78,8 @@ class TasksViewModelTest {
     private lateinit var reorderTasksUseCase: ReorderTasksUseCase
     private lateinit var permissionChecker: PermissionChecker
     private lateinit var tasksScreenPreferencesRepository: TasksScreenPreferencesRepository
+    private lateinit var restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase
+    private lateinit var restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -95,6 +101,8 @@ class TasksViewModelTest {
         reorderTasksUseCase = mockk(relaxed = true)
         permissionChecker = mockk(relaxed = true)
         tasksScreenPreferencesRepository = mockk(relaxed = true)
+        restoreDeletedTasksUseCase = mockk(relaxed = true)
+        restoreDeletedCategoryUseCase = mockk(relaxed = true)
 
         coEvery { taskRepository.getAllTasks() } returns flowOf(emptyList())
         coEvery { categoryRepository.getAllCategories() } returns flowOf(emptyList())
@@ -102,26 +110,31 @@ class TasksViewModelTest {
         every { tasksScreenPreferencesRepository.getShowCompletedTasks() } returns true
 
         viewModel =
-            TasksViewModel(
-                taskRepository,
-                categoryRepository,
-                createTaskUseCase,
-                updateTaskUseCase,
-                deleteTaskUseCase,
-                toggleTaskCompletionUseCase,
-                createCategoryUseCase,
-                updateCategoryUseCase,
-                deleteCategoryUseCase,
-                setDefaultCategoryUseCase,
-                reorderCategoriesUseCase,
-                deleteCompletedTasksUseCase,
-                clearAllRemindersUseCase,
-                reorderTasksUseCase,
-                permissionChecker,
-                tasksScreenPreferencesRepository,
-                testDispatcher,
-            )
+            createViewModel()
     }
+
+    private fun createViewModel() =
+        TasksViewModel(
+            taskRepository,
+            categoryRepository,
+            createTaskUseCase,
+            updateTaskUseCase,
+            deleteTaskUseCase,
+            toggleTaskCompletionUseCase,
+            createCategoryUseCase,
+            updateCategoryUseCase,
+            deleteCategoryUseCase,
+            setDefaultCategoryUseCase,
+            reorderCategoriesUseCase,
+            deleteCompletedTasksUseCase,
+            clearAllRemindersUseCase,
+            reorderTasksUseCase,
+            permissionChecker,
+            tasksScreenPreferencesRepository,
+            testDispatcher,
+            restoreDeletedTasksUseCase,
+            restoreDeletedCategoryUseCase,
+        )
 
     @After
     fun tearDown() {
@@ -133,6 +146,69 @@ class TasksViewModelTest {
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.CategorySelected(5L))
             assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(5L)
+        }
+
+    @Test
+    fun `delete task stores tokenized snapshot and undo restores matching deletion`() =
+        runTest {
+            val task = Task(id = 9, title = "Delete", description = "")
+            val snapshot = TaskDeletionSnapshot.TaskTree(task.id, listOf(task))
+            coEvery { deleteTaskUseCase(task) } returns snapshot
+            coEvery { restoreDeletedTasksUseCase(snapshot) } returns RestoreResult(emptyList())
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteTask(task))
+            advanceUntilIdle()
+            val token = viewModel.pendingDeletionSnapshots.keys.single()
+
+            viewModel.onEvent(TasksContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            coVerify { restoreDeletedTasksUseCase(snapshot) }
+            assertThat(viewModel.pendingDeletionSnapshots).isEmpty()
+        }
+
+    @Test
+    fun `failed task undo retains snapshot until failure snackbar is dismissed`() =
+        runTest {
+            val snapshot =
+                TaskDeletionSnapshot.TaskTree(
+                    rootTaskId = 9L,
+                    tasks = listOf(Task(id = 9L, title = "Delete", description = "")),
+                )
+            val token = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(snapshot))
+            coEvery { restoreDeletedTasksUseCase(snapshot) } throws IllegalStateException("Restore failed")
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch { viewModel.uiEffect.toList(effects) }
+
+            viewModel.onEvent(TasksContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            assertThat(viewModel.pendingDeletionSnapshots).containsKey(token)
+            assertThat(effects)
+                .contains(
+                    TasksContract.UiEffect.ShowSnackbar(
+                        messageResId = R.string.msg_undo_failed,
+                        deletionToken = token,
+                    ),
+                )
+
+            viewModel.onEvent(TasksContract.UiEvent.DismissDeletionUndo(token))
+
+            assertThat(viewModel.pendingDeletionSnapshots).doesNotContainKey(token)
+        }
+
+    @Test
+    fun `dismiss undo removes only matching deletion token`() =
+        runTest {
+            val first = TaskDeletionSnapshot.TaskTree(1, listOf(Task(id = 1, title = "One", description = "")))
+            val second = TaskDeletionSnapshot.TaskTree(2, listOf(Task(id = 2, title = "Two", description = "")))
+            val firstToken = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(first))
+            val secondToken = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(second))
+
+            viewModel.onEvent(TasksContract.UiEvent.DismissDeletionUndo(firstToken))
+
+            assertThat(viewModel.pendingDeletionSnapshots).containsKey(secondToken)
+            assertThat(viewModel.pendingDeletionSnapshots).doesNotContainKey(firstToken)
         }
 
     @Test
@@ -153,50 +229,14 @@ class TasksViewModelTest {
             } returns 10L
 
             val vm =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
             assertThat(vm.uiState.value.selectedCategoryId).isEqualTo(10L)
 
             // Category removed
             coEvery { categoryRepository.getAllCategories() } returns flowOf(emptyList())
             val vm2 =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
             assertThat(vm2.uiState.value.selectedCategoryId).isEqualTo(0L)
             verify { tasksScreenPreferencesRepository.setSelectedCategoryId(0L) }
@@ -692,25 +732,7 @@ class TasksViewModelTest {
         runTest {
             every { tasksScreenPreferencesRepository.getShowCompletedTasks() } returns false
             val vm =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             assertThat(vm.uiState.value.showCompletedTasks).isFalse()
         }
 
@@ -724,25 +746,7 @@ class TasksViewModelTest {
                 tasksScreenPreferencesRepository.getSortOption(DEFAULT_INBOX_CATEGORY.id)
             } returns SortOption.BY_DATE
             val vm =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             assertThat(vm.uiState.value.sortOption).isEqualTo(SortOption.BY_DATE)
         }
 
@@ -817,25 +821,7 @@ class TasksViewModelTest {
             } returns DEFAULT_INBOX_CATEGORY.id
 
             val vm =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             vm.openTaskFromNotification(5L)
             advanceUntilIdle()
@@ -879,25 +865,7 @@ class TasksViewModelTest {
                 )
 
             val vm =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             vm.openTaskFromNotification(7L, originalReminderDate)
             advanceUntilIdle()
@@ -1156,25 +1124,7 @@ class TasksViewModelTest {
 
             // Re-init viewModel to trigger loadData with mocked data
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             // Select Category 1
             viewModel.onEvent(TasksContract.UiEvent.CategorySelected(category1Id))
@@ -1256,25 +1206,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             advanceUntilIdle()
             val grouped = viewModel.uiState.value.completedTaskGroups
@@ -1345,25 +1277,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_PRIORITY
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
 
             val grouped = viewModel.uiState.value.completedTaskGroups
@@ -1408,25 +1322,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.MANUAL
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
 
             val grouped = viewModel.uiState.value.completedTaskGroups
@@ -1465,25 +1361,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_TITLE
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
 
             val grouped = viewModel.uiState.value.completedTaskGroups
@@ -1524,35 +1402,22 @@ class TasksViewModelTest {
         }
 
     @Test
-    fun `deleteCategory Success closes sheet and selects fallback`() =
+    fun `delete and undo unselected category preserves selection`() =
         runTest {
             val catA = Category(id = 1L, name = "A")
             val catB = Category(id = 2L, name = "B")
+            val snapshot =
+                com.mandrecode.tempo.features.tasks.domain.model
+                    .CategoryDeletionSnapshot(catB, emptyList())
             coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(catA, catB))
+            every { tasksScreenPreferencesRepository.getSelectedCategoryId() } returns catA.id
             coEvery { deleteCategoryUseCase.invoke(catB) } returns
-                DeleteCategoryUseCase.Result.Success
+                DeleteCategoryUseCase.Result.Success(snapshot)
+            coEvery { restoreDeletedCategoryUseCase(snapshot) } returns RestoreResult(emptyList())
 
             // Recreate ViewModel with categories available
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
             advanceUntilIdle()
 
             viewModel.onEvent(TasksContract.UiEvent.DeleteCategory(catB))
@@ -1560,6 +1425,13 @@ class TasksViewModelTest {
 
             assertThat(viewModel.uiState.value.categoryForm.isVisible).isFalse()
             assertThat(viewModel.uiState.value.showDeleteCategoryConfirmationDialog).isFalse()
+            assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(catA.id)
+
+            val token = viewModel.pendingDeletionSnapshots.keys.single()
+            viewModel.onEvent(TasksContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            coVerify { restoreDeletedCategoryUseCase(snapshot) }
             assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(catA.id)
         }
 
@@ -1689,25 +1561,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             advanceUntilIdle()
             val grouped = viewModel.uiState.value.activeTasks
@@ -1802,25 +1656,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             advanceUntilIdle()
             val grouped = viewModel.uiState.value.activeTasks
@@ -1879,25 +1715,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_PRIORITY
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             advanceUntilIdle()
             val grouped = viewModel.uiState.value.activeTasks
@@ -1939,25 +1757,7 @@ class TasksViewModelTest {
             every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.MANUAL
 
             viewModel =
-                TasksViewModel(
-                    taskRepository,
-                    categoryRepository,
-                    createTaskUseCase,
-                    updateTaskUseCase,
-                    deleteTaskUseCase,
-                    toggleTaskCompletionUseCase,
-                    createCategoryUseCase,
-                    updateCategoryUseCase,
-                    deleteCategoryUseCase,
-                    setDefaultCategoryUseCase,
-                    reorderCategoriesUseCase,
-                    deleteCompletedTasksUseCase,
-                    clearAllRemindersUseCase,
-                    reorderTasksUseCase,
-                    permissionChecker,
-                    tasksScreenPreferencesRepository,
-                    testDispatcher,
-                )
+                createViewModel()
 
             advanceUntilIdle()
             val grouped = viewModel.uiState.value.activeTasks

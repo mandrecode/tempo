@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.domain.repository
 
 import com.mandrecode.tempo.features.tasks.domain.model.Category
+import com.mandrecode.tempo.features.tasks.domain.model.CategoryDeletionSnapshot
 import kotlinx.coroutines.flow.Flow
 
 interface CategoryRepository {
@@ -17,6 +18,10 @@ interface CategoryRepository {
     suspend fun getCategoryCount(): Int
 
     suspend fun deleteCategory(category: Category)
+
+    suspend fun deleteCategoryWithSnapshot(category: Category): CategoryDeletionSnapshot
+
+    suspend fun restoreDeletedCategory(snapshot: CategoryDeletionSnapshot)
 
     suspend fun deleteCategoryById(id: Long)
 

@@ -5,6 +5,7 @@ import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.HabitEntity
 import com.mandrecode.tempo.core.data.local.InMemoryTempoDatabaseRule
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitChainDeletionSnapshot
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDate
@@ -28,6 +29,7 @@ class HabitChainRepositoryRoomIntegrationTest {
             HabitChainRepositoryImpl(
                 databaseRule.database.habitChainDao(),
                 databaseRule.database.habitChainMemberDao(),
+                databaseRule.database.habitDao(),
                 databaseRule.database,
             )
     }
@@ -52,6 +54,121 @@ class HabitChainRepositoryRoomIntegrationTest {
             assertThat(fetched).isNotNull()
             assertThat(fetched!!.habitIds).containsExactly(habitBId, habitAId).inOrder()
             assertThat(repository.getAllHabitChains().first()).hasSize(1)
+        }
+
+    @Test
+    fun deleteChainAndHabits_restorePreservesMembersAndStableIds() =
+        runTest {
+            val habitAId = insertHabit("Hydrate")
+            val habitBId = insertHabit("Stretch")
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(title = "Morning", habitIds = listOf(habitBId, habitAId), createdDate = createdDate),
+                )
+
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = true)
+            assertThat(repository.getHabitChainById(chainId)).isNull()
+
+            repository.restoreDeletedHabitChain(snapshot)
+            repository.restoreDeletedHabitChain(snapshot)
+
+            assertThat(repository.getHabitChainById(chainId)?.habitIds).containsExactly(habitBId, habitAId).inOrder()
+            assertThat(databaseRule.database.habitDao().getHabitById(habitAId)).isNotNull()
+            assertThat(databaseRule.database.habitDao().getHabitById(habitBId)).isNotNull()
+        }
+
+    @Test
+    fun restoreDeletedHabitChain_reusedHabitIdRollsBackChainRestore() =
+        runTest {
+            val habitId = insertHabit("Deleted")
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(title = "Morning", habitIds = listOf(habitId), createdDate = createdDate),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = true)
+            databaseRule.database.habitDao().insertHabit(
+                HabitEntity(id = habitId, title = "Unrelated", description = "", createdDate = createdDate),
+            )
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitChainById(chainId)).isNull()
+            assertThat(
+                databaseRule.database
+                    .habitDao()
+                    .getHabitById(habitId)
+                    ?.title,
+            ).isEqualTo("Unrelated")
+        }
+
+    @Test
+    fun restoreDeletedHabitChain_reusedChainIdDoesNotOverwriteNewerRow() =
+        runTest {
+            val habitId = insertHabit("Preserved")
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(title = "Deleted", habitIds = listOf(habitId), createdDate = createdDate),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = false)
+            repository.insertHabitChain(HabitChain(id = chainId, title = "Unrelated", createdDate = createdDate))
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitChainById(chainId)?.title).isEqualTo("Unrelated")
+        }
+
+    @Test
+    fun restorePreservedHabit_restoresReminderWithoutOverwritingEdits() =
+        runTest {
+            val originalReminder = LocalDateTime(2026, 7, 20, 9, 0)
+            val transferredReminder = LocalDateTime(2026, 7, 21, 10, 0)
+            val habitDao = databaseRule.database.habitDao()
+            val habitId =
+                habitDao.insertHabit(
+                    HabitEntity(
+                        title = "Original",
+                        description = "",
+                        reminderDate = originalReminder,
+                        createdDate = createdDate,
+                    ),
+                )
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(
+                        title = "Morning",
+                        habitIds = listOf(habitId),
+                        periodicReminder = transferredReminder,
+                        createdDate = createdDate,
+                    ),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = false)
+            val transferredHabit = requireNotNull(habitDao.getHabitById(habitId))
+            habitDao.updateHabit(transferredHabit.copy(title = "Edited during undo window"))
+
+            repository.restoreDeletedHabitChain(snapshot)
+
+            val restoredHabit = requireNotNull(habitDao.getHabitById(habitId))
+            assertThat(restoredHabit.title).isEqualTo("Edited during undo window")
+            assertThat(restoredHabit.reminderDate).isEqualTo(originalReminder)
+        }
+
+    @Test
+    fun failedRestore_rollsBackChainInsert() =
+        runTest {
+            val chain = HabitChain(id = 999, title = "Broken", habitIds = listOf(404), createdDate = createdDate)
+            val snapshot =
+                HabitChainDeletionSnapshot(
+                    chain = chain,
+                    habitsBeforeDeletion = emptyList(),
+                    affectedChains = listOf(chain),
+                    deletedHabits = true,
+                )
+
+            runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(repository.getHabitChainById(chain.id)).isNull()
         }
 
     @Test
