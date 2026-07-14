@@ -386,7 +386,6 @@ class HabitBottomSheetTest {
         val savedChains = mutableListOf<String>()
         var dismissed = false
         lateinit var switchToChainTab: () -> Unit
-        composeTestRule.mainClock.autoAdvance = false
         composeTestRule.setContent {
             TempoTheme {
                 var selectedTab by remember { mutableStateOf(HabitSheetTab.HABIT) }
@@ -435,13 +434,12 @@ class HabitBottomSheetTest {
         }
 
         composeTestRule.onNodeWithText("Cancel").performScrollTo().performClick()
-        composeTestRule.mainClock.advanceTimeBy(1_000)
+        composeTestRule.waitUntil(timeoutMillis = 5_000) { dismissed }
         composeTestRule.runOnIdle {
             assertTrue(dismissed)
             assertTrue(savedHabits.isEmpty())
             assertTrue(savedChains.isEmpty())
         }
-        composeTestRule.mainClock.autoAdvance = true
     }
 
     // --- Regression tests for #398, #424: title overflow and long text ---

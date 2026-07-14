@@ -53,3 +53,9 @@
 - [x] 9.2 Preserve auto-dash output, selection offsets, and unrelated link styling during edits
 - [x] 9.3 Add focused coverage for insertion, deletion, paste, and edits inside links
 - [x] 9.4 Run quality checks and install the uncommitted experiment on the Pixel 7
+
+## 10. Instrumented-test synchronization follow-up
+
+- [x] 10.1 Trace the PR-only CI stall to the habit/chain tab-switch regression test
+- [x] 10.2 Keep the Compose test clock auto-advancing through animated bottom-sheet setup and dismissal
+- [x] 10.3 Stress-test the fix on API 31 and run the full instrumented suite on the Pixel 10 AVD
