@@ -9,6 +9,8 @@ import com.mandrecode.tempo.features.routines.domain.usecase.CreateHabitUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.CreateOrUpdateHabitChainUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.DeleteHabitChainUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.DeleteHabitUseCase
+import com.mandrecode.tempo.features.routines.domain.usecase.RestoreDeletedHabitChainUseCase
+import com.mandrecode.tempo.features.routines.domain.usecase.RestoreDeletedHabitUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.UpdateHabitUseCase
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
@@ -35,6 +37,8 @@ class RoutinesViewModel
         internal val deleteHabitChainUseCase: DeleteHabitChainUseCase,
         internal val clearAllHabitRemindersUseCase: ClearAllHabitRemindersUseCase,
         internal val permissionChecker: PermissionChecker,
+        internal val restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase,
+        internal val restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(RoutinesContract.UiState())
         internal val mutableUiState: MutableStateFlow<RoutinesContract.UiState>
@@ -43,6 +47,8 @@ class RoutinesViewModel
 
         private val _uiEffect = Channel<RoutinesContract.UiEffect>(Channel.BUFFERED)
         val uiEffect = _uiEffect.receiveAsFlow()
+        internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingRoutineDeletion>()
+        internal var nextDeletionToken = 0L
 
         init {
             loadData()
@@ -114,14 +120,25 @@ class RoutinesViewModel
                     confirmClearAllHabitReminders()
 
                 is RoutinesContract.UiEvent.OnPermissionsGranted -> onPermissionsGranted()
+                is RoutinesContract.UiEvent.UndoDeletion -> undoDeletion(event.token)
+                is RoutinesContract.UiEvent.DismissDeletionUndo -> dismissDeletionUndo(event.token)
             }
         }
 
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,
             formatArgs: List<Any> = emptyList(),
+            @StringRes actionResId: Int? = null,
+            deletionToken: Long? = null,
         ) {
-            _uiEffect.send(RoutinesContract.UiEffect.ShowSnackbar(messageResId, formatArgs))
+            _uiEffect.send(
+                RoutinesContract.UiEffect.ShowSnackbar(
+                    messageResId = messageResId,
+                    formatArgs = formatArgs,
+                    actionResId = actionResId,
+                    deletionToken = deletionToken,
+                ),
+            )
         }
 
         fun openHabitFromNotification(habitId: Long) {

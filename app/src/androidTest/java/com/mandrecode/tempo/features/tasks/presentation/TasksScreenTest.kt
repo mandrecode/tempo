@@ -114,6 +114,8 @@ class TasksScreenTest {
                 permissionChecker,
                 tasksScreenPreferencesRepository,
                 testDispatcher,
+                mockk(relaxed = true),
+                mockk(relaxed = true),
             )
     }
 
@@ -172,6 +174,8 @@ class TasksScreenTest {
                 permissionChecker,
                 tasksScreenPreferencesRepository,
                 testDispatcher,
+                mockk(relaxed = true),
+                mockk(relaxed = true),
             )
 
         composeTestRule.setContent {

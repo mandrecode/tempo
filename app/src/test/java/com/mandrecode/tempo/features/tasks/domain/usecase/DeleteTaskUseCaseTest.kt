@@ -1,8 +1,10 @@
 package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.mockk
@@ -28,12 +30,14 @@ class DeleteTaskUseCaseTest {
     fun `deleting task cancels reminder then removes from repository`() =
         runTest {
             val task = task()
+            coEvery { taskRepository.deleteTaskWithSnapshot(task.id) } returns
+                TaskDeletionSnapshot.TaskTree(task.id, listOf(task))
 
             useCase(task)
 
             coVerifyOrder {
+                taskRepository.deleteTaskWithSnapshot(task.id)
                 taskReminderScheduler.cancel(task)
-                taskRepository.deleteTask(task)
             }
         }
 
@@ -41,11 +45,13 @@ class DeleteTaskUseCaseTest {
     fun `deleting task without reminder still calls cancel and delete`() =
         runTest {
             val task = task(reminderDate = null)
+            coEvery { taskRepository.deleteTaskWithSnapshot(task.id) } returns
+                TaskDeletionSnapshot.TaskTree(task.id, listOf(task))
 
             useCase(task)
 
             verify { taskReminderScheduler.cancel(task) }
-            coVerify { taskRepository.deleteTask(task) }
+            coVerify { taskRepository.deleteTaskWithSnapshot(task.id) }
         }
 
     private fun task(

@@ -15,6 +15,8 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteCompletedTasksUs
 import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderCategoriesUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
@@ -52,6 +54,8 @@ class TasksViewModel
         internal val permissionChecker: PermissionChecker,
         internal val tasksScreenPreferencesRepository: TasksScreenPreferencesRepository,
         @DefaultDispatcher internal val defaultDispatcher: CoroutineDispatcher,
+        internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
+        internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
 
@@ -78,12 +82,23 @@ class TasksViewModel
         // from the correct anchor (mirrors MarkAsCompletedReceiver). Cleared after the
         // first toggle, when a different task is opened, or when the form is dismissed.
         internal var pendingOriginalReminderDate: Pair<Long, LocalDateTime>? = null
+        internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingTaskDeletion>()
+        internal var nextDeletionToken = 0L
 
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,
             formatArgs: List<Any> = emptyList(),
+            @StringRes actionResId: Int? = null,
+            deletionToken: Long? = null,
         ) {
-            _uiEffect.send(TasksContract.UiEffect.ShowSnackbar(messageResId, formatArgs))
+            _uiEffect.send(
+                TasksContract.UiEffect.ShowSnackbar(
+                    messageResId = messageResId,
+                    formatArgs = formatArgs,
+                    actionResId = actionResId,
+                    deletionToken = deletionToken,
+                ),
+            )
         }
 
         init {
@@ -159,6 +174,8 @@ class TasksViewModel
                 is TasksContract.UiEvent.DismissPermissionRevokedDialog -> dismissPermissionRevokedDialog()
                 is TasksContract.UiEvent.ConfirmClearAllReminders -> confirmClearAllReminders()
                 is TasksContract.UiEvent.OnPermissionsGranted -> onPermissionsGranted()
+                is TasksContract.UiEvent.UndoDeletion -> undoDeletion(event.token)
+                is TasksContract.UiEvent.DismissDeletionUndo -> dismissDeletionUndo(event.token)
             }
         }
 

@@ -5,9 +5,13 @@ import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
+import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.Test
 
@@ -69,6 +73,78 @@ class HabitReminderReceiverTest {
         val result = HabitReminderReceiver.shouldShowHabitReminder(habit, delayedOccurrenceDate)
 
         assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns true when chain has not started`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = ""),
+                habit(id = 2L, completionHistory = "2029-12-31"),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns false when chain was started manually`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = "2030-01-01"),
+                habit(id = 2L, completionHistory = ""),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns true when completion belongs to another date`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = "2030-01-02"),
+                habit(id = 2L, completionHistory = "2029-12-31"),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `getChainHabits skips repository lookup for empty chain`() =
+        runTest {
+            val habitRepository = mockk<HabitRepository>(relaxed = true)
+            val receiver = HabitReminderReceiver().apply { this.habitRepository = habitRepository }
+
+            val result = receiver.getChainHabits(emptyList())
+
+            assertThat(result).isEmpty()
+            coVerify(exactly = 0) { habitRepository.getHabitsByIds(any()) }
+        }
+
+    @Test
+    fun `resolveScheduledDate prefers alarm occurrence date after reminder advances`() {
+        val advancedReminderDate = LocalDate(2030, 1, 2)
+
+        val result = HabitReminderReceiver.resolveScheduledDate("2030-01-01", advancedReminderDate)
+
+        assertThat(result).isEqualTo(LocalDate(2030, 1, 1))
+    }
+
+    @Test
+    fun `resolveScheduledDate falls back when alarm occurrence date is invalid`() {
+        val fallbackDate = LocalDate(2030, 1, 2)
+
+        val result = HabitReminderReceiver.resolveScheduledDate("not-a-date", fallbackDate)
+
+        assertThat(result).isEqualTo(fallbackDate)
     }
 
     @Test
@@ -146,4 +222,16 @@ class HabitReminderReceiverTest {
         verify { context.getString(R.string.mark_as_completed) }
         verify(exactly = 0) { context.getString(R.string.still_on_track) }
     }
+
+    private fun habit(
+        id: Long,
+        completionHistory: String,
+    ) = Habit(
+        id = id,
+        title = "Habit $id",
+        description = "",
+        reminderDate = null,
+        createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+        completionHistory = completionHistory,
+    )
 }

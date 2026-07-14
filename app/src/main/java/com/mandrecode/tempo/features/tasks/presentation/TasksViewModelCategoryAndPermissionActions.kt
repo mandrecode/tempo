@@ -132,9 +132,10 @@ internal fun TasksViewModel.cancelDeleteCategory() {
 }
 
 internal fun TasksViewModel.deleteCategory(category: Category) {
+    val selectedCategoryIdBeforeDeletion = mutableUiState.value.selectedCategoryId
     viewModelScope.launch {
         try {
-            when (deleteCategoryUseCase(category)) {
+            when (val result = deleteCategoryUseCase(category)) {
                 is DeleteCategoryUseCase.Result.CannotDeleteDefault -> {
                     mutableUiState.update {
                         it.copy(
@@ -157,13 +158,14 @@ internal fun TasksViewModel.deleteCategory(category: Category) {
 
                 is DeleteCategoryUseCase.Result.Success -> {
                     val fallbackId =
-                        mutableUiState.value.categories
-                            .firstOrNull { it.id != category.id }
-                            ?.id
-                            ?: mutableUiState.value.categories
-                                .firstOrNull()
+                        if (selectedCategoryIdBeforeDeletion != category.id) {
+                            selectedCategoryIdBeforeDeletion
+                        } else {
+                            mutableUiState.value.categories
+                                .firstOrNull { it.id != category.id }
                                 ?.id
-                            ?: 0L
+                                ?: 0L
+                        }
                     val sortOption =
                         tasksScreenPreferencesRepository.getSortOption(fallbackId)
                     mutableUiState.update {
@@ -175,9 +177,18 @@ internal fun TasksViewModel.deleteCategory(category: Category) {
                             sortOption = sortOption,
                         )
                     }
+                    val token =
+                        storePendingDeletion(
+                            PendingTaskDeletion.Category(
+                                snapshot = result.snapshot,
+                                selectedCategoryIdBeforeDeletion = selectedCategoryIdBeforeDeletion,
+                            ),
+                        )
                     showSnackbar(
-                        R.string.msg_category_deleted_success,
-                        listOf(category.name),
+                        messageResId = R.string.msg_category_deleted_success,
+                        formatArgs = listOf(category.name),
+                        actionResId = R.string.undo,
+                        deletionToken = token,
                     )
                 }
             }
@@ -266,11 +277,16 @@ internal fun TasksViewModel.confirmDeleteCompletedTasks() {
     viewModelScope.launch {
         try {
             val categoryId = mutableUiState.value.selectedCategoryId
-            deleteCompletedTasksUseCase(categoryId)
+            val snapshot = deleteCompletedTasksUseCase(categoryId)
             mutableUiState.update {
                 it.copy(showDeleteCompletedConfirmationDialog = false)
             }
-            showSnackbar(R.string.msg_completed_tasks_deleted_success)
+            val token = storePendingDeletion(PendingTaskDeletion.Tasks(snapshot))
+            showSnackbar(
+                messageResId = R.string.msg_completed_tasks_deleted_success,
+                actionResId = R.string.undo,
+                deletionToken = token,
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
