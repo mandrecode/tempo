@@ -2,6 +2,7 @@ package com.mandrecode.tempo.core.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -16,7 +17,10 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 @Composable
 private fun SettingsButtonPreview() {
     TempoTheme {
-        Surface(color = MaterialTheme.colorScheme.surface) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
             Box(modifier = Modifier.padding(24.dp)) {
                 SettingsButton(onClick = {})
             }
