@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
@@ -36,6 +37,9 @@ private val addSubtaskLabel: String
 
 private val expandLabel: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.expand)
+
+private val collapseLabel: String
+    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.collapse)
 
 class TaskCardTest {
     @get:Rule
@@ -211,6 +215,56 @@ class TaskCardTest {
     }
 
     @Test
+    fun longDescription_expandsAndCollapses_withTopAlignedControls() {
+        val task =
+            Task(
+                id = 1,
+                title = "Write documentation",
+                description =
+                    "Document the complete release workflow, verification steps, rollback plan, " +
+                        "and stakeholder communication details.",
+            )
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskItem(
+                    task = task,
+                    onToggleCompletion = {},
+                    onEdit = {},
+                    modifier = Modifier.width(360.dp),
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        val collapsedLayout = descriptionLayoutResult()
+        assertThat(collapsedLayout.lineCount).isEqualTo(1)
+        assertThat(collapsedLayout.isLineEllipsized(0)).isTrue()
+        assertHeaderRegionsTopAligned()
+
+        composeTestRule
+            .onNodeWithContentDescription(expandLabel, substring = true)
+            .performClick()
+        composeTestRule.waitForIdle()
+
+        composeTestRule
+            .onNodeWithContentDescription(collapseLabel, substring = true)
+            .assertIsDisplayed()
+        assertThat(descriptionLayoutResult().lineCount).isGreaterThan(1)
+        assertHeaderRegionsTopAligned()
+
+        composeTestRule
+            .onNodeWithContentDescription(collapseLabel, substring = true)
+            .performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(descriptionLayoutResult().lineCount).isEqualTo(1)
+        composeTestRule
+            .onNodeWithContentDescription(expandLabel, substring = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun topLevelCompletedMetadataDate_staysSingleLine_inConstrainedWidth() {
         val task =
             Task(
@@ -298,11 +352,34 @@ class TaskCardTest {
     }
 
     private fun assertSingleLineText(tag: String) {
-        val textLayoutResults = mutableListOf<TextLayoutResult>()
-        composeTestRule.onNodeWithTag(tag, useUnmergedTree = true).performSemanticsAction(SemanticsActions.GetTextLayoutResult) {
-            it(textLayoutResults)
-        }
-        assertThat(textLayoutResults).isNotEmpty()
-        assertThat(textLayoutResults.first().lineCount).isEqualTo(1)
+        assertThat(textLayoutResult(tag).lineCount).isEqualTo(1)
+    }
+
+    private fun descriptionLayoutResult(): TextLayoutResult = textLayoutResult(TASK_DESCRIPTION_TAG)
+
+    private fun textLayoutResult(tag: String): TextLayoutResult {
+        val results = mutableListOf<TextLayoutResult>()
+        composeTestRule
+            .onNodeWithTag(tag, useUnmergedTree = true)
+            .performSemanticsAction(SemanticsActions.GetTextLayoutResult) { it(results) }
+        assertThat(results).isNotEmpty()
+        return results.first()
+    }
+
+    private fun assertHeaderRegionsTopAligned() {
+        val topPositions =
+            listOf(
+                TASK_COMPLETION_CONTROL_TAG,
+                TASK_CONTENT_TAG,
+                TASK_TRAILING_ACTIONS_TAG,
+            ).map { tag ->
+                composeTestRule
+                    .onNodeWithTag(tag, useUnmergedTree = true)
+                    .fetchSemanticsNode()
+                    .boundsInRoot
+                    .top
+            }
+
+        assertThat(topPositions.max() - topPositions.min()).isAtMost(1f)
     }
 }
