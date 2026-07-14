@@ -56,6 +56,7 @@ class OnboardingViewModelTest {
         every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
         every { onboardingPreferencesRepository.isCompleted } returns onboardingCompleted
         every { onboardingPreferencesRepository.markStarted() } returns true
+        every { themePreferencesRepository.hasSavedUseTempoColors() } returns false
     }
 
     @After
@@ -82,6 +83,15 @@ class OnboardingViewModelTest {
     @Test
     fun givenOnboardingAlreadyStarted_whenCreated_thenCurrentColorsArePreserved() {
         every { onboardingPreferencesRepository.markStarted() } returns false
+
+        createViewModel()
+
+        verify(exactly = 0) { themePreferencesRepository.setUseTempoColors(any()) }
+    }
+
+    @Test
+    fun givenIncompleteUpgradeWithSavedColors_whenCreated_thenCurrentColorsArePreserved() {
+        every { themePreferencesRepository.hasSavedUseTempoColors() } returns true
 
         createViewModel()
 
@@ -221,6 +231,7 @@ class OnboardingViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(OnboardingContract.UiEvent.SkipClicked)
+                advanceUntilIdle()
 
                 assertThat(awaitItem())
                     .isEqualTo(OnboardingContract.UiEffect.Exit(OnboardingContract.DefaultTab.TASKS))
@@ -240,6 +251,7 @@ class OnboardingViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
+                advanceUntilIdle()
 
                 assertThat(awaitItem())
                     .isEqualTo(OnboardingContract.UiEffect.Exit(OnboardingContract.DefaultTab.ROUTINES))
@@ -257,6 +269,7 @@ class OnboardingViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
+                advanceUntilIdle()
 
                 assertThat(awaitItem())
                     .isEqualTo(OnboardingContract.UiEffect.Exit(OnboardingContract.DefaultTab.TASKS))

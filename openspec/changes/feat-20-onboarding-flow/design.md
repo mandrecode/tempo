@@ -38,7 +38,7 @@ Alternative: stage all choices and commit only on Finish. Rejected because repla
 
 ### Persist only completion as new onboarding data
 
-Add a small SharedPreferences-backed `OnboardingPreferencesRepository` that exposes completion as a reactive flow, an idempotent `setCompleted()` operation, and a one-time started marker. Existing repositories remain authoritative for all configurable choices. When onboarding starts for the first time, Tempo colors are selected once, satisfying the new-install default without overwriting an explicit choice after recomposition, process recreation, or replay.
+Add a small SharedPreferences-backed `OnboardingPreferencesRepository` that exposes completion as a reactive flow, an idempotent `setCompleted()` operation, and a one-time started marker. Existing repositories remain authoritative for all configurable choices. When onboarding starts for the first time and the theme repository has no saved color preference, Tempo colors are selected once. This satisfies the new-install default without overwriting an upgrading user's explicit choice or changing it after recomposition, process recreation, or replay.
 
 No database transaction is required: each preference is an independent SharedPreferences write. Completion is written only after preference events have already been applied; repeating Finish or Skip is safe because setting the same completion boolean is idempotent.
 

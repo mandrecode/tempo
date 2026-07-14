@@ -58,11 +58,15 @@ The onboarding flow SHALL expose Skip on each page before the final welcome, Bac
 - **THEN** the Start using Tempo action receives more horizontal space than Back so its localized label remains readable
 
 ### Requirement: Appearance selection
-The onboarding flow SHALL reuse the Settings appearance controls to allow light, dark, or system mode and selection between Tempo signature colors and supported dynamic colors, with Tempo colors selected by default for users who have not completed onboarding.
+The onboarding flow SHALL reuse the Settings appearance controls to allow light, dark, or system mode and selection between Tempo signature colors and supported dynamic colors, with Tempo colors selected by default when no color preference has been saved.
 
 #### Scenario: New user sees appearance choices
-- **WHEN** an incomplete user reaches the appearance page
+- **WHEN** an incomplete user without a saved color preference reaches the appearance page
 - **THEN** light, dark, and system mode choices are shown, Tempo colors are marked selected, and dynamic colors are available when supported by the device
+
+#### Scenario: Existing color preference
+- **WHEN** an incomplete upgrading user already has a saved Tempo or dynamic color preference
+- **THEN** onboarding preserves and displays that saved preference
 
 #### Scenario: User changes appearance
 - **WHEN** the user selects an available color scheme

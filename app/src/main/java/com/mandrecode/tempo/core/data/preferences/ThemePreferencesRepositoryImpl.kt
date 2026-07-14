@@ -44,6 +44,8 @@ class ThemePreferencesRepositoryImpl
          */
         override fun getUseTempoColors(): Flow<Boolean> = _useTempoColors.asStateFlow()
 
+        override fun hasSavedUseTempoColors(): Boolean = prefs.contains(KEY_USE_TEMPO_COLORS)
+
         /**
          * Saves the Tempo colors preference.
          */

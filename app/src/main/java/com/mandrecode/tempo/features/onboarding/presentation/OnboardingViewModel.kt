@@ -33,7 +33,11 @@ class OnboardingViewModel
         val uiEffect = effectChannel.receiveAsFlow()
 
         init {
-            if (!onboardingPreferencesRepository.isCompleted.value && onboardingPreferencesRepository.markStarted()) {
+            if (
+                !onboardingPreferencesRepository.isCompleted.value &&
+                onboardingPreferencesRepository.markStarted() &&
+                !themePreferencesRepository.hasSavedUseTempoColors()
+            ) {
                 themePreferencesRepository.setUseTempoColors(true)
             }
             observePreferences()
@@ -136,7 +140,9 @@ class OnboardingViewModel
         private fun completeOnboarding() {
             val destination = mutableUiState.value.resolvedDefaultTab()
             onboardingPreferencesRepository.setCompleted()
-            effectChannel.trySend(OnboardingContract.UiEffect.Exit(destination))
+            viewModelScope.launch {
+                effectChannel.send(OnboardingContract.UiEffect.Exit(destination))
+            }
         }
 
         private fun String.toDefaultTab(): OnboardingContract.DefaultTab =

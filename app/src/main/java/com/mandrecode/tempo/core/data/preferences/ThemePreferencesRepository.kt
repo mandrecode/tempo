@@ -10,5 +10,7 @@ interface ThemePreferencesRepository {
 
     fun getUseTempoColors(): Flow<Boolean>
 
+    fun hasSavedUseTempoColors(): Boolean
+
     fun setUseTempoColors(enabled: Boolean)
 }

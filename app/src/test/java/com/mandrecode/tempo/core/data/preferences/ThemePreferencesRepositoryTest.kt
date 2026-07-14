@@ -32,6 +32,7 @@ class ThemePreferencesRepositoryTest {
                 every { edit() } returns mockEditor
                 every { getString(any(), any()) } returns null
                 every { getBoolean(any(), any()) } returns false
+                every { contains(any()) } returns false
             }
         mockContext =
             mockk {
@@ -107,6 +108,13 @@ class ThemePreferencesRepositoryTest {
                 cancelAndIgnoreRemainingEvents()
             }
         }
+
+    @Test
+    fun `hasSavedUseTempoColorsReflectsPersistedKey`() {
+        every { mockPrefs.contains("use_tempo_colors") } returns true
+
+        assertThat(repository.hasSavedUseTempoColors()).isTrue()
+    }
 
     @Test
     fun `setUseTempoColorsUpdatesFlow`() =
