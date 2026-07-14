@@ -109,6 +109,24 @@ class OnboardingContentTest {
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.TasksTabToggled(false))
     }
 
+    @Test
+    fun givenLastPage_whenRendered_thenStartActionIsWiderThanBack() {
+        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1))
+
+        val backWidth =
+            composeTestRule
+                .onNodeWithTag(OnboardingTestTags.BACK)
+                .fetchSemanticsNode()
+                .boundsInRoot.width
+        val startWidth =
+            composeTestRule
+                .onNodeWithTag(OnboardingTestTags.FORWARD)
+                .fetchSemanticsNode()
+                .boundsInRoot.width
+
+        assertThat(startWidth).isGreaterThan(backWidth)
+    }
+
     private fun setContent(
         uiState: OnboardingContract.UiState,
         onEvent: (OnboardingContract.UiEvent) -> Unit = {},

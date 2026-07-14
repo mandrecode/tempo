@@ -27,3 +27,4 @@
 - [x] 4.6 Adapt onboarding across compact, medium, expanded, and short window sizes using Android MediaQuery guidance
 - [x] 4.7 Move the segmented onboarding progress above page content to match Didi's hierarchy
 - [x] 4.8 Keep onboarding button colors stable while preserving press-driven shape animation
+- [x] 4.9 Give the final Start using Tempo action enough width for compact screens and localized labels

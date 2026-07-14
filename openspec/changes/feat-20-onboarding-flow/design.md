@@ -62,6 +62,8 @@ Alternative: keep the stock linear progress indicator and static button shapes. 
 
 Enable Compose MediaQuery integration and derive onboarding layout from the current window width and height. Compact and medium windows keep a centered single-column flow; windows at least 840 dp wide place education or configuration beside the page introduction in two balanced columns. Short landscape windows reduce outer and section spacing while preserving scrollability, safe drawing insets, and 48 dp actions. Phone, foldable, tablet, and desktop previews cover the major form factors without adding a new dependency.
 
+The final footer gives the longer Start using Tempo action twice the horizontal weight of Back, keeping the localized completion label readable on compact phones without changing the proportions of ordinary Back/Next navigation.
+
 Alternative: infer layout from the physical device type or a startup-only configuration value. Rejected because split-screen, fold/unfold, desktop resizing, and rotation can all change the usable window while the app remains active.
 
 ### Keep permission education contextual

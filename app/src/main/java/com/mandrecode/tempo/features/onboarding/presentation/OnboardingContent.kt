@@ -169,7 +169,10 @@ private fun OnboardingFooter(
                 onEvent(event)
             },
             style = OnboardingButtonStyle.Primary,
-            modifier = Modifier.weight(1f).testTag(OnboardingTestTags.FORWARD),
+            modifier =
+                Modifier
+                    .weight(if (uiState.isLastPage) FINAL_ACTION_WEIGHT else 1f)
+                    .testTag(OnboardingTestTags.FORWARD),
         )
     }
 }
@@ -389,3 +392,5 @@ internal object OnboardingTestTags {
 }
 
 internal val OnboardingMaxWidth = 600.dp
+
+private const val FINAL_ACTION_WEIGHT = 2f
