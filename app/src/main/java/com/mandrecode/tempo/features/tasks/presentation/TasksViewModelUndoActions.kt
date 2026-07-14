@@ -39,8 +39,10 @@ internal fun TasksViewModel.undoDeletion(token: Long) {
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
-            pendingDeletionSnapshots.remove(token)
-            showSnackbar(R.string.msg_undo_failed)
+            showSnackbar(
+                messageResId = R.string.msg_undo_failed,
+                deletionToken = token,
+            )
         }
     }
 }

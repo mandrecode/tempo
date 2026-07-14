@@ -48,3 +48,9 @@
 - [x] 7.1 Soften the snackbar outline and elevation to match Tempo's flat tonal surfaces.
 - [x] 7.2 Replace the Didi-specific action shape animation with Tempo's shared pressable-button animation.
 - [x] 7.3 Run formatting, static analysis, focused UI tests, and inspect the result on the connected Pixel 7.
+
+## 8. Copilot review follow-up
+
+- [x] 8.1 Retain Tasks and Routines deletion snapshots after restore failure until tokenized failure feedback is dismissed.
+- [x] 8.2 Replace the Routines snackbar effect runtime cast with exhaustive typed handling.
+- [x] 8.3 Add ViewModel regression coverage and run formatting, static analysis, unit tests, and OpenSpec validation.

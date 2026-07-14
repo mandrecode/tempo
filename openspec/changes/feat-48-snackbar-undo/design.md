@@ -72,6 +72,12 @@ After visual review on the Pixel 7, retain Didi's layout, typography, outer geom
 
 The action uses Tempo's shared `rememberPressableButtonAnimation`, giving it the same 24dp resting and 12dp pressed corners and 150ms tween as other Tempo buttons. Reusing this utility aligns motion and shape behavior across the app and removes a snackbar-specific animation implementation.
 
+### 8. Retain failed Undo snapshots through failure feedback
+
+An Undo restore failure keeps its pending snapshot and emits the non-actionable failure snackbar with the same deletion token. The Screen reports that failure snackbar's eventual dismissal through the existing tokenized dismissal event, which then removes the snapshot. Successful restoration still consumes the token immediately. This closes the gap between retry-safe state and snackbar lifetime without adding a second action or a separate cleanup path.
+
+Routines effect collection uses an exhaustive `when` and passes the concrete `ShowSnackbar` effect to its renderer. This preserves compile-time handling when new effect variants are introduced instead of relying on a runtime cast.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

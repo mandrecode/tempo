@@ -165,6 +165,36 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `failed task undo retains snapshot until failure snackbar is dismissed`() =
+        runTest {
+            val snapshot =
+                TaskDeletionSnapshot.TaskTree(
+                    rootTaskId = 9L,
+                    tasks = listOf(Task(id = 9L, title = "Delete", description = "")),
+                )
+            val token = viewModel.storePendingDeletion(PendingTaskDeletion.Tasks(snapshot))
+            coEvery { restoreDeletedTasksUseCase(snapshot) } throws IllegalStateException("Restore failed")
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch { viewModel.uiEffect.toList(effects) }
+
+            viewModel.onEvent(TasksContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            assertThat(viewModel.pendingDeletionSnapshots).containsKey(token)
+            assertThat(effects)
+                .contains(
+                    TasksContract.UiEffect.ShowSnackbar(
+                        messageResId = R.string.msg_undo_failed,
+                        deletionToken = token,
+                    ),
+                )
+
+            viewModel.onEvent(TasksContract.UiEvent.DismissDeletionUndo(token))
+
+            assertThat(viewModel.pendingDeletionSnapshots).doesNotContainKey(token)
+        }
+
+    @Test
     fun `dismiss undo removes only matching deletion token`() =
         runTest {
             val first = TaskDeletionSnapshot.TaskTree(1, listOf(Task(id = 1, title = "One", description = "")))

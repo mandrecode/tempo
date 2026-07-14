@@ -132,6 +132,32 @@ class RoutinesViewModelTest {
         }
 
     @Test
+    fun `failed routine undo retains snapshot until failure snackbar is dismissed`() =
+        runTest {
+            val snapshot = HabitDeletionSnapshot(habit(5L), emptyList())
+            val token = viewModel.storePendingDeletion(PendingRoutineDeletion.Habit(snapshot))
+            coEvery { restoreDeletedHabitUseCase(snapshot) } throws IllegalStateException("Restore failed")
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            backgroundScope.launch { viewModel.uiEffect.toList(effects) }
+
+            viewModel.onEvent(RoutinesContract.UiEvent.UndoDeletion(token))
+            advanceUntilIdle()
+
+            assertThat(viewModel.pendingDeletionSnapshots).containsKey(token)
+            assertThat(effects)
+                .contains(
+                    RoutinesContract.UiEffect.ShowSnackbar(
+                        messageResId = R.string.msg_undo_failed,
+                        deletionToken = token,
+                    ),
+                )
+
+            viewModel.onEvent(RoutinesContract.UiEvent.DismissDeletionUndo(token))
+
+            assertThat(viewModel.pendingDeletionSnapshots).doesNotContainKey(token)
+        }
+
+    @Test
     fun `loadData sets habits and chains and stops loading`() =
         runTest {
             val habits = listOf(habit(1L), habit(2L))

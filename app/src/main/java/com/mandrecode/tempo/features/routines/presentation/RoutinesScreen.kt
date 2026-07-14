@@ -95,7 +95,10 @@ fun RoutinesScreen(
 
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
-            showRoutinesSnackbar(effect, context, snackbarHostState, viewModel::onEvent)
+            when (effect) {
+                is RoutinesContract.UiEffect.ShowSnackbar ->
+                    showRoutinesSnackbar(effect, context, snackbarHostState, viewModel::onEvent)
+            }
         }
     }
 
@@ -221,13 +224,11 @@ fun RoutinesScreen(
 
 @Suppress("LocalContextGetResourceValueCall")
 private suspend fun showRoutinesSnackbar(
-    effect: RoutinesContract.UiEffect,
+    snackbar: RoutinesContract.UiEffect.ShowSnackbar,
     context: Context,
     snackbarHostState: SnackbarHostState,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
 ) {
-    val snackbar = effect as RoutinesContract.UiEffect.ShowSnackbar
-
     val message =
         if (snackbar.formatArgs.isNotEmpty()) {
             context.getString(snackbar.messageResId, *snackbar.formatArgs.toTypedArray())

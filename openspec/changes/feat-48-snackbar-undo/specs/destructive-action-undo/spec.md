@@ -115,6 +115,11 @@ A deletion snapshot SHALL remain eligible for Undo until its associated snackbar
 - **WHEN** the Undo snackbar expires or is dismissed without action
 - **THEN** its deletion snapshot is discarded and cannot be restored through a later snackbar action
 
+#### Scenario: Undo restoration fails
+
+- **WHEN** restoration fails after the user selects Undo
+- **THEN** the deletion snapshot remains pending until the tokenized failure snackbar is dismissed
+
 #### Scenario: Process ends during undo window
 
 - **WHEN** the app process ends while an Undo snackbar is active
