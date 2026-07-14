@@ -3,6 +3,7 @@ package com.mandrecode.tempo.core.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -32,9 +33,14 @@ class CompletedTaskRetentionPreferencesTest {
     fun `defaults to disabled with thirty day retention`() {
         val preferences = createPreferences()
 
-        assertThat(preferences.isEnabled.value).isFalse()
+        assertThat(preferences.isEnabled.value).isEqualTo(CompletedTaskRetentionPreferences.DEFAULT_ENABLED)
         assertThat(preferences.retentionDays.value).isEqualTo(30)
-        verify { sharedPreferences.getBoolean("enabled", false) }
+        verify {
+            sharedPreferences.getBoolean(
+                "enabled",
+                CompletedTaskRetentionPreferences.DEFAULT_ENABLED,
+            )
+        }
     }
 
     @Test
