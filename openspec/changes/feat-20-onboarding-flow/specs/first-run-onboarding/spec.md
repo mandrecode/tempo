@@ -94,7 +94,7 @@ Finishing or skipping first-run onboarding SHALL mark it complete and navigate t
 
 #### Scenario: Finish onboarding
 - **WHEN** the user selects the final completion action
-- **THEN** onboarding is removed from the active back stack and the selected enabled default tab is displayed
+- **THEN** onboarding is removed from the active back stack and a fade-through scale transition reveals the selected enabled default tab
 
 #### Scenario: Stored default is invalid
 - **WHEN** onboarding exits while the stored default tab is disabled

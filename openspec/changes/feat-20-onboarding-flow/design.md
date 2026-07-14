@@ -56,6 +56,8 @@ Alternative: render onboarding outside the NavHost. Rejected because Settings re
 
 Onboarding actions use Tempo's existing press-driven shape animation language while keeping their normal colors stable during presses. The progress indicator follows Didi's segmented pill treatment: one segment per page, completed and current segments use the primary color, future segments use a muted surface color, and segment colors animate when the page changes. It sits near the top of the flow, directly below Skip and above the current page content, while the footer contains only navigation actions.
 
+Completing the welcome page uses a route-scoped fade-through: the centered welcome fades while scaling slightly outward, and the resolved Tasks or Routines destination fades in while scaling to full size. Both halves use Tempo's long motion duration. The transition is scoped to onboarding-to-app navigation, so Settings replay and ordinary tab navigation keep their existing motion.
+
 Alternative: keep the stock linear progress indicator and static button shapes. Rejected because they visually diverge from the interaction feedback used throughout Tempo and make discrete onboarding steps less legible.
 
 ### Adapt onboarding to the live window size

@@ -330,7 +330,9 @@ private fun TempoNavGraph(
         popEnterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
         popExitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
     ) {
-        composable<RoutinesRoute> {
+        composable<RoutinesRoute>(
+            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
+        ) {
             RoutinesDestination(
                 navController = navController,
                 navigationPreferencesRepository = navigationPreferencesRepository,
@@ -340,7 +342,9 @@ private fun TempoNavGraph(
             )
         }
 
-        composable<TasksRoute> {
+        composable<TasksRoute>(
+            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
+        ) {
             TasksDestination(
                 navController = navController,
                 navigationPreferencesRepository = navigationPreferencesRepository,
@@ -350,7 +354,9 @@ private fun TempoNavGraph(
             )
         }
 
-        composable<OnboardingRoute> { backStackEntry ->
+        composable<OnboardingRoute>(
+            exitTransition = { onboardingHandoffExitTransition(targetState.destination) },
+        ) { backStackEntry ->
             val route = backStackEntry.toRoute<OnboardingRoute>()
             OnboardingDestination(
                 navController = navController,
