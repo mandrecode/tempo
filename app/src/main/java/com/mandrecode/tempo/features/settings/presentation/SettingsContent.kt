@@ -76,7 +76,7 @@ fun SettingsContent(
 }
 
 @Composable
-private fun ThemeSection(
+internal fun ThemeSection(
     uiState: SettingsContract.UiState,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
@@ -126,7 +126,7 @@ private fun ThemeSection(
 }
 
 @Composable
-private fun ColorSchemeSection(
+internal fun ColorSchemeSection(
     uiState: SettingsContract.UiState,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
@@ -197,7 +197,7 @@ private fun NotificationsSection() {
 }
 
 @Composable
-private fun TabsAndNavigationSection(
+internal fun TabsAndNavigationSection(
     uiState: SettingsContract.UiState,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
@@ -221,7 +221,7 @@ private fun TabsAndNavigationSection(
 }
 
 @Composable
-private fun DefaultTabSection(
+internal fun DefaultTabSection(
     uiState: SettingsContract.UiState,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {

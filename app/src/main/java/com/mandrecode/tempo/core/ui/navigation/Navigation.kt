@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.core.ui.navigation
 
-import android.widget.Toast
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -31,24 +30,25 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.theme.spacing
+import com.mandrecode.tempo.features.onboarding.presentation.OnboardingContract
+import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
@@ -64,6 +64,11 @@ object TasksRoute
 
 @Serializable
 object SettingsRoute
+
+@Serializable
+data class OnboardingRoute(
+    val isReplay: Boolean = false,
+)
 
 sealed interface PendingNotificationAction {
     data class OpenTask(
@@ -187,7 +192,7 @@ private fun navigateTo(
     onRouteChange: (String) -> Unit,
 ) {
     navController.navigate(item.route) {
-        popUpTo(navController.graph.findStartDestination().id) {
+        popUpTo(navController.topLevelPopUpToId()) {
             saveState = true
         }
         launchSingleTop = true
@@ -324,7 +329,9 @@ private fun TempoNavGraph(
         popEnterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
         popExitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
     ) {
-        composable<RoutinesRoute> {
+        composable<RoutinesRoute>(
+            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
+        ) {
             RoutinesDestination(
                 navController = navController,
                 navigationPreferencesRepository = navigationPreferencesRepository,
@@ -334,13 +341,25 @@ private fun TempoNavGraph(
             )
         }
 
-        composable<TasksRoute> {
+        composable<TasksRoute>(
+            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
+        ) {
             TasksDestination(
                 navController = navController,
                 navigationPreferencesRepository = navigationPreferencesRepository,
                 pendingNotificationAction = pendingNotificationAction,
                 onConsumePendingNotificationAction = onConsumePendingNotificationAction,
                 onFloatingBarStateChange = onTasksFloatingBarStateChange,
+            )
+        }
+
+        composable<OnboardingRoute>(
+            exitTransition = { onboardingHandoffExitTransition(targetState.destination) },
+        ) { backStackEntry ->
+            val route = backStackEntry.toRoute<OnboardingRoute>()
+            OnboardingDestination(
+                navController = navController,
+                isReplay = route.isReplay,
             )
         }
 
@@ -367,7 +386,7 @@ private fun NotificationNavigationEffects(
     LaunchedEffect(routinesNavigationTrigger) {
         if (routinesNavigationTrigger > 0) {
             navController.navigate(RoutinesRoute) {
-                popUpTo(navController.graph.findStartDestination().id) {
+                popUpTo(navController.topLevelPopUpToId()) {
                     saveState = true
                 }
                 launchSingleTop = true
@@ -380,7 +399,7 @@ private fun NotificationNavigationEffects(
     LaunchedEffect(tasksNavigationTrigger) {
         if (tasksNavigationTrigger > 0) {
             navController.navigate(TasksRoute) {
-                popUpTo(navController.graph.findStartDestination().id) {
+                popUpTo(navController.topLevelPopUpToId()) {
                     saveState = true
                 }
                 launchSingleTop = true
@@ -466,18 +485,36 @@ private fun RouteTopBar(
 
 @Composable
 private fun SettingsDestination(navController: NavHostController) {
-    val context = LocalContext.current
-    val onboardingNotLiveMessage = stringResource(R.string.onboarding_not_live)
-
     SettingsScreen(
         onBackClick = { navController.popBackStack() },
         onOnboardingClick = {
-            Toast
-                .makeText(
-                    context,
-                    onboardingNotLiveMessage,
-                    Toast.LENGTH_SHORT,
-                ).show()
+            navController.navigate(OnboardingRoute(isReplay = true)) {
+                launchSingleTop = true
+            }
+        },
+    )
+}
+
+@Composable
+private fun OnboardingDestination(
+    navController: NavHostController,
+    isReplay: Boolean,
+) {
+    OnboardingScreen(
+        onExit = { defaultTab ->
+            if (isReplay) {
+                navController.popBackStack()
+            } else {
+                val destination =
+                    when (defaultTab) {
+                        OnboardingContract.DefaultTab.ROUTINES -> RoutinesRoute
+                        OnboardingContract.DefaultTab.TASKS -> TasksRoute
+                    }
+                navController.navigate(destination) {
+                    popUpTo<OnboardingRoute> { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
         },
     )
 }

@@ -11,6 +11,7 @@ interface CompletedTaskRetentionPreferences {
     fun setRetentionDays(days: Int)
 
     companion object {
+        const val DEFAULT_ENABLED = false
         const val DEFAULT_RETENTION_DAYS = 30
         const val MIN_RETENTION_DAYS = 1
         const val MAX_RETENTION_DAYS = 365

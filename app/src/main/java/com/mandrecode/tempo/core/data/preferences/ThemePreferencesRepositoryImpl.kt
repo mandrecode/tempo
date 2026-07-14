@@ -61,7 +61,7 @@ class ThemePreferencesRepositoryImpl
             }
         }
 
-        private fun getCurrentUseTempoColors(): Boolean = prefs.getBoolean(KEY_USE_TEMPO_COLORS, false)
+        private fun getCurrentUseTempoColors(): Boolean = prefs.getBoolean(KEY_USE_TEMPO_COLORS, true)
 
         companion object {
             private const val PREFS_NAME = "theme_prefs"

@@ -31,7 +31,7 @@ class ThemePreferencesRepositoryTest {
             mockk {
                 every { edit() } returns mockEditor
                 every { getString(any(), any()) } returns null
-                every { getBoolean(any(), any()) } returns false
+                every { getBoolean(any(), any()) } answers { secondArg() }
             }
         mockContext =
             mockk {
@@ -100,9 +100,21 @@ class ThemePreferencesRepositoryTest {
         }
 
     @Test
-    fun `defaultUseTempoColorsIsFalse`() =
+    fun `defaultUseTempoColorsIsTrue`() =
         runTest {
             repository.getUseTempoColors().test {
+                assertThat(awaitItem()).isTrue()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `savedDynamicColorsPreferenceIsPreserved`() =
+        runTest {
+            every { mockPrefs.getBoolean("use_tempo_colors", true) } returns false
+            val repo = ThemePreferencesRepositoryImpl(mockContext)
+
+            repo.getUseTempoColors().test {
                 assertThat(awaitItem()).isFalse()
                 cancelAndIgnoreRemainingEvents()
             }
