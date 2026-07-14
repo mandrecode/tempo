@@ -35,9 +35,11 @@ Alternative considered: use `KeyboardActions` to intercept Enter. Multiline text
 
 The behavior is invoked by `TaskBottomSheetContent` when its description changes. It is not added to the shared link-annotation utility or habit editor because issue #39 is task-scoped and changing all description editors would broaden product behavior.
 
-### Render editable task text without URL annotations
+### Update editable task URL styling incrementally
 
-Pass the task description's existing `TextFieldValue` directly to the Material text field. URL detection and annotated-string construction remain available to read-only description surfaces, where click handling is useful, but are removed from the per-keystroke editing path. Auto-dash formatting continues to operate on the original `TextFieldValue`, including its selection and composition state.
+Pass the task description's existing `TextFieldValue` directly to the Material text field and maintain URL ranges in a text-preserving identity visual transformation. For each text edit, find the changed interval, retain ranges before its paragraph, shift ranges after its paragraph by the text-length delta, and immediately rescan only the affected paragraph or paragraphs. This prevents unrelated links from moving or blinking while bounding regex work to the locally changed text. Auto-dash formatting continues to operate first, and link ranges update from the resulting `TextFieldValue`, including transformed newline insertions.
+
+Alternatives considered: rebuilding all URL annotations on every edit repeats work across the full 5,000-character description; delaying the full scan makes links visibly disappear and reappear; retaining stale absolute ranges moves styling onto unrelated characters. Removing live editor styling entirely remains the fallback if incremental behavior does not meet the Pixel 7 responsiveness target, while read-only card links remain unchanged.
 
 ### Keep rapidly changing description state at a narrow composition boundary
 
@@ -48,6 +50,8 @@ Alternative considered: annotate the broad form parameter bundles as stable. Tho
 ### Collect one debounced autosave stream per editor
 
 Launch autosave once for the edited entity and collect Compose snapshots through `snapshotFlow`, followed by `distinctUntilChanged` and a 350 ms debounce. Updated callbacks and externally supplied form state are read through current Compose state so the collector does not restart for each character. The final snapshot still participates in sheet-dismissal flushing.
+
+For the combined habit/habit-chain sheet, key editor state, the autosave collector, and the last dispatched snapshot by both the selected tab and that tab's editing ID. Select the initial comparison snapshot from the active tab as well. This keeps tab switches from retaining the other entity's text or dispatching false-positive autosaves.
 
 ### Make clearing errors idempotent
 

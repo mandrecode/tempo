@@ -10,7 +10,7 @@ Profiling the implemented editor on a Pixel 7 also found that sustained descript
 - End automatic dash continuation when the current dashed line contains no content.
 - Preserve text selection and ordinary multiline editing when no dash-list rule applies.
 - Add focused tests for the list transformation.
-- Keep task descriptions as plain editable text while the field is active; retain enhanced link rendering in read-only surfaces.
+- Keep task-description typing responsive by updating URL styling only for the changed paragraph; retain enhanced link rendering in read-only surfaces.
 - Isolate task and habit description changes from unrelated form sections.
 - Replace restart-per-keystroke autosave effects with one distinct, debounced snapshot stream per editor.
 - Avoid redundant form-error state updates and verify the result with comparable Pixel 7 traces.

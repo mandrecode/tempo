@@ -33,6 +33,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -56,6 +57,7 @@ import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
+import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.titleResId
 import kotlinx.coroutines.flow.filterNotNull
@@ -234,8 +236,12 @@ private fun TaskDescriptionField(
     onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
+    val linkVisualTransformation = rememberLinkStyling(descriptionState)
+    val descriptionValue = descriptionState.value
+    linkVisualTransformation.update(descriptionValue.text)
+
     TextField(
-        value = descriptionState.value,
+        value = descriptionValue,
         onValueChange = onDescriptionChange,
         placeholder = {
             Text(
@@ -244,6 +250,7 @@ private fun TaskDescriptionField(
             )
         },
         textStyle = MaterialTheme.typography.bodyLarge,
+        visualTransformation = linkVisualTransformation,
         colors =
             TextFieldDefaults.colors(
                 focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -271,6 +278,17 @@ private fun TaskDescriptionField(
                 null
             },
     )
+}
+
+@Composable
+private fun rememberLinkStyling(descriptionState: DescriptionEditorState): IncrementalLinkVisualTransformation {
+    val linkColor = MaterialTheme.colorScheme.primary
+    return remember(descriptionState, linkColor) {
+        IncrementalLinkVisualTransformation(
+            initialText = descriptionState.value.text,
+            linkColor = linkColor,
+        )
+    }
 }
 
 @Composable

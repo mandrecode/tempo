@@ -5,8 +5,15 @@ The task and habit editors SHALL limit per-keystroke work to the actively changi
 
 #### Scenario: Edit a long task description
 - **WHEN** the user changes a task description containing a large amount of text
-- **THEN** the editor updates the plain text and selection without rebuilding URL annotations for the editable value
+- **THEN** the editor updates the text and selection without rebuilding URL annotations for every edit
+- **AND** URL detection is limited to the paragraph or paragraphs affected by the edit
 - **AND** read-only task descriptions continue to recognize supported links
+
+#### Scenario: Type between multiple URLs
+- **WHEN** the user inserts or removes text before a later URL while cached styling exists
+- **THEN** unaffected URL ranges before the edit retain their styling
+- **AND** unaffected URL ranges after the edit shift with their original text
+- **AND** links in the affected paragraph are recognized immediately from the updated text
 
 #### Scenario: Edit a habit description
 - **WHEN** the user changes a habit description
@@ -22,6 +29,12 @@ The task and habit editors SHALL autosave distinct form snapshots after the conf
 #### Scenario: Dismiss before the debounce completes
 - **WHEN** the sheet is dismissed with a valid pending snapshot
 - **THEN** the latest snapshot is flushed using the existing dismissal behavior
+
+#### Scenario: Switch between an edited habit and habit chain
+- **WHEN** the user switches tabs while both a habit and habit chain are available to the editor
+- **THEN** title and description state rebind to the entity selected by the active tab
+- **AND** debounce and dismissal comparisons use that tab's editing ID and initial snapshot
+- **AND** an unchanged entity does not trigger an autosave
 
 ### Requirement: Idempotent form error clearing
 Task and habit form state SHALL remain unchanged when a description edit requests error clearing and no form errors are present.

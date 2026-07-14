@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.core.ui.util
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -118,4 +119,103 @@ class EnhancedDescriptionTextTest {
         assertThat(text.substring(annotation.start, annotation.end))
             .isEqualTo("https://example.com/docs")
     }
+
+    @Test
+    fun givenInitialLinkStyles_whenTransformingCurrentText_thenPreservesTextAndOffsets() {
+        val currentText = AnnotatedString("Read https://example.com")
+        val transformation =
+            IncrementalLinkVisualTransformation(
+                initialText = currentText.text,
+                linkColor = Color.Blue,
+            )
+
+        val transformedText = transformation.filter(currentText)
+
+        assertThat(transformedText.text.text).isEqualTo(currentText.text)
+        assertThat(styledSubstrings(transformedText.text)).containsExactly("https://example.com")
+        assertThat(transformedText.offsetMapping.originalToTransformed(currentText.length))
+            .isEqualTo(currentText.length)
+    }
+
+    @Test
+    fun givenTextInsertedBetweenLinks_whenUpdating_thenKeepsBothLinksStyledInPlace() {
+        val initialText = "Open google.es and youtube.com"
+        val updatedText = "Open google.es and write here before youtube.com"
+        val transformation =
+            IncrementalLinkVisualTransformation(
+                initialText = initialText,
+                linkColor = Color.Blue,
+            )
+
+        transformation.update(updatedText)
+        val transformedText = transformation.filter(AnnotatedString(updatedText))
+
+        assertThat(styledSubstrings(transformedText.text))
+            .containsExactly("google.es", "youtube.com")
+            .inOrder()
+    }
+
+    @Test
+    fun givenMultilinePasteBeforeLaterLink_whenUpdating_thenShiftsAndStylesAllLinks() {
+        val initialText = "google.es\nyoutube.com"
+        val updatedText = "google.es\nexample.org\nyoutube.com"
+        val transformation =
+            IncrementalLinkVisualTransformation(
+                initialText = initialText,
+                linkColor = Color.Blue,
+            )
+
+        transformation.update(updatedText)
+        val transformedText = transformation.filter(AnnotatedString(updatedText))
+
+        assertThat(styledSubstrings(transformedText.text))
+            .containsExactly("google.es", "example.org", "youtube.com")
+            .inOrder()
+    }
+
+    @Test
+    fun givenEditInvalidatesLink_whenUpdating_thenRemovesOnlyThatLinkStyle() {
+        val initialText = "google.es\nyoutube.com"
+        val updatedText = "googlees\nyoutube.com"
+        val transformation =
+            IncrementalLinkVisualTransformation(
+                initialText = initialText,
+                linkColor = Color.Blue,
+            )
+
+        transformation.update(updatedText)
+        val transformedText = transformation.filter(AnnotatedString(updatedText))
+
+        assertThat(styledSubstrings(transformedText.text)).containsExactly("youtube.com")
+    }
+
+    @Test
+    fun givenMixedEditSequence_whenUpdatingIncrementally_thenMatchesFullLinkParsing() {
+        val versions =
+            listOf(
+                "google.es and youtube.com\nexample.org",
+                "google.es and notes before youtube.com\nexample.org",
+                "googlees and notes before youtube.com\nexample.org",
+                "googlees and notes before youtube.com\nnewsite.net\nexample.org",
+                "googlees and notes before youtube.com\nnewsite.net example.org",
+            )
+        val transformation =
+            IncrementalLinkVisualTransformation(
+                initialText = versions.first(),
+                linkColor = Color.Blue,
+            )
+
+        versions.forEach { version ->
+            transformation.update(version)
+            val incrementalText = transformation.filter(AnnotatedString(version)).text
+            val fullyParsedText = buildEnhancedDescriptionText(text = version, linkColor = Color.Blue)
+
+            assertThat(incrementalText.spanStyles)
+                .containsExactlyElementsIn(fullyParsedText.spanStyles)
+                .inOrder()
+        }
+    }
+
+    private fun styledSubstrings(text: AnnotatedString): List<String> =
+        text.spanStyles.map { range -> text.text.substring(range.start, range.end) }
 }

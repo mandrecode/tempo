@@ -27,3 +27,29 @@
 
 - [x] 5.1 Require the entire current line to be empty before exiting dash-list mode
 - [x] 5.2 Add regression coverage for Enter immediately after a populated item's dash prefix
+
+## 6. Idle URL styling follow-up
+
+- [x] 6.1 Add a cached, text-preserving visual transformation for task-description URL spans
+- [x] 6.2 Refresh task-description URL styling after 300 ms of idle input
+- [x] 6.3 Add focused regression coverage and run the relevant quality checks
+
+## 7. Copilot tab-isolation follow-up
+
+- [x] 7.1 Rebind habit editor state and autosave identity to the selected tab
+- [x] 7.2 Compare debounced and dismissal snapshots against the active tab's initial entity
+- [x] 7.3 Add regression coverage for switching between unchanged habit and chain editors
+- [x] 7.4 Reply to and resolve every Copilot review conversation
+
+## 8. Stale URL styling regression
+
+- [x] 8.1 Hide cached URL spans while their source text differs from the current description
+- [x] 8.2 Add regression coverage for typing between multiple cached links
+- [x] 8.3 Run focused tests and quality checks without committing
+
+## 9. Incremental live URL styling experiment
+
+- [x] 9.1 Replace delayed whole-description URL refresh with changed-paragraph range updates
+- [x] 9.2 Preserve auto-dash output, selection offsets, and unrelated link styling during edits
+- [x] 9.3 Add focused coverage for insertion, deletion, paste, and edits inside links
+- [x] 9.4 Run quality checks and install the uncommitted experiment on the Pixel 7

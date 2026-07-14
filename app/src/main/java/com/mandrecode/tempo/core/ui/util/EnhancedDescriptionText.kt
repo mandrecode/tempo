@@ -156,7 +156,10 @@ private fun trimTrailingPunctuation(
 
 private fun textNeedsTrimming(character: Char): Boolean = character in ".,;:!?"
 
-private fun findDescriptionLinks(text: String): Sequence<DescriptionLink> =
+internal fun findDescriptionLinks(
+    text: String,
+    rangeOffset: Int = 0,
+): Sequence<DescriptionLink> =
     LINK_PATTERN.findAll(text).mapNotNull { match ->
         val range = trimTrailingPunctuation(text = text, match = match)
         if (range.isEmpty()) {
@@ -164,13 +167,13 @@ private fun findDescriptionLinks(text: String): Sequence<DescriptionLink> =
         } else {
             val displayText = text.substring(range)
             DescriptionLink(
-                range = range,
+                range = (range.first + rangeOffset)..(range.last + rangeOffset),
                 uri = normalizeDescriptionUri(displayText),
             )
         }
     }
 
-private data class DescriptionLink(
+internal data class DescriptionLink(
     val range: IntRange,
     val uri: String,
 )

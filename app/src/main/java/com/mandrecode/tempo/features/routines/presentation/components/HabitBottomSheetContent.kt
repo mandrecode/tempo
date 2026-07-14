@@ -82,8 +82,14 @@ internal fun HabitBottomSheetContent(
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
+    val editingTargetId =
+        when (formState.selectedTab) {
+            HabitSheetTab.HABIT -> formState.editingHabit?.id
+            HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.id
+        }
+    val editorKey = remember(formState.selectedTab, editingTargetId) { formState.selectedTab to editingTargetId }
 
-    var title by remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
+    var title by remember(editorKey) {
         mutableStateOf(
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.title ?: ""
@@ -92,27 +98,27 @@ internal fun HabitBottomSheetContent(
         )
     }
     val initialDescription =
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
+        remember(editorKey) {
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.description.orEmpty()
                 HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.description.orEmpty()
             }
         }
     val descriptionState =
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
+        remember(editorKey) {
             DescriptionEditorState(TextFieldValue(initialDescription))
         }
     var isDescriptionDirty by
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
+        remember(editorKey) {
             mutableStateOf(false)
         }
-    var selectedHabitIds by remember(formState.editingHabitChain?.id) {
+    var selectedHabitIds by remember(editorKey) {
         mutableStateOf(
             formState.editingHabitChain?.habitIds ?: emptyList(),
         )
     }
 
-    var isTitleError by remember { mutableStateOf(false) }
+    var isTitleError by remember(editorKey) { mutableStateOf(false) }
     var showPermissionCheck by remember { mutableStateOf(false) }
     var autoSelectedColor by remember {
         mutableStateOf(
@@ -300,6 +306,11 @@ internal fun HabitBottomSheetContent(
                 )
             }
         }
+    val initialSnapshot: Any? =
+        when (formState.selectedTab) {
+            HabitSheetTab.HABIT -> editingHabitSnapshot
+            HabitSheetTab.HABIT_CHAIN -> editingChainSnapshot
+        }
 
     val hasUnsavedChanges =
         remember(
@@ -372,15 +383,12 @@ internal fun HabitBottomSheetContent(
     val autoSaveEnabled = autoSaveHabitEnabled || autoSaveHabitChainEnabled
 
     var lastDispatchedSnapshot by
-        remember(formState.editingHabit?.id, formState.editingHabitChain?.id, formState.selectedTab) {
+        remember(editorKey) {
             mutableStateOf<Any?>(null)
         }
     DebouncedSnapshotEffect(
         enabled = autoSaveEnabled,
-        key = when (formState.selectedTab) {
-            HabitSheetTab.HABIT -> formState.editingHabit?.id
-            HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.id
-        },
+        key = editorKey,
         debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
         snapshotProvider = {
             when (formState.selectedTab) {
@@ -408,10 +416,6 @@ internal fun HabitBottomSheetContent(
             }
         },
         onSnapshot = { snapshot ->
-            val initialSnapshot = when (formState.selectedTab) {
-                HabitSheetTab.HABIT -> editingHabitSnapshot
-                HabitSheetTab.HABIT_CHAIN -> editingChainSnapshot
-            }
             if (snapshot != initialSnapshot && lastDispatchedSnapshot != snapshot) {
                 when (snapshot) {
                     is HabitFormSnapshot -> {
@@ -458,10 +462,6 @@ internal fun HabitBottomSheetContent(
                         periodicReminder = formState.reminderDate,
                     )
             }
-        val initialSnapshot = when (formState.selectedTab) {
-            HabitSheetTab.HABIT -> editingHabitSnapshot
-            HabitSheetTab.HABIT_CHAIN -> editingChainSnapshot
-        }
         if (autoSaveEnabled && title.isNotBlank()) {
             if (currentSnapshot != initialSnapshot && currentSnapshot != lastDispatchedSnapshot) {
                 when (currentSnapshot) {
