@@ -361,12 +361,6 @@ private suspend fun TasksViewModel.handleToggleResult(
             handleSchedulePermissionError(result.updateResult)
         }
 
-        is ToggleTaskCompletionUseCase.Result.PeriodicRolledBack -> {
-            expandTask(taskId)
-            showSnackbar(R.string.msg_periodic_uncheck_rollback)
-            handleSchedulePermissionError(result.updateResult)
-        }
-
         is ToggleTaskCompletionUseCase.Result.ParentToggled -> {
             if (result.isCompleted) {
                 collapseTask(taskId)
