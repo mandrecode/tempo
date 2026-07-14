@@ -5,7 +5,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -75,8 +74,7 @@ internal fun AnimatedOnboardingButton(
             pressedRadius = 12.dp,
             animationDuration = BUTTON_ANIMATION_DURATION,
         )
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val colors = animatedButtonColors(style = style, isPressed = isPressed)
+    val colors = onboardingButtonColors(style = style)
     val onHapticClick = {
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         onClick()
@@ -103,54 +101,24 @@ private fun progressColor(isComplete: Boolean): Color =
     }
 
 @Composable
-private fun animatedButtonColors(
-    style: OnboardingButtonStyle,
-    isPressed: Boolean,
-): OnboardingButtonColors {
-    val targets = buttonColorTargets(style = style, isPressed = isPressed)
-    val container by animateColorAsState(targets.container, tween(BUTTON_ANIMATION_DURATION), label = "buttonContainer")
-    val content by animateColorAsState(targets.content, tween(BUTTON_ANIMATION_DURATION), label = "buttonContent")
-    val border by animateColorAsState(targets.border, tween(BUTTON_ANIMATION_DURATION), label = "buttonBorder")
-    return OnboardingButtonColors(container = container, content = content, border = border)
-}
-
-@Composable
-private fun buttonColorTargets(
-    style: OnboardingButtonStyle,
-    isPressed: Boolean,
-): OnboardingButtonColors =
+private fun onboardingButtonColors(style: OnboardingButtonStyle): OnboardingButtonColors =
     when (style) {
         OnboardingButtonStyle.Primary ->
             OnboardingButtonColors(
-                container =
-                    if (isPressed) {
-                        MaterialTheme.colorScheme.primaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
-                content =
-                    if (isPressed) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onPrimary
-                    },
+                container = MaterialTheme.colorScheme.primary,
+                content = MaterialTheme.colorScheme.onPrimary,
                 border = Color.Transparent,
             )
         OnboardingButtonStyle.Outlined ->
             OnboardingButtonColors(
-                container = if (isPressed) MaterialTheme.colorScheme.surfaceContainerHigh else Color.Transparent,
-                content = if (isPressed) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
-                border = if (isPressed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                container = Color.Transparent,
+                content = MaterialTheme.colorScheme.primary,
+                border = MaterialTheme.colorScheme.outline,
             )
         OnboardingButtonStyle.Text ->
             OnboardingButtonColors(
-                container = if (isPressed) MaterialTheme.colorScheme.primaryContainer else Color.Transparent,
-                content =
-                    if (isPressed) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.primary
-                    },
+                container = Color.Transparent,
+                content = MaterialTheme.colorScheme.primary,
                 border = Color.Transparent,
             )
     }

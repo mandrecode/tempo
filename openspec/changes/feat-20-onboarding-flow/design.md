@@ -54,9 +54,9 @@ Alternative: render onboarding outside the NavHost. Rejected because Settings re
 
 ### Match established expressive motion
 
-Onboarding actions use Tempo's existing press-driven shape and color animation language. The progress indicator follows Didi's segmented pill treatment: one segment per page, completed and current segments use the primary color, future segments use a muted surface color, and segment colors animate when the page changes. It sits near the top of the flow, directly below Skip and above the current page content, while the footer contains only navigation actions.
+Onboarding actions use Tempo's existing press-driven shape animation language while keeping their normal colors stable during presses. The progress indicator follows Didi's segmented pill treatment: one segment per page, completed and current segments use the primary color, future segments use a muted surface color, and segment colors animate when the page changes. It sits near the top of the flow, directly below Skip and above the current page content, while the footer contains only navigation actions.
 
-Alternative: keep the stock linear progress indicator and static Material buttons. Rejected because they visually diverge from the interaction feedback used throughout Tempo and make discrete onboarding steps less legible.
+Alternative: keep the stock linear progress indicator and static button shapes. Rejected because they visually diverge from the interaction feedback used throughout Tempo and make discrete onboarding steps less legible.
 
 ### Adapt onboarding to the live window size
 

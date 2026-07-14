@@ -35,7 +35,7 @@ The onboarding flow SHALL expose Skip on every page, Back after the first page, 
 
 #### Scenario: Page transition feedback
 - **WHEN** the user presses an onboarding action or changes pages
-- **THEN** action shape and colors animate using Tempo's established interaction treatment, and a Didi-style segmented progress indicator above the page content animates the completed-page colors
+- **THEN** action shapes animate using Tempo's established interaction treatment while their colors remain stable, and a Didi-style segmented progress indicator above the page content animates the completed-page colors
 
 #### Scenario: Window size changes
 - **WHEN** onboarding is shown on a phone, foldable, tablet, desktop, landscape, or resized multi-window surface
