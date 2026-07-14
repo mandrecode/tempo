@@ -30,3 +30,4 @@
 - [x] 4.9 Give the final Start using Tempo action enough width for compact screens and localized labels
 - [x] 4.10 Add a centered Tempo logo and app-name welcome page as the final onboarding step
 - [x] 4.11 Animate the welcome-to-app handoff with a route-scoped fade-through scale transition
+- [x] 4.12 Keep automatic completed-task removal disabled when no preference has been saved

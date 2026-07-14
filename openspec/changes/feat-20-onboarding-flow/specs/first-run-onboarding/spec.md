@@ -83,7 +83,11 @@ The onboarding flow SHALL allow the user to choose an enabled default tab and SH
 - **THEN** the app enables no additional tab and persists the other tab as the default
 
 ### Requirement: Completed-task retention configuration
-The onboarding flow SHALL allow the user to enable automatic completed-task removal and choose a supported retention duration.
+The onboarding flow SHALL leave automatic completed-task removal disabled for users without a saved retention preference, and SHALL allow the user to enable automatic removal and choose a supported retention duration.
+
+#### Scenario: New user sees retention defaults
+- **WHEN** a user without a saved completed-task retention preference reaches configuration
+- **THEN** automatic completed-task removal is disabled
 
 #### Scenario: Configure retention
 - **WHEN** the user enables automatic removal and selects a retention duration

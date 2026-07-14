@@ -34,6 +34,7 @@ class CompletedTaskRetentionPreferencesTest {
 
         assertThat(preferences.isEnabled.value).isFalse()
         assertThat(preferences.retentionDays.value).isEqualTo(30)
+        verify { sharedPreferences.getBoolean("enabled", false) }
     }
 
     @Test
