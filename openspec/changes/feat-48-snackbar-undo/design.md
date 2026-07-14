@@ -88,6 +88,10 @@ Habits preserved during a chain deletion are the exception because their rows we
 
 Post-deletion scheduler work uses the chain returned in the committed repository snapshot rather than the potentially stale UI argument. Category deletion pending state also captures the selected category ID before any fallback is applied; Undo restores that selection only when the category is still valid or was restored by the same snapshot. Undo use cases are mandatory ViewModel dependencies so incomplete wiring fails at compile time rather than when the user selects Undo.
 
+### 11. Preserve concurrent edits and recursively capture task trees
+
+Undo for a chain that preserved its habits restores only each habit's reminder field, because chain deletion changes only that field; all other habit edits made during the Undo window remain authoritative. Task-tree deletion uses recursive Room queries to capture descendants in parent-first order and delete the complete forest atomically, covering both individual and completed-task deletion regardless of nesting depth. Completed-task reminder cancellation is a required dependency and cannot be silently omitted by constructing the use case without a scheduler.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

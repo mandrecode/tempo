@@ -52,18 +52,14 @@ class TaskRepositoryImpl
         override suspend fun updateTasks(tasks: List<Task>) = taskDao.updateTasks(tasks.toEntity())
 
         override suspend fun deleteTask(task: Task) {
-            val entity = task.toEntity()
-            // Delete all subtasks first
-            taskDao.deleteSubtasks(entity.id)
-            taskDao.deleteTask(entity)
+            taskDao.deleteTaskTrees(listOf(task.id))
         }
 
         override suspend fun deleteTaskWithSnapshot(taskId: Long): TaskDeletionSnapshot.TaskTree =
             database.withTransaction {
-                val root = requireNotNull(taskDao.getTaskById(taskId))
-                val tasks = listOf(root) + taskDao.getSubtasksSync(taskId)
-                taskDao.deleteSubtasks(taskId)
-                taskDao.deleteTaskById(taskId)
+                val tasks = taskDao.getTaskTrees(listOf(taskId))
+                require(tasks.any { it.id == taskId })
+                taskDao.deleteTaskTrees(listOf(taskId))
                 TaskDeletionSnapshot.TaskTree(
                     rootTaskId = taskId,
                     tasks = tasks.toDomain(),
@@ -74,12 +70,13 @@ class TaskRepositoryImpl
             database.withTransaction {
                 val completedParentIds = taskDao.getCompletedTopLevelTaskIds(categoryId)
                 val tasks =
-                    taskDao
-                        .getTasksByCategoryId(categoryId)
-                        .filter { it.id in completedParentIds || it.parentTaskId in completedParentIds }
-                if (completedParentIds.isNotEmpty()) {
-                    taskDao.deleteSubtasksByParentIds(completedParentIds)
-                    taskDao.deleteTasksByIds(completedParentIds)
+                    if (completedParentIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        taskDao.getTaskTrees(completedParentIds)
+                    }
+                if (tasks.isNotEmpty()) {
+                    taskDao.deleteTaskTrees(completedParentIds)
                 }
                 TaskDeletionSnapshot.CompletedTasks(
                     categoryId = categoryId,
@@ -136,8 +133,7 @@ class TaskRepositoryImpl
         override suspend fun deleteCompletedTasksByCategoryId(categoryId: Long) {
             val completedParentIds = taskDao.getCompletedTopLevelTaskIds(categoryId)
             if (completedParentIds.isNotEmpty()) {
-                taskDao.deleteSubtasksByParentIds(completedParentIds)
-                taskDao.deleteTasksByIds(completedParentIds)
+                taskDao.deleteTaskTrees(completedParentIds)
             }
         }
 
@@ -151,8 +147,7 @@ class TaskRepositoryImpl
 
         override suspend fun deleteTaskWithSubtasks(taskId: Long) =
             database.withTransaction {
-                taskDao.deleteSubtasks(taskId)
-                taskDao.deleteTaskById(taskId)
+                taskDao.deleteTaskTrees(listOf(taskId))
             }
 
         override suspend fun <R> runInTransaction(block: suspend () -> R): R = database.withTransaction { block() }

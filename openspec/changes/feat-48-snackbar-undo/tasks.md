@@ -68,3 +68,10 @@
 - [x] 10.2 Preserve the category selection that was active before deletion and cover undoing an unselected category.
 - [x] 10.3 Make all Tasks and Routines restore use cases required ViewModel dependencies.
 - [x] 10.4 Run formatting, static analysis, unit tests, build, and OpenSpec validation.
+
+## 11. Copilot review follow-up: deep trees and field-scoped restore
+
+- [x] 11.1 Restore only reminder values for habits preserved during chain deletion and cover concurrent edits.
+- [x] 11.2 Capture and delete complete descendant trees for individual and completed-task snapshots using recursive Room queries.
+- [x] 11.3 Make completed-task reminder cancellation a required dependency and update its tests.
+- [x] 11.4 Run formatting, static analysis, unit/Room tests, builds, and OpenSpec validation.

@@ -120,6 +120,41 @@ class HabitChainRepositoryRoomIntegrationTest {
         }
 
     @Test
+    fun restorePreservedHabit_restoresReminderWithoutOverwritingEdits() =
+        runTest {
+            val originalReminder = LocalDateTime(2026, 7, 20, 9, 0)
+            val transferredReminder = LocalDateTime(2026, 7, 21, 10, 0)
+            val habitDao = databaseRule.database.habitDao()
+            val habitId =
+                habitDao.insertHabit(
+                    HabitEntity(
+                        title = "Original",
+                        description = "",
+                        reminderDate = originalReminder,
+                        createdDate = createdDate,
+                    ),
+                )
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(
+                        title = "Morning",
+                        habitIds = listOf(habitId),
+                        periodicReminder = transferredReminder,
+                        createdDate = createdDate,
+                    ),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = false)
+            val transferredHabit = requireNotNull(habitDao.getHabitById(habitId))
+            habitDao.updateHabit(transferredHabit.copy(title = "Edited during undo window"))
+
+            repository.restoreDeletedHabitChain(snapshot)
+
+            val restoredHabit = requireNotNull(habitDao.getHabitById(habitId))
+            assertThat(restoredHabit.title).isEqualTo("Edited during undo window")
+            assertThat(restoredHabit.reminderDate).isEqualTo(originalReminder)
+        }
+
+    @Test
     fun failedRestore_rollsBackChainInsert() =
         runTest {
             val chain = HabitChain(id = 999, title = "Broken", habitIds = listOf(404), createdDate = createdDate)

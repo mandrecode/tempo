@@ -58,6 +58,11 @@ Selecting Undo SHALL atomically restore all persisted records captured for that 
 - **WHEN** the user selects Undo for a completed-task deletion
 - **THEN** every task deleted by that bulk action is restored with its completion state and parent relationship
 
+#### Scenario: A deeply nested task tree is undone
+
+- **WHEN** an individual or completed-task deletion contains descendants below the first subtask level
+- **THEN** every descendant is captured, deleted, and restored with its complete hierarchy
+
 #### Scenario: Habit deletion is undone
 
 - **WHEN** the user selects Undo for a habit deletion
@@ -67,6 +72,11 @@ Selecting Undo SHALL atomically restore all persisted records captured for that 
 
 - **WHEN** the user selects Undo for a chain deletion that preserved its habits
 - **THEN** the chain and ordered membership are restored and the habits' reminder state is restored to its pre-deletion value
+
+#### Scenario: A preserved habit is edited during the Undo window
+
+- **WHEN** a habit preserved by chain deletion is edited before the chain deletion is undone
+- **THEN** Undo restores only its prior reminder value and preserves all newer habit edits
 
 #### Scenario: Delete-habits chain deletion is undone
 
@@ -115,6 +125,11 @@ After Undo commits restored data, the app SHALL reconcile reminders from that sn
 
 - **WHEN** an undone snapshot has no reminder or its reminder is past, completed, or otherwise ineligible under normal scheduling rules
 - **THEN** the app does not create an active reminder for that record
+
+#### Scenario: Completed tasks are permanently deleted
+
+- **WHEN** completed-task deletion commits a snapshot containing scheduled tasks
+- **THEN** reminder cancellation runs for every captured task through the required scheduler dependency
 
 #### Scenario: Chain deletion input is stale
 

@@ -108,7 +108,7 @@ class HabitChainRepositoryImpl
                         if (habitDao.getHabitById(habit.id) == null) {
                             habitDao.insertHabit(entity)
                         } else {
-                            habitDao.updateHabit(entity)
+                            habitDao.updateHabitReminder(habit.id, habit.reminderDate)
                         }
                     }
                 }

@@ -45,21 +45,18 @@ class TaskRepositoryTest {
     }
 
     @Test
-    fun `deleteTaskWithSnapshot captures root and subtasks before deleting`() =
+    fun `deleteTaskWithSnapshot captures the full task tree before deleting`() =
         runTest {
             val root = TaskEntity(id = 10L, title = "Root", description = "")
             val child = TaskEntity(id = 11L, title = "Child", description = "", parentTaskId = 10L)
-            coEvery { taskDao.getTaskById(10L) } returns root
-            coEvery { taskDao.getSubtasksSync(10L) } returns listOf(child)
+            val grandchild = TaskEntity(id = 12L, title = "Grandchild", description = "", parentTaskId = 11L)
+            coEvery { taskDao.getTaskTrees(listOf(10L)) } returns listOf(root, child, grandchild)
 
             val result = repository.deleteTaskWithSnapshot(10L)
 
             assertThat(result.rootTaskId).isEqualTo(10L)
-            assertThat(result.tasks.map(Task::id)).containsExactly(10L, 11L).inOrder()
-            coVerifyOrder {
-                taskDao.deleteSubtasks(10L)
-                taskDao.deleteTaskById(10L)
-            }
+            assertThat(result.tasks.map(Task::id)).containsExactly(10L, 11L, 12L).inOrder()
+            coVerify { taskDao.deleteTaskTrees(listOf(10L)) }
         }
 
     @Test
@@ -67,15 +64,21 @@ class TaskRepositoryTest {
         runTest {
             val root = TaskEntity(id = 20L, title = "Done", description = "", isCompleted = true, categoryId = 2L)
             val child = TaskEntity(id = 21L, title = "Child", description = "", categoryId = 2L, parentTaskId = 20L)
-            val incomplete = TaskEntity(id = 22L, title = "Open", description = "", categoryId = 2L)
+            val grandchild =
+                TaskEntity(
+                    id = 22L,
+                    title = "Grandchild",
+                    description = "",
+                    categoryId = 2L,
+                    parentTaskId = 21L,
+                )
             coEvery { taskDao.getCompletedTopLevelTaskIds(2L) } returns listOf(20L)
-            coEvery { taskDao.getTasksByCategoryId(2L) } returns listOf(root, child, incomplete)
+            coEvery { taskDao.getTaskTrees(listOf(20L)) } returns listOf(root, child, grandchild)
 
             val result = repository.deleteCompletedTasksWithSnapshot(2L)
 
-            assertThat(result.tasks.map(Task::id)).containsExactly(20L, 21L)
-            coVerify { taskDao.deleteSubtasksByParentIds(listOf(20L)) }
-            coVerify { taskDao.deleteTasksByIds(listOf(20L)) }
+            assertThat(result.tasks.map(Task::id)).containsExactly(20L, 21L, 22L).inOrder()
+            coVerify { taskDao.deleteTaskTrees(listOf(20L)) }
         }
 
     @Test
@@ -124,8 +127,7 @@ class TaskRepositoryTest {
             repository.deleteCompletedTasksByCategoryId(categoryId)
 
             coVerify { taskDao.getCompletedTopLevelTaskIds(categoryId) }
-            coVerify { taskDao.deleteSubtasksByParentIds(parentIds) }
-            coVerify { taskDao.deleteTasksByIds(parentIds) }
+            coVerify { taskDao.deleteTaskTrees(parentIds) }
         }
 
     @Test
@@ -137,8 +139,7 @@ class TaskRepositoryTest {
             repository.deleteCompletedTasksByCategoryId(categoryId)
 
             coVerify { taskDao.getCompletedTopLevelTaskIds(categoryId) }
-            coVerify(exactly = 0) { taskDao.deleteSubtasksByParentIds(any()) }
-            coVerify(exactly = 0) { taskDao.deleteTasksByIds(any()) }
+            coVerify(exactly = 0) { taskDao.deleteTaskTrees(any()) }
         }
 
     @Test

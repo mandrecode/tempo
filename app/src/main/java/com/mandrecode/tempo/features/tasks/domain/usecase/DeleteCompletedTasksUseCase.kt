@@ -8,10 +8,10 @@ class DeleteCompletedTasksUseCase
     @Inject
     constructor(
         private val taskRepository: TaskRepository,
-        private val taskReminderScheduler: TaskReminderScheduler? = null,
+        private val taskReminderScheduler: TaskReminderScheduler,
     ) {
         suspend operator fun invoke(categoryId: Long) =
             taskRepository.deleteCompletedTasksWithSnapshot(categoryId).also { snapshot ->
-                snapshot.tasks.forEach { taskReminderScheduler?.cancel(it) }
+                snapshot.tasks.forEach { taskReminderScheduler.cancel(it) }
             }
     }

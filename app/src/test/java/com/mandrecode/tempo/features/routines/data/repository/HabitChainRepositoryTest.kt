@@ -252,4 +252,38 @@ class HabitChainRepositoryTest {
             coVerify(exactly = 0) { habitDao.updateHabit(any()) }
             coVerify(exactly = 0) { habitChainDao.insertHabitChain(any()) }
         }
+
+    @Test
+    fun `restoreDeletedHabitChain only restores reminder for preserved habit`() =
+        runTest {
+            val originalReminder = LocalDateTime(2026, 7, 20, 9, 0)
+            val habit =
+                Habit(
+                    id = 1L,
+                    title = "Original",
+                    description = "",
+                    reminderDate = originalReminder,
+                    createdDate = fixedDate,
+                )
+            coEvery { habitDao.getHabitById(habit.id) } returns
+                HabitEntity(
+                    id = habit.id,
+                    title = "Edited during undo window",
+                    description = "",
+                    reminderDate = testChain.periodicReminder,
+                    createdDate = fixedDate,
+                )
+            val snapshot =
+                HabitChainDeletionSnapshot(
+                    chain = testChain,
+                    habitsBeforeDeletion = listOf(habit),
+                    affectedChains = emptyList(),
+                    deletedHabits = false,
+                )
+
+            repository.restoreDeletedHabitChain(snapshot)
+
+            coVerify { habitDao.updateHabitReminder(habit.id, originalReminder) }
+            coVerify(exactly = 0) { habitDao.updateHabit(any()) }
+        }
 }

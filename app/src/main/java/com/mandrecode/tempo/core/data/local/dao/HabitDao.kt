@@ -70,4 +70,10 @@ interface HabitDao {
         habitIds: List<Long>,
         reminderDate: LocalDateTime?,
     )
+
+    @Query("UPDATE habits SET reminderDate = :reminderDate WHERE id = :habitId")
+    suspend fun updateHabitReminder(
+        habitId: Long,
+        reminderDate: LocalDateTime?,
+    )
 }
