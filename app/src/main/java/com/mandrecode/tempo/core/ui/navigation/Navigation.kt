@@ -35,7 +35,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -193,7 +192,7 @@ private fun navigateTo(
     onRouteChange: (String) -> Unit,
 ) {
     navController.navigate(item.route) {
-        popUpTo(navController.graph.findStartDestination().id) {
+        popUpTo(navController.topLevelPopUpToId()) {
             saveState = true
         }
         launchSingleTop = true
@@ -387,7 +386,7 @@ private fun NotificationNavigationEffects(
     LaunchedEffect(routinesNavigationTrigger) {
         if (routinesNavigationTrigger > 0) {
             navController.navigate(RoutinesRoute) {
-                popUpTo(navController.graph.findStartDestination().id) {
+                popUpTo(navController.topLevelPopUpToId()) {
                     saveState = true
                 }
                 launchSingleTop = true
@@ -400,7 +399,7 @@ private fun NotificationNavigationEffects(
     LaunchedEffect(tasksNavigationTrigger) {
         if (tasksNavigationTrigger > 0) {
             navController.navigate(TasksRoute) {
-                popUpTo(navController.graph.findStartDestination().id) {
+                popUpTo(navController.topLevelPopUpToId()) {
                     saveState = true
                 }
                 launchSingleTop = true

@@ -3,9 +3,7 @@ package com.mandrecode.tempo.core.data.preferences
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
-import io.mockk.Runs
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
 import org.junit.Before
@@ -21,7 +19,7 @@ class OnboardingPreferencesRepositoryTest {
         editor =
             mockk(relaxed = true) {
                 every { putBoolean(any(), any()) } returns this
-                every { apply() } just Runs
+                every { commit() } returns true
             }
         preferences =
             mockk {
@@ -46,7 +44,7 @@ class OnboardingPreferencesRepositoryTest {
 
         assertThat(repository.isCompleted.value).isTrue()
         verify(exactly = 1) { editor.putBoolean("completed", true) }
-        verify(exactly = 1) { editor.apply() }
+        verify(exactly = 1) { editor.commit() }
     }
 
     @Test

@@ -11,6 +11,10 @@ The app SHALL show onboarding before the normal Tasks or Routines destination un
 - **WHEN** the app starts after onboarding was finished or skipped
 - **THEN** the app opens the resolved enabled default tab without showing onboarding
 
+#### Scenario: Completion survives immediate process death
+- **WHEN** onboarding completes and the app begins handing off to the selected tab
+- **THEN** the completion marker is durably persisted before onboarding exits
+
 ### Requirement: Short ordered concept education
 The onboarding flow SHALL present the benefits of tasks and categories before the benefits of routines and reminders, SHALL explain concepts and configuration in four pages, and SHALL end with a fifth welcome page.
 
@@ -111,6 +115,10 @@ Finishing or skipping first-run onboarding SHALL mark it complete and navigate t
 #### Scenario: Stored default is invalid
 - **WHEN** onboarding exits while the stored default tab is disabled
 - **THEN** the app displays the remaining enabled tab
+
+#### Scenario: Top-level navigation after handoff
+- **WHEN** the user repeatedly switches tabs or opens notification destinations after first-run onboarding exits
+- **THEN** prior top-level destinations do not accumulate in the back stack and Back does not return to onboarding
 
 ### Requirement: Settings replay
 Settings SHALL allow a completed user to replay onboarding without clearing completion or resetting saved choices.

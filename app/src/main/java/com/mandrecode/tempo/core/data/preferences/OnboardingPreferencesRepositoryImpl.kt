@@ -23,7 +23,7 @@ class OnboardingPreferencesRepositoryImpl
         override fun setCompleted() {
             if (completed.value) return
 
-            preferences.edit { putBoolean(KEY_COMPLETED, true) }
+            preferences.edit(commit = true) { putBoolean(KEY_COMPLETED, true) }
             completed.value = true
         }
 

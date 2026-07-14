@@ -41,6 +41,7 @@ Alternative: stage all choices and commit only on Finish. Rejected because repla
 Add a small SharedPreferences-backed `OnboardingPreferencesRepository` that exposes completion as a reactive flow and an idempotent `setCompleted()` operation. Existing repositories remain authoritative for all configurable choices. The theme repository resolves an absent color key to Tempo colors from its first emission while continuing to return an explicitly saved Tempo or dynamic choice. This satisfies the new-install default without a transient dynamic-color frame or any onboarding-time preference overwrite.
 
 No database transaction is required: each preference is an independent SharedPreferences write. Completion is written only after preference events have already been applied; repeating Finish or Skip is safe because setting the same completion boolean is idempotent.
+Because completion gates startup, that final boolean is committed synchronously before the in-memory completion state advances and the exit effect navigates away. This avoids losing the marker if the process dies immediately after handoff.
 
 Alternative: store a single onboarding configuration object. Rejected because it would duplicate existing preference state and introduce synchronization failure modes.
 
@@ -49,6 +50,8 @@ Alternative: store a single onboarding configuration object. Rejected because it
 Add `OnboardingRoute(isReplay: Boolean)` to the existing NavHost. `MainViewModel` includes onboarding completion in startup state, and `MainActivity` selects onboarding as the initial route when incomplete. First-run Finish/Skip marks completion and replaces onboarding with the resolved enabled default route. Settings replay navigates to the same route with `isReplay = true`; leaving replay pops back to Settings while completion remains true.
 
 The NavHost start destination is captured only when the successful app composition is first created. Reactive preference changes update the active screen and theme, but they do not rebuild the navigation graph or replace an active onboarding replay.
+
+First-run handoff removes onboarding even though it was the graph's original start destination. Shared top-level navigation therefore pops to that start entry while it exists and falls back to the always-present graph entry after onboarding removes itself. Repeated tab switches and notification navigation replace the active top-level destination instead of accumulating unreachable history.
 
 Alternative: render onboarding outside the NavHost. Rejected because Settings replay and back-stack behavior would require a second routing mechanism.
 
