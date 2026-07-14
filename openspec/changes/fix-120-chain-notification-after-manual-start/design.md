@@ -23,15 +23,18 @@ The alarm receiver must remain responsible for recurrence rollover: whether or n
 
 1. **Gate notification delivery in the receiver using member completion history.** After loading the chain, the receiver loads its member habits and posts only when none records completion for the occurrence date. This is resilient to an alarm already being dispatched and uses the final durable state at delivery time. Proactive alarm cancellation was considered, but it cannot fully eliminate receiver races and would require carefully preserving the next recurrence from a separate path.
 
-2. **Use the chain reminder's pre-rollover date as the occurrence key.** Completion history is date-specific, so a delayed alarm evaluates the date represented by the stored reminder before recurrence advancement. This matches the standalone reminder guard and avoids a later completion incorrectly suppressing an earlier delayed occurrence.
+2. **Carry the occurrence date in the chain alarm intent and prefer it at delivery.** Completion history is date-specific, so the alarm scheduler stores the trigger's local date in `EXTRA_SCHEDULED_DATE`, matching standalone habit alarms. The receiver prefers that immutable occurrence date over the chain's stored reminder, which may already have advanced before a delayed delivery.
 
 3. **Keep recurrence advancement unconditional after a valid chain is loaded.** Suppression changes presentation only. The existing `rescheduleHabitChain` call remains outside the notification condition so each delivered alarm advances at most once through the existing date comparison and repository update.
 
 4. **Extract a visible-for-testing pure predicate.** Unit tests cover no progress, partial progress, and date-specific delayed occurrences. The receiver performs repository reads and scheduler side effects outside any Room transaction; this change adds no new write transaction boundary.
 
+5. **Skip the repository member lookup for empty chains.** Empty chains are valid and have no progress that can suppress a notification. Returning an empty member list directly avoids passing an empty `IN` argument to Room while preserving the existing reminder behavior.
+
 ## Risks / Trade-offs
 
 - **[A stale or missing member record is absent from the repository result]** → Evaluate available members; any persisted matching completion suppresses the prompt, while no matching completion preserves the existing reminder behavior.
+- **[A chain has no members]** → Skip the Room lookup and treat the occurrence as unstarted.
 - **[Progress changes concurrently with receiver delivery]** → Reading immediately before notification construction narrows the race; Android may still interleave a toggle after the read, but the live-activity path dismisses a posted chain notification when progress begins.
 - **[Suppressed notification could accidentally stop future reminders]** → Keep recurrence rescheduling independent from the display predicate and cover that invariant in the implementation structure and tests.
 

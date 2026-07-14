@@ -15,6 +15,14 @@ The system SHALL show a scheduled habit-chain reminder only when none of the cha
 - **WHEN** a habit-chain reminder fires and member completion history exists only for a different date
 - **THEN** the system posts the habit-chain reminder notification for the scheduled occurrence
 
+#### Scenario: Delayed alarm after stored reminder advances
+- **WHEN** a habit-chain alarm is delivered after the chain's stored reminder date has advanced
+- **THEN** the system evaluates member progress against the occurrence date carried by the alarm
+
+#### Scenario: Empty chain reminder fires
+- **WHEN** a habit-chain reminder fires for a chain with no member habits
+- **THEN** the system handles the empty chain without querying members or crashing
+
 ### Requirement: Suppression preserves recurring reminders
 The system SHALL process recurrence rollover after a scheduled chain alarm even when the current occurrence's notification is suppressed.
 

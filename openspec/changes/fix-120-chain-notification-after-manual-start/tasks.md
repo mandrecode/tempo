@@ -11,3 +11,9 @@
 ## 3. Quality Gates
 
 - [x] 3.1 Validate the OpenSpec change and run `ktlintFormat`, `ktlintCheck`, and `:app:detekt`.
+
+## 4. Copilot Review Follow-up
+
+- [x] 4.1 Guard empty chain member lookups and carry the original occurrence date in chain alarm intents.
+- [x] 4.2 Add regression tests for empty chains and delayed occurrence-date resolution.
+- [x] 4.3 Run focused and full verification, validate OpenSpec, and publish the review fixes.
