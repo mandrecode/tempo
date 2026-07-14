@@ -1,3 +1,5 @@
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
+
 package com.mandrecode.tempo.features.onboarding.presentation
 
 import android.content.res.Configuration
@@ -7,10 +9,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ComposeUiFlags
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Devices
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+
+@Preview(name = "Phone", device = Devices.PHONE, showBackground = true)
+@Preview(name = "Foldable", device = Devices.FOLDABLE, showBackground = true)
+@Preview(name = "Tablet", device = Devices.TABLET, showBackground = true)
+@Preview(name = "Desktop", device = Devices.DESKTOP, showBackground = true)
+private annotation class PreviewOnboardingFormFactors
 
 @Preview(name = "Tasks - Light", device = "id:pixel_9", showBackground = true)
 @Preview(
@@ -21,6 +31,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 )
 @Composable
 private fun OnboardingTasksPreview() {
+    ComposeUiFlags.isMediaQueryIntegrationEnabled = true
     TempoTheme(useTempoColors = true) {
         OnboardingContent(
             uiState = OnboardingContract.UiState(),
@@ -38,6 +49,7 @@ private fun OnboardingTasksPreview() {
 )
 @Composable
 private fun OnboardingSetupPreview() {
+    ComposeUiFlags.isMediaQueryIntegrationEnabled = true
     TempoTheme(useTempoColors = true) {
         OnboardingContent(
             uiState =
@@ -73,5 +85,26 @@ private fun OnboardingMotionComponentsPreview() {
                 }
             }
         }
+    }
+}
+
+@PreviewOnboardingFormFactors
+@Preview(
+    name = "Short landscape",
+    device = "spec:width=891dp,height=411dp,dpi=420",
+    showBackground = true,
+)
+@Composable
+private fun OnboardingAdaptiveSetupPreview() {
+    ComposeUiFlags.isMediaQueryIntegrationEnabled = true
+    TempoTheme(useTempoColors = true) {
+        OnboardingContent(
+            uiState =
+                OnboardingContract.UiState(
+                    currentPage = 3,
+                    autoRemoveCompletedTasksEnabled = true,
+                ),
+            onEvent = {},
+        )
     }
 }

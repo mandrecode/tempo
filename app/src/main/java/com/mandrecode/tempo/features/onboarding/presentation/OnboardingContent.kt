@@ -20,9 +20,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -33,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -49,6 +48,7 @@ fun OnboardingContent(
     onEvent: (OnboardingContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val layout = rememberOnboardingLayout()
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -58,24 +58,31 @@ fun OnboardingContent(
                 Modifier
                     .fillMaxSize()
                     .windowInsetsPadding(WindowInsets.safeDrawing)
-                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                    .padding(
+                        horizontal = layout.outerHorizontalPadding,
+                        vertical = layout.outerVerticalPadding,
+                    ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            OnboardingSkip(onEvent = onEvent)
+            OnboardingSkip(layout = layout, onEvent = onEvent)
             OnboardingPage(
                 uiState = uiState,
                 onEvent = onEvent,
+                layout = layout,
                 modifier = Modifier.weight(1f).fillMaxWidth(),
             )
-            OnboardingFooter(uiState = uiState, onEvent = onEvent)
+            OnboardingFooter(uiState = uiState, layout = layout, onEvent = onEvent)
         }
     }
 }
 
 @Composable
-private fun OnboardingSkip(onEvent: (OnboardingContract.UiEvent) -> Unit) {
+private fun OnboardingSkip(
+    layout: OnboardingLayout,
+    onEvent: (OnboardingContract.UiEvent) -> Unit,
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().widthIn(max = OnboardingMaxWidth),
+        modifier = Modifier.fillMaxWidth().widthIn(max = layout.pageMaxWidth),
         horizontalArrangement = Arrangement.End,
     ) {
         AnimatedOnboardingButton(
@@ -91,6 +98,7 @@ private fun OnboardingSkip(onEvent: (OnboardingContract.UiEvent) -> Unit) {
 private fun OnboardingPage(
     uiState: OnboardingContract.UiState,
     onEvent: (OnboardingContract.UiEvent) -> Unit,
+    layout: OnboardingLayout,
     modifier: Modifier = Modifier,
 ) {
     AnimatedContent(
@@ -104,12 +112,15 @@ private fun OnboardingPage(
         label = "onboardingPage",
         modifier = modifier,
     ) { page ->
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            modifier = Modifier.fillMaxSize().clipToBounds(),
+            contentAlignment = Alignment.Center,
+        ) {
             when (page) {
-                0 -> TasksAndCategoriesPage()
-                1 -> RoutinesAndRemindersPage()
-                2 -> AppearancePage(uiState = uiState, onEvent = onEvent)
-                else -> OnboardingSetupPage(uiState = uiState, onEvent = onEvent)
+                0 -> TasksAndCategoriesPage(layout = layout)
+                1 -> RoutinesAndRemindersPage(layout = layout)
+                2 -> AppearancePage(uiState = uiState, layout = layout, onEvent = onEvent)
+                else -> OnboardingSetupPage(uiState = uiState, layout = layout, onEvent = onEvent)
             }
         }
     }
@@ -118,11 +129,12 @@ private fun OnboardingPage(
 @Composable
 private fun OnboardingFooter(
     uiState: OnboardingContract.UiState,
+    layout: OnboardingLayout,
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth().widthIn(max = OnboardingMaxWidth),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.fillMaxWidth().widthIn(max = layout.footerMaxWidth),
+        verticalArrangement = Arrangement.spacedBy(if (layout.isShort) 8.dp else 16.dp),
     ) {
         OnboardingProgress(
             currentPage = uiState.currentPage,
@@ -167,8 +179,9 @@ private fun OnboardingFooter(
 }
 
 @Composable
-private fun TasksAndCategoriesPage() {
+private fun TasksAndCategoriesPage(layout: OnboardingLayout) {
     EducationPage(
+        layout = layout,
         iconRes = R.drawable.ic_tasks,
         title = stringResource(R.string.onboarding_tasks_title),
         description = stringResource(R.string.onboarding_tasks_description),
@@ -189,8 +202,9 @@ private fun TasksAndCategoriesPage() {
 }
 
 @Composable
-private fun RoutinesAndRemindersPage() {
+private fun RoutinesAndRemindersPage(layout: OnboardingLayout) {
     EducationPage(
+        layout = layout,
         iconRes = R.drawable.ic_routine,
         title = stringResource(R.string.onboarding_routines_title),
         description = stringResource(R.string.onboarding_routines_description),
@@ -212,57 +226,83 @@ private fun RoutinesAndRemindersPage() {
 
 @Composable
 private fun EducationPage(
+    layout: OnboardingLayout,
     iconRes: Int,
     title: String,
     description: String,
     concepts: List<EducationConcept>,
-) {
-    Column(
-        modifier = Modifier.widthIn(max = OnboardingMaxWidth).verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        HeroIcon(iconRes = iconRes)
+) = AdaptiveOnboardingPage(
+    layout = layout,
+    intro = {
+        if (!layout.isShort) {
+            HeroIcon(iconRes = iconRes)
+        }
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineLarge,
+            style =
+                if (layout.isShort) {
+                    MaterialTheme.typography.headlineMedium
+                } else {
+                    MaterialTheme.typography.headlineLarge
+                },
             fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
         Text(
             text = description,
-            style = MaterialTheme.typography.bodyLarge,
+            style =
+                if (layout.isShort) {
+                    MaterialTheme.typography.bodyMedium
+                } else {
+                    MaterialTheme.typography.bodyLarge
+                },
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center,
         )
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            concepts.forEach { concept -> ConceptCard(concept) }
-        }
-    }
-}
+    },
+    body = {
+        concepts.forEach { concept -> ConceptCard(concept = concept, compact = layout.isShort) }
+    },
+)
 
 @Composable
-private fun ConceptCard(concept: EducationConcept) {
+private fun ConceptCard(
+    concept: EducationConcept,
+    compact: Boolean,
+) {
     Card(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLow),
         modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
-            modifier = Modifier.padding(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(if (compact) 12.dp else 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(if (compact) 12.dp else 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Icon(
                 painter = painterResource(concept.iconRes),
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(28.dp),
+                modifier = Modifier.size(if (compact) 24.dp else 28.dp),
             )
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(concept.title, style = MaterialTheme.typography.titleMedium)
+                Text(
+                    concept.title,
+                    style =
+                        if (compact) {
+                            MaterialTheme.typography.titleSmall
+                        } else {
+                            MaterialTheme.typography.titleMedium
+                        },
+                )
                 Text(
                     concept.description,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style =
+                        if (compact) {
+                            MaterialTheme.typography.bodySmall
+                        } else {
+                            MaterialTheme.typography.bodyMedium
+                        },
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -273,6 +313,7 @@ private fun ConceptCard(concept: EducationConcept) {
 @Composable
 private fun AppearancePage(
     uiState: OnboardingContract.UiState,
+    layout: OnboardingLayout,
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
     val settingsUiState = uiState.toSettingsUiState()
@@ -280,27 +321,40 @@ private fun AppearancePage(
         onEvent(event.toOnboardingEvent())
     }
 
-    Column(
-        modifier = Modifier.widthIn(max = OnboardingMaxWidth).verticalScroll(rememberScrollState()),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp),
-    ) {
-        HeroIcon(iconRes = R.drawable.ic_palette)
-        Text(
-            text = stringResource(R.string.onboarding_appearance_title),
-            style = MaterialTheme.typography.headlineLarge,
-            fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.onboarding_appearance_description),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-        ThemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
-        ColorSchemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
-    }
+    AdaptiveOnboardingPage(
+        layout = layout,
+        intro = {
+            if (!layout.isShort) {
+                HeroIcon(iconRes = R.drawable.ic_palette)
+            }
+            Text(
+                text = stringResource(R.string.onboarding_appearance_title),
+                style =
+                    if (layout.isShort) {
+                        MaterialTheme.typography.headlineMedium
+                    } else {
+                        MaterialTheme.typography.headlineLarge
+                    },
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                text = stringResource(R.string.onboarding_appearance_description),
+                style =
+                    if (layout.isShort) {
+                        MaterialTheme.typography.bodyMedium
+                    } else {
+                        MaterialTheme.typography.bodyLarge
+                    },
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+            )
+        },
+        body = {
+            ThemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
+            ColorSchemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
+        },
+    )
 }
 
 @Composable
@@ -313,7 +367,10 @@ private fun HeroIcon(iconRes: Int) {
         Icon(
             painter = painterResource(iconRes),
             contentDescription = null,
-            modifier = Modifier.padding(24.dp).size(48.dp),
+            modifier =
+                Modifier
+                    .padding(24.dp)
+                    .size(48.dp),
         )
     }
 }
@@ -329,6 +386,8 @@ internal object OnboardingTestTags {
     const val BACK = "onboarding_back"
     const val FORWARD = "onboarding_forward"
     const val PROGRESS_SEGMENT = "onboarding_progress_segment"
+    const val SINGLE_PANE = "onboarding_single_pane"
+    const val TWO_PANE = "onboarding_two_pane"
 }
 
 internal val OnboardingMaxWidth = 600.dp

@@ -37,6 +37,10 @@ The onboarding flow SHALL expose Skip on every page, Back after the first page, 
 - **WHEN** the user presses an onboarding action or changes pages
 - **THEN** action shape and colors animate using Tempo's established interaction treatment, and a Didi-style segmented progress indicator animates the completed-page colors
 
+#### Scenario: Window size changes
+- **WHEN** onboarding is shown on a phone, foldable, tablet, desktop, landscape, or resized multi-window surface
+- **THEN** the content recomposes into a readable single- or two-column layout without clipping actions or losing scroll access
+
 ### Requirement: Appearance selection
 The onboarding flow SHALL reuse the Settings appearance controls to allow light, dark, or system mode and selection between Tempo signature colors and supported dynamic colors, with Tempo colors selected by default for users who have not completed onboarding.
 

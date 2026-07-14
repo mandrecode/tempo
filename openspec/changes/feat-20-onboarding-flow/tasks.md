@@ -24,3 +24,4 @@
 - [x] 4.3 Perform a first-run and Settings-replay smoke test on the available Pixel target
 - [x] 4.4 Keep the active onboarding route stable when theme, tab, or default-tab preferences change
 - [x] 4.5 Animate onboarding button shape/colors and replace linear progress with Didi-style animated segments
+- [x] 4.6 Adapt onboarding across compact, medium, expanded, and short window sizes using Android MediaQuery guidance

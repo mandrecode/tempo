@@ -58,6 +58,12 @@ Onboarding actions use Tempo's existing press-driven shape and color animation l
 
 Alternative: keep the stock linear progress indicator and static Material buttons. Rejected because they visually diverge from the interaction feedback used throughout Tempo and make discrete onboarding steps less legible.
 
+### Adapt onboarding to the live window size
+
+Enable Compose MediaQuery integration and derive onboarding layout from the current window width and height. Compact and medium windows keep a centered single-column flow; windows at least 840 dp wide place education or configuration beside the page introduction in two balanced columns. Short landscape windows reduce outer and section spacing while preserving scrollability, safe drawing insets, and 48 dp actions. Phone, foldable, tablet, and desktop previews cover the major form factors without adding a new dependency.
+
+Alternative: infer layout from the physical device type or a startup-only configuration value. Rejected because split-screen, fold/unfold, desktop resizing, and rotation can all change the usable window while the app remains active.
+
 ### Keep permission education contextual
 
 The reminder page explains that reminders can notify at useful times, but it does not request permission. Existing notification permission education remains the sole permission-sensitive entry point, so onboarding copy cannot get ahead of the user's first reminder action.
