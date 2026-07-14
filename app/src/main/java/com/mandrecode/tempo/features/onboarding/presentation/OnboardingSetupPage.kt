@@ -7,7 +7,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.features.settings.presentation.CompletedTaskRetentionSection
 import com.mandrecode.tempo.features.settings.presentation.DefaultTabSection
 import com.mandrecode.tempo.features.settings.presentation.SettingsContract
 import com.mandrecode.tempo.features.settings.presentation.TabsAndNavigationSection
@@ -19,7 +18,10 @@ internal fun OnboardingSetupPage(
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
     val settingsUiState = uiState.toSettingsUiState()
-    val onSettingsEvent = { event: SettingsContract.UiEvent -> onEvent(event.toOnboardingEvent()) }
+    val onSettingsEvent = { event: SettingsContract.UiEvent ->
+        val onboardingEvent = event.toOnboardingEvent()
+        if (onboardingEvent != null) onEvent(onboardingEvent)
+    }
 
     AdaptiveOnboardingPage(
         layout = layout,
@@ -49,7 +51,6 @@ internal fun OnboardingSetupPage(
         body = {
             TabsAndNavigationSection(uiState = settingsUiState, onEvent = onSettingsEvent)
             DefaultTabSection(uiState = settingsUiState, onEvent = onSettingsEvent)
-            CompletedTaskRetentionSection(uiState = settingsUiState, onEvent = onSettingsEvent)
         },
     )
 }

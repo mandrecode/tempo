@@ -1,6 +1,6 @@
 ## Context
 
-Tempo already persists theme colors, tab visibility, the default tab, and completed-task retention, and Settings exposes all four controls. Startup currently resolves only those preferences and enters the selected Tasks or Routines destination. Settings contains a placeholder "View onboarding" action, but there is no onboarding route or persisted completion state.
+Tempo already persists theme colors, tab visibility, the default tab, and completed-task retention, and Settings exposes all four controls. Startup currently resolves only those preferences and enters the selected Tasks or Routines destination. Settings contains a placeholder "View onboarding" action, but there is no onboarding route or persisted completion state. Completed-task retention is an advanced, potentially destructive preference that is more appropriate after users understand the app.
 
 The change crosses startup, navigation, preferences, and Compose presentation. It must preserve the app's Screen/Content split, use existing repositories as the source of truth, keep onboarding short, and avoid coupling reminder education to Android permission requests.
 
@@ -9,7 +9,7 @@ The change crosses startup, navigation, preferences, and Compose presentation. I
 **Goals:**
 
 - Gate the normal start destination until a first-run user finishes or skips onboarding.
-- Explain the core concepts and preferences in four short pages, followed by a focused Tempo welcome page.
+- Explain the benefits and core concepts in four short pages, followed by a focused Tempo welcome page.
 - Apply preference selections through the same repositories used by Settings and the rest of the app.
 - Persist completion and support replay from Settings.
 - Guarantee at least one visible tab and an enabled default tab.
@@ -32,7 +32,7 @@ Alternative: implement a one-off composable in `MainActivity`. Rejected because 
 
 ### Use four content pages plus a final welcome page and apply choices immediately
 
-The pages are: (1) tasks and categories, (2) routines and reminders, (3) light/dark/system mode plus Tempo versus dynamic colors, (4) tab visibility, default tab, and completed-task retention, and (5) a centered final welcome with the unmodified default Tempo launcher logo and app name. The welcome renders the launcher resource directly so Compose does not replace or augment its background. The appearance and setup pages reuse the same section composables as Settings so behavior and styling cannot drift. Automatic completed-task removal remains disabled when no preference has been saved; replay continues to reflect the user's stored choice. Preference edits are persisted as the user makes them, matching Settings behavior and allowing the global theme to preview appearance changes immediately. The completion action appears on the welcome page so configuration and celebration remain distinct steps.
+The pages are: (1) the benefits of tasks and categories, (2) the benefits of routines and reminders, (3) light/dark/system mode plus Tempo versus dynamic colors, (4) tab visibility and default tab, and (5) a centered final welcome with the unmodified default Tempo launcher logo and app name. The welcome renders the launcher resource directly so Compose does not replace or augment its background. The appearance and setup pages reuse the same section composables as Settings so behavior and styling cannot drift. Completed-task retention remains exclusively in Settings, keeping the first-run configuration focused and avoiding an advanced destructive control before the user has completed a task. Preference edits are persisted as the user makes them, matching Settings behavior and allowing the global theme to preview appearance changes immediately. The completion action appears on the welcome page so configuration and celebration remain distinct steps; Skip is omitted there because it would duplicate completion behavior.
 
 Alternative: stage all choices and commit only on Finish. Rejected because replay would need a parallel draft model and appearance could not provide an immediate whole-app preview. Skip therefore preserves any explicit edits already made.
 
@@ -77,7 +77,7 @@ The reminder page explains that reminders can notify at useful times, but it doe
 - [Users upgrading from an older release are technically "incomplete"] → Treat the first release containing onboarding as their first guided launch; Skip is always visible, and completion is persisted immediately.
 - [Immediate preference writes during replay can change settings before Finish] → Controls are explicit and reflect the same immediate-save model already used in Settings.
 - [Two ViewModels could drift in tab invariants] → Cover the same invariants with onboarding tests and keep repository constants as the shared persisted representation.
-- [Dense configuration page could feel long] → Reuse compact controls, group related navigation choices, keep education copy concise, and follow it with a visually calm welcome page.
+- [Users may look for retention during onboarding replay] → Keep the control in its established Settings section and keep onboarding focused on first-session choices.
 - [Localized copy can diverge as behavior evolves] → Keep copy factual, reference existing concepts, and add English and Spanish resources in the same change.
 
 ## Migration Plan

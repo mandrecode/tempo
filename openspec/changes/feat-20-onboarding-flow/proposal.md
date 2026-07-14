@@ -4,12 +4,12 @@ New users currently land in Tempo without an explanation of how tasks, categorie
 
 ## What Changes
 
-- Add a lightweight, paged onboarding flow that introduces tasks and categories before routines and reminders, then ends on a centered Tempo welcome page.
-- Show onboarding automatically on first launch, while allowing users to skip it at any point.
+- Add a lightweight, benefit-led onboarding flow that introduces tasks and categories before routines and reminders, then ends on a centered Tempo welcome page.
+- Show onboarding automatically on first launch, allowing users to skip its content and configuration pages before the dedicated completion screen.
 - Let users choose Tempo's signature colors or dynamic colors, with Tempo selected by default for new installations.
 - Let users enable or disable the Tasks and Routines tabs while guaranteeing that at least one remains enabled.
 - Let users choose an enabled default tab.
-- Let users configure automatic removal and retention days for completed tasks.
+- Keep advanced completed-task retention controls in Settings instead of onboarding.
 - Finish or skip onboarding by handing off to the selected default tab, and persist completion so onboarding does not block later launches.
 - Make onboarding replayable from Settings without resetting first-run state or changing the user's saved choices unless they explicitly edit them.
 - Keep notification permission requests out of this flow; onboarding explains reminders, while the existing contextual permission-education behavior remains responsible for requesting access.
@@ -28,4 +28,4 @@ None.
 
 - Adds an onboarding presentation feature, route, ViewModel, preference persistence, localized resources, previews, and tests in `:app`.
 - Integrates app startup and Settings navigation with the onboarding route.
-- Reuses existing theme, navigation-tab, default-tab, and completed-task-retention preferences; no new external dependency, Room schema change, or permission flow is required.
+- Reuses existing theme, navigation-tab, and default-tab preferences; no new external dependency, Room schema change, or permission flow is required.

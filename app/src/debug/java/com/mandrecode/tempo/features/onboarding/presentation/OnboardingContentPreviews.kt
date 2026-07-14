@@ -52,11 +52,7 @@ private fun OnboardingSetupPreview() {
     ComposeUiFlags.isMediaQueryIntegrationEnabled = true
     TempoTheme(useTempoColors = true) {
         OnboardingContent(
-            uiState =
-                OnboardingContract.UiState(
-                    currentPage = 3,
-                    autoRemoveCompletedTasksEnabled = true,
-                ),
+            uiState = OnboardingContract.UiState(currentPage = 3),
             onEvent = {},
         )
     }
@@ -117,11 +113,7 @@ private fun OnboardingAdaptiveSetupPreview() {
     ComposeUiFlags.isMediaQueryIntegrationEnabled = true
     TempoTheme(useTempoColors = true) {
         OnboardingContent(
-            uiState =
-                OnboardingContract.UiState(
-                    currentPage = 3,
-                    autoRemoveCompletedTasksEnabled = true,
-                ),
+            uiState = OnboardingContract.UiState(currentPage = 3),
             onEvent = {},
         )
     }

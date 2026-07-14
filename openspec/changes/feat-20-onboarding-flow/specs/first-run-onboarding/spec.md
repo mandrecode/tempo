@@ -12,7 +12,7 @@ The app SHALL show onboarding before the normal Tasks or Routines destination un
 - **THEN** the app opens the resolved enabled default tab without showing onboarding
 
 ### Requirement: Short ordered concept education
-The onboarding flow SHALL present tasks and categories before routines and reminders, SHALL explain concepts and configuration in four pages, and SHALL end with a fifth welcome page.
+The onboarding flow SHALL present the benefits of tasks and categories before the benefits of routines and reminders, SHALL explain concepts and configuration in four pages, and SHALL end with a fifth welcome page.
 
 #### Scenario: User advances through education
 - **WHEN** the user moves forward from the first page
@@ -27,11 +27,15 @@ The onboarding flow SHALL present tasks and categories before routines and remin
 - **THEN** a final page displays the unmodified default Tempo launcher logo and app name centered in the available content area
 
 ### Requirement: Skippable and navigable flow
-The onboarding flow SHALL expose Skip on every page, Back after the first page, and a forward action until the final page.
+The onboarding flow SHALL expose Skip on each page before the final welcome, Back after the first page, and a forward action until the final page.
 
 #### Scenario: Skip from any page
-- **WHEN** the user selects Skip
+- **WHEN** the user selects Skip from a content or configuration page
 - **THEN** onboarding is marked complete and the user is handed off without visiting the remaining pages
+
+#### Scenario: Final welcome actions
+- **WHEN** the final welcome page is displayed
+- **THEN** Back and Start using Tempo are available without a redundant Skip action
 
 #### Scenario: Navigate backward
 - **WHEN** the user selects Back after the first page
@@ -82,16 +86,12 @@ The onboarding flow SHALL allow the user to choose an enabled default tab and SH
 - **WHEN** the user disables the current default tab while the other tab is enabled
 - **THEN** the app enables no additional tab and persists the other tab as the default
 
-### Requirement: Completed-task retention configuration
-The onboarding flow SHALL leave automatic completed-task removal disabled for users without a saved retention preference, and SHALL allow the user to enable automatic removal and choose a supported retention duration.
+### Requirement: Advanced retention remains in Settings
+The onboarding flow SHALL NOT expose automatic completed-task removal or retention-duration controls.
 
-#### Scenario: New user sees retention defaults
-- **WHEN** a user without a saved completed-task retention preference reaches configuration
-- **THEN** automatic completed-task removal is disabled
-
-#### Scenario: Configure retention
-- **WHEN** the user enables automatic removal and selects a retention duration
-- **THEN** the app persists the enabled state and normalized supported retention duration through the existing retention behavior
+#### Scenario: User wants to configure completed-task retention
+- **WHEN** the user wants to change automatic removal after onboarding
+- **THEN** the existing completed-task controls remain available in Settings
 
 ### Requirement: Successful handoff
 Finishing or skipping first-run onboarding SHALL mark it complete and navigate to the resolved enabled default tab.

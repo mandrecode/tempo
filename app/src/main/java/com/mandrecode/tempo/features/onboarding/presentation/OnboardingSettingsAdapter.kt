@@ -10,11 +10,9 @@ internal fun OnboardingContract.UiState.toSettingsUiState(): SettingsContract.Ui
         isRoutinesTabEnabled = isRoutinesTabEnabled,
         isTasksTabEnabled = isTasksTabEnabled,
         defaultTab = defaultTab.toSettingsDefaultTab(),
-        autoRemoveCompletedTasksEnabled = autoRemoveCompletedTasksEnabled,
-        completedTaskRetentionDays = completedTaskRetentionDays,
     )
 
-internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.UiEvent =
+internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.UiEvent? =
     when (this) {
         is SettingsContract.UiEvent.ThemeModeSelected -> OnboardingContract.UiEvent.ThemeModeSelected(mode)
         is SettingsContract.UiEvent.TempoColorsToggled -> OnboardingContract.UiEvent.TempoColorsSelected(enabled)
@@ -23,11 +21,9 @@ internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.Ui
         is SettingsContract.UiEvent.DefaultTabSelected ->
             OnboardingContract.UiEvent.DefaultTabSelected(defaultTab.toOnboardingDefaultTab())
 
-        is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled ->
-            OnboardingContract.UiEvent.AutoRemoveCompletedTasksToggled(enabled)
-
-        is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged ->
-            OnboardingContract.UiEvent.CompletedTaskRetentionDaysChanged(days)
+        is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled,
+        is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged,
+        -> null
     }
 
 private fun OnboardingContract.DefaultTab.toSettingsDefaultTab(): SettingsContract.DefaultTab =

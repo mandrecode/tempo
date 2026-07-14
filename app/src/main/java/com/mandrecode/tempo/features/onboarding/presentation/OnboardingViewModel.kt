@@ -7,8 +7,6 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
-import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,8 +25,6 @@ class OnboardingViewModel
         private val themePreferencesRepository: ThemePreferencesRepository,
         private val navigationPreferencesRepository: NavigationPreferencesRepository,
         private val onboardingPreferencesRepository: OnboardingPreferencesRepository,
-        private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
-        private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(OnboardingContract.UiState())
         val uiState: StateFlow<OnboardingContract.UiState> = mutableUiState.asStateFlow()
@@ -60,17 +56,6 @@ class OnboardingViewModel
                 is OnboardingContract.UiEvent.RoutinesTabToggled -> setRoutinesTabEnabled(event.enabled)
                 is OnboardingContract.UiEvent.TasksTabToggled -> setTasksTabEnabled(event.enabled)
                 is OnboardingContract.UiEvent.DefaultTabSelected -> setDefaultTab(event.defaultTab)
-                is OnboardingContract.UiEvent.AutoRemoveCompletedTasksToggled ->
-                    updateCompletedTaskRetention(
-                        enabled = event.enabled,
-                        days = mutableUiState.value.completedTaskRetentionDays,
-                    )
-
-                is OnboardingContract.UiEvent.CompletedTaskRetentionDaysChanged ->
-                    updateCompletedTaskRetention(
-                        enabled = mutableUiState.value.autoRemoveCompletedTasksEnabled,
-                        days = event.days,
-                    )
             }
         }
 
@@ -101,21 +86,6 @@ class OnboardingViewModel
                         )
                     }
                 }
-            }
-            viewModelScope.launch {
-                combine(
-                    completedTaskRetentionPreferences.isEnabled,
-                    completedTaskRetentionPreferences.retentionDays,
-                ) { enabled, days -> enabled to days }
-                    .collect { (enabled, days) ->
-                        mutableUiState.update {
-                            it.copy(
-                                autoRemoveCompletedTasksEnabled = enabled,
-                                completedTaskRetentionDays =
-                                    CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
-                            )
-                        }
-                    }
             }
         }
 
@@ -161,13 +131,6 @@ class OnboardingViewModel
             if (!enabled) return
 
             navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
-        }
-
-        private fun updateCompletedTaskRetention(
-            enabled: Boolean,
-            days: Int,
-        ) {
-            configureCompletedTaskRetention(enabled, days)
         }
 
         private fun completeOnboarding() {

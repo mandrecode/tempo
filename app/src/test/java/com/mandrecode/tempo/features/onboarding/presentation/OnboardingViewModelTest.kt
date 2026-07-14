@@ -8,8 +8,6 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
-import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
-import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -31,15 +29,11 @@ class OnboardingViewModelTest {
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
     private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
-    private lateinit var completedTaskRetentionPreferences: CompletedTaskRetentionPreferences
-    private lateinit var configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase
     private lateinit var useTempoColors: MutableStateFlow<Boolean>
     private lateinit var themeMode: MutableStateFlow<ThemeMode>
     private lateinit var routinesEnabled: MutableStateFlow<Boolean>
     private lateinit var tasksEnabled: MutableStateFlow<Boolean>
     private lateinit var defaultTab: MutableStateFlow<String>
-    private lateinit var retentionEnabled: MutableStateFlow<Boolean>
-    private lateinit var retentionDays: MutableStateFlow<Int>
     private lateinit var onboardingCompleted: MutableStateFlow<Boolean>
 
     @Before
@@ -48,15 +42,11 @@ class OnboardingViewModelTest {
         themePreferencesRepository = mockk(relaxed = true)
         navigationPreferencesRepository = mockk(relaxed = true)
         onboardingPreferencesRepository = mockk(relaxed = true)
-        completedTaskRetentionPreferences = mockk(relaxed = true)
-        configureCompletedTaskRetention = mockk(relaxed = true)
         useTempoColors = MutableStateFlow(false)
         themeMode = MutableStateFlow(ThemeMode.SYSTEM)
         routinesEnabled = MutableStateFlow(true)
         tasksEnabled = MutableStateFlow(true)
         defaultTab = MutableStateFlow(DEFAULT_TAB_ROUTINES)
-        retentionEnabled = MutableStateFlow(false)
-        retentionDays = MutableStateFlow(30)
         onboardingCompleted = MutableStateFlow(false)
 
         every { themePreferencesRepository.getUseTempoColors() } returns useTempoColors
@@ -64,8 +54,6 @@ class OnboardingViewModelTest {
         every { navigationPreferencesRepository.isRoutinesTabEnabled() } returns routinesEnabled
         every { navigationPreferencesRepository.isTasksTabEnabled() } returns tasksEnabled
         every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
-        every { completedTaskRetentionPreferences.isEnabled } returns retentionEnabled
-        every { completedTaskRetentionPreferences.retentionDays } returns retentionDays
         every { onboardingPreferencesRepository.isCompleted } returns onboardingCompleted
         every { onboardingPreferencesRepository.markStarted() } returns true
     }
@@ -151,17 +139,6 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun givenRetentionChange_whenEventReceived_thenExistingConfigurationUseCaseIsCalled() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.CompletedTaskRetentionDaysChanged(45))
-
-            verify { configureCompletedTaskRetention(false, 45) }
-        }
-
-    @Test
     fun givenTasksDefault_whenSkipped_thenCompletionAndTasksExitAreEmitted() =
         runTest {
             defaultTab.value = DEFAULT_TAB_TASKS
@@ -183,7 +160,5 @@ class OnboardingViewModelTest {
             themePreferencesRepository = themePreferencesRepository,
             navigationPreferencesRepository = navigationPreferencesRepository,
             onboardingPreferencesRepository = onboardingPreferencesRepository,
-            completedTaskRetentionPreferences = completedTaskRetentionPreferences,
-            configureCompletedTaskRetention = configureCompletedTaskRetention,
         )
 }

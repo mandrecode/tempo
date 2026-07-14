@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -24,7 +25,7 @@ class OnboardingContentTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun givenAnyPage_whenRendered_thenSkipIsAvailable() {
+    fun givenContentPage_whenRendered_thenSkipIsAvailable() {
         var uiState by mutableStateOf(OnboardingContract.UiState())
         composeTestRule.setContent {
             TempoTheme {
@@ -35,13 +36,20 @@ class OnboardingContentTest {
             }
         }
 
-        repeat(OnboardingContract.PAGE_COUNT) { page ->
+        repeat(OnboardingContract.PAGE_COUNT - 1) { page ->
             composeTestRule.runOnIdle {
                 uiState = uiState.copy(currentPage = page)
             }
 
             composeTestRule.onNodeWithTag(OnboardingTestTags.SKIP).assertIsDisplayed().assertIsEnabled()
         }
+    }
+
+    @Test
+    fun givenWelcomePage_whenRendered_thenSkipIsNotAvailable() {
+        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1))
+
+        composeTestRule.onAllNodesWithTag(OnboardingTestTags.SKIP).assertCountEquals(0)
     }
 
     @Test
@@ -120,6 +128,17 @@ class OnboardingContentTest {
         composeTestRule.onNodeWithTag(OnboardingTestTags.FORWARD).performClick()
 
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.NextClicked)
+    }
+
+    @Test
+    fun givenSetupPage_whenRendered_thenCompletedTaskRetentionIsNotShown() {
+        setContent(OnboardingContract.UiState(currentPage = 3))
+
+        val autoRemoveLabel =
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(
+                R.string.settings_auto_remove_completed_tasks,
+            )
+        composeTestRule.onAllNodesWithText(autoRemoveLabel).assertCountEquals(0)
     }
 
     @Test

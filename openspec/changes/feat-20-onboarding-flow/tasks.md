@@ -32,3 +32,6 @@
 - [x] 4.11 Animate the welcome-to-app handoff with a route-scoped fade-through scale transition
 - [x] 4.12 Keep automatic completed-task removal disabled when no preference has been saved
 - [x] 4.13 Render the unmodified default app launcher logo on the final welcome page
+- [x] 4.14 Remove the redundant Skip action from the final welcome page
+- [x] 4.15 Keep completed-task retention controls exclusively in Settings
+- [x] 4.16 Sharpen the English and Spanish education pages around user benefits

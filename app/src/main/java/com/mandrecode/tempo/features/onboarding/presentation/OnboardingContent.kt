@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
@@ -66,7 +67,11 @@ fun OnboardingContent(
                     ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            OnboardingSkip(layout = layout, onEvent = onEvent)
+            OnboardingSkip(
+                isVisible = !uiState.isLastPage,
+                layout = layout,
+                onEvent = onEvent,
+            )
             OnboardingProgress(
                 currentPage = uiState.currentPage,
                 pageCount = OnboardingContract.PAGE_COUNT,
@@ -85,19 +90,26 @@ fun OnboardingContent(
 
 @Composable
 private fun OnboardingSkip(
+    isVisible: Boolean,
     layout: OnboardingLayout,
     onEvent: (OnboardingContract.UiEvent) -> Unit,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().widthIn(max = layout.pageMaxWidth),
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .widthIn(max = layout.pageMaxWidth)
+                .heightIn(min = 48.dp),
         horizontalArrangement = Arrangement.End,
     ) {
-        AnimatedOnboardingButton(
-            label = stringResource(R.string.onboarding_skip),
-            onClick = { onEvent(OnboardingContract.UiEvent.SkipClicked) },
-            style = OnboardingButtonStyle.Text,
-            modifier = Modifier.testTag(OnboardingTestTags.SKIP),
-        )
+        if (isVisible) {
+            AnimatedOnboardingButton(
+                label = stringResource(R.string.onboarding_skip),
+                onClick = { onEvent(OnboardingContract.UiEvent.SkipClicked) },
+                style = OnboardingButtonStyle.Text,
+                modifier = Modifier.testTag(OnboardingTestTags.SKIP),
+            )
+        }
     }
 }
 
@@ -359,7 +371,8 @@ private fun AppearancePage(
 ) {
     val settingsUiState = uiState.toSettingsUiState()
     val onSettingsEvent = { event: com.mandrecode.tempo.features.settings.presentation.SettingsContract.UiEvent ->
-        onEvent(event.toOnboardingEvent())
+        val onboardingEvent = event.toOnboardingEvent()
+        if (onboardingEvent != null) onEvent(onboardingEvent)
     }
 
     AdaptiveOnboardingPage(
