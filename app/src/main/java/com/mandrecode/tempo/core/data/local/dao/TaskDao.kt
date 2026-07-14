@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
+import androidx.room.Transaction
 import androidx.room.Update
 import com.mandrecode.tempo.core.data.entity.TaskEntity
 import kotlinx.coroutines.flow.Flow
@@ -114,9 +115,25 @@ interface TaskDao {
     @Query("SELECT id FROM tasks WHERE isCompleted = 1 AND parentTaskId IS NULL AND categoryId = :categoryId")
     suspend fun getCompletedTopLevelTaskIds(categoryId: Long): List<Long>
 
+    @Query(
+        "SELECT id FROM tasks " +
+            "WHERE isCompleted = 1 AND parentTaskId IS NULL " +
+            "AND completedAt IS NOT NULL AND completedAt <= :cutoff",
+    )
+    suspend fun getCompletedTopLevelTaskIdsAtOrBefore(cutoff: String): List<Long>
+
     @Query("DELETE FROM tasks WHERE parentTaskId IN (:parentIds)")
     suspend fun deleteSubtasksByParentIds(parentIds: List<Long>)
 
     @Query("DELETE FROM tasks WHERE id IN (:ids)")
     suspend fun deleteTasksByIds(ids: List<Long>)
+
+    @Transaction
+    suspend fun deleteCompletedTaskTreesAtOrBefore(cutoff: String) {
+        val completedParentIds = getCompletedTopLevelTaskIdsAtOrBefore(cutoff)
+        if (completedParentIds.isNotEmpty()) {
+            deleteSubtasksByParentIds(completedParentIds)
+            deleteTasksByIds(completedParentIds)
+        }
+    }
 }

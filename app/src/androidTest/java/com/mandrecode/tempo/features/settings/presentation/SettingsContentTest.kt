@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.settings.presentation
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -225,5 +226,53 @@ class SettingsContentTest {
 
         composeTestRule.waitForIdle()
         assertThat(onboardingClicked).isTrue()
+    }
+
+    @Test
+    fun retentionControlsAreHiddenWhenAutomaticRemovalIsDisabled() {
+        val removeAfterText = localizedString(R.string.settings_remove_completed_after)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(autoRemoveCompletedTasksEnabled = false),
+                    onEvent = {},
+                    onOnboardingClick = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(removeAfterText).assertDoesNotExist()
+    }
+
+    @Test
+    fun incrementRetentionEmitsNextPreset() {
+        val increaseDescription = localizedString(R.string.settings_increase_retention_days)
+        var selectedDays: Int? = null
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState =
+                        SettingsContract.UiState(
+                            autoRemoveCompletedTasksEnabled = true,
+                            completedTaskRetentionDays = 30,
+                        ),
+                    onEvent = { event ->
+                        if (event is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged) {
+                            selectedDays = event.days
+                        }
+                    },
+                    onOnboardingClick = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription(increaseDescription)
+            .performScrollTo()
+            .performClick()
+
+        assertThat(selectedDays).isEqualTo(45)
     }
 }

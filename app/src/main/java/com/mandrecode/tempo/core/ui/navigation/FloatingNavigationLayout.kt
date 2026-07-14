@@ -1,5 +1,8 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
@@ -15,8 +18,20 @@ internal fun isFloatingNavigationRailLayout(): Boolean {
 
 @Composable
 internal fun floatingNavigationBottomClearancePadding(defaultPadding: Dp): Dp =
-    if (isFloatingNavigationRailLayout()) {
-        defaultPadding
-    } else {
-        TempoSpacing.bottomNavHeight + defaultPadding
-    }
+    calculateFloatingNavigationBottomClearancePadding(
+        defaultPadding = defaultPadding,
+        navigationBarPadding = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding(),
+        isRailLayout = isFloatingNavigationRailLayout(),
+    )
+
+internal fun calculateFloatingNavigationBottomClearancePadding(
+    defaultPadding: Dp,
+    navigationBarPadding: Dp,
+    isRailLayout: Boolean,
+): Dp =
+    navigationBarPadding +
+        if (isRailLayout) {
+            defaultPadding
+        } else {
+            TempoSpacing.bottomNavHeight + defaultPadding
+        }

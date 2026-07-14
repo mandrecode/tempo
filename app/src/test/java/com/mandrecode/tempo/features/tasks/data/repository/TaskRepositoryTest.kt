@@ -16,6 +16,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDateTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -122,5 +123,14 @@ class TaskRepositoryTest {
             coVerify { taskDao.getCompletedTopLevelTaskIds(categoryId) }
             coVerify(exactly = 0) { taskDao.deleteSubtasksByParentIds(any()) }
             coVerify(exactly = 0) { taskDao.deleteTasksByIds(any()) }
+        }
+
+    @Test
+    fun `deleteCompletedTasksAtOrBefore deletes eligible task trees`() =
+        runTest {
+            val cutoff = LocalDateTime(2026, 6, 13, 10, 30)
+            repository.deleteCompletedTasksAtOrBefore(cutoff)
+
+            coVerify { taskDao.deleteCompletedTaskTreesAtOrBefore(cutoff.toString()) }
         }
 }

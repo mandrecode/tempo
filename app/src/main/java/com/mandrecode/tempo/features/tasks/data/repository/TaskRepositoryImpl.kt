@@ -137,6 +137,9 @@ class TaskRepositoryImpl
             }
         }
 
+        override suspend fun deleteCompletedTasksAtOrBefore(cutoff: LocalDateTime) =
+            taskDao.deleteCompletedTaskTreesAtOrBefore(cutoff.toString())
+
         override suspend fun updateTaskNextInstanceId(
             taskId: Long,
             nextInstanceId: Long?,
