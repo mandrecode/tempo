@@ -9,7 +9,7 @@ The change crosses startup, navigation, preferences, and Compose presentation. I
 **Goals:**
 
 - Gate the normal start destination until a first-run user finishes or skips onboarding.
-- Explain the core concepts in four short pages: tasks/categories, routines/reminders, appearance, and practical defaults.
+- Explain the core concepts and preferences in four short pages, followed by a focused Tempo welcome page.
 - Apply preference selections through the same repositories used by Settings and the rest of the app.
 - Persist completion and support replay from Settings.
 - Guarantee at least one visible tab and an enabled default tab.
@@ -30,9 +30,9 @@ Add `features/onboarding/presentation` with a contract, ViewModel, Screen, and p
 
 Alternative: implement a one-off composable in `MainActivity`. Rejected because it would mix startup, preference orchestration, navigation, and UI state while preventing the established Screen/Content split.
 
-### Use four pages and apply choices immediately
+### Use four content pages plus a final welcome page and apply choices immediately
 
-The pages are: (1) tasks and categories, (2) routines and reminders, (3) light/dark/system mode plus Tempo versus dynamic colors, and (4) tab visibility, default tab, and completed-task retention. The appearance and setup pages reuse the same section composables as Settings so behavior and styling cannot drift. Preference edits are persisted as the user makes them, matching Settings behavior and allowing the global theme to preview appearance changes immediately.
+The pages are: (1) tasks and categories, (2) routines and reminders, (3) light/dark/system mode plus Tempo versus dynamic colors, (4) tab visibility, default tab, and completed-task retention, and (5) a centered final welcome with the Tempo logo and app name. The appearance and setup pages reuse the same section composables as Settings so behavior and styling cannot drift. Preference edits are persisted as the user makes them, matching Settings behavior and allowing the global theme to preview appearance changes immediately. The completion action appears on the welcome page so configuration and celebration remain distinct steps.
 
 Alternative: stage all choices and commit only on Finish. Rejected because replay would need a parallel draft model and appearance could not provide an immediate whole-app preview. Skip therefore preserves any explicit edits already made.
 
@@ -75,7 +75,7 @@ The reminder page explains that reminders can notify at useful times, but it doe
 - [Users upgrading from an older release are technically "incomplete"] → Treat the first release containing onboarding as their first guided launch; Skip is always visible, and completion is persisted immediately.
 - [Immediate preference writes during replay can change settings before Finish] → Controls are explicit and reflect the same immediate-save model already used in Settings.
 - [Two ViewModels could drift in tab invariants] → Cover the same invariants with onboarding tests and keep repository constants as the shared persisted representation.
-- [Dense final configuration page could feel long] → Reuse compact controls, group related navigation choices, and keep education copy on earlier pages concise.
+- [Dense configuration page could feel long] → Reuse compact controls, group related navigation choices, keep education copy concise, and follow it with a visually calm welcome page.
 - [Localized copy can diverge as behavior evolves] → Keep copy factual, reference existing concepts, and add English and Spanish resources in the same change.
 
 ## Migration Plan

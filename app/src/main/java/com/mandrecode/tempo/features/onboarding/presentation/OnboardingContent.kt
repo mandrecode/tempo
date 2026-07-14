@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -33,6 +35,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -125,9 +128,48 @@ private fun OnboardingPage(
                 0 -> TasksAndCategoriesPage(layout = layout)
                 1 -> RoutinesAndRemindersPage(layout = layout)
                 2 -> AppearancePage(uiState = uiState, layout = layout, onEvent = onEvent)
-                else -> OnboardingSetupPage(uiState = uiState, layout = layout, onEvent = onEvent)
+                SETUP_PAGE_INDEX -> OnboardingSetupPage(uiState = uiState, layout = layout, onEvent = onEvent)
+                else -> OnboardingWelcomePage(layout = layout)
             }
         }
+    }
+}
+
+@Composable
+internal fun OnboardingWelcomePage(
+    layout: OnboardingLayout,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Surface(
+            shape = CircleShape,
+            color = colorResource(R.color.ic_launcher_background),
+        ) {
+            Image(
+                painter = painterResource(R.drawable.ic_launcher_foreground),
+                contentDescription = stringResource(R.string.app_name),
+                modifier =
+                    Modifier
+                        .size(if (layout.isShort) 96.dp else 144.dp)
+                        .testTag(OnboardingTestTags.WELCOME_LOGO),
+            )
+        }
+        Text(
+            text = stringResource(R.string.app_name),
+            style =
+                if (layout.isShort) {
+                    MaterialTheme.typography.headlineLarge
+                } else {
+                    MaterialTheme.typography.displayMedium
+                },
+            fontWeight = FontWeight.SemiBold,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = layout.sectionSpacing),
+        )
     }
 }
 
@@ -387,6 +429,7 @@ internal object OnboardingTestTags {
     const val PROGRESS = "onboarding_progress"
     const val PROGRESS_SEGMENT = "onboarding_progress_segment"
     const val PAGE = "onboarding_page"
+    const val WELCOME_LOGO = "onboarding_welcome_logo"
     const val SINGLE_PANE = "onboarding_single_pane"
     const val TWO_PANE = "onboarding_two_pane"
 }
@@ -394,3 +437,4 @@ internal object OnboardingTestTags {
 internal val OnboardingMaxWidth = 600.dp
 
 private const val FINAL_ACTION_WEIGHT = 2f
+private const val SETUP_PAGE_INDEX = 3

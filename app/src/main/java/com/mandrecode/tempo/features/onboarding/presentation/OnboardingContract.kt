@@ -6,7 +6,7 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 
 object OnboardingContract {
-    const val PAGE_COUNT = 4
+    const val PAGE_COUNT = 5
 
     data class UiState(
         val currentPage: Int = 0,

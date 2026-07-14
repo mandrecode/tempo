@@ -12,7 +12,7 @@
 
 ## 3. Onboarding UI
 
-- [x] 3.1 Build the pure four-page onboarding Content with accessible controls, progress, and responsive edge-to-edge layout
+- [x] 3.1 Build the pure five-page onboarding Content with accessible controls, progress, and responsive edge-to-edge layout
 - [x] 3.2 Add the onboarding Screen/effect handling and typed route for first-run handoff and Settings replay
 - [x] 3.3 Replace the Settings placeholder with onboarding navigation
 - [x] 3.4 Add debug light/dark previews and Compose UI tests for content, navigation actions, configuration controls, and Skip availability
@@ -28,3 +28,4 @@
 - [x] 4.7 Move the segmented onboarding progress above page content to match Didi's hierarchy
 - [x] 4.8 Keep onboarding button colors stable while preserving press-driven shape animation
 - [x] 4.9 Give the final Start using Tempo action enough width for compact screens and localized labels
+- [x] 4.10 Add a centered Tempo logo and app-name welcome page as the final onboarding step

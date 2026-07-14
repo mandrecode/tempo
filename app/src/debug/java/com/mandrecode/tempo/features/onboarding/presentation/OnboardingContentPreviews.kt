@@ -62,6 +62,24 @@ private fun OnboardingSetupPreview() {
     }
 }
 
+@Preview(name = "Welcome - Light", device = "id:pixel_9", showBackground = true)
+@Preview(
+    name = "Welcome - Dark",
+    device = "id:pixel_9",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true,
+)
+@Composable
+private fun OnboardingWelcomePreview() {
+    ComposeUiFlags.isMediaQueryIntegrationEnabled = true
+    TempoTheme(useTempoColors = true) {
+        OnboardingContent(
+            uiState = OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1),
+            onEvent = {},
+        )
+    }
+}
+
 @Preview(name = "Motion components", showBackground = true)
 @Composable
 private fun OnboardingMotionComponentsPreview() {

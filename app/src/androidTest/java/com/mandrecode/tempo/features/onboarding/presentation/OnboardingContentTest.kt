@@ -110,6 +110,32 @@ class OnboardingContentTest {
     }
 
     @Test
+    fun givenSetupPage_whenForwardClicked_thenNextEventIsEmitted() {
+        var emittedEvent: OnboardingContract.UiEvent? = null
+        setContent(
+            OnboardingContract.UiState(currentPage = 3),
+            onEvent = { emittedEvent = it },
+        )
+
+        composeTestRule.onNodeWithTag(OnboardingTestTags.FORWARD).performClick()
+
+        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.NextClicked)
+    }
+
+    @Test
+    fun givenWelcomePage_whenForwardClicked_thenFinishEventIsEmitted() {
+        var emittedEvent: OnboardingContract.UiEvent? = null
+        setContent(
+            OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1),
+            onEvent = { emittedEvent = it },
+        )
+
+        composeTestRule.onNodeWithTag(OnboardingTestTags.FORWARD).performClick()
+
+        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.FinishClicked)
+    }
+
+    @Test
     fun givenLastPage_whenRendered_thenStartActionIsWiderThanBack() {
         setContent(OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1))
 
@@ -125,6 +151,15 @@ class OnboardingContentTest {
                 .boundsInRoot.width
 
         assertThat(startWidth).isGreaterThan(backWidth)
+    }
+
+    @Test
+    fun givenLastPage_whenRendered_thenCenteredTempoWelcomeIsDisplayed() {
+        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.PAGE_COUNT - 1))
+
+        val appName = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.app_name)
+        composeTestRule.onNodeWithTag(OnboardingTestTags.WELCOME_LOGO).assertIsDisplayed()
+        composeTestRule.onNodeWithText(appName).assertIsDisplayed()
     }
 
     private fun setContent(

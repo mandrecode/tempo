@@ -12,7 +12,7 @@ The app SHALL show onboarding before the normal Tasks or Routines destination un
 - **THEN** the app opens the resolved enabled default tab without showing onboarding
 
 ### Requirement: Short ordered concept education
-The onboarding flow SHALL present tasks and categories before routines and reminders, and SHALL explain these concepts in no more than four pages including configuration.
+The onboarding flow SHALL present tasks and categories before routines and reminders, SHALL explain concepts and configuration in four pages, and SHALL end with a fifth welcome page.
 
 #### Scenario: User advances through education
 - **WHEN** the user moves forward from the first page
@@ -21,6 +21,10 @@ The onboarding flow SHALL present tasks and categories before routines and remin
 #### Scenario: Reminder education
 - **WHEN** the routines and reminders page is displayed
 - **THEN** the app explains reminder behavior without requesting notification permission
+
+#### Scenario: Final welcome
+- **WHEN** the user advances from the configuration page
+- **THEN** a final page displays the Tempo logo and app name centered in the available content area
 
 ### Requirement: Skippable and navigable flow
 The onboarding flow SHALL expose Skip on every page, Back after the first page, and a forward action until the final page.

@@ -4,7 +4,7 @@ New users currently land in Tempo without an explanation of how tasks, categorie
 
 ## What Changes
 
-- Add a lightweight, paged onboarding flow that introduces tasks and categories before routines and reminders.
+- Add a lightweight, paged onboarding flow that introduces tasks and categories before routines and reminders, then ends on a centered Tempo welcome page.
 - Show onboarding automatically on first launch, while allowing users to skip it at any point.
 - Let users choose Tempo's signature colors or dynamic colors, with Tempo selected by default for new installations.
 - Let users enable or disable the Tasks and Routines tabs while guaranteeing that at least one remains enabled.
