@@ -94,19 +94,48 @@ class HabitRepositoryTest {
         }
 
     @Test
-    fun `restoreDeletedHabit upserts habit chain and memberships`() =
+    fun `restoreDeletedHabit inserts habit and restores matching chain memberships`() =
         runTest {
             val habit = Habit(id = 9L, title = "Read", description = "", createdDate = now)
             val chain = HabitChain(id = 10L, title = "Evening", habitIds = listOf(9L), createdDate = now)
             coEvery { habitDao.getHabitById(9L) } returns null
-            coEvery { habitChainDao.getHabitChainById(10L) } returns HabitChainEntity(id = 10L, title = "Old")
+            coEvery { habitChainDao.getHabitChainById(10L) } returns
+                HabitChainEntity(id = 10L, title = "Evening", createdDate = now)
 
             repository.restoreDeletedHabit(HabitDeletionSnapshot(habit, listOf(chain)))
 
             coVerify { habitDao.insertHabit(match { it.id == 9L }) }
-            coVerify { habitChainDao.updateHabitChain(match { it.id == 10L }) }
+            coVerify(exactly = 0) { habitChainDao.updateHabitChain(any()) }
             coVerify { habitChainMemberDao.deleteByChainId(10L) }
             coVerify { habitChainMemberDao.insertMembers(match { it.single().habitId == 9L }) }
+        }
+
+    @Test
+    fun `restoreDeletedHabit rejects a reused habit id`() =
+        runTest {
+            val habit = Habit(id = 9L, title = "Deleted", description = "", createdDate = now)
+            coEvery { habitDao.getHabitById(9L) } returns
+                HabitEntity(id = 9L, title = "Unrelated", description = "", createdDate = now)
+
+            val result = runCatching { repository.restoreDeletedHabit(HabitDeletionSnapshot(habit, emptyList())) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { habitDao.updateHabit(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedHabit rejects a reused chain id`() =
+        runTest {
+            val habit = Habit(id = 9L, title = "Read", description = "", createdDate = now)
+            val chain = HabitChain(id = 10L, title = "Evening", habitIds = listOf(9L), createdDate = now)
+            coEvery { habitDao.getHabitById(9L) } returns null
+            coEvery { habitChainDao.getHabitChainById(10L) } returns HabitChainEntity(id = 10L, title = "Unrelated")
+
+            val result = runCatching { repository.restoreDeletedHabit(HabitDeletionSnapshot(habit, listOf(chain))) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { habitChainDao.updateHabitChain(any()) }
+            coVerify(exactly = 0) { habitChainMemberDao.deleteByChainId(any()) }
         }
 
     @Test

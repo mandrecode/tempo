@@ -54,3 +54,10 @@
 - [x] 8.1 Retain Tasks and Routines deletion snapshots after restore failure until tokenized failure feedback is dismissed.
 - [x] 8.2 Replace the Routines snackbar effect runtime cast with exhaustive typed handling.
 - [x] 8.3 Add ViewModel regression coverage and run formatting, static analysis, unit tests, and OpenSpec validation.
+
+## 9. Restore conflict safety
+
+- [x] 9.1 Add a shared insert-or-exact-match restore guard and apply it to deleted tasks, categories, habits, and chains.
+- [x] 9.2 Preserve deliberate reminder restoration for habits that were not deleted with their chain.
+- [x] 9.3 Add unit and Room integration tests for ID-reuse conflicts, idempotent retry, and transaction rollback.
+- [x] 9.4 Run formatting, static analysis, unit/instrumented tests, and OpenSpec validation.

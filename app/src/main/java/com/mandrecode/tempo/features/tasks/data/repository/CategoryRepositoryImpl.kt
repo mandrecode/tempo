@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
 import androidx.room.withTransaction
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
@@ -51,19 +52,23 @@ class CategoryRepositoryImpl
         override suspend fun restoreDeletedCategory(snapshot: CategoryDeletionSnapshot) {
             database.withTransaction {
                 val categoryEntity = snapshot.category.toEntity()
-                if (categoryDao.getCategoryById(snapshot.category.id) == null) {
+                insertOrVerifyRestoredEntity(
+                    existing = categoryDao.getCategoryById(snapshot.category.id),
+                    snapshot = categoryEntity,
+                    recordDescription = "category ${snapshot.category.id}",
+                ) {
                     categoryDao.insertCategory(categoryEntity)
-                } else {
-                    categoryDao.updateCategory(categoryEntity)
                 }
                 snapshot.tasks
                     .sortedBy { it.parentTaskId != null }
                     .forEach { task ->
                         val entity = task.toEntity()
-                        if (taskDao.getTaskById(task.id) == null) {
+                        insertOrVerifyRestoredEntity(
+                            existing = taskDao.getTaskById(task.id),
+                            snapshot = entity,
+                            recordDescription = "task ${task.id}",
+                        ) {
                             taskDao.insertTask(entity)
-                        } else {
-                            taskDao.updateTask(entity)
                         }
                     }
             }

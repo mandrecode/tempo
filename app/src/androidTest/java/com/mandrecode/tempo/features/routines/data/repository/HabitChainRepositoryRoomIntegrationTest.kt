@@ -78,6 +78,48 @@ class HabitChainRepositoryRoomIntegrationTest {
         }
 
     @Test
+    fun restoreDeletedHabitChain_reusedHabitIdRollsBackChainRestore() =
+        runTest {
+            val habitId = insertHabit("Deleted")
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(title = "Morning", habitIds = listOf(habitId), createdDate = createdDate),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = true)
+            databaseRule.database.habitDao().insertHabit(
+                HabitEntity(id = habitId, title = "Unrelated", description = "", createdDate = createdDate),
+            )
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitChainById(chainId)).isNull()
+            assertThat(
+                databaseRule.database
+                    .habitDao()
+                    .getHabitById(habitId)
+                    ?.title,
+            ).isEqualTo("Unrelated")
+        }
+
+    @Test
+    fun restoreDeletedHabitChain_reusedChainIdDoesNotOverwriteNewerRow() =
+        runTest {
+            val habitId = insertHabit("Preserved")
+            val chainId =
+                repository.insertHabitChain(
+                    HabitChain(title = "Deleted", habitIds = listOf(habitId), createdDate = createdDate),
+                )
+            val snapshot = repository.deleteHabitChainWithSnapshot(chainId, deleteHabits = false)
+            repository.insertHabitChain(HabitChain(id = chainId, title = "Unrelated", createdDate = createdDate))
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitChainById(chainId)?.title).isEqualTo("Unrelated")
+        }
+
+    @Test
     fun failedRestore_rollsBackChainInsert() =
         runTest {
             val chain = HabitChain(id = 999, title = "Broken", habitIds = listOf(404), createdDate = createdDate)

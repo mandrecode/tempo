@@ -96,4 +96,22 @@ class CategoryRepositoryRoomIntegrationTest {
                     ?.categoryId,
             ).isEqualTo(categoryId)
         }
+
+    @Test
+    fun restoreDeletedCategory_reusedCategoryIdDoesNotOverwriteNewerRow() =
+        runTest {
+            val categoryId = repository.insertCategory(Category(name = "Deleted"))
+            val taskId =
+                databaseRule.database.taskDao().insertTask(
+                    Task(title = "Report", description = "", categoryId = categoryId).toEntity(),
+                )
+            val snapshot = repository.deleteCategoryWithSnapshot(requireNotNull(repository.getCategoryById(categoryId)))
+            repository.insertCategory(Category(id = categoryId, name = "Unrelated"))
+
+            val result = runCatching { repository.restoreDeletedCategory(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getCategoryById(categoryId)?.name).isEqualTo("Unrelated")
+            assertThat(databaseRule.database.taskDao().getTaskById(taskId)).isNull()
+        }
 }

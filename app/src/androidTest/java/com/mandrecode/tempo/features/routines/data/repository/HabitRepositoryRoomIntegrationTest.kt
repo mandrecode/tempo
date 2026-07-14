@@ -86,6 +86,38 @@ class HabitRepositoryRoomIntegrationTest {
         }
 
     @Test
+    fun restoreDeletedHabit_reusedHabitIdDoesNotOverwriteNewerRow() =
+        runTest {
+            val habitId =
+                repository.insertHabit(
+                    Habit(title = "Deleted", description = "", createdDate = LocalDateTime(2026, 1, 1, 8, 0)),
+                )
+            val chainRepository =
+                HabitChainRepositoryImpl(
+                    databaseRule.database.habitChainDao(),
+                    databaseRule.database.habitChainMemberDao(),
+                    databaseRule.database.habitDao(),
+                    databaseRule.database,
+                )
+            val chainId = chainRepository.insertHabitChain(HabitChain(title = "Morning", habitIds = listOf(habitId)))
+            val snapshot = repository.deleteHabitWithSnapshot(habitId)
+            repository.insertHabit(
+                Habit(
+                    id = habitId,
+                    title = "Unrelated",
+                    description = "",
+                    createdDate = LocalDateTime(2026, 2, 1, 8, 0),
+                ),
+            )
+
+            val result = runCatching { repository.restoreDeletedHabit(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitById(habitId)?.title).isEqualTo("Unrelated")
+            assertThat(chainRepository.getHabitChainById(chainId)?.habitIds).isEmpty()
+        }
+
+    @Test
     fun toggleHabitCompletion_updatesCompletionHistoryAndLegacyFlag() =
         runTest {
             val today = Clock.System.todayIn(TimeZone.currentSystemDefault())

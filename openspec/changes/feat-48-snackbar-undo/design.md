@@ -78,6 +78,12 @@ An Undo restore failure keeps its pending snapshot and emits the non-actionable 
 
 Routines effect collection uses an exhaustive `when` and passes the concrete `ShowSnackbar` effect to its renderer. This preserves compile-time handling when new effect variants are introduced instead of relying on a runtime cast.
 
+### 9. Reject reused primary keys during restore
+
+Restore remains idempotent only when an existing row exactly matches the captured snapshot. A missing row is inserted with its stable ID; an identical row is treated as an already-restored no-op; and a different row with the same ID raises a restore conflict inside the Room transaction. This prevents SQLite ROWID reuse during the Undo window from overwriting unrelated tasks, categories, habits, or chains, while preserving safe retries after a completed restore.
+
+Habits preserved during a chain deletion are the exception because their rows were never deleted and their reminder values were deliberately changed by that operation. Those known rows continue to be updated from the snapshot. Rows actually deleted with the chain use the insert-or-exact-match rule.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

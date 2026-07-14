@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
 import androidx.room.withTransaction
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
@@ -91,10 +92,13 @@ class TaskRepositoryImpl
                 snapshot.tasks
                     .sortedBy { it.parentTaskId != null }
                     .forEach { task ->
-                        if (taskDao.getTaskById(task.id) == null) {
-                            taskDao.insertTask(task.toEntity())
-                        } else {
-                            taskDao.updateTask(task.toEntity())
+                        val entity = task.toEntity()
+                        insertOrVerifyRestoredEntity(
+                            existing = taskDao.getTaskById(task.id),
+                            snapshot = entity,
+                            recordDescription = "task ${task.id}",
+                        ) {
+                            taskDao.insertTask(entity)
                         }
                     }
             }

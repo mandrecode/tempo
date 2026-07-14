@@ -82,6 +82,16 @@ Snapshot capture and deletion SHALL occur in one Room transaction, restoration S
 - **WHEN** any database record in a deletion snapshot cannot be restored
 - **THEN** the restore transaction is rolled back and the app reports that Undo failed without leaving a partially restored snapshot
 
+#### Scenario: Deleted identifier was reused
+
+- **WHEN** a different record has reused an identifier captured by the deletion snapshot
+- **THEN** restoration fails and rolls back without overwriting the newer record
+
+#### Scenario: Restore is retried after success
+
+- **WHEN** a restored row already exactly matches the deletion snapshot
+- **THEN** restoration treats that row as already restored without duplicating or rewriting it
+
 #### Scenario: Reminder restoration fails after data restore
 
 - **WHEN** persisted data is restored but one or more reminder schedules fail

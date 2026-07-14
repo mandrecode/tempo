@@ -108,6 +108,21 @@ class TaskRepositoryRoomIntegrationTest {
         }
 
     @Test
+    fun restoreDeletedTasks_reusedChildIdRollsBackParentInsert() =
+        runTest {
+            val parentId = repository.insertTask(Task(title = "Parent", description = ""))
+            val childId = repository.insertTask(Task(title = "Child", description = "", parentTaskId = parentId))
+            val snapshot = repository.deleteTaskWithSnapshot(parentId)
+            repository.insertTask(Task(id = childId, title = "Unrelated", description = ""))
+
+            val result = runCatching { repository.restoreDeletedTasks(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getTaskById(parentId)).isNull()
+            assertThat(repository.getTaskById(childId)?.title).isEqualTo("Unrelated")
+        }
+
+    @Test
     fun deleteCompletedTasksByCategoryId_deletesParentsAndSubtasks() =
         runTest {
             val completedParentId =

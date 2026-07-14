@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.routines.data.repository
 
 import androidx.room.withTransaction
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
@@ -95,18 +96,30 @@ class HabitChainRepositoryImpl
             database.withTransaction {
                 snapshot.habitsBeforeDeletion.forEach { habit ->
                     val entity = habit.toEntity()
-                    if (habitDao.getHabitById(habit.id) == null) {
-                        habitDao.insertHabit(entity)
+                    if (snapshot.deletedHabits) {
+                        insertOrVerifyRestoredEntity(
+                            existing = habitDao.getHabitById(habit.id),
+                            snapshot = entity,
+                            recordDescription = "habit ${habit.id}",
+                        ) {
+                            habitDao.insertHabit(entity)
+                        }
                     } else {
-                        habitDao.updateHabit(entity)
+                        if (habitDao.getHabitById(habit.id) == null) {
+                            habitDao.insertHabit(entity)
+                        } else {
+                            habitDao.updateHabit(entity)
+                        }
                     }
                 }
                 snapshot.affectedChains.forEach { chain ->
                     val entity = chain.toEntity()
-                    if (habitChainDao.getHabitChainById(chain.id) == null) {
+                    insertOrVerifyRestoredEntity(
+                        existing = habitChainDao.getHabitChainById(chain.id),
+                        snapshot = entity,
+                        recordDescription = "habit chain ${chain.id}",
+                    ) {
                         habitChainDao.insertHabitChain(entity)
-                    } else {
-                        habitChainDao.updateHabitChain(entity)
                     }
                     habitChainMemberDao.deleteByChainId(chain.id)
                     val members = chain.toMemberEntities()

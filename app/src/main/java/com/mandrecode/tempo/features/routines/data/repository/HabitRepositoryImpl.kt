@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.routines.data.repository
 
 import androidx.room.withTransaction
 import com.mandrecode.tempo.core.data.entity.HabitEntity
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
@@ -71,17 +72,21 @@ class HabitRepositoryImpl
         override suspend fun restoreDeletedHabit(snapshot: HabitDeletionSnapshot) {
             database.withTransaction {
                 val habitEntity = snapshot.habit.toEntity()
-                if (habitDao.getHabitById(snapshot.habit.id) == null) {
+                insertOrVerifyRestoredEntity(
+                    existing = habitDao.getHabitById(snapshot.habit.id),
+                    snapshot = habitEntity,
+                    recordDescription = "habit ${snapshot.habit.id}",
+                ) {
                     habitDao.insertHabit(habitEntity)
-                } else {
-                    habitDao.updateHabit(habitEntity)
                 }
                 snapshot.affectedChains.forEach { chain ->
                     val chainEntity = chain.toEntity()
-                    if (habitChainDao.getHabitChainById(chain.id) == null) {
+                    insertOrVerifyRestoredEntity(
+                        existing = habitChainDao.getHabitChainById(chain.id),
+                        snapshot = chainEntity,
+                        recordDescription = "habit chain ${chain.id}",
+                    ) {
                         habitChainDao.insertHabitChain(chainEntity)
-                    } else {
-                        habitChainDao.updateHabitChain(chainEntity)
                     }
                     habitChainMemberDao.deleteByChainId(chain.id)
                     val members = chain.toMemberEntities()

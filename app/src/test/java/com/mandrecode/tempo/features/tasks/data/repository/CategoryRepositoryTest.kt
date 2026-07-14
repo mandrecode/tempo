@@ -68,24 +68,54 @@ class CategoryRepositoryTest {
         }
 
     @Test
-    fun `restoreDeletedCategory inserts missing category and upserts tasks parent first`() =
+    fun `restoreDeletedCategory inserts missing category and accepts matching tasks parent first`() =
         runTest {
             val category = Category(id = 5L, name = "Restored")
             val root = Task(id = 50L, title = "Root", description = "", categoryId = 5L)
             val child = Task(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L)
             coEvery { categoryDao.getCategoryById(5L) } returns null
             coEvery { taskDao.getTaskById(50L) } returns null
-            coEvery { taskDao.getTaskById(51L) } returns TaskEntity(id = 51L, title = "Old", description = "")
+            coEvery { taskDao.getTaskById(51L) } returns
+                TaskEntity(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L)
 
             repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(child, root)))
 
             coVerify { categoryDao.insertCategory(CategoryEntity(id = 5L, name = "Restored")) }
             coVerifyOrder {
                 taskDao.insertTask(TaskEntity(id = 50L, title = "Root", description = "", categoryId = 5L))
-                taskDao.updateTask(
-                    TaskEntity(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L),
-                )
+                taskDao.getTaskById(51L)
             }
+            coVerify(exactly = 0) { taskDao.updateTask(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedCategory rejects a reused category id`() =
+        runTest {
+            val snapshot = CategoryDeletionSnapshot(Category(id = 5L, name = "Deleted"), emptyList())
+            coEvery { categoryDao.getCategoryById(5L) } returns CategoryEntity(id = 5L, name = "Unrelated")
+
+            val result = runCatching { repository.restoreDeletedCategory(snapshot) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { categoryDao.updateCategory(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedCategory rejects a reused task id`() =
+        runTest {
+            val category = Category(id = 5L, name = "Restored")
+            val task = Task(id = 50L, title = "Deleted", description = "", categoryId = 5L)
+            coEvery { categoryDao.getCategoryById(5L) } returns CategoryEntity(id = 5L, name = "Restored")
+            coEvery { taskDao.getTaskById(50L) } returns
+                TaskEntity(id = 50L, title = "Unrelated", description = "", categoryId = 5L)
+
+            val result =
+                runCatching {
+                    repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(task)))
+                }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { taskDao.updateTask(any()) }
         }
 
     @Test

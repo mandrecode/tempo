@@ -79,12 +79,13 @@ class TaskRepositoryTest {
         }
 
     @Test
-    fun `restoreDeletedTasks inserts missing tasks and updates existing tasks parent first`() =
+    fun `restoreDeletedTasks inserts missing tasks and accepts matching tasks parent first`() =
         runTest {
             val root = Task(id = 30L, title = "Root", description = "")
             val child = Task(id = 31L, title = "Child", description = "", parentTaskId = 30L)
             coEvery { taskDao.getTaskById(30L) } returns null
-            coEvery { taskDao.getTaskById(31L) } returns TaskEntity(id = 31L, title = "Old", description = "")
+            coEvery { taskDao.getTaskById(31L) } returns
+                TaskEntity(id = 31L, title = "Child", description = "", categoryId = 0L, parentTaskId = 30L)
 
             repository.restoreDeletedTasks(
                 TaskDeletionSnapshot.TaskTree(rootTaskId = 30L, tasks = listOf(child, root)),
@@ -92,10 +93,25 @@ class TaskRepositoryTest {
 
             coVerifyOrder {
                 taskDao.insertTask(TaskEntity(id = 30L, title = "Root", description = "", categoryId = 0L))
-                taskDao.updateTask(
-                    TaskEntity(id = 31L, title = "Child", description = "", categoryId = 0L, parentTaskId = 30L),
-                )
+                taskDao.getTaskById(31L)
             }
+            coVerify(exactly = 0) { taskDao.updateTask(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedTasks rejects a reused task id`() =
+        runTest {
+            val snapshot =
+                TaskDeletionSnapshot.TaskTree(
+                    rootTaskId = 30L,
+                    tasks = listOf(Task(id = 30L, title = "Deleted", description = "")),
+                )
+            coEvery { taskDao.getTaskById(30L) } returns TaskEntity(id = 30L, title = "Unrelated", description = "")
+
+            val result = runCatching { repository.restoreDeletedTasks(snapshot) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { taskDao.updateTask(any()) }
         }
 
     @Test
