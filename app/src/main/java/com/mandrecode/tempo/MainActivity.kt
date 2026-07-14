@@ -10,6 +10,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -81,31 +82,7 @@ class MainActivity : ComponentActivity() {
 
                 is MainUiState.Success -> {
                     val navController = rememberNavController()
-                    val startDestination =
-                        remember(
-                            state.defaultTab,
-                            state.isRoutinesTabEnabled,
-                            state.isTasksTabEnabled,
-                            state.isOnboardingCompleted,
-                        ) {
-                            when {
-                                !state.isOnboardingCompleted -> OnboardingRoute()
-
-                                state.defaultTab ==
-                                    NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
-                                    state.isRoutinesTabEnabled -> RoutinesRoute
-
-                                state.defaultTab ==
-                                    NavigationPreferencesRepository.DEFAULT_TAB_TASKS &&
-                                    state.isTasksTabEnabled -> TasksRoute
-
-                                state.isRoutinesTabEnabled -> RoutinesRoute
-
-                                state.isTasksTabEnabled -> TasksRoute
-
-                                else -> RoutinesRoute
-                            }
-                        }
+                    val startDestination = rememberStartDestination(state)
 
                     TempoTheme(
                         darkTheme =
@@ -238,3 +215,21 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
     }
 }
+
+@Composable
+internal fun rememberStartDestination(state: MainUiState.Success): Any =
+    remember {
+        when {
+            !state.isOnboardingCompleted -> OnboardingRoute()
+
+            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
+                state.isRoutinesTabEnabled -> RoutinesRoute
+
+            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_TASKS &&
+                state.isTasksTabEnabled -> TasksRoute
+
+            state.isRoutinesTabEnabled -> RoutinesRoute
+            state.isTasksTabEnabled -> TasksRoute
+            else -> RoutinesRoute
+        }
+    }

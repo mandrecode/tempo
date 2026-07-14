@@ -22,3 +22,4 @@
 - [x] 4.1 Add matching English and Spanish onboarding strings and reuse existing drawables/design tokens
 - [x] 4.2 Run `openspec validate feat-20-onboarding-flow`, `./gradlew ktlintFormat`, `./gradlew lintDebug`, `./gradlew testDebugUnitTest`, `./gradlew ktlintCheck`, and `./gradlew :app:detekt`
 - [x] 4.3 Perform a first-run and Settings-replay smoke test on the available Pixel target
+- [x] 4.4 Keep the active onboarding route stable when theme, tab, or default-tab preferences change

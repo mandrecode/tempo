@@ -48,6 +48,8 @@ Alternative: store a single onboarding configuration object. Rejected because it
 
 Add `OnboardingRoute(isReplay: Boolean)` to the existing NavHost. `MainViewModel` includes onboarding completion in startup state, and `MainActivity` selects onboarding as the initial route when incomplete. First-run Finish/Skip marks completion and replaces onboarding with the resolved enabled default route. Settings replay navigates to the same route with `isReplay = true`; leaving replay pops back to Settings while completion remains true.
 
+The NavHost start destination is captured only when the successful app composition is first created. Reactive preference changes update the active screen and theme, but they do not rebuild the navigation graph or replace an active onboarding replay.
+
 Alternative: render onboarding outside the NavHost. Rejected because Settings replay and back-stack behavior would require a second routing mechanism.
 
 ### Keep permission education contextual

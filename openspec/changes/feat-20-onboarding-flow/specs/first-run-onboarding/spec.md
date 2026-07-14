@@ -94,3 +94,7 @@ Settings SHALL allow a completed user to replay onboarding without clearing comp
 #### Scenario: Finish replay
 - **WHEN** the user finishes or skips onboarding opened from Settings
 - **THEN** the app returns to Settings and preserves onboarding completion
+
+#### Scenario: Edit navigation preferences during replay
+- **WHEN** the user changes tab visibility or the default tab while replaying onboarding
+- **THEN** the app keeps onboarding active until the user explicitly finishes or skips it
