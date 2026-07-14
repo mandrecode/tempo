@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.domain.repository
 
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.LocalDateTime
 
@@ -30,6 +31,12 @@ interface TaskRepository {
     suspend fun updateTasks(tasks: List<Task>)
 
     suspend fun deleteTask(task: Task)
+
+    suspend fun deleteTaskWithSnapshot(taskId: Long): TaskDeletionSnapshot.TaskTree
+
+    suspend fun deleteCompletedTasksWithSnapshot(categoryId: Long): TaskDeletionSnapshot.CompletedTasks
+
+    suspend fun restoreDeletedTasks(snapshot: TaskDeletionSnapshot)
 
     suspend fun toggleTaskCompletion(
         id: Long,

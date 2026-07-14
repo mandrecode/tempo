@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.local.InMemoryTempoDatabaseRule
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import io.mockk.mockk
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -57,6 +58,63 @@ class HabitRepositoryRoomIntegrationTest {
             assertThat(fetched!!.title).isEqualTo("Meditate")
             assertThat(fetched.createdDate).isEqualTo(createdDate)
             assertThat(all).hasSize(1)
+        }
+
+    @Test
+    fun deleteAndRestoreHabit_preservesHistoryAndChainMembership() =
+        runTest {
+            val created = LocalDateTime(2026, 1, 1, 8, 0)
+            val habitId =
+                repository.insertHabit(
+                    Habit(title = "Read", description = "", createdDate = created, completionHistory = "2026-01-01"),
+                )
+            val chainRepository =
+                HabitChainRepositoryImpl(
+                    databaseRule.database.habitChainDao(),
+                    databaseRule.database.habitChainMemberDao(),
+                    databaseRule.database.habitDao(),
+                    databaseRule.database,
+                )
+            val chainId = chainRepository.insertHabitChain(HabitChain(title = "Morning", habitIds = listOf(habitId)))
+
+            val snapshot = repository.deleteHabitWithSnapshot(habitId)
+            repository.restoreDeletedHabit(snapshot)
+            repository.restoreDeletedHabit(snapshot)
+
+            assertThat(repository.getHabitById(habitId)?.completionHistory).isEqualTo("2026-01-01")
+            assertThat(chainRepository.getHabitChainById(chainId)?.habitIds).containsExactly(habitId)
+        }
+
+    @Test
+    fun restoreDeletedHabit_reusedHabitIdDoesNotOverwriteNewerRow() =
+        runTest {
+            val habitId =
+                repository.insertHabit(
+                    Habit(title = "Deleted", description = "", createdDate = LocalDateTime(2026, 1, 1, 8, 0)),
+                )
+            val chainRepository =
+                HabitChainRepositoryImpl(
+                    databaseRule.database.habitChainDao(),
+                    databaseRule.database.habitChainMemberDao(),
+                    databaseRule.database.habitDao(),
+                    databaseRule.database,
+                )
+            val chainId = chainRepository.insertHabitChain(HabitChain(title = "Morning", habitIds = listOf(habitId)))
+            val snapshot = repository.deleteHabitWithSnapshot(habitId)
+            repository.insertHabit(
+                Habit(
+                    id = habitId,
+                    title = "Unrelated",
+                    description = "",
+                    createdDate = LocalDateTime(2026, 2, 1, 8, 0),
+                ),
+            )
+
+            val result = runCatching { repository.restoreDeletedHabit(snapshot) }
+
+            assertThat(result.isFailure).isTrue()
+            assertThat(repository.getHabitById(habitId)?.title).isEqualTo("Unrelated")
+            assertThat(chainRepository.getHabitChainById(chainId)?.habitIds).isEmpty()
         }
 
     @Test

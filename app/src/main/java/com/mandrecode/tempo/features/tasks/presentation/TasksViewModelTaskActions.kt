@@ -294,8 +294,13 @@ internal fun TasksViewModel.confirmDeleteTask(task: Task) {
 internal fun TasksViewModel.deleteTask(task: Task) =
     viewModelScope.launch {
         try {
-            deleteTaskUseCase(task)
-            showSnackbar(R.string.task_deleted)
+            val snapshot = deleteTaskUseCase(task)
+            val token = storePendingDeletion(PendingTaskDeletion.Tasks(snapshot))
+            showSnackbar(
+                messageResId = R.string.task_deleted,
+                actionResId = R.string.undo,
+                deletionToken = token,
+            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -353,12 +358,6 @@ private suspend fun TasksViewModel.handleToggleResult(
 ) {
     when (result) {
         is ToggleTaskCompletionUseCase.Result.PeriodicCompleted -> {
-            handleSchedulePermissionError(result.updateResult)
-        }
-
-        is ToggleTaskCompletionUseCase.Result.PeriodicRolledBack -> {
-            expandTask(taskId)
-            showSnackbar(R.string.msg_periodic_uncheck_rollback)
             handleSchedulePermissionError(result.updateResult)
         }
 

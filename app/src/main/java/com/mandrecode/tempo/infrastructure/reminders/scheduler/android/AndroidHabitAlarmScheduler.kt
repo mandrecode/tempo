@@ -69,6 +69,7 @@ class AndroidHabitAlarmScheduler(
             Intent(context, HabitReminderReceiver::class.java).apply {
                 putExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID, habitChainId)
                 putExtra(HabitReminderReceiver.EXTRA_IS_CHAIN, true)
+                putExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE, triggerAtMillis.toScheduledDateString())
             }
         val pendingIntent =
             PendingIntent.getBroadcast(

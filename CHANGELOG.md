@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.16](https://github.com/mandrecode/tempo/compare/v0.8.15...v0.8.16) (2026-07-14)
+
+
+### Bug Fixes
+
+* **#120:** suppress reminders for started chains ([#131](https://github.com/mandrecode/tempo/issues/131)) ([770cca4](https://github.com/mandrecode/tempo/commit/770cca46762ffcef1a027765e267fa1b0877de19))
+* **#71:** preserve overdue task when unchecking recurrence ([#132](https://github.com/mandrecode/tempo/issues/132)) ([27408bf](https://github.com/mandrecode/tempo/commit/27408bf6995b06d2e96c5dd768a60fc840ea18d4))
+
 ## [0.8.15](https://github.com/mandrecode/tempo/compare/v0.8.14...v0.8.15) (2026-07-13)
 
 

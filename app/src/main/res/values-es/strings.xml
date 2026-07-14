@@ -152,7 +152,7 @@
     <string name="discard_changes_message">Tienes cambios sin guardar. ¿Estás seguro de que quieres descartarlos?</string>
     <string name="confirm_deletion">Confirmar eliminación</string>
     <string name="delete_task_message_prefix">¿Estás seguro de que quieres eliminar la tarea </string>
-    <string name="delete_task_message_suffix">\u003F Esta acción no se puede deshacer.</string>
+    <string name="delete_task_message_suffix">\u003F Podrás deshacerlo durante unos instantes.</string>
     <string name="delete_task_with_subtasks_message"> y sus %1$d %2$s</string>
     <string name="this_task">esta tarea</string>
     <string name="subtask">subtarea</string>
@@ -163,9 +163,13 @@
         <item quantity="other">subtareas</item>
     </plurals>
     <string name="delete_all_completed_tasks">Eliminar todas las tareas completadas</string>
-    <string name="delete_completed_tasks_confirm_message">¿Estás seguro de que quieres eliminar todas las tareas completadas? Esta acción no se puede deshacer.</string>
+    <string name="delete_completed_tasks_confirm_message">¿Estás seguro de que quieres eliminar todas las tareas completadas? Podrás deshacerlo durante unos instantes.</string>
     <string name="delete_category_message_prefix">¿Estás seguro de que quieres eliminar la categoría </string>
-    <string name="delete_category_message_suffix">\u003F Esto también eliminará todas las tareas dentro de ella. Esta acción no se puede deshacer.</string>
+    <string name="delete_category_message_suffix">\u003F Esto también eliminará todas las tareas dentro de ella. Podrás deshacerlo durante unos instantes.</string>
+    <string name="undo">Deshacer</string>
+    <string name="msg_undo_success">Eliminación deshecha</string>
+    <string name="msg_undo_failed">No se pudo deshacer la eliminación</string>
+    <string name="msg_undo_restored_reminder_warning">Restaurado, pero algunos recordatorios necesitan atención</string>
     <string name="habit_chain_select_at_least_one">Selecciona al menos un hábito para la cadena</string>
     <string name="habit_chain_deleted_success">Cadena de hábitos eliminada con éxito</string>
     <string name="empty_habit_chain_title">Cadena de hábitos vacía</string>
@@ -250,7 +254,6 @@
     <string name="msg_task_updated_failed_scheduling">Tarea actualizada, pero la programación del recordatorio falló</string>
     <string name="msg_task_add_failed">Error al añadir la tarea: %1$s</string>
     <string name="msg_task_update_failed">Error al actualizar la tarea: %1$s</string>
-    <string name="msg_periodic_uncheck_rollback">Próxima repetición cancelada</string>
     <string name="msg_task_reorder_failed">Error al reordenar tareas: %1$s</string>
     <string name="msg_category_name_empty">El nombre de la categoría no puede estar vacío.</string>
     <string name="msg_category_exists">Ya existe una categoría con el nombre \'%1$s\'.</string>

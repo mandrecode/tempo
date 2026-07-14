@@ -5,10 +5,14 @@ import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainWithMembers
+import com.mandrecode.tempo.core.data.entity.HabitEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
+import com.mandrecode.tempo.core.data.local.dao.HabitDao
+import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitChainDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -29,6 +33,7 @@ class HabitChainRepositoryTest {
     private lateinit var habitChainDao: HabitChainDao
     private lateinit var habitChainMemberDao: HabitChainMemberDao
     private lateinit var database: TempoDatabase
+    private lateinit var habitDao: HabitDao
     private lateinit var repository: HabitChainRepository
 
     private val fixedDate = LocalDateTime(2024, 1, 1, 12, 0, 0)
@@ -68,6 +73,7 @@ class HabitChainRepositoryTest {
         habitChainDao = mockk(relaxed = true)
         habitChainMemberDao = mockk(relaxed = true)
         database = mockk(relaxed = true)
+        habitDao = mockk(relaxed = true)
 
         mockkStatic("androidx.room.RoomDatabaseKt")
         @Suppress("UNCHECKED_CAST")
@@ -75,7 +81,7 @@ class HabitChainRepositoryTest {
             (args[1] as (suspend () -> Any?)).invoke()
         }
 
-        repository = HabitChainRepositoryImpl(habitChainDao, habitChainMemberDao, database)
+        repository = HabitChainRepositoryImpl(habitChainDao, habitChainMemberDao, habitDao, database)
     }
 
     @After
@@ -204,5 +210,96 @@ class HabitChainRepositoryTest {
             val result = repository.getChainsForHabit(1L)
             assertThat(result).hasSize(2)
             coVerify(exactly = 1) { habitChainDao.getHabitChainsWithMembersByIds(any()) }
+        }
+
+    @Test
+    fun `deleteHabitChainWithSnapshot fetches affected chains in one membership query`() =
+        runTest {
+            coEvery { habitChainDao.getHabitChainWithMembersById(testChain.id) } returns testChainWithMembers
+            coEvery { habitDao.getHabitsByIds(testChain.habitIds) } returns emptyList()
+            coEvery { habitChainMemberDao.getChainIdsForHabits(testChain.habitIds) } returns listOf(testChain.id)
+            coEvery { habitChainDao.getHabitChainsWithMembersByIds(listOf(testChain.id)) } returns
+                listOf(testChainWithMembers)
+
+            val snapshot = repository.deleteHabitChainWithSnapshot(testChain.id, deleteHabits = false)
+
+            assertThat(snapshot.affectedChains).containsExactly(testChain)
+            coVerify(exactly = 1) { habitChainMemberDao.getChainIdsForHabits(testChain.habitIds) }
+            coVerify(exactly = 0) { habitChainMemberDao.getChainIdsForHabit(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedHabitChain rejects a reused chain id`() =
+        runTest {
+            coEvery { habitChainDao.getHabitChainById(testChain.id) } returns
+                HabitChainEntity(id = testChain.id, title = "Unrelated", createdDate = fixedDate)
+            val snapshot =
+                HabitChainDeletionSnapshot(
+                    chain = testChain,
+                    habitsBeforeDeletion = emptyList(),
+                    affectedChains = listOf(testChain),
+                    deletedHabits = true,
+                )
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { habitChainDao.updateHabitChain(any()) }
+            coVerify(exactly = 0) { habitChainMemberDao.deleteByChainId(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedHabitChain rejects a reused deleted habit id`() =
+        runTest {
+            val habit = Habit(id = 1L, title = "Deleted", description = "", createdDate = fixedDate)
+            coEvery { habitDao.getHabitById(habit.id) } returns
+                HabitEntity(id = habit.id, title = "Unrelated", description = "", createdDate = fixedDate)
+            val snapshot =
+                HabitChainDeletionSnapshot(
+                    chain = testChain,
+                    habitsBeforeDeletion = listOf(habit),
+                    affectedChains = listOf(testChain),
+                    deletedHabits = true,
+                )
+
+            val result = runCatching { repository.restoreDeletedHabitChain(snapshot) }
+
+            assertThat(result.exceptionOrNull()).isInstanceOf(IllegalStateException::class.java)
+            coVerify(exactly = 0) { habitDao.updateHabit(any()) }
+            coVerify(exactly = 0) { habitChainDao.insertHabitChain(any()) }
+        }
+
+    @Test
+    fun `restoreDeletedHabitChain only restores reminder for preserved habit`() =
+        runTest {
+            val originalReminder = LocalDateTime(2026, 7, 20, 9, 0)
+            val habit =
+                Habit(
+                    id = 1L,
+                    title = "Original",
+                    description = "",
+                    reminderDate = originalReminder,
+                    createdDate = fixedDate,
+                )
+            coEvery { habitDao.getHabitById(habit.id) } returns
+                HabitEntity(
+                    id = habit.id,
+                    title = "Edited during undo window",
+                    description = "",
+                    reminderDate = testChain.periodicReminder,
+                    createdDate = fixedDate,
+                )
+            val snapshot =
+                HabitChainDeletionSnapshot(
+                    chain = testChain,
+                    habitsBeforeDeletion = listOf(habit),
+                    affectedChains = emptyList(),
+                    deletedHabits = false,
+                )
+
+            repository.restoreDeletedHabitChain(snapshot)
+
+            coVerify { habitDao.updateHabitReminder(habit.id, originalReminder) }
+            coVerify(exactly = 0) { habitDao.updateHabit(any()) }
         }
 }

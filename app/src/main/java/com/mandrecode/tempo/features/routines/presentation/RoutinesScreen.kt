@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.routines.presentation
 
+import android.content.Context
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -7,7 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -39,7 +42,7 @@ import com.mandrecode.tempo.features.routines.presentation.components.dialogs.De
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.EmptyHabitChainConfirmDialog
 
-private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 84.dp
+private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,16 +96,8 @@ fun RoutinesScreen(
     LaunchedEffect(Unit) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                is RoutinesContract.UiEffect.ShowSnackbar -> {
-                    @Suppress("LocalContextGetResourceValueCall")
-                    val message =
-                        if (effect.formatArgs.isNotEmpty()) {
-                            context.getString(effect.messageResId, *effect.formatArgs.toTypedArray())
-                        } else {
-                            context.getString(effect.messageResId)
-                        }
-                    snackbarHostState.showSnackbar(message)
-                }
+                is RoutinesContract.UiEffect.ShowSnackbar ->
+                    showRoutinesSnackbar(effect, context, snackbarHostState, viewModel::onEvent)
             }
         }
     }
@@ -227,6 +222,37 @@ fun RoutinesScreen(
     }
 }
 
+@Suppress("LocalContextGetResourceValueCall")
+private suspend fun showRoutinesSnackbar(
+    snackbar: RoutinesContract.UiEffect.ShowSnackbar,
+    context: Context,
+    snackbarHostState: SnackbarHostState,
+    onEvent: (RoutinesContract.UiEvent) -> Unit,
+) {
+    val message =
+        if (snackbar.formatArgs.isNotEmpty()) {
+            context.getString(snackbar.messageResId, *snackbar.formatArgs.toTypedArray())
+        } else {
+            context.getString(snackbar.messageResId)
+        }
+    val actionLabel = snackbar.actionResId?.let(context::getString)
+    val result =
+        snackbarHostState.showSnackbar(
+            message = message,
+            actionLabel = actionLabel,
+            duration = if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Long,
+        )
+    snackbar.deletionToken?.let { token ->
+        onEvent(
+            if (result == SnackbarResult.ActionPerformed) {
+                RoutinesContract.UiEvent.UndoDeletion(token)
+            } else {
+                RoutinesContract.UiEvent.DismissDeletionUndo(token)
+            },
+        )
+    }
+}
+
 @Composable
 private fun RoutinesDialogs(
     uiState: RoutinesContract.UiState,
@@ -305,9 +331,6 @@ private fun RoutinesSnackbar(
             Modifier
                 .fillMaxSize()
                 .padding(
-                    start = 16.dp,
-                    top = 16.dp,
-                    end = 16.dp,
                     bottom =
                         if (isRailLayout) {
                             16.dp

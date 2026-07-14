@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.routines.domain.usecase
 
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
 import jakarta.inject.Inject
@@ -11,8 +12,9 @@ class DeleteHabitUseCase
         private val habitRepository: HabitRepository,
         private val habitReminderScheduler: HabitReminderScheduler,
     ) {
-        suspend operator fun invoke(habit: Habit) {
-            habitRepository.deleteHabit(habit)
+        suspend operator fun invoke(habit: Habit): HabitDeletionSnapshot {
+            val snapshot = habitRepository.deleteHabitWithSnapshot(habit.id)
             habitReminderScheduler.cancelHabit(habit)
+            return snapshot
         }
     }

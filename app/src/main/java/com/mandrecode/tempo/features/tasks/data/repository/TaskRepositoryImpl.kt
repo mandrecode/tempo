@@ -1,11 +1,13 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
 import androidx.room.withTransaction
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
 import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -50,10 +52,53 @@ class TaskRepositoryImpl
         override suspend fun updateTasks(tasks: List<Task>) = taskDao.updateTasks(tasks.toEntity())
 
         override suspend fun deleteTask(task: Task) {
-            val entity = task.toEntity()
-            // Delete all subtasks first
-            taskDao.deleteSubtasks(entity.id)
-            taskDao.deleteTask(entity)
+            taskDao.deleteTaskTrees(listOf(task.id))
+        }
+
+        override suspend fun deleteTaskWithSnapshot(taskId: Long): TaskDeletionSnapshot.TaskTree =
+            database.withTransaction {
+                val tasks = taskDao.getTaskTrees(listOf(taskId))
+                require(tasks.any { it.id == taskId })
+                taskDao.deleteTaskTrees(listOf(taskId))
+                TaskDeletionSnapshot.TaskTree(
+                    rootTaskId = taskId,
+                    tasks = tasks.toDomain(),
+                )
+            }
+
+        override suspend fun deleteCompletedTasksWithSnapshot(categoryId: Long): TaskDeletionSnapshot.CompletedTasks =
+            database.withTransaction {
+                val completedParentIds = taskDao.getCompletedTopLevelTaskIds(categoryId)
+                val tasks =
+                    if (completedParentIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        taskDao.getTaskTrees(completedParentIds)
+                    }
+                if (tasks.isNotEmpty()) {
+                    taskDao.deleteTaskTrees(completedParentIds)
+                }
+                TaskDeletionSnapshot.CompletedTasks(
+                    categoryId = categoryId,
+                    tasks = tasks.toDomain(),
+                )
+            }
+
+        override suspend fun restoreDeletedTasks(snapshot: TaskDeletionSnapshot) {
+            database.withTransaction {
+                snapshot.tasks
+                    .sortedParentFirst()
+                    .forEach { task ->
+                        val entity = task.toEntity()
+                        insertOrVerifyRestoredEntity(
+                            existing = taskDao.getTaskById(task.id),
+                            snapshot = entity,
+                            recordDescription = "task ${task.id}",
+                        ) {
+                            taskDao.insertTask(entity)
+                        }
+                    }
+            }
         }
 
         override suspend fun toggleTaskCompletion(
@@ -88,8 +133,7 @@ class TaskRepositoryImpl
         override suspend fun deleteCompletedTasksByCategoryId(categoryId: Long) {
             val completedParentIds = taskDao.getCompletedTopLevelTaskIds(categoryId)
             if (completedParentIds.isNotEmpty()) {
-                taskDao.deleteSubtasksByParentIds(completedParentIds)
-                taskDao.deleteTasksByIds(completedParentIds)
+                taskDao.deleteTaskTrees(completedParentIds)
             }
         }
 
@@ -103,8 +147,7 @@ class TaskRepositoryImpl
 
         override suspend fun deleteTaskWithSubtasks(taskId: Long) =
             database.withTransaction {
-                taskDao.deleteSubtasks(taskId)
-                taskDao.deleteTaskById(taskId)
+                taskDao.deleteTaskTrees(listOf(taskId))
             }
 
         override suspend fun <R> runInTransaction(block: suspend () -> R): R = database.withTransaction { block() }

@@ -2,14 +2,17 @@ package com.mandrecode.tempo.features.routines.data.repository
 
 import androidx.room.withTransaction
 import com.mandrecode.tempo.core.data.entity.HabitEntity
+import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.features.routines.data.mapper.toDomain
 import com.mandrecode.tempo.features.routines.data.mapper.toEntity
+import com.mandrecode.tempo.features.routines.data.mapper.toMemberEntities
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.infrastructure.liveactivity.HabitChainLiveActivityManager
 import com.mandrecode.tempo.util.CompletionHistoryUtil
@@ -48,6 +51,51 @@ class HabitRepositoryImpl
         override suspend fun updateHabit(habit: Habit) = habitDao.updateHabit(habit.toEntity())
 
         override suspend fun deleteHabit(habit: Habit) = habitDao.deleteHabit(habit.toEntity())
+
+        override suspend fun deleteHabitWithSnapshot(habitId: Long): HabitDeletionSnapshot =
+            database.withTransaction {
+                val habit = requireNotNull(habitDao.getHabitById(habitId))
+                val chainIds = habitChainMemberDao.getChainIdsForHabit(habitId)
+                val affectedChains =
+                    if (chainIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        habitChainDao.getHabitChainsWithMembersByIds(chainIds).toDomain()
+                    }
+                habitDao.deleteHabit(habit)
+                HabitDeletionSnapshot(
+                    habit = habit.toDomain(),
+                    affectedChains = affectedChains,
+                )
+            }
+
+        override suspend fun restoreDeletedHabit(snapshot: HabitDeletionSnapshot) {
+            database.withTransaction {
+                val habitEntity = snapshot.habit.toEntity()
+                insertOrVerifyRestoredEntity(
+                    existing = habitDao.getHabitById(snapshot.habit.id),
+                    snapshot = habitEntity,
+                    recordDescription = "habit ${snapshot.habit.id}",
+                ) {
+                    habitDao.insertHabit(habitEntity)
+                }
+                snapshot.affectedChains.forEach { chain ->
+                    val chainEntity = chain.toEntity()
+                    insertOrVerifyRestoredEntity(
+                        existing = habitChainDao.getHabitChainById(chain.id),
+                        snapshot = chainEntity,
+                        recordDescription = "habit chain ${chain.id}",
+                    ) {
+                        habitChainDao.insertHabitChain(chainEntity)
+                    }
+                    habitChainMemberDao.deleteByChainId(chain.id)
+                    val members = chain.toMemberEntities()
+                    if (members.isNotEmpty()) {
+                        habitChainMemberDao.insertMembers(members)
+                    }
+                }
+            }
+        }
 
         override suspend fun deleteHabitsByIds(habitIds: List<Long>) = habitDao.deleteHabitsByIds(habitIds)
 

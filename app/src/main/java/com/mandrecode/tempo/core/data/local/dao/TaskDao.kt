@@ -17,11 +17,31 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getTaskById(id: Long): TaskEntity?
 
+    @Query("SELECT * FROM tasks WHERE categoryId = :categoryId ORDER BY parentTaskId, sortOrder, id")
+    suspend fun getTasksByCategoryId(categoryId: Long): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE parentTaskId = :parentId ORDER BY sortOrder ASC, id ASC")
     fun getSubtasks(parentId: Long): Flow<List<TaskEntity>>
 
     @Query("SELECT * FROM tasks WHERE parentTaskId = :parentId ORDER BY sortOrder ASC, id ASC")
     suspend fun getSubtasksSync(parentId: Long): List<TaskEntity>
+
+    @Query(
+        """
+        WITH RECURSIVE task_tree(id, depth) AS (
+            SELECT id, 0 FROM tasks WHERE id IN (:rootIds)
+            UNION ALL
+            SELECT child.id, task_tree.depth + 1
+            FROM tasks AS child
+            JOIN task_tree ON child.parentTaskId = task_tree.id
+        )
+        SELECT tasks.*
+        FROM tasks
+        JOIN task_tree ON tasks.id = task_tree.id
+        ORDER BY task_tree.depth, tasks.sortOrder, tasks.id
+        """,
+    )
+    suspend fun getTaskTrees(rootIds: List<Long>): List<TaskEntity>
 
     @Query("SELECT MAX(sortOrder) FROM tasks WHERE parentTaskId = :parentId")
     suspend fun getMaxSubtaskSortOrder(parentId: Long): Int?
@@ -125,12 +145,25 @@ interface TaskDao {
     @Query("DELETE FROM tasks WHERE id IN (:ids)")
     suspend fun deleteTasksByIds(ids: List<Long>)
 
+    @Query(
+        """
+        WITH RECURSIVE task_tree(id) AS (
+            SELECT id FROM tasks WHERE id IN (:rootIds)
+            UNION ALL
+            SELECT child.id
+            FROM tasks AS child
+            JOIN task_tree ON child.parentTaskId = task_tree.id
+        )
+        DELETE FROM tasks WHERE id IN (SELECT id FROM task_tree)
+        """,
+    )
+    suspend fun deleteTaskTrees(rootIds: List<Long>)
+
     @Transaction
     suspend fun deleteCompletedTaskTreesAtOrBefore(cutoff: String) {
         val completedParentIds = getCompletedTopLevelTaskIdsAtOrBefore(cutoff)
         if (completedParentIds.isNotEmpty()) {
-            deleteSubtasksByParentIds(completedParentIds)
-            deleteTasksByIds(completedParentIds)
+            deleteTaskTrees(completedParentIds)
         }
     }
 }
