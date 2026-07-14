@@ -1003,14 +1003,18 @@ internal fun RoutinesViewModel.setRepeatDays(days: Set<DayOfWeek>?) {
 }
 
 internal fun RoutinesViewModel.clearHabitErrors() {
-    mutableUiState.update {
-        it.copy(
-            habitForm =
-                it.habitForm.copy(
-                    titleError = null,
-                    descriptionError = null,
-                ),
-        )
+    mutableUiState.update { state ->
+        if (state.habitForm.titleError == null && state.habitForm.descriptionError == null) {
+            state
+        } else {
+            state.copy(
+                habitForm =
+                    state.habitForm.copy(
+                        titleError = null,
+                        descriptionError = null,
+                    ),
+            )
+        }
     }
 }
 

@@ -1,8 +1,6 @@
 package com.mandrecode.tempo.core.ui.util
 
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.TextFieldValue
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
@@ -105,26 +103,6 @@ class EnhancedDescriptionTextTest {
         assertThat(spanStyle.start).isEqualTo(linkStart)
         assertThat(spanStyle.end).isEqualTo(linkEnd)
         assertThat(spanStyle.item.color).isEqualTo(Color.Blue)
-    }
-
-    @Test
-    fun givenTextFieldValueWithLink_whenEnhancingDescriptionTextFieldValue_thenPreservesSelectionAndStylesLink() {
-        val value =
-            TextFieldValue(
-                text = "Open www.example.com",
-                selection = TextRange(8),
-            )
-
-        val enhancedValue = enhancedDescriptionTextFieldValue(value = value, linkColor = Color.Blue)
-        val linkStyleColor =
-            enhancedValue.annotatedString.spanStyles
-                .single()
-                .item.color
-
-        assertThat(enhancedValue.text).isEqualTo(value.text)
-        assertThat(enhancedValue.selection).isEqualTo(TextRange(8))
-        assertThat(enhancedValue.annotatedString.spanStyles).hasSize(1)
-        assertThat(linkStyleColor).isEqualTo(Color.Blue)
     }
 
     @Test

@@ -763,6 +763,16 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `clearTaskErrors keeps current state when errors are already clear`() =
+        runTest {
+            val stateBeforeClear = viewModel.uiState.value
+
+            viewModel.onEvent(TasksContract.UiEvent.ClearTaskErrors)
+
+            assertThat(viewModel.uiState.value).isSameInstanceAs(stateBeforeClear)
+        }
+
+    @Test
     fun `deleteCategory removes tasks and category`() =
         runTest {
             val category = Category(id = 2L, name = "Temp")

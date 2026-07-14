@@ -42,6 +42,17 @@ class TaskDescriptionFormattingTest {
     }
 
     @Test
+    fun givenCursorAfterDashPrefix_whenItemTextRemains_thenPreservesListFormatting() {
+        val previous = textFieldValue(text = "- Buy milk", cursor = 2)
+        val proposed = textFieldValue(text = "- \nBuy milk", cursor = 3)
+
+        val result = applyTaskDescriptionDashFormatting(previous, proposed)
+
+        assertThat(result.text).isEqualTo("- \n- Buy milk")
+        assertThat(result.selection).isEqualTo(TextRange(5))
+    }
+
+    @Test
     fun givenEmptyDashedItem_whenNewlineInserted_thenExitsDashList() {
         val previous = textFieldValue("- Buy milk\n- ")
         val proposed = textFieldValue("- Buy milk\n- \n")

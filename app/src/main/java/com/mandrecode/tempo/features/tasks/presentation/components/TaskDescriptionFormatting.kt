@@ -29,10 +29,18 @@ internal fun applyTaskDescriptionDashFormatting(
         } else {
             null
         }
+    val remainingLineText =
+        if (match != null) {
+            val nextLineBreak = proposedValue.text.indexOf('\n', startIndex = insertionIndex + 1)
+            val lineEnd = nextLineBreak.takeIf { it >= 0 } ?: proposedValue.text.length
+            proposedValue.text.substring(insertionIndex + 1, lineEnd)
+        } else {
+            ""
+        }
 
     return when {
         match == null -> proposedValue
-        match.groupValues[2].isBlank() ->
+        match.groupValues[2].isBlank() && remainingLineText.isBlank() ->
             TextFieldValue(
                 text = proposedValue.text.removeRange(lineStart, insertionIndex + 1),
                 selection = TextRange(lineStart),

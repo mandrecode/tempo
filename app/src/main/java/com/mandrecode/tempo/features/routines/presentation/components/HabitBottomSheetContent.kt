@@ -34,6 +34,8 @@ import com.mandrecode.tempo.core.ui.theme.getMonochromeColor
 import com.mandrecode.tempo.core.ui.theme.getPastelColors
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.theme.resolveColorToKey
+import com.mandrecode.tempo.core.ui.util.DebouncedSnapshotEffect
+import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
 import com.mandrecode.tempo.core.ui.util.selectRandomColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -42,7 +44,6 @@ import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import com.mandrecode.tempo.infrastructure.permissions.hasNotificationPermissions
 import com.mandrecode.tempo.util.findChainForHabit
-import kotlinx.coroutines.delay
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 import kotlinx.datetime.number
@@ -90,16 +91,21 @@ internal fun HabitBottomSheetContent(
             },
         )
     }
-    var description by remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
-        mutableStateOf(
-            TextFieldValue(
-                when (formState.selectedTab) {
-                    HabitSheetTab.HABIT -> formState.editingHabit?.description ?: ""
-                    HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.description ?: ""
-                },
-            ),
-        )
-    }
+    val initialDescription =
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+            when (formState.selectedTab) {
+                HabitSheetTab.HABIT -> formState.editingHabit?.description.orEmpty()
+                HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.description.orEmpty()
+            }
+        }
+    val descriptionState =
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+            DescriptionEditorState(TextFieldValue(initialDescription))
+        }
+    var isDescriptionDirty by
+        remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
+            mutableStateOf(false)
+        }
     var selectedHabitIds by remember(formState.editingHabitChain?.id) {
         mutableStateOf(
             formState.editingHabitChain?.habitIds ?: emptyList(),
@@ -301,7 +307,7 @@ internal fun HabitBottomSheetContent(
             editingHabitSnapshot,
             editingChainSnapshot,
             title,
-            description.text,
+            isDescriptionDirty,
             selectedHabitIds,
             formState.selectedIcon,
             formState.selectedColorKey,
@@ -316,7 +322,7 @@ internal fun HabitBottomSheetContent(
                     val habit = editingHabitSnapshot
                     if (habit == null) {
                         title.isNotBlank() ||
-                            description.text.isNotBlank() ||
+                            isDescriptionDirty ||
                             formState.selectedIcon != autoSelectedIcon ||
                             formState.selectedColorKey != autoSelectedColor ||
                             formState.selectedRepeatDays != null ||
@@ -324,7 +330,7 @@ internal fun HabitBottomSheetContent(
                             formState.selectedHabitType != HabitType.BUILD
                     } else {
                         title != habit.title ||
-                            description.text != habit.description ||
+                            isDescriptionDirty ||
                             formState.selectedIcon != habit.icon ||
                             formState.selectedColorKey != habit.colorKey ||
                             formState.selectedRepeatDays != habit.repeatDays ||
@@ -337,7 +343,7 @@ internal fun HabitBottomSheetContent(
                     val chain = editingChainSnapshot
                     if (chain == null) {
                         title.isNotBlank() ||
-                            description.text.isNotBlank() ||
+                            isDescriptionDirty ||
                             selectedHabitIds.isNotEmpty() ||
                             formState.selectedIcon != autoSelectedIcon ||
                             formState.selectedColorKey != autoSelectedColor ||
@@ -345,7 +351,7 @@ internal fun HabitBottomSheetContent(
                             formState.reminderDate != null
                     } else {
                         title != chain.title ||
-                            description.text != chain.description ||
+                            isDescriptionDirty ||
                             selectedHabitIds != chain.habitIds ||
                             formState.selectedIcon != chain.icon ||
                             formState.selectedColorKey != chain.colorKey ||
@@ -365,57 +371,103 @@ internal fun HabitBottomSheetContent(
     val autoSaveHabitChainEnabled = isEditingHabitChain && onAutoSaveHabitChain != null
     val autoSaveEnabled = autoSaveHabitEnabled || autoSaveHabitChainEnabled
 
-    val currentAutoSaveSnapshot: Any =
-        if (formState.selectedTab == HabitSheetTab.HABIT) {
-            HabitFormSnapshot(
-                title = title,
-                description = description.text,
-                icon = formState.selectedIcon,
-                colorKey = formState.selectedColorKey,
-                repeatDays = formState.selectedRepeatDays,
-                reminderDate = formState.reminderDate,
-                habitType = formState.selectedHabitType,
-            )
-        } else {
-            ChainFormSnapshot(
-                title = title,
-                description = description.text,
-                habitIds = selectedHabitIds,
-                icon = formState.selectedIcon,
-                colorKey = formState.selectedColorKey,
-                repeatDays = formState.selectedRepeatDays,
-                periodicReminder = formState.reminderDate,
-            )
-        }
     var lastDispatchedSnapshot by
         remember(formState.editingHabit?.id, formState.editingHabitChain?.id) {
             mutableStateOf<Any?>(null)
         }
+    DebouncedSnapshotEffect(
+        enabled = autoSaveEnabled,
+        key = formState.editingHabit?.id ?: formState.editingHabitChain?.id,
+        debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
+        snapshotProvider = {
+            when (formState.selectedTab) {
+                HabitSheetTab.HABIT ->
+                    HabitFormSnapshot(
+                        title = title,
+                        description = descriptionState.value.text,
+                        icon = formState.selectedIcon,
+                        colorKey = formState.selectedColorKey,
+                        repeatDays = formState.selectedRepeatDays,
+                        reminderDate = formState.reminderDate,
+                        habitType = formState.selectedHabitType,
+                    )
 
-    LaunchedEffect(autoSaveEnabled, currentAutoSaveSnapshot, hasUnsavedChanges) {
-        if (!autoSaveEnabled || !hasUnsavedChanges || title.isBlank()) return@LaunchedEffect
-        delay(AUTO_SAVE_DEBOUNCE_MS)
-        if (lastDispatchedSnapshot == currentAutoSaveSnapshot) return@LaunchedEffect
+                HabitSheetTab.HABIT_CHAIN ->
+                    ChainFormSnapshot(
+                        title = title,
+                        description = descriptionState.value.text,
+                        habitIds = selectedHabitIds,
+                        icon = formState.selectedIcon,
+                        colorKey = formState.selectedColorKey,
+                        repeatDays = formState.selectedRepeatDays,
+                        periodicReminder = formState.reminderDate,
+                    )
+            }
+        },
+        onSnapshot = { snapshot ->
+            val initialSnapshot = editingHabitSnapshot ?: editingChainSnapshot
+            if (snapshot != initialSnapshot && lastDispatchedSnapshot != snapshot) {
+                when (snapshot) {
+                    is HabitFormSnapshot -> {
+                        if (snapshot.title.isBlank()) return@DebouncedSnapshotEffect
+                        onAutoSaveHabit?.invoke(snapshot.title, snapshot.description)
+                    }
 
-        when {
-            autoSaveHabitEnabled -> onAutoSaveHabit?.invoke(title, description.text)
-            autoSaveHabitChainEnabled ->
-                onAutoSaveHabitChain?.invoke(title, description.text, selectedHabitIds)
-        }
-        lastDispatchedSnapshot = currentAutoSaveSnapshot
-    }
-
-    val hasPendingAutoSave =
-        autoSaveEnabled && hasUnsavedChanges && currentAutoSaveSnapshot != lastDispatchedSnapshot
+                    is ChainFormSnapshot -> {
+                        if (snapshot.title.isBlank()) return@DebouncedSnapshotEffect
+                        onAutoSaveHabitChain?.invoke(
+                            snapshot.title,
+                            snapshot.description,
+                            snapshot.habitIds,
+                        )
+                    }
+                }
+                lastDispatchedSnapshot = snapshot
+            }
+        },
+    )
 
     val onSheetDismissRequest: () -> Unit = {
-        if (autoSaveEnabled && hasPendingAutoSave && title.isNotBlank()) {
-            when {
-                autoSaveHabitEnabled -> onAutoSaveHabit?.invoke(title, description.text)
-                autoSaveHabitChainEnabled ->
-                    onAutoSaveHabitChain?.invoke(title, description.text, selectedHabitIds)
+        val currentSnapshot: Any =
+            when (formState.selectedTab) {
+                HabitSheetTab.HABIT ->
+                    HabitFormSnapshot(
+                        title = title,
+                        description = descriptionState.value.text,
+                        icon = formState.selectedIcon,
+                        colorKey = formState.selectedColorKey,
+                        repeatDays = formState.selectedRepeatDays,
+                        reminderDate = formState.reminderDate,
+                        habitType = formState.selectedHabitType,
+                    )
+
+                HabitSheetTab.HABIT_CHAIN ->
+                    ChainFormSnapshot(
+                        title = title,
+                        description = descriptionState.value.text,
+                        habitIds = selectedHabitIds,
+                        icon = formState.selectedIcon,
+                        colorKey = formState.selectedColorKey,
+                        repeatDays = formState.selectedRepeatDays,
+                        periodicReminder = formState.reminderDate,
+                    )
             }
-            lastDispatchedSnapshot = currentAutoSaveSnapshot
+        val initialSnapshot = editingHabitSnapshot ?: editingChainSnapshot
+        if (autoSaveEnabled && title.isNotBlank()) {
+            if (currentSnapshot != initialSnapshot && currentSnapshot != lastDispatchedSnapshot) {
+                when (currentSnapshot) {
+                    is HabitFormSnapshot ->
+                        onAutoSaveHabit?.invoke(currentSnapshot.title, currentSnapshot.description)
+
+                    is ChainFormSnapshot ->
+                        onAutoSaveHabitChain?.invoke(
+                            currentSnapshot.title,
+                            currentSnapshot.description,
+                            currentSnapshot.habitIds,
+                        )
+                }
+                lastDispatchedSnapshot = currentSnapshot
+            }
         }
         onDismiss()
     }
@@ -435,13 +487,13 @@ internal fun HabitBottomSheetContent(
                     .padding(top = 8.dp, bottom = 32.dp),
         ) {
             HabitBottomSheetBody(
+                descriptionState = descriptionState,
                 state =
                     HabitBottomSheetBodyState(
                         formState = formState,
                         selectedDate = selectedDate,
                         habits = habits,
                         title = title,
-                        description = description,
                         selectedHabitIds = selectedHabitIds,
                         isTitleError = isTitleError,
                         isHabitInChain = isHabitInChain,
@@ -461,11 +513,13 @@ internal fun HabitBottomSheetContent(
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 title = newValue.substring(0, MAX_TITLE_LENGTH)
-                                description =
+                                descriptionState.update(
                                     TextFieldValue(
-                                        text = overflow + description.text,
+                                        text = overflow + descriptionState.value.text,
                                         selection = TextRange(overflow.length),
-                                    )
+                                    ),
+                                )
+                                isDescriptionDirty = descriptionState.value.text != initialDescription
                                 focusDescriptionTrigger++
                             } else {
                                 title = newValue
@@ -474,7 +528,8 @@ internal fun HabitBottomSheetContent(
                             }
                         },
                         onDescriptionChanged = {
-                            description = it
+                            descriptionState.update(it)
+                            isDescriptionDirty = descriptionState.value.text != initialDescription
                             onClearErrors()
                         },
                         onSetIcon = onSetIcon,
@@ -494,11 +549,12 @@ internal fun HabitBottomSheetContent(
                             if (!isTitleError) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 when (formState.selectedTab) {
-                                    HabitSheetTab.HABIT -> onConfirmHabit(title, description.text)
+                                    HabitSheetTab.HABIT ->
+                                        onConfirmHabit(title, descriptionState.value.text)
                                     HabitSheetTab.HABIT_CHAIN ->
                                         onConfirmHabitChain(
                                             title,
-                                            description.text,
+                                            descriptionState.value.text,
                                             selectedHabitIds,
                                         )
                                 }

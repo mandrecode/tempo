@@ -44,6 +44,7 @@ import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
+import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import com.mandrecode.tempo.features.routines.presentation.components.sections.HabitHistoryView
@@ -59,6 +60,7 @@ internal const val HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG = "habit_bottom_sheet
 @Composable
 internal fun HabitBottomSheetBody(
     state: HabitBottomSheetBodyState,
+    descriptionState: DescriptionEditorState,
     actions: HabitBottomSheetBodyActions,
     focusConfig: HabitBottomSheetFocusConfig,
 ) {
@@ -119,8 +121,9 @@ internal fun HabitBottomSheetBody(
         )
 
         HabitDescriptionSection(
-            state = state,
-            actions = actions,
+            descriptionState = descriptionState,
+            descriptionError = state.formState.descriptionError,
+            onDescriptionChange = actions.onDescriptionChanged,
             focusConfig = focusConfig,
         )
 
@@ -343,8 +346,9 @@ private fun HabitTitleField(
 
 @Composable
 private fun HabitDescriptionSection(
-    state: HabitBottomSheetBodyState,
-    actions: HabitBottomSheetBodyActions,
+    descriptionState: DescriptionEditorState,
+    descriptionError: Int?,
+    onDescriptionChange: (androidx.compose.ui.text.input.TextFieldValue) -> Unit,
     focusConfig: HabitBottomSheetFocusConfig,
 ) {
     Row(
@@ -363,8 +367,8 @@ private fun HabitDescriptionSection(
         }
 
         TextField(
-            value = state.description,
-            onValueChange = actions.onDescriptionChanged,
+            value = descriptionState.value,
+            onValueChange = onDescriptionChange,
             placeholder = {
                 Text(
                     stringResource(R.string.add_details),
@@ -385,16 +389,17 @@ private fun HabitDescriptionSection(
                 Modifier
                     .weight(1f)
                     .padding(start = 4.dp)
+                    .testTag(HABIT_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
                     .focusRequester(focusConfig.descriptionFocusRequester),
             maxLines = 5,
             keyboardOptions =
                 KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                 ),
-            isError = state.formState.descriptionError != null,
+            isError = descriptionError != null,
             supportingText =
-                if (state.formState.descriptionError != null) {
-                    { Text(stringResource(state.formState.descriptionError)) }
+                if (descriptionError != null) {
+                    { Text(stringResource(descriptionError)) }
                 } else {
                     null
                 },

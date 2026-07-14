@@ -24,7 +24,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -119,20 +118,6 @@ internal fun buildEnhancedDescriptionText(
             append(text.substring(currentIndex))
         }
     }
-
-internal fun enhancedDescriptionTextFieldValue(
-    value: TextFieldValue,
-    linkColor: Color,
-): TextFieldValue =
-    TextFieldValue(
-        annotatedString =
-            buildEnhancedDescriptionText(
-                text = value.text,
-                linkColor = linkColor,
-            ),
-        selection = value.selection,
-        composition = value.composition,
-    )
 
 internal fun normalizeDescriptionUri(rawValue: String): String =
     if (rawValue.startsWith("www.", ignoreCase = true) || rawValue.none { it == ':' }) {

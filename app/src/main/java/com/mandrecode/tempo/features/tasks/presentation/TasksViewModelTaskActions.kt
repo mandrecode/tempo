@@ -611,8 +611,14 @@ internal fun TasksViewModel.collapseTask(taskId: Long) {
 }
 
 internal fun TasksViewModel.clearTaskErrors() {
-    mutableUiState.update {
-        it.copy(taskForm = it.taskForm.copy(titleError = null, descriptionError = null))
+    mutableUiState.update { state ->
+        if (state.taskForm.titleError == null && state.taskForm.descriptionError == null) {
+            state
+        } else {
+            state.copy(
+                taskForm = state.taskForm.copy(titleError = null, descriptionError = null),
+            )
+        }
     }
 }
 

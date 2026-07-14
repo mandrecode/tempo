@@ -34,6 +34,7 @@ import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -335,6 +336,46 @@ class HabitBottomSheetTest {
 
         composeTestRule.onNodeWithText("Push-ups").assertIsDisplayed()
         composeTestRule.onNodeWithText("Do 20 push-ups").assertIsDisplayed()
+    }
+
+    @Test
+    fun givenRapidDescriptionEdits_whenAutoSavingHabit_thenDispatchesLatestValueOnce() {
+        val savedDescriptions = mutableListOf<String>()
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(editingHabit = habitInChain()),
+                    selectedDate = today(),
+                    habits = listOf(habitInChain()),
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetHabitType = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onAutoSaveHabit = { _, description -> savedDescriptions += description },
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeBy(1_000)
+
+        val descriptionField =
+            composeTestRule.onNodeWithTag(HABIT_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+        descriptionField.performTextReplacement("a")
+        descriptionField.performTextReplacement("ab")
+        descriptionField.performTextReplacement("abc")
+
+        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.runOnIdle { assertEquals(listOf("abc"), savedDescriptions) }
+        composeTestRule.mainClock.autoAdvance = true
     }
 
     // --- Regression tests for #398, #424: title overflow and long text ---
