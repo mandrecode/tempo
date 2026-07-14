@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.9.0](https://github.com/mandrecode/tempo/compare/v0.8.16...v0.9.0) (2026-07-14)
+
+
+### ⚠ BREAKING CHANGES
+
+* **#20:** add onboarding flow ([#134](https://github.com/mandrecode/tempo/issues/134))
+
+### Features
+
+* **#20:** add onboarding flow ([#134](https://github.com/mandrecode/tempo/issues/134)) ([3f1e31d](https://github.com/mandrecode/tempo/commit/3f1e31d380969b589c37a12fe3ad434a92ae80a2))
+* **#39:** add task description auto-dashes ([#137](https://github.com/mandrecode/tempo/issues/137)) ([7144fa7](https://github.com/mandrecode/tempo/commit/7144fa7c0ef89efb80de3eb8b30a8b19fad1d23c))
+* **#44:** improve task card style ([#139](https://github.com/mandrecode/tempo/issues/139)) ([26190fa](https://github.com/mandrecode/tempo/commit/26190fa19a6ea3713d2e77a93f04e67a3f970497))
+* **#48:** add undoable destructive actions ([#130](https://github.com/mandrecode/tempo/issues/130)) ([ea2a988](https://github.com/mandrecode/tempo/commit/ea2a9886128760ce674f6afe6818645c9eb3e7c2))
+
+
+### Bug Fixes
+
+* **#75:** soften settings button contrast ([#138](https://github.com/mandrecode/tempo/issues/138)) ([8c43fb9](https://github.com/mandrecode/tempo/commit/8c43fb972866c8157a0812262f43457c07700ebe))
+
 ## [0.8.16](https://github.com/mandrecode/tempo/compare/v0.8.15...v0.8.16) (2026-07-14)
 
 
