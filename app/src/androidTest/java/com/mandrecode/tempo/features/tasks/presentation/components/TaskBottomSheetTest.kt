@@ -4,7 +4,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsFocused
@@ -20,8 +19,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.swipe
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Periodicity
@@ -62,53 +59,11 @@ private val discardChangesLabel: String
 private val discardLabel: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.discard)
 
-private val dismissSheetLabel: String
-    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.dismiss_sheet)
-
 private fun defaultFormState() = TasksContract.TaskFormState()
 
 class TaskBottomSheetTest {
     @get:Rule
     val composeTestRule = createComposeRule()
-
-    @Test
-    fun givenTaskSheet_whenHandleIsDraggedDown_thenSheetRemainsOpen() {
-        var dismissed = false
-        composeTestRule.setContent {
-            TempoTheme {
-                TaskBottomSheet(
-                    task = null,
-                    categories = listOf(DEFAULT_INBOX_CATEGORY),
-                    selectedCategoryIdFromFilter = null,
-                    formState = defaultFormState(),
-                    onSetPriority = {},
-                    onClearPriority = {},
-                    onSetReminder = { _, _, _, _, _ -> },
-                    onClearReminder = {},
-                    onSetPeriodicity = {},
-                    onClearPeriodicity = {},
-                    onSetPeriodicityInterval = {},
-                    onSetRepeatDays = {},
-                    onSetMonthDayOption = {},
-                    onDismiss = { dismissed = true },
-                    onClearErrors = {},
-                    onConfirm = { _, _, _ -> },
-                )
-            }
-        }
-
-        composeTestRule.onNodeWithContentDescription(dismissSheetLabel).performTouchInput {
-            swipe(
-                start = center,
-                end = Offset(center.x, center.y + 1_000f),
-                durationMillis = 500,
-            )
-        }
-        composeTestRule.waitForIdle()
-
-        assertFalse(dismissed)
-        composeTestRule.onNodeWithTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG).assertIsDisplayed()
-    }
 
     @Test
     fun displaysTaskTitleField() {

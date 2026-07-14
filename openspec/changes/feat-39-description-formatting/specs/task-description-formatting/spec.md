@@ -21,14 +21,3 @@ The task editor SHALL remove an empty dash-list marker when the user presses Ent
 #### Scenario: End dash-list entry
 - **WHEN** the user presses Enter on a line containing only optional indentation and `- `
 - **THEN** the empty marker is removed and the cursor remains on an unformatted line after the preceding content
-
-### Requirement: Task editor scrolling cannot dismiss the sheet
-The task editor SHALL ignore drag-to-dismiss gestures so vertical interaction does not close the editor unexpectedly.
-
-#### Scenario: Drag the task editor sheet handle
-- **WHEN** the user performs a downward drag from the task editor sheet handle
-- **THEN** the task editor remains open
-
-#### Scenario: Use an explicit dismissal path
-- **WHEN** the user activates cancel, back, scrim, save, or an accessibility dismissal action
-- **THEN** the existing guarded dismissal behavior remains available

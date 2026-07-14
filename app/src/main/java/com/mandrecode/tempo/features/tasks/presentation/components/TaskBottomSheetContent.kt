@@ -294,7 +294,6 @@ internal fun TaskBottomSheetContent(
         onDismissRequest = onSheetDismissRequest,
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && taskTitle.isNotBlank()) false else hasUnsavedChanges,
-        dragToDismissEnabled = false,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(

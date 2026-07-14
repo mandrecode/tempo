@@ -13,7 +13,6 @@ fun TempoModalBottomSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnsavedChanges: Boolean = false,
-    dragToDismissEnabled: Boolean = true,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     TempoModalSheet(
@@ -21,7 +20,6 @@ fun TempoModalBottomSheet(
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         hasUnsavedChanges = hasUnsavedChanges,
-        dragToDismissEnabled = dragToDismissEnabled,
         content = content,
     )
 }
