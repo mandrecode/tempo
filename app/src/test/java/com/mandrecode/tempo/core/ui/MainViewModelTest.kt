@@ -1,8 +1,10 @@
 package com.mandrecode.tempo.core.ui
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
@@ -11,10 +13,9 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -28,6 +29,7 @@ import org.junit.Test
 class MainViewModelTest {
     private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
+    private lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -35,12 +37,14 @@ class MainViewModelTest {
         Dispatchers.setMain(testDispatcher)
         navigationPreferencesRepository = mockk()
         themePreferencesRepository = mockk()
+        onboardingPreferencesRepository = mockk()
 
         every { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         every { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
         every { navigationPreferencesRepository.getDefaultTab() } returns flowOf("routines")
         every { navigationPreferencesRepository.isRoutinesTabEnabled() } returns flowOf(true)
         every { navigationPreferencesRepository.isTasksTabEnabled() } returns flowOf(true)
+        every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
     }
 
     @After
@@ -61,24 +65,17 @@ class MainViewModelTest {
         runTest {
             val viewModel = createViewModel()
 
-            val values = mutableListOf<MainUiState>()
-            val job =
-                backgroundScope.launch(testDispatcher) {
-                    viewModel.uiState.collect { values.add(it) }
-                }
-
-            advanceUntilIdle()
-
-            val success = values.last()
-            assertThat(success).isInstanceOf(MainUiState.Success::class.java)
-            success as MainUiState.Success
-            assertThat(success.themeMode).isEqualTo(ThemeMode.SYSTEM)
-            assertThat(success.useTempoColors).isFalse()
-            assertThat(success.defaultTab).isEqualTo("routines")
-            assertThat(success.isRoutinesTabEnabled).isTrue()
-            assertThat(success.isTasksTabEnabled).isTrue()
-
-            job.cancel()
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                val success = awaitItem() as MainUiState.Success
+                assertThat(success.themeMode).isEqualTo(ThemeMode.SYSTEM)
+                assertThat(success.useTempoColors).isFalse()
+                assertThat(success.defaultTab).isEqualTo("routines")
+                assertThat(success.isRoutinesTabEnabled).isTrue()
+                assertThat(success.isTasksTabEnabled).isTrue()
+                assertThat(success.isOnboardingCompleted).isFalse()
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -88,18 +85,23 @@ class MainViewModelTest {
 
             val viewModel = createViewModel()
 
-            val values = mutableListOf<MainUiState>()
-            val job =
-                backgroundScope.launch(testDispatcher) {
-                    viewModel.uiState.collect { values.add(it) }
-                }
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                assertThat((awaitItem() as MainUiState.Success).themeMode).isEqualTo(ThemeMode.DARK)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
 
-            advanceUntilIdle()
-
-            val success = values.last() as MainUiState.Success
-            assertThat(success.themeMode).isEqualTo(ThemeMode.DARK)
-
-            job.cancel()
+    @Test
+    fun `emits Success with completed onboarding`() =
+        runTest {
+            every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(true)
+            val viewModel = createViewModel()
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                assertThat((awaitItem() as MainUiState.Success).isOnboardingCompleted).isTrue()
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -110,19 +112,13 @@ class MainViewModelTest {
 
             val viewModel = createViewModel()
 
-            val values = mutableListOf<MainUiState>()
-            val job =
-                backgroundScope.launch(testDispatcher) {
-                    viewModel.uiState.collect { values.add(it) }
-                }
-
-            advanceUntilIdle()
-
-            val success = values.last() as MainUiState.Success
-            assertThat(success.isRoutinesTabEnabled).isFalse()
-            assertThat(success.isTasksTabEnabled).isFalse()
-
-            job.cancel()
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                val success = awaitItem() as MainUiState.Success
+                assertThat(success.isRoutinesTabEnabled).isFalse()
+                assertThat(success.isTasksTabEnabled).isFalse()
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test
@@ -269,5 +265,6 @@ class MainViewModelTest {
             savedStateHandle = savedStateHandle,
             navigationPreferencesRepository = navigationPreferencesRepository,
             themePreferencesRepository = themePreferencesRepository,
+            onboardingPreferencesRepository = onboardingPreferencesRepository,
         )
 }

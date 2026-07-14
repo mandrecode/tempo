@@ -24,6 +24,7 @@ import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.model.MainUiState
+import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
 import com.mandrecode.tempo.core.ui.navigation.TasksRoute
@@ -79,13 +80,17 @@ class MainActivity : ComponentActivity() {
                 }
 
                 is MainUiState.Success -> {
+                    val navController = rememberNavController()
                     val startDestination =
                         remember(
                             state.defaultTab,
                             state.isRoutinesTabEnabled,
                             state.isTasksTabEnabled,
+                            state.isOnboardingCompleted,
                         ) {
                             when {
+                                !state.isOnboardingCompleted -> OnboardingRoute()
+
                                 state.defaultTab ==
                                     NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
                                     state.isRoutinesTabEnabled -> RoutinesRoute
@@ -115,7 +120,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background,
                         ) {
-                            val navController = rememberNavController()
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,
                                 navController = navController,

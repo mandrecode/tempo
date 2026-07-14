@@ -5,6 +5,8 @@ import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.CompletedTaskRetentionPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositoryImpl
+import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
+import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
@@ -43,6 +45,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindNavigationPreferencesRepository(impl: NavigationPreferencesRepositoryImpl): NavigationPreferencesRepository
+
+    @Binds
+    abstract fun bindOnboardingPreferencesRepository(impl: OnboardingPreferencesRepositoryImpl): OnboardingPreferencesRepository
 
     @Binds
     abstract fun bindAppPreferencesRepository(impl: AppPreferencesRepositoryImpl): AppPreferencesRepository
