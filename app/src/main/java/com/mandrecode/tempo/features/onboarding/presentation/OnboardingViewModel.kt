@@ -47,8 +47,8 @@ class OnboardingViewModel
                 OnboardingContract.UiEvent.FinishClicked,
                 -> completeOnboarding()
 
-                is OnboardingContract.UiEvent.TempoColorsSelected ->
-                    themePreferencesRepository.setUseTempoColors(event.enabled)
+                is OnboardingContract.UiEvent.UseTempoColorsToggled ->
+                    themePreferencesRepository.setUseTempoColors(event.useTempoColors)
 
                 is OnboardingContract.UiEvent.ThemeModeSelected ->
                     themePreferencesRepository.setThemeMode(event.mode)

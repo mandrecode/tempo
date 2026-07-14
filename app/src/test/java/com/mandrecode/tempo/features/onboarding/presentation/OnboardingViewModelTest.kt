@@ -89,10 +89,10 @@ class OnboardingViewModelTest {
     }
 
     @Test
-    fun givenAppearancePage_whenTempoColorsSelected_thenSettingsRepositoryIsUpdated() {
+    fun givenAppearancePage_whenUseTempoColorsToggled_thenSettingsRepositoryIsUpdated() {
         val viewModel = createViewModel()
 
-        viewModel.onEvent(OnboardingContract.UiEvent.TempoColorsSelected(false))
+        viewModel.onEvent(OnboardingContract.UiEvent.UseTempoColorsToggled(false))
 
         verify { themePreferencesRepository.setUseTempoColors(false) }
     }

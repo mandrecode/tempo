@@ -103,7 +103,7 @@ class OnboardingContentTest {
             InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.settings_color_scheme_dynamic)
         composeTestRule.onNode(hasText(dynamicLabel) and hasClickAction()).performClick()
 
-        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.TempoColorsSelected(false))
+        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.UseTempoColorsToggled(false))
     }
 
     @Test

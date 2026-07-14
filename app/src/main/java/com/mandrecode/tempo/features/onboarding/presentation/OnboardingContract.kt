@@ -30,8 +30,8 @@ object OnboardingContract {
 
         data object FinishClicked : UiEvent
 
-        data class TempoColorsSelected(
-            val enabled: Boolean,
+        data class UseTempoColorsToggled(
+            val useTempoColors: Boolean,
         ) : UiEvent
 
         data class ThemeModeSelected(

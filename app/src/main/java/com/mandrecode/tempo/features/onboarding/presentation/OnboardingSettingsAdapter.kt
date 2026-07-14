@@ -15,7 +15,7 @@ internal fun OnboardingContract.UiState.toSettingsUiState(): SettingsContract.Ui
 internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.UiEvent? =
     when (this) {
         is SettingsContract.UiEvent.ThemeModeSelected -> OnboardingContract.UiEvent.ThemeModeSelected(mode)
-        is SettingsContract.UiEvent.TempoColorsToggled -> OnboardingContract.UiEvent.TempoColorsSelected(enabled)
+        is SettingsContract.UiEvent.TempoColorsToggled -> OnboardingContract.UiEvent.UseTempoColorsToggled(enabled)
         is SettingsContract.UiEvent.RoutinesTabToggled -> OnboardingContract.UiEvent.RoutinesTabToggled(enabled)
         is SettingsContract.UiEvent.TasksTabToggled -> OnboardingContract.UiEvent.TasksTabToggled(enabled)
         is SettingsContract.UiEvent.DefaultTabSelected ->

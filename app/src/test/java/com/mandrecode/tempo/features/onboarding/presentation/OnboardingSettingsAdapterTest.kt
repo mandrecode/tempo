@@ -36,7 +36,7 @@ class OnboardingSettingsAdapterTest {
         assertThat(SettingsContract.UiEvent.ThemeModeSelected(ThemeMode.LIGHT).toOnboardingEvent())
             .isEqualTo(OnboardingContract.UiEvent.ThemeModeSelected(ThemeMode.LIGHT))
         assertThat(SettingsContract.UiEvent.TempoColorsToggled(true).toOnboardingEvent())
-            .isEqualTo(OnboardingContract.UiEvent.TempoColorsSelected(true))
+            .isEqualTo(OnboardingContract.UiEvent.UseTempoColorsToggled(true))
         assertThat(SettingsContract.UiEvent.RoutinesTabToggled(false).toOnboardingEvent())
             .isEqualTo(OnboardingContract.UiEvent.RoutinesTabToggled(false))
         assertThat(SettingsContract.UiEvent.TasksTabToggled(false).toOnboardingEvent())
