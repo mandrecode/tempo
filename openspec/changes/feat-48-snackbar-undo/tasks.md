@@ -42,3 +42,9 @@
 - [x] 6.1 Replace the stock Material snackbar composition with a Didi-equivalent custom surface, layout, typography, border, filled action, and pressed-corner animation, using Tempo-calibrated elevation.
 - [x] 6.2 Update previews and Compose UI assertions for the Didi-equivalent actionable and message-only states without changing Undo behavior or accessibility.
 - [x] 6.3 Run formatting, static analysis, unit/UI checks, and compare the resulting snackbar on the connected Pixel 7 against the Didi reference.
+
+## 7. Tempo visual integration
+
+- [x] 7.1 Soften the snackbar outline and elevation to match Tempo's flat tonal surfaces.
+- [x] 7.2 Replace the Didi-specific action shape animation with Tempo's shared pressable-button animation.
+- [x] 7.3 Run formatting, static analysis, focused UI tests, and inspect the result on the connected Pixel 7.

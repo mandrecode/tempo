@@ -22,7 +22,12 @@ The app SHALL render task and routine feedback through one shared snackbar prese
 #### Scenario: Didi source parity
 
 - **WHEN** the shared snackbar is rendered
-- **THEN** its container, content row, message, action surface, outline, spacing, and pressed-corner animation use the same Compose structure and values as Didi's reference snackbar, with elevation calibrated to Tempo's existing surfaces
+- **THEN** its container, content row, message, action surface, and spacing use Didi's reference structure and geometry, with surface emphasis and motion calibrated to Tempo's existing components
+
+#### Scenario: Tempo visual integration
+
+- **WHEN** the Didi-inspired snackbar is rendered in Tempo
+- **THEN** it retains Didi's layout and content geometry while using Tempo's subtle outline, low shadow, flat tonal treatment, and shared button press animation
 
 ### Requirement: Accessible localized snackbar action
 

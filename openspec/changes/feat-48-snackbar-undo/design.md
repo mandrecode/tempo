@@ -64,7 +64,13 @@ No Didi-specific colors or hardcoded user-facing strings will be introduced. The
 
 The visual reference is Didi's `DidiSnackbar` implementation in the sibling `Git/didi` checkout. Tempo's shared renderer will mirror that component's Compose structure and values: a custom `Surface` with 24dp horizontal and 8dp vertical outer padding, 560dp maximum width, 28dp corners, and a 1dp `outlineVariant` border. Its row uses 24dp horizontal and 16dp vertical content padding with 16dp spacing. The message uses `titleMedium`; the action uses a filled `primaryContainer` surface, `labelLarge` bold text, 24dp by 16dp padding, and Didi's spring-driven pressed-corner transition from 20dp to 12dp.
 
-The package name, active Tempo theme, and elevation are adapted. Tempo uses 3dp shadow and tonal elevation instead of Didi's 6dp so the snackbar remains consistent with Tempo's existing elevated surfaces. All component geometry, typography roles, border, action treatment, and interaction animation remain source-equivalent to Didi. Using the active theme keeps Tempo's brand and dynamic colors while reproducing Didi's design system rather than importing Didi-specific color constants.
+The package name, active Tempo theme, and elevation are adapted. The initial parity pass used 3dp shadow and tonal elevation instead of Didi's 6dp. Decision 7 supersedes the elevation, outline emphasis, and action animation values after in-app review; Didi's layout and content geometry remain the structural reference. Using the active theme keeps Tempo's brand and dynamic colors rather than importing Didi-specific color constants.
+
+### 7. Integrate the Didi structure with Tempo's flatter surface language
+
+After visual review on the Pixel 7, retain Didi's layout, typography, outer geometry, spacing, and filled action while using Tempo's established surface hierarchy. The snackbar uses `surfaceContainerHigh` directly with zero tonal elevation, a restrained 2dp shadow, and Tempo's subtle 1dp outline at 10% alpha. This keeps the transient surface distinguishable above content without making it read like a dialog.
+
+The action uses Tempo's shared `rememberPressableButtonAnimation`, giving it the same 24dp resting and 12dp pressed corners and 150ms tween as other Tempo buttons. Reusing this utility aligns motion and shape behavior across the app and removes a snackbar-specific animation implementation.
 
 ## Risks / Trade-offs
 
