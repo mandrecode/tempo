@@ -48,6 +48,11 @@ Selecting Undo SHALL atomically restore all persisted records captured for that 
 - **WHEN** the user selects Undo for a category deletion
 - **THEN** the category and all of its deleted tasks are restored and the previously selected category is selected when it is valid
 
+#### Scenario: An unselected category deletion is undone
+
+- **WHEN** the user deletes and restores a category other than the currently selected category
+- **THEN** the category that was selected before deletion remains selected
+
 #### Scenario: Completed-task deletion is undone
 
 - **WHEN** the user selects Undo for a completed-task deletion
@@ -110,6 +115,11 @@ After Undo commits restored data, the app SHALL reconcile reminders from that sn
 
 - **WHEN** an undone snapshot has no reminder or its reminder is past, completed, or otherwise ineligible under normal scheduling rules
 - **THEN** the app does not create an active reminder for that record
+
+#### Scenario: Chain deletion input is stale
+
+- **WHEN** the chain passed by the UI differs from the chain captured by the committed deletion snapshot
+- **THEN** reminder transfer and cancellation use the persisted chain values from the snapshot
 
 ### Requirement: Undo lifetime follows its snackbar
 

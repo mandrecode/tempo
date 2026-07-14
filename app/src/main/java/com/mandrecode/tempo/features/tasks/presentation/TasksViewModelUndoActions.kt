@@ -21,10 +21,16 @@ internal fun TasksViewModel.undoDeletion(token: Long) {
         try {
             val result =
                 when (pending) {
-                    is PendingTaskDeletion.Tasks -> requireNotNull(restoreDeletedTasksUseCase)(pending.snapshot)
+                    is PendingTaskDeletion.Tasks -> restoreDeletedTasksUseCase(pending.snapshot)
                     is PendingTaskDeletion.Category -> {
-                        requireNotNull(restoreDeletedCategoryUseCase)(pending.snapshot).also {
-                            selectCategory(pending.snapshot.category.id)
+                        restoreDeletedCategoryUseCase(pending.snapshot).also {
+                            val categoryId = pending.selectedCategoryIdBeforeDeletion
+                            val categoryIsValid =
+                                categoryId == pending.snapshot.category.id ||
+                                    mutableUiState.value.categories.any { it.id == categoryId }
+                            if (categoryIsValid) {
+                                selectCategory(categoryId)
+                            }
                         }
                     }
                 }

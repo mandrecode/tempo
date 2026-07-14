@@ -10,5 +10,6 @@ internal sealed interface PendingTaskDeletion {
 
     data class Category(
         val snapshot: CategoryDeletionSnapshot,
+        val selectedCategoryIdBeforeDeletion: Long,
     ) : PendingTaskDeletion
 }

@@ -84,6 +84,10 @@ Restore remains idempotent only when an existing row exactly matches the capture
 
 Habits preserved during a chain deletion are the exception because their rows were never deleted and their reminder values were deliberately changed by that operation. Those known rows continue to be updated from the snapshot. Rows actually deleted with the chain use the insert-or-exact-match rule.
 
+### 10. Treat committed snapshots as authoritative orchestration input
+
+Post-deletion scheduler work uses the chain returned in the committed repository snapshot rather than the potentially stale UI argument. Category deletion pending state also captures the selected category ID before any fallback is applied; Undo restores that selection only when the category is still valid or was restored by the same snapshot. Undo use cases are mandatory ViewModel dependencies so incomplete wiring fails at compile time rather than when the user selects Undo.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

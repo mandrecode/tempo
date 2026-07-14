@@ -37,8 +37,8 @@ class RoutinesViewModel
         internal val deleteHabitChainUseCase: DeleteHabitChainUseCase,
         internal val clearAllHabitRemindersUseCase: ClearAllHabitRemindersUseCase,
         internal val permissionChecker: PermissionChecker,
-        internal val restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase? = null,
-        internal val restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase? = null,
+        internal val restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase,
+        internal val restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(RoutinesContract.UiState())
         internal val mutableUiState: MutableStateFlow<RoutinesContract.UiState>

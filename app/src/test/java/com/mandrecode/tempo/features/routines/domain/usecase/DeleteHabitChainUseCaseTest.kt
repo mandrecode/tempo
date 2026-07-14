@@ -54,6 +54,24 @@ class DeleteHabitChainUseCaseTest {
         }
 
     @Test
+    fun `deleteHabits false uses persisted chain reminder when input is stale`() =
+        runTest {
+            val persistedReminder = LocalDateTime(2099, 6, 15, 10, 0)
+            val inputChain = chain(habitIds = listOf(1L), periodicReminder = null)
+            val persistedChain = inputChain.copy(periodicReminder = persistedReminder)
+            stubSnapshot(
+                chain = inputChain,
+                deletedHabits = false,
+                snapshotChain = persistedChain,
+            )
+
+            useCase(inputChain, deleteHabits = false)
+
+            coVerify { habitReminderScheduler.scheduleHabit(1L, persistedReminder) }
+            coVerify { habitReminderScheduler.cancelHabitChain(persistedChain) }
+        }
+
+    @Test
     fun `deleteHabits false without reminder does not transfer reminders`() =
         runTest {
             val chain = chain(habitIds = listOf(1L), periodicReminder = null)
@@ -91,12 +109,13 @@ class DeleteHabitChainUseCaseTest {
     private fun stubSnapshot(
         chain: HabitChain,
         deletedHabits: Boolean,
+        snapshotChain: HabitChain = chain,
     ) {
         coEvery { habitChainRepository.deleteHabitChainWithSnapshot(chain.id, deletedHabits) } returns
             HabitChainDeletionSnapshot(
-                chain = chain,
+                chain = snapshotChain,
                 habitsBeforeDeletion = emptyList(),
-                affectedChains = listOf(chain),
+                affectedChains = listOf(snapshotChain),
                 deletedHabits = deletedHabits,
             )
     }

@@ -54,8 +54,8 @@ class TasksViewModel
         internal val permissionChecker: PermissionChecker,
         internal val tasksScreenPreferencesRepository: TasksScreenPreferencesRepository,
         @DefaultDispatcher internal val defaultDispatcher: CoroutineDispatcher,
-        internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase? = null,
-        internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase? = null,
+        internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
+        internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
 

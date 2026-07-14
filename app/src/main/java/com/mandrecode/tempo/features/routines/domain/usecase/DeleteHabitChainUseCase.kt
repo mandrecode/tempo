@@ -17,7 +17,8 @@ class DeleteHabitChainUseCase
             deleteHabits: Boolean,
         ): HabitChainDeletionSnapshot {
             val snapshot = habitChainRepository.deleteHabitChainWithSnapshot(habitChain.id, deleteHabits)
-            val habitIds = snapshot.chain.habitIds
+            val persistedChain = snapshot.chain
+            val habitIds = persistedChain.habitIds
 
             if (deleteHabits) {
                 if (habitIds.isNotEmpty()) {
@@ -26,14 +27,14 @@ class DeleteHabitChainUseCase
                     }
                 }
             } else {
-                if (habitIds.isNotEmpty() && habitChain.periodicReminder != null) {
+                if (habitIds.isNotEmpty() && persistedChain.periodicReminder != null) {
                     habitIds.forEach { habitId ->
-                        habitReminderScheduler.scheduleHabit(habitId, habitChain.periodicReminder)
+                        habitReminderScheduler.scheduleHabit(habitId, persistedChain.periodicReminder)
                     }
                 }
             }
 
-            habitReminderScheduler.cancelHabitChain(habitChain)
+            habitReminderScheduler.cancelHabitChain(persistedChain)
             return snapshot
         }
     }

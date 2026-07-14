@@ -61,3 +61,10 @@
 - [x] 9.2 Preserve deliberate reminder restoration for habits that were not deleted with their chain.
 - [x] 9.3 Add unit and Room integration tests for ID-reuse conflicts, idempotent retry, and transaction rollback.
 - [x] 9.4 Run formatting, static analysis, unit/instrumented tests, and OpenSpec validation.
+
+## 10. Copilot review follow-up: authoritative undo state
+
+- [x] 10.1 Drive chain reminder transfer and cancellation from the committed deletion snapshot and cover stale UI input.
+- [x] 10.2 Preserve the category selection that was active before deletion and cover undoing an unselected category.
+- [x] 10.3 Make all Tasks and Routines restore use cases required ViewModel dependencies.
+- [x] 10.4 Run formatting, static analysis, unit tests, build, and OpenSpec validation.

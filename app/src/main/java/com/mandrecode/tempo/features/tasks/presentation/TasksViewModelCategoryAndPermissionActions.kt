@@ -132,6 +132,7 @@ internal fun TasksViewModel.cancelDeleteCategory() {
 }
 
 internal fun TasksViewModel.deleteCategory(category: Category) {
+    val selectedCategoryIdBeforeDeletion = mutableUiState.value.selectedCategoryId
     viewModelScope.launch {
         try {
             when (val result = deleteCategoryUseCase(category)) {
@@ -157,13 +158,14 @@ internal fun TasksViewModel.deleteCategory(category: Category) {
 
                 is DeleteCategoryUseCase.Result.Success -> {
                     val fallbackId =
-                        mutableUiState.value.categories
-                            .firstOrNull { it.id != category.id }
-                            ?.id
-                            ?: mutableUiState.value.categories
-                                .firstOrNull()
+                        if (selectedCategoryIdBeforeDeletion != category.id) {
+                            selectedCategoryIdBeforeDeletion
+                        } else {
+                            mutableUiState.value.categories
+                                .firstOrNull { it.id != category.id }
                                 ?.id
-                            ?: 0L
+                                ?: 0L
+                        }
                     val sortOption =
                         tasksScreenPreferencesRepository.getSortOption(fallbackId)
                     mutableUiState.update {
@@ -177,7 +179,10 @@ internal fun TasksViewModel.deleteCategory(category: Category) {
                     }
                     val token =
                         storePendingDeletion(
-                            PendingTaskDeletion.Category(result.snapshot),
+                            PendingTaskDeletion.Category(
+                                snapshot = result.snapshot,
+                                selectedCategoryIdBeforeDeletion = selectedCategoryIdBeforeDeletion,
+                            ),
                         )
                     showSnackbar(
                         messageResId = R.string.msg_category_deleted_success,

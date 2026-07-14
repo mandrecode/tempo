@@ -21,9 +21,9 @@ internal fun RoutinesViewModel.undoDeletion(token: Long) {
         try {
             val result =
                 when (pending) {
-                    is PendingRoutineDeletion.Habit -> requireNotNull(restoreDeletedHabitUseCase)(pending.snapshot)
+                    is PendingRoutineDeletion.Habit -> restoreDeletedHabitUseCase(pending.snapshot)
                     is PendingRoutineDeletion.HabitChain ->
-                        requireNotNull(restoreDeletedHabitChainUseCase)(pending.snapshot)
+                        restoreDeletedHabitChainUseCase(pending.snapshot)
                 }
             pendingDeletionSnapshots.remove(token)
             showSnackbar(
