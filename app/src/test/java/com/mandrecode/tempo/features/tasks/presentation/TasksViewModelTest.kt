@@ -1050,6 +1050,33 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `unchecking archived periodic occurrence expands task without snackbar`() =
+        runTest {
+            val task =
+                Task(
+                    id = 1,
+                    title = "Archived periodic",
+                    description = "",
+                    isCompleted = true,
+                    reminderDate = LocalDateTime(2024, 1, 1, 10, 0),
+                    nextInstanceId = 42L,
+                )
+            coEvery { toggleTaskCompletionUseCase.invoke(task) } returns
+                ToggleTaskCompletionUseCase.Result.ParentToggled(
+                    isCompleted = false,
+                    updateResult = UpdateTaskUseCase.Result.Success(ScheduleResult.Skipped),
+                )
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch { viewModel.uiEffect.toList(effects) }
+
+            viewModel.onEvent(TasksContract.UiEvent.ToggleTaskCompletion(task))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.expandedTaskIds).contains(task.id)
+            assertThat(effects.filterIsInstance<TasksContract.UiEffect.ShowSnackbar>()).isEmpty()
+        }
+
+    @Test
     fun `hideTaskDialog resets task dialog state`() =
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
