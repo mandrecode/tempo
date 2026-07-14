@@ -53,6 +53,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -76,6 +77,10 @@ private val SubtaskFallbackItemHeight = 68.dp
 internal const val CARD_CONTENT_ANIM_DURATION_MS = 200
 internal const val TASK_METADATA_COMPLETED_DATE_TAG = "task_metadata_completed_date"
 internal const val TASK_METADATA_REMINDER_DATE_TAG = "task_metadata_reminder_date"
+internal const val TASK_COMPLETION_CONTROL_TAG = "task_completion_control"
+internal const val TASK_CONTENT_TAG = "task_content"
+internal const val TASK_TRAILING_ACTIONS_TAG = "task_trailing_actions"
+internal const val TASK_DESCRIPTION_TAG = "task_description"
 
 // Asymmetric fade durations for the SubtaskMetadataRow appearance/disappearance:
 // fade-in is slightly slower so the badge feels like it settles into place, while
@@ -94,12 +99,13 @@ fun TaskItem(
     onReorderSubtasks: (fromIndex: Int, toIndex: Int, subtasks: List<Task>) -> Unit = { _, _, _ -> },
     subtasks: List<Task> = emptyList(),
     isSubtasksExpanded: Boolean = true,
+    initialDescriptionExpanded: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
     val sanitizedDescription = remember(task.description) { sanitizeDescription(task.description) }
 
-    var isDescriptionExpanded by remember { mutableStateOf(false) }
+    var isDescriptionExpanded by remember(task.id) { mutableStateOf(initialDescriptionExpanded) }
 
     val cardColor by animateColorAsState(
         targetValue =
@@ -185,11 +191,12 @@ fun TaskItem(
                     Modifier
                         .fillMaxWidth()
                         .padding(cardContentPadding),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
                 Box(
                     modifier =
                         Modifier
+                            .testTag(TASK_COMPLETION_CONTROL_TAG)
                             .size(48.dp)
                             .graphicsLayer {
                                 scaleX = checkboxScale
@@ -241,6 +248,7 @@ fun TaskItem(
                 Column(
                     modifier =
                         Modifier
+                            .testTag(TASK_CONTENT_TAG)
                             .weight(1f)
                             .animateContentSize(animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS)),
                 ) {
@@ -280,6 +288,7 @@ fun TaskItem(
                                         },
                                     maxLines = if (isDescriptionExpanded) Int.MAX_VALUE else 1,
                                     overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.testTag(TASK_DESCRIPTION_TAG),
                                     onTextLayout = { textLayoutResult ->
                                         isDescriptionOverflowing =
                                             if (isDescriptionExpanded) {
@@ -318,6 +327,7 @@ fun TaskItem(
                     if (subtasks.isNotEmpty()) isSubtasksExpanded else isDescriptionExpanded
 
                 Row(
+                    modifier = Modifier.testTag(TASK_TRAILING_ACTIONS_TAG),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (showExpandButton) {

@@ -216,6 +216,33 @@ private fun TaskItemWithLongDescriptionPreview() {
     }
 }
 
+@Preview(name = "Light - Expanded", showBackground = true, device = "id:pixel_9")
+@Preview(
+    name = "Dark - Expanded",
+    showBackground = true,
+    device = "id:pixel_9",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun TaskItemWithExpandedLongDescriptionPreview() {
+    TempoTheme {
+        TaskItem(
+            task =
+                Task(
+                    id = 5,
+                    title = "Write documentation",
+                    description =
+                        "This is a very long description that should wrap across multiple lines while " +
+                            "the completion control and trailing actions remain aligned to the top.",
+                ),
+            onToggleCompletion = {},
+            onEdit = {},
+            initialDescriptionExpanded = true,
+            modifier = Modifier.padding(8.dp),
+        )
+    }
+}
+
 @Preview(name = "Light", showBackground = true, device = "id:pixel_9")
 @Preview(
     name = "Dark",
