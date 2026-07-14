@@ -11,5 +11,6 @@ sealed interface MainUiState {
         val defaultTab: String,
         val isRoutinesTabEnabled: Boolean,
         val isTasksTabEnabled: Boolean,
+        val isOnboardingCompleted: Boolean,
     ) : MainUiState
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -25,11 +26,12 @@ class MainViewModel
         private val savedStateHandle: SavedStateHandle,
         navigationPreferencesRepository: NavigationPreferencesRepository,
         themePreferencesRepository: ThemePreferencesRepository,
+        onboardingPreferencesRepository: OnboardingPreferencesRepository,
     ) : ViewModel() {
         private val _pendingNotificationAction = MutableStateFlow(readPendingNotificationAction())
         val pendingNotificationAction: StateFlow<PendingNotificationAction?> = _pendingNotificationAction.asStateFlow()
 
-        val uiState: StateFlow<MainUiState> =
+        private val mainPreferences =
             combine(
                 themePreferencesRepository.getThemeMode(),
                 themePreferencesRepository.getUseTempoColors(),
@@ -43,7 +45,16 @@ class MainViewModel
                     defaultTab = defaultTab,
                     isRoutinesTabEnabled = isRoutinesTabEnabled,
                     isTasksTabEnabled = isTasksTabEnabled,
+                    isOnboardingCompleted = false,
                 )
+            }
+
+        val uiState: StateFlow<MainUiState> =
+            combine(
+                mainPreferences,
+                onboardingPreferencesRepository.isCompleted,
+            ) { state, isOnboardingCompleted ->
+                state.copy(isOnboardingCompleted = isOnboardingCompleted)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),

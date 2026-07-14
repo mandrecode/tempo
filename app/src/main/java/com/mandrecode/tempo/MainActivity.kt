@@ -10,6 +10,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -24,6 +25,7 @@ import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.model.MainUiState
+import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
 import com.mandrecode.tempo.core.ui.navigation.TasksRoute
@@ -79,28 +81,8 @@ class MainActivity : ComponentActivity() {
                 }
 
                 is MainUiState.Success -> {
-                    val startDestination =
-                        remember(
-                            state.defaultTab,
-                            state.isRoutinesTabEnabled,
-                            state.isTasksTabEnabled,
-                        ) {
-                            when {
-                                state.defaultTab ==
-                                    NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
-                                    state.isRoutinesTabEnabled -> RoutinesRoute
-
-                                state.defaultTab ==
-                                    NavigationPreferencesRepository.DEFAULT_TAB_TASKS &&
-                                    state.isTasksTabEnabled -> TasksRoute
-
-                                state.isRoutinesTabEnabled -> RoutinesRoute
-
-                                state.isTasksTabEnabled -> TasksRoute
-
-                                else -> RoutinesRoute
-                            }
-                        }
+                    val navController = rememberNavController()
+                    val startDestination = rememberStartDestination(state)
 
                     TempoTheme(
                         darkTheme =
@@ -115,7 +97,6 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.background,
                         ) {
-                            val navController = rememberNavController()
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,
                                 navController = navController,
@@ -234,3 +215,21 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
     }
 }
+
+@Composable
+internal fun rememberStartDestination(state: MainUiState.Success): Any =
+    remember {
+        when {
+            !state.isOnboardingCompleted -> OnboardingRoute()
+
+            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
+                state.isRoutinesTabEnabled -> RoutinesRoute
+
+            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_TASKS &&
+                state.isTasksTabEnabled -> TasksRoute
+
+            state.isRoutinesTabEnabled -> RoutinesRoute
+            state.isTasksTabEnabled -> TasksRoute
+            else -> RoutinesRoute
+        }
+    }

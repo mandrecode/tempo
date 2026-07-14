@@ -17,7 +17,13 @@ class CompletedTaskRetentionPreferencesImpl
         @ApplicationContext context: Context,
     ) : CompletedTaskRetentionPreferences {
         private val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        private val enabledFlow = MutableStateFlow(prefs.getBoolean(KEY_ENABLED, false))
+        private val enabledFlow =
+            MutableStateFlow(
+                prefs.getBoolean(
+                    KEY_ENABLED,
+                    CompletedTaskRetentionPreferences.DEFAULT_ENABLED,
+                ),
+            )
         private val retentionDaysFlow = MutableStateFlow(readRetentionDays())
 
         override val isEnabled: StateFlow<Boolean> = enabledFlow.asStateFlow()
