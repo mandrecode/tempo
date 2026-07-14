@@ -86,6 +86,7 @@ internal fun TempoModalSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnsavedChanges: Boolean = false,
+    dragToDismissEnabled: Boolean = true,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     val state = rememberTempoModalSheetState(direction, onDismissRequest, hasUnsavedChanges)
@@ -118,6 +119,7 @@ internal fun TempoModalSheet(
         TempoModalSheetDialogContent(
             state = state,
             modifier = modifier,
+            dragToDismissEnabled = dragToDismissEnabled,
             content = content,
         )
     }
@@ -126,6 +128,7 @@ internal fun TempoModalSheet(
 @Composable
 private fun TempoModalSheetDialogContent(
     state: TempoModalSheetState,
+    dragToDismissEnabled: Boolean,
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
@@ -161,6 +164,7 @@ private fun TempoModalSheetDialogContent(
     ) {
         TempoModalSheetSurface(
             state = state,
+            dragToDismissEnabled = dragToDismissEnabled,
             content = content,
         )
     }
@@ -169,6 +173,7 @@ private fun TempoModalSheetDialogContent(
 @Composable
 private fun BoxScope.TempoModalSheetSurface(
     state: TempoModalSheetState,
+    dragToDismissEnabled: Boolean,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     Surface(
@@ -193,6 +198,7 @@ private fun BoxScope.TempoModalSheetSurface(
     ) {
         TempoModalSheetColumn(
             state = state,
+            dragToDismissEnabled = dragToDismissEnabled,
             content = content,
         )
     }
@@ -201,6 +207,7 @@ private fun BoxScope.TempoModalSheetSurface(
 @Composable
 private fun TempoModalSheetColumn(
     state: TempoModalSheetState,
+    dragToDismissEnabled: Boolean,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     LayoutBox(
@@ -223,6 +230,7 @@ private fun TempoModalSheetColumn(
         }
         TempoModalSheetDragHandle(
             state = state,
+            dragToDismissEnabled = dragToDismissEnabled,
             modifier =
                 Modifier.align(
                     if (state.direction == TempoModalSheetDirection.Bottom) {
@@ -390,6 +398,7 @@ private fun TempoModalSheetWindowEffects() {
 @Composable
 private fun TempoModalSheetDragHandle(
     state: TempoModalSheetState,
+    dragToDismissEnabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
@@ -405,7 +414,13 @@ private fun TempoModalSheetDragHandle(
                         state.onRequestDismiss()
                         true
                     }
-                }.pointerInputForSheetDrag(state, scope),
+                }.then(
+                    if (dragToDismissEnabled) {
+                        Modifier.pointerInputForSheetDrag(state, scope)
+                    } else {
+                        Modifier
+                    },
+                ),
         contentAlignment =
             if (state.direction == TempoModalSheetDirection.Bottom) {
                 Alignment.TopCenter

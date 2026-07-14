@@ -294,6 +294,7 @@ internal fun TaskBottomSheetContent(
         onDismissRequest = onSheetDismissRequest,
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && taskTitle.isNotBlank()) false else hasUnsavedChanges,
+        dragToDismissEnabled = false,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(
@@ -340,7 +341,11 @@ internal fun TaskBottomSheetContent(
                             }
                         },
                         onTaskDescriptionChanged = {
-                            taskDescription = it
+                            taskDescription =
+                                applyTaskDescriptionDashFormatting(
+                                    previousValue = taskDescription,
+                                    proposedValue = it,
+                                )
                             onClearErrors()
                         },
                         onSelectCategory = { selectedCategoryId = it },
