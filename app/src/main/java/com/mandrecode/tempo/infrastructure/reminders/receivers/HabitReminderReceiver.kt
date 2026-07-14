@@ -56,34 +56,18 @@ class HabitReminderReceiver : BroadcastReceiver() {
         CoroutineScope(ioDispatcher).launch {
             try {
                 if (isChain) {
-                    val chainId = intent.getLongExtra(EXTRA_HABIT_CHAIN_ID, -1L)
-                    if (chainId != -1L) {
-                        val habitChain = habitChainRepository.getHabitChainById(chainId)
-                        if (habitChain != null) {
-                            val scheduledDate =
-                                habitChain.periodicReminder?.date
-                                    ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
-                            showHabitChainNotification(
-                                context,
-                                habitChain.id,
-                                habitChain.title,
-                                habitChain.description,
-                                scheduledDate,
-                            )
-                            rescheduleHabitChain(habitChain)
-                        }
-                    }
+                    handleChainReminder(context, intent)
                 } else {
                     val habitId = intent.getLongExtra(EXTRA_HABIT_ID, -1L)
                     if (habitId != -1L) {
                         val habit = habitRepository.getHabitById(habitId)
                         if (habit != null) {
                             val scheduledDate =
-                                intent
-                                    .getStringExtra(EXTRA_SCHEDULED_DATE)
-                                    ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
-                                    ?: habit.reminderDate?.date
-                                    ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
+                                resolveScheduledDate(
+                                    intent.getStringExtra(EXTRA_SCHEDULED_DATE),
+                                    habit.reminderDate?.date
+                                        ?: Clock.System.todayIn(TimeZone.currentSystemDefault()),
+                                )
                             if (shouldShowHabitReminder(habit, scheduledDate)) {
                                 showHabitNotification(
                                     context,
@@ -103,6 +87,43 @@ class HabitReminderReceiver : BroadcastReceiver() {
             }
         }
     }
+
+    private suspend fun handleChainReminder(
+        context: Context,
+        intent: Intent,
+    ) {
+        val chainId = intent.getLongExtra(EXTRA_HABIT_CHAIN_ID, -1L)
+        if (chainId == -1L) return
+
+        val habitChain = habitChainRepository.getHabitChainById(chainId) ?: return
+        val fallbackDate =
+            habitChain.periodicReminder?.date
+                ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
+        val scheduledDate =
+            resolveScheduledDate(
+                intent.getStringExtra(EXTRA_SCHEDULED_DATE),
+                fallbackDate,
+            )
+        val chainHabits = getChainHabits(habitChain.habitIds)
+        if (shouldShowHabitChainReminder(chainHabits, scheduledDate)) {
+            showHabitChainNotification(
+                context,
+                habitChain.id,
+                habitChain.title,
+                habitChain.description,
+                scheduledDate,
+            )
+        }
+        rescheduleHabitChain(habitChain)
+    }
+
+    @VisibleForTesting
+    internal suspend fun getChainHabits(habitIds: List<Long>): List<Habit> =
+        if (habitIds.isEmpty()) {
+            emptyList()
+        } else {
+            habitRepository.getHabitsByIds(habitIds)
+        }
 
     private suspend fun rescheduleHabit(habit: Habit) {
         val nextReminderDate =
@@ -284,6 +305,24 @@ class HabitReminderReceiver : BroadcastReceiver() {
             habit: Habit,
             scheduledDate: LocalDate,
         ): Boolean = !CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+
+        @VisibleForTesting
+        internal fun shouldShowHabitChainReminder(
+            habits: List<Habit>,
+            scheduledDate: LocalDate,
+        ): Boolean =
+            habits.none { habit ->
+                CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+            }
+
+        @VisibleForTesting
+        internal fun resolveScheduledDate(
+            scheduledDateExtra: String?,
+            fallbackDate: LocalDate,
+        ): LocalDate =
+            scheduledDateExtra
+                ?.let { runCatching { LocalDate.parse(it) }.getOrNull() }
+                ?: fallbackDate
 
         /**
          * Returns the notification content text for a habit reminder.
