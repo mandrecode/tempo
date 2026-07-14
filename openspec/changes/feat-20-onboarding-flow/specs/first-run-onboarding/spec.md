@@ -24,7 +24,7 @@ The onboarding flow SHALL present tasks and categories before routines and remin
 
 #### Scenario: Final welcome
 - **WHEN** the user advances from the configuration page
-- **THEN** a final page displays the Tempo logo and app name centered in the available content area
+- **THEN** a final page displays the unmodified default Tempo launcher logo and app name centered in the available content area
 
 ### Requirement: Skippable and navigable flow
 The onboarding flow SHALL expose Skip on every page, Back after the first page, and a forward action until the final page.

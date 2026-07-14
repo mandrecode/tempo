@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.onboarding.presentation
 
+import android.widget.ImageView
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.fadeIn
@@ -7,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -35,12 +34,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.viewinterop.AndroidView
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.settings.presentation.ColorSchemeSection
 import com.mandrecode.tempo.features.settings.presentation.ThemeSection
@@ -145,19 +144,20 @@ internal fun OnboardingWelcomePage(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        Surface(
-            shape = CircleShape,
-            color = colorResource(R.color.ic_launcher_background),
-        ) {
-            Image(
-                painter = painterResource(R.drawable.ic_launcher_foreground),
-                contentDescription = stringResource(R.string.app_name),
-                modifier =
-                    Modifier
-                        .size(if (layout.isShort) 96.dp else 144.dp)
-                        .testTag(OnboardingTestTags.WELCOME_LOGO),
-            )
-        }
+        val appName = stringResource(R.string.app_name)
+        AndroidView(
+            factory = { context ->
+                ImageView(context).apply {
+                    setImageResource(R.mipmap.ic_launcher)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                }
+            },
+            update = { imageView -> imageView.contentDescription = appName },
+            modifier =
+                Modifier
+                    .size(if (layout.isShort) 96.dp else 144.dp)
+                    .testTag(OnboardingTestTags.WELCOME_LOGO),
+        )
         Text(
             text = stringResource(R.string.app_name),
             style =

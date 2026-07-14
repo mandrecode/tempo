@@ -31,3 +31,4 @@
 - [x] 4.10 Add a centered Tempo logo and app-name welcome page as the final onboarding step
 - [x] 4.11 Animate the welcome-to-app handoff with a route-scoped fade-through scale transition
 - [x] 4.12 Keep automatic completed-task removal disabled when no preference has been saved
+- [x] 4.13 Render the unmodified default app launcher logo on the final welcome page
