@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -99,7 +101,7 @@ class OnboardingContentTest {
 
         val dynamicLabel =
             InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.settings_color_scheme_dynamic)
-        composeTestRule.onNodeWithText(dynamicLabel).performClick()
+        composeTestRule.onNode(hasText(dynamicLabel) and hasClickAction()).performClick()
 
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.TempoColorsSelected(false))
     }

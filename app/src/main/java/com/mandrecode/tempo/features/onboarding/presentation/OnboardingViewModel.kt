@@ -158,6 +158,7 @@ class OnboardingViewModel
                 defaultTab == OnboardingContract.DefaultTab.ROUTINES && isRoutinesTabEnabled -> defaultTab
                 defaultTab == OnboardingContract.DefaultTab.TASKS && isTasksTabEnabled -> defaultTab
                 isRoutinesTabEnabled -> OnboardingContract.DefaultTab.ROUTINES
-                else -> OnboardingContract.DefaultTab.TASKS
+                isTasksTabEnabled -> OnboardingContract.DefaultTab.TASKS
+                else -> OnboardingContract.DefaultTab.ROUTINES
             }
     }

@@ -80,6 +80,24 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun givenOnboardingAlreadyStarted_whenCreated_thenCurrentColorsArePreserved() {
+        every { onboardingPreferencesRepository.markStarted() } returns false
+
+        createViewModel()
+
+        verify(exactly = 0) { themePreferencesRepository.setUseTempoColors(any()) }
+    }
+
+    @Test
+    fun givenAppearancePage_whenTempoColorsSelected_thenSettingsRepositoryIsUpdated() {
+        val viewModel = createViewModel()
+
+        viewModel.onEvent(OnboardingContract.UiEvent.TempoColorsSelected(false))
+
+        verify { themePreferencesRepository.setUseTempoColors(false) }
+    }
+
+    @Test
     fun givenAppearancePage_whenThemeModeSelected_thenSettingsRepositoryIsUpdated() {
         val viewModel = createViewModel()
 
@@ -98,6 +116,20 @@ class OnboardingViewModelTest {
 
             viewModel.onEvent(OnboardingContract.UiEvent.BackClicked)
             assertThat(viewModel.uiState.value.currentPage).isEqualTo(0)
+        }
+
+    @Test
+    fun givenPageBoundary_whenNavigatingPastIt_thenPageRemainsInBounds() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onEvent(OnboardingContract.UiEvent.BackClicked)
+            assertThat(viewModel.uiState.value.currentPage).isEqualTo(0)
+
+            repeat(OnboardingContract.PAGE_COUNT + 1) {
+                viewModel.onEvent(OnboardingContract.UiEvent.NextClicked)
+            }
+            assertThat(viewModel.uiState.value.currentPage).isEqualTo(OnboardingContract.PAGE_COUNT - 1)
         }
 
     @Test
@@ -121,6 +153,48 @@ class OnboardingViewModelTest {
             viewModel.onEvent(OnboardingContract.UiEvent.RoutinesTabToggled(false))
 
             verify { navigationPreferencesRepository.setRoutinesTabEnabled(false) }
+            verify { navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_TASKS) }
+        }
+
+    @Test
+    fun givenOnlyTasksEnabled_whenTasksDisabled_thenInvariantPreventsWrite() =
+        runTest {
+            routinesEnabled.value = false
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(OnboardingContract.UiEvent.TasksTabToggled(false))
+
+            verify(exactly = 0) { navigationPreferencesRepository.setTasksTabEnabled(false) }
+        }
+
+    @Test
+    fun givenTasksAreDefault_whenTasksDisabled_thenDefaultMovesToRoutines() =
+        runTest {
+            defaultTab.value = DEFAULT_TAB_TASKS
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(OnboardingContract.UiEvent.TasksTabToggled(false))
+
+            verify { navigationPreferencesRepository.setTasksTabEnabled(false) }
+            verify { navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_ROUTINES) }
+        }
+
+    @Test
+    fun givenEnabledTabs_whenSelectedAsDefault_thenBothSelectionsArePersisted() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(
+                OnboardingContract.UiEvent.DefaultTabSelected(OnboardingContract.DefaultTab.ROUTINES),
+            )
+            viewModel.onEvent(
+                OnboardingContract.UiEvent.DefaultTabSelected(OnboardingContract.DefaultTab.TASKS),
+            )
+
+            verify { navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_ROUTINES) }
             verify { navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_TASKS) }
         }
 
@@ -153,6 +227,41 @@ class OnboardingViewModelTest {
                 cancelAndIgnoreRemainingEvents()
             }
             verify { onboardingPreferencesRepository.setCompleted() }
+        }
+
+    @Test
+    fun givenCorruptedStateWithNoEnabledTabs_whenFinished_thenRoutinesFallbackIsEmitted() =
+        runTest {
+            routinesEnabled.value = false
+            tasksEnabled.value = false
+            defaultTab.value = DEFAULT_TAB_TASKS
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
+
+                assertThat(awaitItem())
+                    .isEqualTo(OnboardingContract.UiEffect.Exit(OnboardingContract.DefaultTab.ROUTINES))
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun givenDisabledStoredDefault_whenFinished_thenEnabledTabFallbackIsEmitted() =
+        runTest {
+            routinesEnabled.value = false
+            defaultTab.value = DEFAULT_TAB_ROUTINES
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
+
+                assertThat(awaitItem())
+                    .isEqualTo(OnboardingContract.UiEffect.Exit(OnboardingContract.DefaultTab.TASKS))
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     private fun createViewModel(): OnboardingViewModel =

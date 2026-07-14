@@ -22,6 +22,10 @@ The onboarding flow SHALL present the benefits of tasks and categories before th
 - **WHEN** the routines and reminders page is displayed
 - **THEN** the app explains reminder behavior without requesting notification permission
 
+#### Scenario: Education card contrast
+- **WHEN** task, category, routine, or reminder concepts are displayed
+- **THEN** their cards use the same neutral `surfaceContainer` contrast role as cards elsewhere in the app
+
 #### Scenario: Final welcome
 - **WHEN** the user advances from the configuration page
 - **THEN** a final page displays the unmodified default Tempo launcher logo and app name centered in the available content area

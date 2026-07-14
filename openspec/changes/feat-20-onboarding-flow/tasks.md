@@ -35,3 +35,4 @@
 - [x] 4.14 Remove the redundant Skip action from the final welcome page
 - [x] 4.15 Keep completed-task retention controls exclusively in Settings
 - [x] 4.16 Sharpen the English and Spanish education pages around user benefits
+- [x] 4.17 Match onboarding concept-card contrast to the app's neutral `surfaceContainer` card role

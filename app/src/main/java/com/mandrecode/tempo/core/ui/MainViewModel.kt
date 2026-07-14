@@ -31,7 +31,7 @@ class MainViewModel
         private val _pendingNotificationAction = MutableStateFlow(readPendingNotificationAction())
         val pendingNotificationAction: StateFlow<PendingNotificationAction?> = _pendingNotificationAction.asStateFlow()
 
-        val mainPreferences =
+        private val mainPreferences =
             combine(
                 themePreferencesRepository.getThemeMode(),
                 themePreferencesRepository.getUseTempoColors(),
