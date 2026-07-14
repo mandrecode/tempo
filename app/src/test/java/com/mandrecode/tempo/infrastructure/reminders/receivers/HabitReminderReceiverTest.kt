@@ -72,6 +72,48 @@ class HabitReminderReceiverTest {
     }
 
     @Test
+    fun `shouldShowHabitChainReminder returns true when chain has not started`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = ""),
+                habit(id = 2L, completionHistory = "2029-12-31"),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns false when chain was started manually`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = "2030-01-01"),
+                habit(id = 2L, completionHistory = ""),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns true when completion belongs to another date`() {
+        val scheduledDate = LocalDateTime(2030, 1, 1, 8, 0).date
+        val habits =
+            listOf(
+                habit(id = 1L, completionHistory = "2030-01-02"),
+                habit(id = 2L, completionHistory = "2029-12-31"),
+            )
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
     fun `buildHabitNotificationContentText returns quit-specific copy for QUIT habits`() {
         val expected = "Still going strong? Check off Smoking"
         every {
@@ -146,4 +188,16 @@ class HabitReminderReceiverTest {
         verify { context.getString(R.string.mark_as_completed) }
         verify(exactly = 0) { context.getString(R.string.still_on_track) }
     }
+
+    private fun habit(
+        id: Long,
+        completionHistory: String,
+    ) = Habit(
+        id = id,
+        title = "Habit $id",
+        description = "",
+        reminderDate = null,
+        createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+        completionHistory = completionHistory,
+    )
 }

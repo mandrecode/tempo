@@ -63,13 +63,16 @@ class HabitReminderReceiver : BroadcastReceiver() {
                             val scheduledDate =
                                 habitChain.periodicReminder?.date
                                     ?: Clock.System.todayIn(TimeZone.currentSystemDefault())
-                            showHabitChainNotification(
-                                context,
-                                habitChain.id,
-                                habitChain.title,
-                                habitChain.description,
-                                scheduledDate,
-                            )
+                            val chainHabits = habitRepository.getHabitsByIds(habitChain.habitIds)
+                            if (shouldShowHabitChainReminder(chainHabits, scheduledDate)) {
+                                showHabitChainNotification(
+                                    context,
+                                    habitChain.id,
+                                    habitChain.title,
+                                    habitChain.description,
+                                    scheduledDate,
+                                )
+                            }
                             rescheduleHabitChain(habitChain)
                         }
                     }
@@ -284,6 +287,15 @@ class HabitReminderReceiver : BroadcastReceiver() {
             habit: Habit,
             scheduledDate: LocalDate,
         ): Boolean = !CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+
+        @VisibleForTesting
+        internal fun shouldShowHabitChainReminder(
+            habits: List<Habit>,
+            scheduledDate: LocalDate,
+        ): Boolean =
+            habits.none { habit ->
+                CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+            }
 
         /**
          * Returns the notification content text for a habit reminder.
