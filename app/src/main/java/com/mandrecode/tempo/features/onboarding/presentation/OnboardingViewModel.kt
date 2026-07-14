@@ -33,13 +33,6 @@ class OnboardingViewModel
         val uiEffect = effectChannel.receiveAsFlow()
 
         init {
-            if (
-                !onboardingPreferencesRepository.isCompleted.value &&
-                onboardingPreferencesRepository.markStarted() &&
-                !themePreferencesRepository.hasSavedUseTempoColors()
-            ) {
-                themePreferencesRepository.setUseTempoColors(true)
-            }
             observePreferences()
         }
 

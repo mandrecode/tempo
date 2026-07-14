@@ -50,15 +50,6 @@ class OnboardingPreferencesRepositoryTest {
     }
 
     @Test
-    fun givenOnboardingHasNotStarted_whenMarkedStartedTwice_thenOnlyFirstCallReturnsTrue() {
-        every { preferences.getBoolean("started", false) } returnsMany listOf(false, true)
-
-        assertThat(repository.markStarted()).isTrue()
-        assertThat(repository.markStarted()).isFalse()
-        verify(exactly = 1) { editor.putBoolean("started", true) }
-    }
-
-    @Test
     fun givenCompletedOnboarding_whenCompletedAgain_thenWriteIsIdempotent() {
         repository.setCompleted()
         repository.setCompleted()

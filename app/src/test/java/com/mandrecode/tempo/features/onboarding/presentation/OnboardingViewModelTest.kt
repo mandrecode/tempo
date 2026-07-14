@@ -34,7 +34,6 @@ class OnboardingViewModelTest {
     private lateinit var routinesEnabled: MutableStateFlow<Boolean>
     private lateinit var tasksEnabled: MutableStateFlow<Boolean>
     private lateinit var defaultTab: MutableStateFlow<String>
-    private lateinit var onboardingCompleted: MutableStateFlow<Boolean>
 
     @Before
     fun setup() {
@@ -47,55 +46,17 @@ class OnboardingViewModelTest {
         routinesEnabled = MutableStateFlow(true)
         tasksEnabled = MutableStateFlow(true)
         defaultTab = MutableStateFlow(DEFAULT_TAB_ROUTINES)
-        onboardingCompleted = MutableStateFlow(false)
 
         every { themePreferencesRepository.getUseTempoColors() } returns useTempoColors
         every { themePreferencesRepository.getThemeMode() } returns themeMode
         every { navigationPreferencesRepository.isRoutinesTabEnabled() } returns routinesEnabled
         every { navigationPreferencesRepository.isTasksTabEnabled() } returns tasksEnabled
         every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
-        every { onboardingPreferencesRepository.isCompleted } returns onboardingCompleted
-        every { onboardingPreferencesRepository.markStarted() } returns true
-        every { themePreferencesRepository.hasSavedUseTempoColors() } returns false
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-    }
-
-    @Test
-    fun givenIncompleteOnboarding_whenCreated_thenTempoColorsAreSelectedByDefault() {
-        createViewModel()
-
-        verify(exactly = 1) { themePreferencesRepository.setUseTempoColors(true) }
-    }
-
-    @Test
-    fun givenCompletedOnboarding_whenReplayed_thenCurrentColorsArePreserved() {
-        onboardingCompleted.value = true
-
-        createViewModel()
-
-        verify(exactly = 0) { themePreferencesRepository.setUseTempoColors(any()) }
-    }
-
-    @Test
-    fun givenOnboardingAlreadyStarted_whenCreated_thenCurrentColorsArePreserved() {
-        every { onboardingPreferencesRepository.markStarted() } returns false
-
-        createViewModel()
-
-        verify(exactly = 0) { themePreferencesRepository.setUseTempoColors(any()) }
-    }
-
-    @Test
-    fun givenIncompleteUpgradeWithSavedColors_whenCreated_thenCurrentColorsArePreserved() {
-        every { themePreferencesRepository.hasSavedUseTempoColors() } returns true
-
-        createViewModel()
-
-        verify(exactly = 0) { themePreferencesRepository.setUseTempoColors(any()) }
     }
 
     @Test

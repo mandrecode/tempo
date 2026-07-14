@@ -20,13 +20,6 @@ class OnboardingPreferencesRepositoryImpl
 
         override val isCompleted: StateFlow<Boolean> = completed.asStateFlow()
 
-        override fun markStarted(): Boolean {
-            if (preferences.getBoolean(KEY_STARTED, false)) return false
-
-            preferences.edit { putBoolean(KEY_STARTED, true) }
-            return true
-        }
-
         override fun setCompleted() {
             if (completed.value) return
 
@@ -37,6 +30,5 @@ class OnboardingPreferencesRepositoryImpl
         private companion object {
             const val PREFERENCES_NAME = "onboarding_preferences"
             const val KEY_COMPLETED = "completed"
-            const val KEY_STARTED = "started"
         }
     }
