@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.onboarding.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
@@ -101,7 +103,9 @@ class OnboardingContentTest {
 
         val dynamicLabel =
             InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.settings_color_scheme_dynamic)
-        composeTestRule.onNode(hasText(dynamicLabel) and hasClickAction()).performClick()
+        composeTestRule
+            .onNode(hasText(dynamicLabel) and hasClickAction())
+            .performSemanticsAction(SemanticsActions.OnClick)
 
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.UseTempoColorsToggled(false))
     }
