@@ -75,3 +75,10 @@
 - [x] 11.2 Capture and delete complete descendant trees for individual and completed-task snapshots using recursive Room queries.
 - [x] 11.3 Make completed-task reminder cancellation a required dependency and update its tests.
 - [x] 11.4 Run formatting, static analysis, unit/Room tests, builds, and OpenSpec validation.
+
+## 12. Copilot review follow-up: dependency-safe restore ordering
+
+- [x] 12.1 Restore task snapshots by computed hierarchy depth in both task and category repositories.
+- [x] 12.2 Fetch affected chain identifiers with one distinct membership query.
+- [x] 12.3 Add regressions for scrambled three-level task snapshots and bounded chain lookup count.
+- [x] 12.4 Run formatting, static analysis, unit/Room tests, builds, and OpenSpec validation.

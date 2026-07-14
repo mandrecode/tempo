@@ -92,6 +92,10 @@ Post-deletion scheduler work uses the chain returned in the committed repository
 
 Undo for a chain that preserved its habits restores only each habit's reminder field, because chain deletion changes only that field; all other habit edits made during the Undo window remain authoritative. Task-tree deletion uses recursive Room queries to capture descendants in parent-first order and delete the complete forest atomically, covering both individual and completed-task deletion regardless of nesting depth. Completed-task reminder cancellation is a required dependency and cannot be silently omitted by constructing the use case without a scheduler.
 
+### 12. Restore arbitrary task depths and batch affected-chain lookup
+
+Task and category restore operations derive each snapshot task's hierarchy depth and restore in ascending depth order, preserving stable order among peers. This guarantees every in-snapshot parent exists before its children at any nesting depth and rejects cyclic snapshots instead of partially restoring them. Habit-chain deletion captures all affected chain identifiers with one distinct membership query over the deleted chain's habit IDs, avoiding query count growth with chain size.
+
 ## Risks / Trade-offs
 
 - [Large category or bulk-completed snapshots consume memory during the snackbar window] → Keep only active token snapshots, discard on dismissal, and store domain data rather than serialized duplicates.

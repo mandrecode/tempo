@@ -86,17 +86,28 @@ class TaskRepositoryTest {
         runTest {
             val root = Task(id = 30L, title = "Root", description = "")
             val child = Task(id = 31L, title = "Child", description = "", parentTaskId = 30L)
+            val grandchild = Task(id = 32L, title = "Grandchild", description = "", parentTaskId = 31L)
             coEvery { taskDao.getTaskById(30L) } returns null
             coEvery { taskDao.getTaskById(31L) } returns
                 TaskEntity(id = 31L, title = "Child", description = "", categoryId = 0L, parentTaskId = 30L)
+            coEvery { taskDao.getTaskById(32L) } returns null
 
             repository.restoreDeletedTasks(
-                TaskDeletionSnapshot.TaskTree(rootTaskId = 30L, tasks = listOf(child, root)),
+                TaskDeletionSnapshot.TaskTree(rootTaskId = 30L, tasks = listOf(grandchild, child, root)),
             )
 
             coVerifyOrder {
                 taskDao.insertTask(TaskEntity(id = 30L, title = "Root", description = "", categoryId = 0L))
                 taskDao.getTaskById(31L)
+                taskDao.insertTask(
+                    TaskEntity(
+                        id = 32L,
+                        title = "Grandchild",
+                        description = "",
+                        categoryId = 0L,
+                        parentTaskId = 31L,
+                    ),
+                )
             }
             coVerify(exactly = 0) { taskDao.updateTask(any()) }
         }

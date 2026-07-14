@@ -87,7 +87,7 @@ class TaskRepositoryImpl
         override suspend fun restoreDeletedTasks(snapshot: TaskDeletionSnapshot) {
             database.withTransaction {
                 snapshot.tasks
-                    .sortedBy { it.parentTaskId != null }
+                    .sortedParentFirst()
                     .forEach { task ->
                         val entity = task.toEntity()
                         insertOrVerifyRestoredEntity(

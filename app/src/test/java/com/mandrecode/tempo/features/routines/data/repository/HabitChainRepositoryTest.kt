@@ -213,6 +213,22 @@ class HabitChainRepositoryTest {
         }
 
     @Test
+    fun `deleteHabitChainWithSnapshot fetches affected chains in one membership query`() =
+        runTest {
+            coEvery { habitChainDao.getHabitChainWithMembersById(testChain.id) } returns testChainWithMembers
+            coEvery { habitDao.getHabitsByIds(testChain.habitIds) } returns emptyList()
+            coEvery { habitChainMemberDao.getChainIdsForHabits(testChain.habitIds) } returns listOf(testChain.id)
+            coEvery { habitChainDao.getHabitChainsWithMembersByIds(listOf(testChain.id)) } returns
+                listOf(testChainWithMembers)
+
+            val snapshot = repository.deleteHabitChainWithSnapshot(testChain.id, deleteHabits = false)
+
+            assertThat(snapshot.affectedChains).containsExactly(testChain)
+            coVerify(exactly = 1) { habitChainMemberDao.getChainIdsForHabits(testChain.habitIds) }
+            coVerify(exactly = 0) { habitChainMemberDao.getChainIdsForHabit(any()) }
+        }
+
+    @Test
     fun `restoreDeletedHabitChain rejects a reused chain id`() =
         runTest {
             coEvery { habitChainDao.getHabitChainById(testChain.id) } returns

@@ -60,7 +60,7 @@ class CategoryRepositoryImpl
                     categoryDao.insertCategory(categoryEntity)
                 }
                 snapshot.tasks
-                    .sortedBy { it.parentTaskId != null }
+                    .sortedParentFirst()
                     .forEach { task ->
                         val entity = task.toEntity()
                         insertOrVerifyRestoredEntity(

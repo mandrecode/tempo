@@ -65,9 +65,11 @@ class HabitChainRepositoryImpl
                 val chain = requireNotNull(habitChainDao.getHabitChainWithMembersById(habitChainId)).toDomain()
                 val habits = habitDao.getHabitsByIds(chain.habitIds).toDomain()
                 val affectedChainIds =
-                    chain.habitIds
-                        .flatMap { habitChainMemberDao.getChainIdsForHabit(it) }
-                        .distinct()
+                    if (chain.habitIds.isEmpty()) {
+                        emptyList()
+                    } else {
+                        habitChainMemberDao.getChainIdsForHabits(chain.habitIds)
+                    }
                 val affectedChains =
                     if (affectedChainIds.isEmpty()) {
                         listOf(chain)

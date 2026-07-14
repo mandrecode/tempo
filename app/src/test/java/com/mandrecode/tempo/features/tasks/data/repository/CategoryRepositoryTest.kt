@@ -73,17 +73,29 @@ class CategoryRepositoryTest {
             val category = Category(id = 5L, name = "Restored")
             val root = Task(id = 50L, title = "Root", description = "", categoryId = 5L)
             val child = Task(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L)
+            val grandchild =
+                Task(id = 52L, title = "Grandchild", description = "", categoryId = 5L, parentTaskId = 51L)
             coEvery { categoryDao.getCategoryById(5L) } returns null
             coEvery { taskDao.getTaskById(50L) } returns null
             coEvery { taskDao.getTaskById(51L) } returns
                 TaskEntity(id = 51L, title = "Child", description = "", categoryId = 5L, parentTaskId = 50L)
+            coEvery { taskDao.getTaskById(52L) } returns null
 
-            repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(child, root)))
+            repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(grandchild, child, root)))
 
             coVerify { categoryDao.insertCategory(CategoryEntity(id = 5L, name = "Restored")) }
             coVerifyOrder {
                 taskDao.insertTask(TaskEntity(id = 50L, title = "Root", description = "", categoryId = 5L))
                 taskDao.getTaskById(51L)
+                taskDao.insertTask(
+                    TaskEntity(
+                        id = 52L,
+                        title = "Grandchild",
+                        description = "",
+                        categoryId = 5L,
+                        parentTaskId = 51L,
+                    ),
+                )
             }
             coVerify(exactly = 0) { taskDao.updateTask(any()) }
         }
