@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -70,9 +71,28 @@ class OnboardingContentTest {
     fun givenAnyPage_whenRendered_thenProgressHasOneSegmentPerPage() {
         setContent(OnboardingContract.UiState(currentPage = 1))
 
-        composeTestRule
-            .onAllNodesWithTag(OnboardingTestTags.PROGRESS_SEGMENT)
-            .assertCountEquals(OnboardingContract.PAGE_COUNT)
+        val segments =
+            composeTestRule.onAllNodesWithTag(
+                testTag = OnboardingTestTags.PROGRESS_SEGMENT,
+                useUnmergedTree = true,
+            )
+        segments.assertCountEquals(OnboardingContract.PAGE_COUNT)
+    }
+
+    @Test
+    fun givenAnyPage_whenRendered_thenProgressExposesItsCurrentStep() {
+        val currentPage = 2
+        setContent(OnboardingContract.UiState(currentPage = currentPage))
+
+        val rangeInfo =
+            composeTestRule
+                .onNodeWithTag(OnboardingTestTags.PROGRESS)
+                .fetchSemanticsNode()
+                .config[SemanticsProperties.ProgressBarRangeInfo]
+
+        assertThat(rangeInfo.current).isEqualTo(currentPage.toFloat())
+        assertThat(rangeInfo.range).isEqualTo(0f..(OnboardingContract.PAGE_COUNT - 1).toFloat())
+        assertThat(rangeInfo.steps).isEqualTo(OnboardingContract.PAGE_COUNT - 2)
     }
 
     @Test

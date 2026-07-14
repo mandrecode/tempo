@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -36,8 +37,16 @@ internal fun OnboardingProgress(
     pageCount: Int,
     modifier: Modifier = Modifier,
 ) {
+    val lastPage = (pageCount - 1).coerceAtLeast(0)
     Row(
-        modifier = modifier.fillMaxWidth().testTag(OnboardingTestTags.PROGRESS),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .progressSemantics(
+                    value = currentPage.coerceIn(0, lastPage).toFloat(),
+                    valueRange = 0f..lastPage.toFloat(),
+                    steps = (pageCount - 2).coerceAtLeast(0),
+                ).testTag(OnboardingTestTags.PROGRESS),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
