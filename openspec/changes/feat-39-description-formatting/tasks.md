@@ -59,3 +59,10 @@
 - [x] 10.1 Trace the PR-only CI stall to the habit/chain tab-switch regression test
 - [x] 10.2 Keep the Compose test clock auto-advancing through animated bottom-sheet setup and dismissal
 - [x] 10.3 Stress-test the fix on API 31 and run the full instrumented suite on the Pixel 10 AVD
+
+## 11. Copilot composition-safety follow-up
+
+- [x] 11.1 Move incremental URL-cache updates out of task-description composition
+- [x] 11.2 Keep accepted auto-dash and title-overflow changes synchronized with URL styling
+- [x] 11.3 Run focused tests and quality checks
+- [ ] 11.4 Reply to and resolve every Copilot conversation

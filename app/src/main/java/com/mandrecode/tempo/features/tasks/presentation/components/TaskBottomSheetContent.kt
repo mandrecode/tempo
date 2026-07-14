@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,6 +34,7 @@ import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
 import com.mandrecode.tempo.core.ui.util.DebouncedSnapshotEffect
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
+import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
@@ -78,6 +80,11 @@ internal fun TaskBottomSheetContent(
         remember(editingTargetId) {
             DescriptionEditorState(TextFieldValue(initialDescription))
         }
+    val descriptionLinkVisualTransformation = rememberLinkStyling(descriptionState)
+    val updateDescription: (TextFieldValue) -> Unit = { value ->
+        descriptionLinkVisualTransformation.update(value.text)
+        descriptionState.update(value)
+    }
     var isDescriptionDirty by remember(editingTargetId) { mutableStateOf(false) }
 
     val defaultCategoryId = categories.firstOrNull { it.isDefault }?.id ?: categories.firstOrNull()?.id ?: 0L
@@ -330,6 +337,7 @@ internal fun TaskBottomSheetContent(
         ) {
             TaskBottomSheetBody(
                 descriptionState = descriptionState,
+                descriptionLinkVisualTransformation = descriptionLinkVisualTransformation,
                 state =
                     TaskBottomSheetBodyState(
                         categories = categories,
@@ -351,7 +359,7 @@ internal fun TaskBottomSheetContent(
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 taskTitle = newValue.substring(0, MAX_TITLE_LENGTH)
-                                descriptionState.update(
+                                updateDescription(
                                     TextFieldValue(
                                         text = overflow + descriptionState.value.text,
                                         selection = TextRange(overflow.length),
@@ -366,7 +374,7 @@ internal fun TaskBottomSheetContent(
                             }
                         },
                         onTaskDescriptionChanged = {
-                            descriptionState.update(
+                            updateDescription(
                                 applyTaskDescriptionDashFormatting(
                                     previousValue = descriptionState.value,
                                     proposedValue = it,
@@ -407,5 +415,16 @@ internal fun TaskBottomSheetContent(
                     ),
             )
         }
+    }
+}
+
+@Composable
+private fun rememberLinkStyling(descriptionState: DescriptionEditorState): IncrementalLinkVisualTransformation {
+    val linkColor = MaterialTheme.colorScheme.primary
+    return remember(descriptionState, linkColor) {
+        IncrementalLinkVisualTransformation(
+            initialText = descriptionState.value.text,
+            linkColor = linkColor,
+        )
     }
 }

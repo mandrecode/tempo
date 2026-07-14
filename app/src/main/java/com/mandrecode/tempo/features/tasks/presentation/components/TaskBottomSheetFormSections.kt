@@ -33,7 +33,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +66,7 @@ import kotlinx.coroutines.flow.first
 internal fun TaskBottomSheetBody(
     state: TaskBottomSheetBodyState,
     descriptionState: DescriptionEditorState,
+    descriptionLinkVisualTransformation: IncrementalLinkVisualTransformation,
     actions: TaskBottomSheetBodyActions,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
@@ -79,6 +79,7 @@ internal fun TaskBottomSheetBody(
 
         TaskDescriptionSection(
             descriptionState = descriptionState,
+            linkVisualTransformation = descriptionLinkVisualTransformation,
             descriptionError = state.formState.descriptionError,
             onDescriptionChange = actions.onTaskDescriptionChanged,
             focusConfig = focusConfig,
@@ -194,6 +195,7 @@ private fun TaskTitleSection(
 @Composable
 private fun TaskDescriptionSection(
     descriptionState: DescriptionEditorState,
+    linkVisualTransformation: IncrementalLinkVisualTransformation,
     descriptionError: Int?,
     onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
@@ -221,6 +223,7 @@ private fun TaskDescriptionSection(
         ) {
             TaskDescriptionField(
                 descriptionState = descriptionState,
+                linkVisualTransformation = linkVisualTransformation,
                 descriptionError = descriptionError,
                 onDescriptionChange = onDescriptionChange,
                 focusConfig = focusConfig,
@@ -232,13 +235,12 @@ private fun TaskDescriptionSection(
 @Composable
 private fun TaskDescriptionField(
     descriptionState: DescriptionEditorState,
+    linkVisualTransformation: IncrementalLinkVisualTransformation,
     descriptionError: Int?,
     onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
-    val linkVisualTransformation = rememberLinkStyling(descriptionState)
     val descriptionValue = descriptionState.value
-    linkVisualTransformation.update(descriptionValue.text)
 
     TextField(
         value = descriptionValue,
@@ -278,17 +280,6 @@ private fun TaskDescriptionField(
                 null
             },
     )
-}
-
-@Composable
-private fun rememberLinkStyling(descriptionState: DescriptionEditorState): IncrementalLinkVisualTransformation {
-    val linkColor = MaterialTheme.colorScheme.primary
-    return remember(descriptionState, linkColor) {
-        IncrementalLinkVisualTransformation(
-            initialText = descriptionState.value.text,
-            linkColor = linkColor,
-        )
-    }
 }
 
 @Composable
