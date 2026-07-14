@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,11 +32,13 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
+import com.mandrecode.tempo.core.ui.util.DebouncedSnapshotEffect
+import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
+import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import com.mandrecode.tempo.infrastructure.permissions.hasNotificationPermissions
-import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.atStartOfDayIn
@@ -72,7 +75,17 @@ internal fun TaskBottomSheetContent(
     val context = LocalContext.current
     val editingTargetId = task?.id
     var taskTitle by remember(editingTargetId) { mutableStateOf(task?.title ?: "") }
-    var taskDescription by remember(editingTargetId) { mutableStateOf(TextFieldValue(task?.description ?: "")) }
+    val initialDescription = remember(editingTargetId) { task?.description.orEmpty() }
+    val descriptionState =
+        remember(editingTargetId) {
+            DescriptionEditorState(TextFieldValue(initialDescription))
+        }
+    val descriptionLinkVisualTransformation = rememberLinkStyling(descriptionState)
+    val updateDescription: (TextFieldValue) -> Unit = { value ->
+        descriptionLinkVisualTransformation.update(value.text)
+        descriptionState.update(value)
+    }
+    var isDescriptionDirty by remember(editingTargetId) { mutableStateOf(false) }
 
     val defaultCategoryId = categories.firstOrNull { it.isDefault }?.id ?: categories.firstOrNull()?.id ?: 0L
     val initialCategoryId =
@@ -216,7 +229,7 @@ internal fun TaskBottomSheetContent(
         remember(
             taskSnapshot,
             taskTitle,
-            taskDescription.text,
+            isDescriptionDirty,
             selectedCategoryId,
             initialCategoryId,
             formState.priority,
@@ -228,14 +241,14 @@ internal fun TaskBottomSheetContent(
         ) {
             if (taskSnapshot == null) {
                 taskTitle.isNotBlank() ||
-                    taskDescription.text.isNotBlank() ||
+                    isDescriptionDirty ||
                     selectedCategoryId != initialCategoryId ||
                     formState.priority != null ||
                     formState.reminderDate != null ||
                     formState.periodicity != null
             } else {
                 taskTitle != taskSnapshot.title ||
-                    taskDescription.text != taskSnapshot.description ||
+                    isDescriptionDirty ||
                     selectedCategoryId != taskSnapshot.categoryId ||
                     formState.priority != taskSnapshot.priority ||
                     formState.reminderDate != taskSnapshot.reminderDate ||
@@ -249,43 +262,61 @@ internal fun TaskBottomSheetContent(
     val autoSaveEnabled = isEditingTask && onAutoSave != null
     val isPriorityReadOnly = task?.isCompleted == true
 
-    val currentAutoSaveSnapshot =
-        TaskFormSnapshot(
-            title = taskTitle,
-            description = taskDescription.text,
-            categoryId = selectedCategoryId,
-            priority = formState.priority,
-            reminderDate = formState.reminderDate,
-            periodicity = formState.periodicity,
-            periodicityInterval = formState.periodicityInterval,
-            repeatDays = formState.repeatDays,
-            monthDayOption = formState.monthDayOption,
-        )
     var lastDispatchedSnapshot by remember(task?.id) { mutableStateOf<TaskFormSnapshot?>(null) }
-
-    LaunchedEffect(autoSaveEnabled, currentAutoSaveSnapshot, hasUnsavedChanges) {
-        if (!autoSaveEnabled || !hasUnsavedChanges || taskTitle.isBlank()) return@LaunchedEffect
-        delay(AUTO_SAVE_DEBOUNCE_MS)
-        if (lastDispatchedSnapshot == currentAutoSaveSnapshot) return@LaunchedEffect
-        onAutoSave?.invoke(
-            taskTitle,
-            taskDescription.text,
-            selectedCategoryId,
-        )
-        lastDispatchedSnapshot = currentAutoSaveSnapshot
-    }
-
-    val hasPendingAutoSave =
-        autoSaveEnabled && hasUnsavedChanges && currentAutoSaveSnapshot != lastDispatchedSnapshot
+    DebouncedSnapshotEffect(
+        enabled = autoSaveEnabled,
+        key = editingTargetId,
+        debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
+        snapshotProvider = {
+            TaskFormSnapshot(
+                title = taskTitle,
+                description = descriptionState.value.text,
+                categoryId = selectedCategoryId,
+                priority = formState.priority,
+                reminderDate = formState.reminderDate,
+                periodicity = formState.periodicity,
+                periodicityInterval = formState.periodicityInterval,
+                repeatDays = formState.repeatDays,
+                monthDayOption = formState.monthDayOption,
+            )
+        },
+        onSnapshot = { snapshot ->
+            if (snapshot != taskSnapshot &&
+                snapshot.title.isNotBlank() &&
+                lastDispatchedSnapshot != snapshot
+            ) {
+                onAutoSave?.invoke(
+                    snapshot.title,
+                    snapshot.description,
+                    snapshot.categoryId,
+                )
+                lastDispatchedSnapshot = snapshot
+            }
+        },
+    )
 
     val onSheetDismissRequest: () -> Unit = {
-        if (autoSaveEnabled && hasPendingAutoSave && taskTitle.isNotBlank()) {
-            onAutoSave?.invoke(
-                taskTitle,
-                taskDescription.text,
-                selectedCategoryId,
+        val currentSnapshot =
+            TaskFormSnapshot(
+                title = taskTitle,
+                description = descriptionState.value.text,
+                categoryId = selectedCategoryId,
+                priority = formState.priority,
+                reminderDate = formState.reminderDate,
+                periodicity = formState.periodicity,
+                periodicityInterval = formState.periodicityInterval,
+                repeatDays = formState.repeatDays,
+                monthDayOption = formState.monthDayOption,
             )
-            lastDispatchedSnapshot = currentAutoSaveSnapshot
+        if (autoSaveEnabled && currentSnapshot.title.isNotBlank()) {
+            if (currentSnapshot != taskSnapshot && currentSnapshot != lastDispatchedSnapshot) {
+                onAutoSave?.invoke(
+                    currentSnapshot.title,
+                    currentSnapshot.description,
+                    currentSnapshot.categoryId,
+                )
+                lastDispatchedSnapshot = currentSnapshot
+            }
         }
         onDismiss()
     }
@@ -305,13 +336,14 @@ internal fun TaskBottomSheetContent(
                     .padding(top = 8.dp, bottom = 32.dp),
         ) {
             TaskBottomSheetBody(
+                descriptionState = descriptionState,
+                descriptionLinkVisualTransformation = descriptionLinkVisualTransformation,
                 state =
                     TaskBottomSheetBodyState(
                         categories = categories,
                         formState = formState,
                         task = task,
                         taskTitle = taskTitle,
-                        taskDescription = taskDescription,
                         selectedCategoryId = selectedCategoryId,
                         formattedReminder = formattedReminder,
                         isTitleError = isTitleError,
@@ -327,11 +359,13 @@ internal fun TaskBottomSheetContent(
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 taskTitle = newValue.substring(0, MAX_TITLE_LENGTH)
-                                taskDescription =
+                                updateDescription(
                                     TextFieldValue(
-                                        text = overflow + taskDescription.text,
+                                        text = overflow + descriptionState.value.text,
                                         selection = TextRange(overflow.length),
-                                    )
+                                    ),
+                                )
+                                isDescriptionDirty = descriptionState.value.text != initialDescription
                                 focusDescriptionTrigger++
                             } else {
                                 taskTitle = newValue
@@ -340,7 +374,13 @@ internal fun TaskBottomSheetContent(
                             }
                         },
                         onTaskDescriptionChanged = {
-                            taskDescription = it
+                            updateDescription(
+                                applyTaskDescriptionDashFormatting(
+                                    previousValue = descriptionState.value,
+                                    proposedValue = it,
+                                ),
+                            )
+                            isDescriptionDirty = descriptionState.value.text != initialDescription
                             onClearErrors()
                         },
                         onSelectCategory = { selectedCategoryId = it },
@@ -362,7 +402,7 @@ internal fun TaskBottomSheetContent(
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 onConfirm(
                                     taskTitle,
-                                    taskDescription.text,
+                                    descriptionState.value.text,
                                     selectedCategoryId,
                                 )
                             }
@@ -375,5 +415,16 @@ internal fun TaskBottomSheetContent(
                     ),
             )
         }
+    }
+}
+
+@Composable
+private fun rememberLinkStyling(descriptionState: DescriptionEditorState): IncrementalLinkVisualTransformation {
+    val linkColor = MaterialTheme.colorScheme.primary
+    return remember(descriptionState, linkColor) {
+        IncrementalLinkVisualTransformation(
+            initialText = descriptionState.value.text,
+            linkColor = linkColor,
+        )
     }
 }

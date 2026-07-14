@@ -44,7 +44,6 @@ internal data class TaskBottomSheetBodyState(
     val formState: TasksContract.TaskFormState,
     val task: Task?,
     val taskTitle: String,
-    val taskDescription: TextFieldValue,
     val selectedCategoryId: Long,
     val formattedReminder: String?,
     val isTitleError: Boolean,

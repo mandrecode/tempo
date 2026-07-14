@@ -19,6 +19,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Periodicity
@@ -30,6 +31,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.datetime.LocalDateTime
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -302,6 +304,46 @@ class TaskBottomSheetTest {
                 .text
                 .contains("https://example.com/docs"),
         )
+    }
+
+    @Test
+    fun givenRapidDescriptionEdits_whenAutoSavingTask_thenDispatchesLatestValueOnce() {
+        val savedDescriptions = mutableListOf<String>()
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task = sampleTask(),
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState(),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                    onAutoSave = { _, description, _ -> savedDescriptions += description },
+                )
+            }
+        }
+        composeTestRule.mainClock.advanceTimeBy(1_000)
+
+        val descriptionField =
+            composeTestRule.onNodeWithTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+        descriptionField.performTextReplacement("a")
+        descriptionField.performTextReplacement("ab")
+        descriptionField.performTextReplacement("abc")
+
+        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.runOnIdle { assertEquals(listOf("abc"), savedDescriptions) }
+        composeTestRule.mainClock.autoAdvance = true
     }
 
     // --- Regression tests for #398, #424: title overflow and long text ---

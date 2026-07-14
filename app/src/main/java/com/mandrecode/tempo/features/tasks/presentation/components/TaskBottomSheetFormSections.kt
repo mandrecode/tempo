@@ -55,8 +55,9 @@ import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.inputTitle
+import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
+import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.core.ui.util.color
-import com.mandrecode.tempo.core.ui.util.enhancedDescriptionTextFieldValue
 import com.mandrecode.tempo.core.ui.util.titleResId
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
@@ -64,6 +65,8 @@ import kotlinx.coroutines.flow.first
 @Composable
 internal fun TaskBottomSheetBody(
     state: TaskBottomSheetBodyState,
+    descriptionState: DescriptionEditorState,
+    descriptionLinkVisualTransformation: IncrementalLinkVisualTransformation,
     actions: TaskBottomSheetBodyActions,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
@@ -75,8 +78,10 @@ internal fun TaskBottomSheetBody(
         )
 
         TaskDescriptionSection(
-            state = state,
-            actions = actions,
+            descriptionState = descriptionState,
+            linkVisualTransformation = descriptionLinkVisualTransformation,
+            descriptionError = state.formState.descriptionError,
+            onDescriptionChange = actions.onTaskDescriptionChanged,
             focusConfig = focusConfig,
         )
 
@@ -189,8 +194,10 @@ private fun TaskTitleSection(
 
 @Composable
 private fun TaskDescriptionSection(
-    state: TaskBottomSheetBodyState,
-    actions: TaskBottomSheetBodyActions,
+    descriptionState: DescriptionEditorState,
+    linkVisualTransformation: IncrementalLinkVisualTransformation,
+    descriptionError: Int?,
+    onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
     Row(
@@ -215,8 +222,10 @@ private fun TaskDescriptionSection(
                     .padding(start = 4.dp),
         ) {
             TaskDescriptionField(
-                state = state,
-                onDescriptionChange = actions.onTaskDescriptionChanged,
+                descriptionState = descriptionState,
+                linkVisualTransformation = linkVisualTransformation,
+                descriptionError = descriptionError,
+                onDescriptionChange = onDescriptionChange,
                 focusConfig = focusConfig,
             )
         }
@@ -225,17 +234,16 @@ private fun TaskDescriptionSection(
 
 @Composable
 private fun TaskDescriptionField(
-    state: TaskBottomSheetBodyState,
+    descriptionState: DescriptionEditorState,
+    linkVisualTransformation: IncrementalLinkVisualTransformation,
+    descriptionError: Int?,
     onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
-    val linkColor = MaterialTheme.colorScheme.primary
+    val descriptionValue = descriptionState.value
+
     TextField(
-        value =
-            enhancedDescriptionTextFieldValue(
-                value = state.taskDescription,
-                linkColor = linkColor,
-            ),
+        value = descriptionValue,
         onValueChange = onDescriptionChange,
         placeholder = {
             Text(
@@ -244,6 +252,7 @@ private fun TaskDescriptionField(
             )
         },
         textStyle = MaterialTheme.typography.bodyLarge,
+        visualTransformation = linkVisualTransformation,
         colors =
             TextFieldDefaults.colors(
                 focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
@@ -263,10 +272,10 @@ private fun TaskDescriptionField(
             KeyboardOptions(
                 capitalization = KeyboardCapitalization.Sentences,
             ),
-        isError = state.formState.descriptionError != null,
+        isError = descriptionError != null,
         supportingText =
-            if (state.formState.descriptionError != null) {
-                { Text(stringResource(state.formState.descriptionError)) }
+            if (descriptionError != null) {
+                { Text(stringResource(descriptionError)) }
             } else {
                 null
             },

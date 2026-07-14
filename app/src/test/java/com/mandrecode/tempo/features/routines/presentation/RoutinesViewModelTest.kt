@@ -319,6 +319,16 @@ class RoutinesViewModelTest {
             assertThat(viewModel.uiState.value.habitForm.descriptionError).isNull()
         }
 
+    @Test
+    fun `clearHabitErrors keeps current state when errors are already clear`() =
+        runTest {
+            val stateBeforeClear = viewModel.uiState.value
+
+            viewModel.onEvent(RoutinesContract.UiEvent.ClearHabitErrors)
+
+            assertThat(viewModel.uiState.value).isSameInstanceAs(stateBeforeClear)
+        }
+
     // --- Date Selection ---
 
     @Test

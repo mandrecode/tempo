@@ -13,6 +13,8 @@ import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.Habi
 import kotlinx.datetime.LocalDateTime
 
 internal const val MAX_TITLE_LENGTH = 65
+internal const val HABIT_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG =
+    "habit_bottom_sheet_description_field"
 internal const val AUTO_SAVE_DEBOUNCE_MS = 350L
 internal val PROPERTY_ROW_GAP = 20.dp
 internal val DELETE_BUTTON_CORNER_RADIUS = 24.dp
@@ -53,7 +55,6 @@ internal data class HabitBottomSheetBodyState(
     val selectedDate: kotlinx.datetime.LocalDate,
     val habits: List<Habit>,
     val title: String,
-    val description: TextFieldValue,
     val selectedHabitIds: List<Long>,
     val isTitleError: Boolean,
     val isHabitInChain: Boolean,

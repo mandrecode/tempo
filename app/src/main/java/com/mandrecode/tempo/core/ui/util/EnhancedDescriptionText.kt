@@ -24,7 +24,6 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
@@ -120,20 +119,6 @@ internal fun buildEnhancedDescriptionText(
         }
     }
 
-internal fun enhancedDescriptionTextFieldValue(
-    value: TextFieldValue,
-    linkColor: Color,
-): TextFieldValue =
-    TextFieldValue(
-        annotatedString =
-            buildEnhancedDescriptionText(
-                text = value.text,
-                linkColor = linkColor,
-            ),
-        selection = value.selection,
-        composition = value.composition,
-    )
-
 internal fun normalizeDescriptionUri(rawValue: String): String =
     if (rawValue.startsWith("www.", ignoreCase = true) || rawValue.none { it == ':' }) {
         "https://$rawValue"
@@ -171,7 +156,10 @@ private fun trimTrailingPunctuation(
 
 private fun textNeedsTrimming(character: Char): Boolean = character in ".,;:!?"
 
-private fun findDescriptionLinks(text: String): Sequence<DescriptionLink> =
+internal fun findDescriptionLinks(
+    text: String,
+    rangeOffset: Int = 0,
+): Sequence<DescriptionLink> =
     LINK_PATTERN.findAll(text).mapNotNull { match ->
         val range = trimTrailingPunctuation(text = text, match = match)
         if (range.isEmpty()) {
@@ -179,13 +167,13 @@ private fun findDescriptionLinks(text: String): Sequence<DescriptionLink> =
         } else {
             val displayText = text.substring(range)
             DescriptionLink(
-                range = range,
+                range = (range.first + rangeOffset)..(range.last + rangeOffset),
                 uri = normalizeDescriptionUri(displayText),
             )
         }
     }
 
-private data class DescriptionLink(
+internal data class DescriptionLink(
     val range: IntRange,
     val uri: String,
 )
