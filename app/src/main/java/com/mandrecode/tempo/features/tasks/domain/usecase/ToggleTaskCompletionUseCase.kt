@@ -25,15 +25,6 @@ class ToggleTaskCompletionUseCase
                 val updateResult: UpdateTaskUseCase.Result,
             ) : Result()
 
-            /**
-             * Returned when the user unchecks a parent task that previously archived a periodic
-             * occurrence. The spawned next-instance was deleted and the original task's
-             * recurrence was restored from it.
-             */
-            data class PeriodicRolledBack(
-                val updateResult: UpdateTaskUseCase.Result,
-            ) : Result()
-
             data class ParentToggled(
                 val isCompleted: Boolean,
                 val updateResult: UpdateTaskUseCase.Result,
@@ -51,7 +42,7 @@ class ToggleTaskCompletionUseCase
                 task.periodicity != null && !task.isCompleted && task.parentTaskId == null ->
                     completePeriodic(task, now)
                 task.parentTaskId == null && task.isCompleted && task.nextInstanceId != null ->
-                    rollbackPeriodicCompletion(task, now)
+                    detachPeriodicCompletion(task)
                 task.parentTaskId == null ->
                     toggleNonPeriodicParent(task, now)
                 else ->
@@ -198,67 +189,50 @@ class ToggleTaskCompletionUseCase
             return r
         }
 
-        private data class RollbackCommit(
+        private data class DetachCommit(
             val restoredTask: Task,
             val restoredSubtasks: List<Task>,
         )
 
-        // ── Branch A-rollback: uncheck an archived task to discard the spawned occurrence ──
-        private suspend fun rollbackPeriodicCompletion(
-            archivedTask: Task,
-            now: LocalDateTime,
-        ): Result {
-            val nextInstanceId = archivedTask.nextInstanceId ?: error("rollback called without nextInstanceId")
-
-            // Snapshot before transaction. If the next instance was deleted by the user already,
-            // we still proceed to restore the archived task — just nothing to delete.
-            val nextInstance = taskRepository.getTaskById(nextInstanceId)
+        // ── Branch A-detach: uncheck an archived occurrence without changing the next one ──
+        private suspend fun detachPeriodicCompletion(archivedTask: Task): Result {
             val archivedSubtasks = taskRepository.getSubtasksSync(archivedTask.id)
 
             val commit =
                 taskRepository.runInTransaction {
-                    performRollbackTxn(archivedTask, nextInstance, archivedSubtasks, now)
+                    performDetachTxn(archivedTask, archivedSubtasks)
                 }
 
-            applyRollbackSchedulerEffects(nextInstance, commit)
+            scheduleRestoredSubtasks(commit.restoredSubtasks)
             val scheduleResult = scheduleOrCancel(commit.restoredTask)
-            return Result.PeriodicRolledBack(UpdateTaskUseCase.Result.Success(scheduleResult))
+            return Result.ParentToggled(
+                isCompleted = false,
+                updateResult = UpdateTaskUseCase.Result.Success(scheduleResult),
+            )
         }
 
-        private suspend fun performRollbackTxn(
+        private suspend fun performDetachTxn(
             archivedTask: Task,
-            nextInstance: Task?,
             archivedSubtasks: List<Task>,
-            now: LocalDateTime,
-        ): RollbackCommit {
-            // 1. Delete the spawned next instance and its cloned subtasks.
-            if (nextInstance != null) {
-                taskRepository.deleteTaskWithSubtasks(nextInstance.id)
-            }
-
-            // 2. Restore archived task. Recurrence fields come from the next instance
-            //    (which preserved them); fall back to the archived task's stripped
-            //    state if next instance is gone (best-effort).
+        ): DetachCommit {
+            // Keep the next occurrence independent. The archived occurrence retains its original
+            // reminder date, but recurrence must remain stripped so only the next occurrence owns
+            // future scheduling.
             val restoredTask =
-                TaskReminderDateUtil.advanceReminderIfNeeded(
-                    archivedTask.copy(
-                        isCompleted = false,
-                        completedAt = null,
-                        nextInstanceId = null,
-                        periodicity = nextInstance?.periodicity ?: archivedTask.periodicity,
-                        periodicityInterval = nextInstance?.periodicityInterval ?: archivedTask.periodicityInterval,
-                        repeatDays = nextInstance?.repeatDays ?: archivedTask.repeatDays,
-                        monthDayOption = nextInstance?.monthDayOption ?: archivedTask.monthDayOption,
-                        reminderDate = nextInstance?.reminderDate ?: archivedTask.reminderDate,
-                    ),
-                    now,
+                archivedTask.copy(
+                    isCompleted = false,
+                    completedAt = null,
+                    nextInstanceId = null,
+                    periodicity = null,
+                    periodicityInterval = 1,
+                    repeatDays = null,
+                    monthDayOption = null,
                 )
             taskRepository.updateTask(restoredTask)
 
-            // 3. Restore subtasks that were auto-completed by this toggle.
             val restoredSubtasks = restoreAutoCompletedSubtasks(archivedTask.completedAt, archivedSubtasks)
 
-            return RollbackCommit(restoredTask, restoredSubtasks)
+            return DetachCommit(restoredTask, restoredSubtasks)
         }
 
         private suspend fun restoreAutoCompletedSubtasks(
@@ -278,16 +252,8 @@ class ToggleTaskCompletionUseCase
             }
         }
 
-        private fun applyRollbackSchedulerEffects(
-            nextInstance: Task?,
-            commit: RollbackCommit,
-        ) {
-            // Cancel the deleted next instance's reminder (if it had one).
-            if (nextInstance?.reminderDate != null) {
-                taskReminderScheduler.cancel(nextInstance)
-            }
-            // Re-schedule reminders for restored subtasks.
-            commit.restoredSubtasks.forEach { sub ->
+        private fun scheduleRestoredSubtasks(restoredSubtasks: List<Task>) {
+            restoredSubtasks.forEach { sub ->
                 if (sub.reminderDate != null) {
                     taskReminderScheduler.schedule(sub)
                 }

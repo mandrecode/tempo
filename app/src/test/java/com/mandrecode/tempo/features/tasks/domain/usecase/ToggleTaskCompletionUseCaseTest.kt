@@ -42,7 +42,7 @@ class ToggleTaskCompletionUseCaseTest {
             UpdateTaskUseCase.Result.Success(ScheduleResult.Skipped)
 
         // runInTransaction must execute its block; the relaxed mock would otherwise return null
-        // and silently skip the entire periodic-completion / rollback flow.
+        // and silently skip the entire periodic-completion / detachment flow.
         coEvery { taskRepository.runInTransaction<Any?>(any()) } coAnswers {
             val block = firstArg<suspend () -> Any?>()
             block()
@@ -527,8 +527,9 @@ class ToggleTaskCompletionUseCaseTest {
         }
 
     @Test
-    fun `unchecking archived task with nextInstanceId rolls back the spawn`() =
+    fun `unchecking archived periodic occurrence keeps next occurrence open`() =
         runTest {
+            val originalReminderDate = LocalDateTime(2024, 6, 15, 9, 0)
             val archivedTask =
                 Task(
                     id = 1,
@@ -536,6 +537,7 @@ class ToggleTaskCompletionUseCaseTest {
                     description = "",
                     isCompleted = true,
                     completedAt = LocalDateTime(2024, 6, 15, 10, 0),
+                    reminderDate = originalReminderDate,
                     nextInstanceId = 42L,
                 )
             val nextInstance =
@@ -549,31 +551,28 @@ class ToggleTaskCompletionUseCaseTest {
                     reminderDate = LocalDateTime(2030, 6, 16, 10, 0),
                 )
 
-            coEvery { taskRepository.getTaskById(42L) } returns nextInstance
             coEvery { taskRepository.getSubtasksSync(1L) } returns emptyList()
 
             val result = useCase(archivedTask)
 
-            assertThat(result).isInstanceOf(ToggleTaskCompletionUseCase.Result.PeriodicRolledBack::class.java)
-            // Spawn deleted
-            coVerify { taskRepository.deleteTaskWithSubtasks(42L) }
-            // Archived task restored — recurrence copied from next instance
+            assertThat(result).isInstanceOf(ToggleTaskCompletionUseCase.Result.ParentToggled::class.java)
             val restoredSlot = slot<Task>()
             coVerify { taskRepository.updateTask(capture(restoredSlot)) }
             assertThat(restoredSlot.captured.id).isEqualTo(1L)
             assertThat(restoredSlot.captured.isCompleted).isFalse()
             assertThat(restoredSlot.captured.completedAt).isNull()
             assertThat(restoredSlot.captured.nextInstanceId).isNull()
-            assertThat(restoredSlot.captured.periodicity).isEqualTo(Periodicity.DAILY)
-            assertThat(restoredSlot.captured.reminderDate).isEqualTo(nextInstance.reminderDate)
-            // New instance reminder cancelled
-            coVerify { taskReminderScheduler.cancel(nextInstance) }
+            assertThat(restoredSlot.captured.periodicity).isNull()
+            assertThat(restoredSlot.captured.reminderDate).isEqualTo(originalReminderDate)
+            coVerify(exactly = 0) { taskRepository.getTaskById(42L) }
+            coVerify(exactly = 0) { taskRepository.deleteTaskWithSubtasks(42L) }
+            coVerify(exactly = 0) { taskReminderScheduler.cancel(nextInstance) }
+            coVerify(exactly = 0) { taskReminderScheduler.schedule(nextInstance) }
         }
 
     @Test
-    fun `rollback with stale next instance reminder restores future reminder`() =
+    fun `unchecking archived periodic occurrence clears legacy recurrence fields`() =
         runTest {
-            val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             val archivedTask =
                 Task(
                     id = 1,
@@ -581,31 +580,24 @@ class ToggleTaskCompletionUseCaseTest {
                     description = "",
                     isCompleted = true,
                     completedAt = LocalDateTime(2024, 6, 15, 10, 0),
+                    reminderDate = LocalDateTime(2024, 6, 15, 9, 0),
+                    periodicity = Periodicity.WEEKLY,
+                    periodicityInterval = 2,
+                    repeatDays = setOf(DayOfWeek.MONDAY),
+                    monthDayOption = MonthDayOption.LAST_DAY,
                     nextInstanceId = 42L,
-                )
-            val nextInstance =
-                Task(
-                    id = 42,
-                    title = "Archived",
-                    description = "",
-                    isCompleted = false,
-                    periodicity = Periodicity.DAILY,
-                    reminderDate = LocalDateTime(2024, 1, 1, 10, 0),
                 )
 
             val restoredSlot = slot<Task>()
-            val scheduledSlot = slot<Task>()
-            coEvery { taskRepository.getTaskById(42L) } returns nextInstance
             coEvery { taskRepository.getSubtasksSync(1L) } returns emptyList()
             coEvery { taskRepository.updateTask(capture(restoredSlot)) } returns Unit
-            coEvery { taskReminderScheduler.schedule(capture(scheduledSlot)) } answers {
-                ScheduleResult.Success(scheduledSlot.captured.reminderDate!!)
-            }
 
             useCase(archivedTask)
 
-            assertThat(restoredSlot.captured.reminderDate).isGreaterThan(now)
-            assertThat(restoredSlot.captured.reminderDate).isEqualTo(scheduledSlot.captured.reminderDate)
+            assertThat(restoredSlot.captured.periodicity).isNull()
+            assertThat(restoredSlot.captured.periodicityInterval).isEqualTo(1)
+            assertThat(restoredSlot.captured.repeatDays).isNull()
+            assertThat(restoredSlot.captured.monthDayOption).isNull()
         }
 
     @Test
@@ -629,7 +621,7 @@ class ToggleTaskCompletionUseCaseTest {
         }
 
     @Test
-    fun `rollback restores subtasks completed by the toggle`() =
+    fun `detaching archived occurrence restores subtasks completed by the toggle`() =
         runTest {
             val archivedAt = LocalDateTime(2024, 6, 15, 10, 0)
             val archivedTask =
@@ -669,8 +661,6 @@ class ToggleTaskCompletionUseCaseTest {
                     completedAt = LocalDateTime(2024, 6, 15, 10, 1),
                 )
 
-            coEvery { taskRepository.getTaskById(42L) } returns
-                Task(id = 42, title = "next", description = "", periodicity = Periodicity.DAILY)
             coEvery { taskRepository.getSubtasksSync(1L) } returns
                 listOf(autoCompletedSubtask, previouslyCompletedSubtask, laterCompletedSubtask)
 
