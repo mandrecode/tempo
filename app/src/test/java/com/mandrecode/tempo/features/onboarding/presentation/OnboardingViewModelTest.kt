@@ -153,6 +153,36 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun givenBothTabsEnabled_whenRapidlyDisablingRoutinesThenTasks_thenTasksRemainsEnabled() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(OnboardingContract.UiEvent.RoutinesTabToggled(false))
+            viewModel.onEvent(OnboardingContract.UiEvent.TasksTabToggled(false))
+
+            assertThat(viewModel.uiState.value.isRoutinesTabEnabled).isFalse()
+            assertThat(viewModel.uiState.value.isTasksTabEnabled).isTrue()
+            verify { navigationPreferencesRepository.setRoutinesTabEnabled(false) }
+            verify(exactly = 0) { navigationPreferencesRepository.setTasksTabEnabled(false) }
+        }
+
+    @Test
+    fun givenBothTabsEnabled_whenRapidlyDisablingTasksThenRoutines_thenRoutinesRemainsEnabled() =
+        runTest {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(OnboardingContract.UiEvent.TasksTabToggled(false))
+            viewModel.onEvent(OnboardingContract.UiEvent.RoutinesTabToggled(false))
+
+            assertThat(viewModel.uiState.value.isRoutinesTabEnabled).isTrue()
+            assertThat(viewModel.uiState.value.isTasksTabEnabled).isFalse()
+            verify { navigationPreferencesRepository.setTasksTabEnabled(false) }
+            verify(exactly = 0) { navigationPreferencesRepository.setRoutinesTabEnabled(false) }
+        }
+
+    @Test
     fun givenEnabledTabs_whenSelectedAsDefault_thenBothSelectionsArePersisted() =
         runTest {
             val viewModel = createViewModel()

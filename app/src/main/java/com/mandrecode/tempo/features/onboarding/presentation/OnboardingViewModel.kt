@@ -102,9 +102,21 @@ class OnboardingViewModel
             val state = mutableUiState.value
             if (!enabled && !state.isTasksTabEnabled) return
 
+            val defaultTab =
+                if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.ROUTINES) {
+                    OnboardingContract.DefaultTab.TASKS
+                } else {
+                    state.defaultTab
+                }
+            mutableUiState.update {
+                it.copy(
+                    isRoutinesTabEnabled = enabled,
+                    defaultTab = defaultTab,
+                )
+            }
             navigationPreferencesRepository.setRoutinesTabEnabled(enabled)
-            if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.ROUTINES) {
-                navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_TASKS)
+            if (defaultTab != state.defaultTab) {
+                navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
             }
         }
 
@@ -112,9 +124,21 @@ class OnboardingViewModel
             val state = mutableUiState.value
             if (!enabled && !state.isRoutinesTabEnabled) return
 
+            val defaultTab =
+                if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.TASKS) {
+                    OnboardingContract.DefaultTab.ROUTINES
+                } else {
+                    state.defaultTab
+                }
+            mutableUiState.update {
+                it.copy(
+                    isTasksTabEnabled = enabled,
+                    defaultTab = defaultTab,
+                )
+            }
             navigationPreferencesRepository.setTasksTabEnabled(enabled)
-            if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.TASKS) {
-                navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_ROUTINES)
+            if (defaultTab != state.defaultTab) {
+                navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
             }
         }
 
@@ -127,6 +151,7 @@ class OnboardingViewModel
                 }
             if (!enabled) return
 
+            mutableUiState.update { it.copy(defaultTab = defaultTab) }
             navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
         }
 
