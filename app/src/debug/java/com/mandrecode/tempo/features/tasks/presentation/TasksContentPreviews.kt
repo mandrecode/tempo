@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.preview.PreviewFormFactors
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
@@ -418,3 +419,43 @@ private fun ActiveTasksByPriorityPreview() {
 }
 
 // endregion
+
+@PreviewFormFactors
+@Composable
+private fun TasksContentPreviewFormFactors() {
+    fun taskWithDate(
+        id: Long,
+        title: String,
+        date: LocalDate?,
+    ) = Task(
+        id = id,
+        title = title,
+        description = "",
+        reminderDate = date?.let { LocalDateTime(it.year, it.monthNumber, it.dayOfMonth, 9, 0) },
+    )
+
+    val activeTaskGroups: Map<ActiveGroupKey, List<Task>> =
+        linkedMapOf(
+            ActiveGroupKey.ByDate(PREVIEW_TODAY) to
+                listOf(
+                    taskWithDate(1, "Morning standup", PREVIEW_TODAY),
+                    taskWithDate(2, "Review pull request", PREVIEW_TODAY),
+                ),
+            ActiveGroupKey.ByDate(null) to
+                listOf(
+                    taskWithDate(3, "Someday task", null),
+                ),
+        )
+
+    TempoTheme {
+        TasksContent(
+            uiState =
+                TasksContract.UiState(
+                    isLoading = false,
+                    sortOption = SortOption.BY_DATE,
+                    activeTasks = activeTaskGroups.toActivePreviewMap(),
+                ),
+            onEvent = {},
+        )
+    }
+}

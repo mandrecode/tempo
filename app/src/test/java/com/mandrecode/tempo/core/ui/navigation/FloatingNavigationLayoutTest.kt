@@ -52,4 +52,12 @@ class FloatingNavigationLayoutTest {
 
         assertThat(clearance).isEqualTo(40.dp)
     }
+
+    @Test
+    fun givenRailMetrics_whenDerivingContentClearance_thenContentClearsTheRailFootprint() {
+        val railFootprint = FloatingRailStartPadding + FloatingRailSurfaceWidth
+
+        assertThat(FloatingRailContentStartPadding.value)
+            .isAtLeast((railFootprint + 8.dp).value)
+    }
 }

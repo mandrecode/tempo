@@ -42,7 +42,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.buttons.SortB
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
-private val TASK_ACTIONS_LANDSCAPE_TO_NAV_OFFSET = 88.dp
 private val TASK_ACTIONS_CENTERING_OFFSET = 29.dp
 private val TASK_ACTIONS_WITH_CLEAR_CENTERING_OFFSET = 58.dp
 private val TASK_ACTIONS_BUTTON_SIZE = 48.dp
@@ -144,7 +143,7 @@ private fun PersistentLandscapeFloatingBar(
             Modifier
                 .fillMaxHeight()
                 .navigationBarsPadding()
-                .padding(start = 56.dp, top = 16.dp, bottom = 16.dp),
+                .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
         contentAlignment = Alignment.Center,
     ) {
         FloatingBarMainControls(

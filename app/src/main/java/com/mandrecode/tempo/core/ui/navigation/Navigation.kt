@@ -8,10 +8,15 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -116,6 +121,7 @@ private val navigationItems =
 internal val FloatingToolbarItemSize = 48.dp
 internal val FloatingToolbarActionButtonSize = 52.dp
 internal val FloatingToolbarItemSpacing = 8.dp
+internal val FloatingToolbarRailSurfacePadding = 8.dp
 private val FloatingToolbarShape = RoundedCornerShape(36.dp)
 
 @Composable
@@ -154,7 +160,7 @@ fun TempoBottomNavigation(
     ) {
         if (isRailLayout) {
             Column(
-                modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp),
+                modifier = Modifier.padding(horizontal = FloatingToolbarRailSurfacePadding, vertical = 12.dp),
                 verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
@@ -280,7 +286,12 @@ fun TempoNavHost(
         onRouteChange = onRouteChange,
     )
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+    ) {
         TempoNavGraph(
             navController = navController,
             startDestination = startDestination,

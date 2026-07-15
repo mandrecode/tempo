@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.routines.presentation
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import com.mandrecode.tempo.core.ui.preview.PreviewFormFactors
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -268,6 +269,38 @@ private fun RoutinesContentQuitsOnlyPreview() {
                     isLoading = false,
                     selectedDate = PREVIEW_TODAY,
                     habits = quits.toPersistentList(),
+                ),
+            onEvent = {},
+        )
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun RoutinesContentPreviewFormFactors() {
+    val habits =
+        listOf(
+            habit(id = 1L, title = "Stretch", reminderHour = 7),
+            habit(id = 2L, title = "Meditate", icon = "spa", reminderHour = 8, colorKey = "color_m3_purple"),
+            habit(id = 3L, title = "Read", icon = "book", reminderHour = null, colorKey = "color_m3_orange"),
+        )
+
+    TempoTheme {
+        RoutinesContent(
+            uiState =
+                RoutinesContract.UiState(
+                    isLoading = false,
+                    selectedDate = PREVIEW_TODAY,
+                    habits = habits.toPersistentList(),
+                    scheduledTimelineItems =
+                        listOf(
+                            timelineHabit(time = 420, habitId = 1L),
+                            timelineHabit(time = 480, habitId = 2L),
+                        ).toPersistentList(),
+                    unscheduledTimelineItems =
+                        listOf(
+                            timelineHabit(time = null, habitId = 3L),
+                        ).toPersistentList(),
                 ),
             onEvent = {},
         )

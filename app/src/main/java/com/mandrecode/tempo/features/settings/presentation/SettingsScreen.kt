@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 
 @Composable
 fun SettingsScreen(
@@ -56,7 +57,10 @@ internal fun SettingsScaffold(
     Scaffold(
         containerColor = settingsContainerColor,
         contentWindowInsets = WindowInsets(0),
-        modifier = modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+        modifier =
+            modifier
+                .adaptiveScreenContentLayout(isRailLayout = false)
+                .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TwoRowsTopAppBar(
                 title = { expanded ->
