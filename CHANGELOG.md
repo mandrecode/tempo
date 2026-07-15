@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.2](https://github.com/mandrecode/tempo/compare/v0.9.1...v0.9.2) (2026-07-15)
+
+
+### Bug Fixes
+
+* **#142:** adapt layouts to window size classes ([#145](https://github.com/mandrecode/tempo/issues/145)) ([c647c17](https://github.com/mandrecode/tempo/commit/c647c17a310e95ea12e64c70699597c46c799e8f))
+
 ## [0.9.1](https://github.com/mandrecode/tempo/compare/v0.9.0...v0.9.1) (2026-07-15)
 
 
