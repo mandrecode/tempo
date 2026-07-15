@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/mandrecode/tempo/compare/v0.9.0...v0.9.1) (2026-07-15)
+
+
+### Bug Fixes
+
+* **#141:** pad snackbars for system nav bar to avoid clashing with floating bar ([#143](https://github.com/mandrecode/tempo/issues/143)) ([64eceba](https://github.com/mandrecode/tempo/commit/64eceba5ec641f0c95c79caf17ee950a67ad64c0))
+
 ## [0.9.0](https://github.com/mandrecode/tempo/compare/v0.8.16...v0.9.0) (2026-07-14)
 
 
