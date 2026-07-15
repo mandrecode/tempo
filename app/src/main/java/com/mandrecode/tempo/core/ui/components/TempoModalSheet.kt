@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
@@ -42,10 +43,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
@@ -74,6 +75,7 @@ private val SHEET_SHADOW_ELEVATION = 1.dp
 private val SHEET_HANDLE_TOUCH_TARGET_HEIGHT = 48.dp
 private val SHEET_HANDLE_CONTENT_INSET = 24.dp
 private val SHEET_HANDLE_EDGE_PADDING = 8.dp
+private val SHEET_MAX_WIDTH = 640.dp
 
 internal enum class TempoModalSheetDirection {
     Top,
@@ -174,6 +176,7 @@ private fun BoxScope.TempoModalSheetSurface(
     Surface(
         modifier =
             Modifier
+                .widthIn(max = SHEET_MAX_WIDTH)
                 .fillMaxWidth()
                 .heightIn(max = state.maxSheetHeight)
                 .onSizeChanged { size ->
@@ -244,11 +247,13 @@ private fun rememberTempoModalSheetState(
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
     val currentOnDismiss by rememberUpdatedState(onDismissRequest)
     val scope = rememberCoroutineScope()
-    val screenHeightDp = LocalConfiguration.current.screenHeightDp.dp
-    val screenHeightPx = with(LocalDensity.current) { screenHeightDp.toPx() }
-    val currentScreenHeightPx by rememberUpdatedState(screenHeightPx)
-    val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, screenHeightDp)
-    val offsetY = remember { Animatable(direction.hiddenOffset(screenHeightPx)) }
+    val windowHeightPx =
+        LocalWindowInfo.current.containerSize.height
+            .toFloat()
+    val windowHeightDp = with(LocalDensity.current) { windowHeightPx.toDp() }
+    val currentScreenHeightPx by rememberUpdatedState(windowHeightPx)
+    val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, windowHeightDp)
+    val offsetY = remember { Animatable(direction.hiddenOffset(windowHeightPx)) }
     val dismissing = remember { mutableStateOf(false) }
     val showDiscardDialog = remember { mutableStateOf(false) }
     val forceDismiss = remember { mutableStateOf(false) }

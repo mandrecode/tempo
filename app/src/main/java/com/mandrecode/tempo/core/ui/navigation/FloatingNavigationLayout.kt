@@ -3,18 +3,17 @@ package com.mandrecode.tempo.core.ui.navigation
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.Dp
+import androidx.window.core.layout.WindowSizeClass
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 
-private const val FLOATING_NAVIGATION_RAIL_BREAKPOINT_DP = 600
-
 @Composable
-internal fun isFloatingNavigationRailLayout(): Boolean {
-    val screenWidthDp = LocalConfiguration.current.screenWidthDp
-    return screenWidthDp >= FLOATING_NAVIGATION_RAIL_BREAKPOINT_DP
-}
+internal fun isFloatingNavigationRailLayout(): Boolean =
+    currentWindowAdaptiveInfo()
+        .windowSizeClass
+        .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
 
 @Composable
 internal fun floatingNavigationBottomClearancePadding(defaultPadding: Dp): Dp =

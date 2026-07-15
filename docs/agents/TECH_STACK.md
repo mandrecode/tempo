@@ -17,6 +17,7 @@
 - **Serialization:** `kotlinx.serialization`
 - **Database:** Room (with KSP for annotation processing)
 - **Collections:** `kotlinx.collections.immutable` (For stable Compose state)
+- **Adaptive layout:** `androidx.compose.material3.adaptive:adaptive` (BOM-managed) — window size classes via `currentWindowAdaptiveInfo()`; never use `LocalConfiguration` screen fields for layout decisions
 
 ## Directory Structure Strategy
 

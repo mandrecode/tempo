@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
@@ -36,15 +38,26 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
-internal val FloatingRailContentStartPadding = 96.dp
-private val FloatingRailLandscapeStartPadding = 56.dp
+internal val FloatingRailStartPadding = 24.dp
+internal val FloatingRailSurfaceWidth = FloatingToolbarItemSize + FloatingToolbarRailSurfacePadding * 2
+private val FloatingRailContentGap = 16.dp
+internal val FloatingRailContentStartPadding =
+    FloatingRailStartPadding + FloatingRailSurfaceWidth + FloatingRailContentGap
+internal val ReadableContentMaxWidth = 840.dp
 
-fun Modifier.floatingRailContentPadding(isRailLayout: Boolean): Modifier =
-    if (isRailLayout) {
-        padding(start = FloatingRailContentStartPadding)
-    } else {
-        this
-    }
+/**
+ * Lays out top-level screen content adaptively: reserves the floating rail's footprint in rail
+ * layouts and caps content at a readable width, centered in the remaining space, on wide windows.
+ */
+fun Modifier.adaptiveScreenContentLayout(isRailLayout: Boolean): Modifier =
+    then(
+        if (isRailLayout) {
+            Modifier.padding(start = FloatingRailContentStartPadding)
+        } else {
+            Modifier
+        },
+    ).wrapContentWidth(Alignment.CenterHorizontally)
+        .widthIn(max = ReadableContentMaxWidth)
 
 @Composable
 internal fun rememberIsSingleTabMode(navigationPreferencesRepository: NavigationPreferencesRepository): Boolean {
@@ -128,7 +141,7 @@ private fun LandscapeBottomRail(
                 .fillMaxHeight()
                 .navigationBarsPadding()
                 .padding(
-                    start = FloatingRailLandscapeStartPadding,
+                    start = FloatingRailStartPadding,
                     top = 16.dp,
                     bottom = 16.dp,
                 ),
