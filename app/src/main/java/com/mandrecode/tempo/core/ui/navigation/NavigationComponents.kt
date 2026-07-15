@@ -56,7 +56,8 @@ fun Modifier.adaptiveScreenContentLayout(isRailLayout: Boolean): Modifier =
         } else {
             Modifier
         },
-    ).wrapContentWidth(Alignment.CenterHorizontally)
+    ).fillMaxWidth()
+        .wrapContentWidth(Alignment.CenterHorizontally)
         .widthIn(max = ReadableContentMaxWidth)
 
 @Composable
