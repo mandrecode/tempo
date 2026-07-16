@@ -200,6 +200,13 @@ class TempoIconTest {
     }
 
     @Test
+    fun `suggestIcon still matches plurals of short keywords`() {
+        setupKeywords()
+        // "meal" (4 chars, hard right boundary) must still match plural "Meals"
+        assertThat(TempoIcon.suggestIcon("Meals prep", context)).isEqualTo(TempoIcon.RESTAURANT)
+    }
+
+    @Test
     fun `suggestIcon returns correct icon for meditation keywords`() {
         setupKeywords()
         assertThat(TempoIcon.suggestIcon("Meditation", context)).isEqualTo(TempoIcon.SPA)

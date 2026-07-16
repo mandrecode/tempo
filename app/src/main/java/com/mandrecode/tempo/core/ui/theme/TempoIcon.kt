@@ -272,15 +272,21 @@ enum class TempoIcon(
 
         // Left side is always a hard word boundary so a keyword can never match mid-word
         // (e.g. "run" must not match inside "brunch", Spanish "ver" must not match inside
-        // "verano"). Short keywords also require a hard boundary on the right, but longer
-        // ones (>4 chars) are allowed to match as a prefix so regular suffixes are still
-        // caught without needing every inflected form listed explicitly
+        // "verano"). Longer keywords (>4 chars) may also match as a prefix so regular
+        // suffixes are still caught without needing every inflected form listed explicitly
         // (e.g. "hydrate" -> "hydrated", "clean" -> "cleaning", Spanish "empleo" -> "empleos").
+        // Short keywords require a hard boundary on the right too, but still allow a plain
+        // "s"/"es" plural first (e.g. "meal" -> "meals", "goal" -> "goals") so common plurals
+        // of short words keep matching without opening the door to arbitrary mid-word hits.
         private fun buildKeywordPattern(keyword: String): Regex {
             val escaped = Regex.escape(keyword)
-            val rightBoundary =
-                if (keyword.length > WHOLE_WORD_BOUNDARY_MAX_LENGTH) "" else "(?![\\p{L}\\p{N}])"
-            return Regex("(?<![\\p{L}\\p{N}])$escaped$rightBoundary")
+            val pattern =
+                if (keyword.length > WHOLE_WORD_BOUNDARY_MAX_LENGTH) {
+                    "(?<![\\p{L}\\p{N}])$escaped"
+                } else {
+                    "(?<![\\p{L}\\p{N}])$escaped(?:es|s)?(?![\\p{L}\\p{N}])"
+                }
+            return Regex(pattern)
         }
 
         private const val WHOLE_WORD_BOUNDARY_MAX_LENGTH = 4
