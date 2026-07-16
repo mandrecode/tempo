@@ -126,14 +126,8 @@ fun TempoNavHost(
             includeEditorEntries = editorPaneEnabled,
         )
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
-    val settingsAsTopLevel = isExpandedFloatingRailLayout()
-    val openSettings: () -> Unit = {
-        if (settingsAsTopLevel) {
-            navigator.navigateToTopLevel(SettingsRoute)
-        } else {
-            navigator.navigate(SettingsRoute)
-        }
-    }
+    val settingsUsesTabTransition = isFloatingNavigationRailLayout()
+    val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
     Box(
         modifier =
@@ -145,7 +139,7 @@ fun TempoNavHost(
             entries = activeEntries,
             navigator = navigator,
             editorSceneStrategy = editorSceneStrategy,
-            settingsAsTopLevel = settingsAsTopLevel,
+            settingsUsesTabTransition = settingsUsesTabTransition,
         )
 
         PersistentFloatingBar(
@@ -166,7 +160,7 @@ private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
     editorSceneStrategy: SceneStrategy<NavKey>,
-    settingsAsTopLevel: Boolean,
+    settingsUsesTabTransition: Boolean,
 ) {
     NavDisplay(
         entries = entries,
@@ -177,14 +171,14 @@ private fun TempoNavDisplay(
             navigationTransition(
                 initialScene = initialState,
                 targetScene = targetState,
-                settingsAsTopLevel = settingsAsTopLevel,
+                settingsUsesTabTransition = settingsUsesTabTransition,
             )
         },
         popTransitionSpec = {
             navigationPopTransition(
                 initialScene = initialState,
                 targetScene = targetState,
-                settingsAsTopLevel = settingsAsTopLevel,
+                settingsUsesTabTransition = settingsUsesTabTransition,
             )
         },
     )
@@ -369,10 +363,12 @@ private fun RouteTopBar(
 
 @Composable
 private fun SettingsDestination(navigator: TempoNavigator) {
+    val isRailLayout = isFloatingNavigationRailLayout()
     SettingsScreen(
         onBackClick = { navigator.pop() },
         onOnboardingClick = { navigator.navigate(OnboardingRoute(isReplay = true)) },
-        showBackButton = !isExpandedFloatingRailLayout(),
+        showBackButton = !isRailLayout,
+        showTitle = !isExpandedFloatingRailLayout(),
     )
 }
 

@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -187,6 +190,11 @@ private fun SettingsRailButton(
     expanded: Boolean,
     onClick: () -> Unit,
 ) {
+    if (!expanded) {
+        CompactSettingsRailButton(selected = selected, onClick = onClick)
+        return
+    }
+
     Surface(
         onClick = { if (!selected) onClick() },
         shape = CircleShape,
@@ -204,7 +212,7 @@ private fun SettingsRailButton(
             },
         modifier =
             Modifier
-                .width(if (expanded) FloatingRailExpandedSurfaceWidth else FloatingRailSurfaceWidth)
+                .width(FloatingRailExpandedSurfaceWidth)
                 .height(FloatingToolbarItemSize),
     ) {
         Row(
@@ -214,14 +222,50 @@ private fun SettingsRailButton(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = if (expanded) null else stringResource(R.string.settings),
+                contentDescription = null,
             )
-            if (expanded) {
-                Text(
-                    text = stringResource(R.string.settings),
-                    style = MaterialTheme.typography.labelLarge,
-                )
-            }
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.labelLarge,
+            )
+        }
+    }
+}
+
+@Composable
+private fun CompactSettingsRailButton(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    if (selected) {
+        FilledIconButton(
+            onClick = {},
+            modifier = Modifier.size(FloatingToolbarItemSize),
+            shape = CircleShape,
+            colors =
+                IconButtonDefaults.filledIconButtonColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = stringResource(R.string.settings),
+            )
+        }
+    } else {
+        IconButton(
+            onClick = onClick,
+            modifier = Modifier.size(FloatingToolbarItemSize),
+            colors =
+                IconButtonDefaults.iconButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = stringResource(R.string.settings),
+            )
         }
     }
 }

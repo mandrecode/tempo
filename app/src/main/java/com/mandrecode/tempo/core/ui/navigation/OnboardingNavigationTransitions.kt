@@ -30,7 +30,7 @@ internal fun onboardingHandoffExitTransition(): ExitTransition =
 internal fun navigationTransition(
     initialScene: Scene<NavKey>,
     targetScene: Scene<NavKey>,
-    settingsAsTopLevel: Boolean = false,
+    settingsUsesTabTransition: Boolean = false,
 ): ContentTransform {
     val initialRoute = initialScene.entries.last().contentKey
     val targetRoute = targetScene.entries.last().contentKey
@@ -38,7 +38,7 @@ internal fun navigationTransition(
         initialRoute is OnboardingRoute && (targetRoute == RoutinesRoute || targetRoute == TasksRoute) ->
             onboardingHandoffEnterTransition() togetherWith onboardingHandoffExitTransition()
 
-        targetRoute == SettingsRoute && !settingsAsTopLevel ->
+        targetRoute == SettingsRoute && !settingsUsesTabTransition ->
             settingsEnterTransition() togetherWith
                 fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
 
@@ -49,12 +49,12 @@ internal fun navigationTransition(
 internal fun navigationPopTransition(
     initialScene: Scene<NavKey>,
     targetScene: Scene<NavKey>,
-    settingsAsTopLevel: Boolean = false,
+    settingsUsesTabTransition: Boolean = false,
 ): ContentTransform =
-    if (initialScene.entries.last().contentKey == SettingsRoute && !settingsAsTopLevel) {
+    if (initialScene.entries.last().contentKey == SettingsRoute && !settingsUsesTabTransition) {
         settingsPopEnterTransition() togetherWith settingsExitTransition()
     } else {
-        navigationTransition(initialScene, targetScene, settingsAsTopLevel)
+        navigationTransition(initialScene, targetScene, settingsUsesTabTransition)
     }
 
 private fun defaultNavigationTransition(): ContentTransform =

@@ -47,12 +47,18 @@ Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp throu
 
 #### Scenario: Settings is a large-window destination
 - **WHEN** the window is at least 1200dp wide and the user selects Settings
-- **THEN** Settings replaces the content pane in place with the same transition as the other tabs while the rail remains visible and selected
+- **THEN** the Settings Nav3 route replaces the content pane with the same transition as the other tabs while the rail remains visible and selected
 - **AND** add, sort, and clear-completed actions from the previous tab are hidden
+- **AND** the redundant Settings content title is not shown
 
 #### Scenario: Settings remains in a collapsed rail
 - **WHEN** a compact-landscape or medium window uses the collapsed navigation rail
-- **THEN** Settings is pinned in the same rail column instead of appearing in the screen top bar
+- **THEN** Settings is pinned as a circular icon in the same rail column instead of appearing in the screen top bar
+- **AND** selecting it shows a selected state without a top back button
+
+#### Scenario: Compact Settings preserves pushed navigation
+- **WHEN** a compact window without a navigation rail opens Settings
+- **THEN** the Settings Nav3 route slides in from the right and shows its back affordance
 
 #### Scenario: Medium editors align to screen content
 - **WHEN** a task or habit editor opens below the 1200dp docked-pane breakpoint

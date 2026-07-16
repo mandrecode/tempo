@@ -1,7 +1,10 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +34,7 @@ fun SettingsScreen(
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
     showBackButton: Boolean = true,
+    showTitle: Boolean = true,
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -42,6 +46,7 @@ fun SettingsScreen(
         onOnboardingClick = onOnboardingClick,
         modifier = modifier,
         showBackButton = showBackButton,
+        showTitle = showTitle,
     )
 }
 
@@ -54,6 +59,7 @@ internal fun SettingsScaffold(
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
     showBackButton: Boolean = true,
+    showTitle: Boolean = true,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val settingsContainerColor = MaterialTheme.colorScheme.background
@@ -66,37 +72,41 @@ internal fun SettingsScaffold(
                 .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TwoRowsTopAppBar(
-                title = { expanded ->
-                    Text(
-                        text = stringResource(R.string.settings),
-                        style =
-                            if (expanded) {
-                                MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
-                            } else {
-                                MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
-                            },
-                    )
-                },
-                navigationIcon = {
-                    if (showBackButton) {
-                        IconButton(onClick = onBackClick) {
-                            Icon(
-                                Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back),
-                            )
+            if (showTitle) {
+                TwoRowsTopAppBar(
+                    title = { expanded ->
+                        Text(
+                            text = stringResource(R.string.settings),
+                            style =
+                                if (expanded) {
+                                    MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
+                                } else {
+                                    MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+                                },
+                        )
+                    },
+                    navigationIcon = {
+                        if (showBackButton) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back),
+                                )
+                            }
                         }
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = settingsContainerColor,
-                        scrolledContainerColor = settingsContainerColor,
-                    ),
-                collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
-                expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
-                scrollBehavior = scrollBehavior,
-            )
+                    },
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = settingsContainerColor,
+                            scrolledContainerColor = settingsContainerColor,
+                        ),
+                    collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
+                    expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
+                    scrollBehavior = scrollBehavior,
+                )
+            } else {
+                Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            }
         },
     ) { padding ->
         SettingsContent(
