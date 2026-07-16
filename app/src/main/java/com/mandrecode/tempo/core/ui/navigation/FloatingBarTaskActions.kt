@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -124,6 +125,7 @@ private fun SortMenuAnchor(
         DropdownMenu(
             expanded = tasksState.sortMenuExpanded,
             onDismissRequest = tasksState.onDismissSort,
+            shape = RoundedCornerShape(16.dp),
         ) {
             SortOption.entries.forEach { option ->
                 DropdownMenuItem(
@@ -132,6 +134,7 @@ private fun SortMenuAnchor(
                         Icon(
                             painter = painterResource(getIconForSortOption(option)),
                             contentDescription = null,
+                            modifier = Modifier.size(20.dp),
                         )
                     },
                     onClick = {
