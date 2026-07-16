@@ -108,7 +108,8 @@ fun IconPicker(
                 else -> {
                     val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
                     if (selectedIcon != null) {
-                        listOf(selectedIcon) + sampledIcons.take(firstRowIconsCount - 1)
+                        val remainingSampled = sampledIcons.filterNot { it.category == selectedIcon.category }
+                        listOf(selectedIcon) + remainingSampled.take(firstRowIconsCount - 1)
                     } else {
                         sampledIcons
                     }
