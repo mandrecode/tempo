@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -21,7 +20,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,13 +41,19 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.theme.IconCategory
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.util.rememberPressableIconButtonAnimation
 
+// Using 6 items per row for a balanced grid
+private const val ITEMS_PER_ROW = 6
+private const val FIRST_ROW_ICONS_COUNT = ITEMS_PER_ROW - 1
+
 /**
  * Icon picker component for selecting habit icons.
- * Displays a grid of icons that fits the width of the container.
- * When collapsed and an icon is selected, it is shown first in the row.
+ * Shows a row sampled across icon categories that fits the width of the container,
+ * plus a trigger that opens a modal with every icon grouped by category.
+ * When an icon is selected, it is always shown somewhere in the row.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -59,29 +66,41 @@ fun IconPicker(
     disabledMessage: String? = null,
 ) {
     val allIcons = remember { TempoIcon.getAllIcons() }
-    var isExpanded by remember { mutableStateOf(false) }
-    // Using 6 items per row for a balanced grid
-    val itemsPerRow = 6
-    val firstRowIconsCount = itemsPerRow - 1
+    var showCategoryModal by remember { mutableStateOf(false) }
+
+    // Sampled once per picker instance so the row doesn't reshuffle on unrelated
+    // recompositions (e.g. typing in another field of the same form).
+    val sampledIcons =
+        remember { TempoIcon.sampleAcrossCategories(allIcons, FIRST_ROW_ICONS_COUNT) }
 
     val iconsToDisplay =
-        if (isExpanded) {
-            allIcons
-        } else {
-            val selectedIndex = allIcons.indexOfFirst { it.iconName == selectedIconName }
-            if (selectedIndex >= firstRowIconsCount) {
-                // Show selected icon first, then fill remaining slots with other icons
-                listOf(allIcons[selectedIndex]) + allIcons.filter { it.iconName != selectedIconName }.take(firstRowIconsCount - 1)
-            } else {
-                allIcons.take(firstRowIconsCount)
+        when {
+            selectedIconName == null -> sampledIcons
+            sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
+            else -> {
+                val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
+                if (selectedIcon != null) {
+                    listOf(selectedIcon) + sampledIcons.take(FIRST_ROW_ICONS_COUNT - 1)
+                } else {
+                    sampledIcons
+                }
             }
         }
 
+    if (showCategoryModal) {
+        IconCategoryModal(
+            allIcons = allIcons,
+            selectedIconName = selectedIconName,
+            onSelectIcon = {
+                onSelectIcon(it)
+                showCategoryModal = false
+            },
+            onDismissRequest = { showCategoryModal = false },
+        )
+    }
+
     Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow)),
+        modifier = modifier.fillMaxWidth(),
     ) {
         FlowRow(
             modifier =
@@ -90,7 +109,7 @@ fun IconPicker(
                     .padding(start = 4.dp, end = 4.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            maxItemsInEachRow = itemsPerRow,
+            maxItemsInEachRow = ITEMS_PER_ROW,
         ) {
             iconsToDisplay.forEach { tempoIcon ->
                 IconOption(
@@ -102,26 +121,24 @@ fun IconPicker(
                             onClearIcon()
                         } else {
                             onSelectIcon(tempoIcon.iconName)
-                            isExpanded = false
                         }
                     },
                 )
             }
 
-            // Add spacers to push the toggle to the bottom right and respect the grid
+            // Add spacers to push the trigger to the bottom right and respect the grid
             // This ensures that partial rows have the same spacing as full rows
             val totalVisible = iconsToDisplay.size + 1
-            val remainder = totalVisible % itemsPerRow
+            val remainder = totalVisible % ITEMS_PER_ROW
             if (remainder != 0) {
-                val spacersNeeded = itemsPerRow - remainder
+                val spacersNeeded = ITEMS_PER_ROW - remainder
                 repeat(spacersNeeded) {
                     Box(modifier = Modifier.size(48.dp))
                 }
             }
 
-            ExpandButton(
-                isExpanded = isExpanded,
-                onClick = { isExpanded = !isExpanded },
+            BrowseCategoriesButton(
+                onClick = { showCategoryModal = true },
                 enabled = enabled,
             )
         }
@@ -247,9 +264,11 @@ private fun IconOption(
     }
 }
 
+/**
+ * Trailing trigger that opens [IconCategoryModal] to browse every icon by category.
+ */
 @Composable
-private fun ExpandButton(
-    isExpanded: Boolean,
+private fun BrowseCategoriesButton(
     onClick: () -> Unit,
     enabled: Boolean,
 ) {
@@ -271,7 +290,7 @@ private fun ExpandButton(
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
             },
-        label = "expand_container_color",
+        label = "browse_categories_container_color",
     )
 
     val contentColor by animateColorAsState(
@@ -281,7 +300,7 @@ private fun ExpandButton(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             },
-        label = "expand_content_color",
+        label = "browse_categories_content_color",
     )
 
     Box(
@@ -302,20 +321,67 @@ private fun ExpandButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter =
-                painterResource(
-                    if (isExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more,
-                ),
-            contentDescription =
-                if (isExpanded) {
-                    stringResource(R.string.collapse)
-                } else {
-                    stringResource(
-                        R.string.expand,
-                    )
-                },
+            painter = painterResource(R.drawable.ic_chevron_right),
+            contentDescription = stringResource(R.string.icon_picker_browse_categories),
             modifier = Modifier.size(iconSize),
             tint = contentColor,
         )
+    }
+}
+
+/**
+ * Modal listing every [TempoIcon], grouped and headed by its [IconCategory].
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IconCategoryModal(
+    allIcons: List<TempoIcon>,
+    selectedIconName: String?,
+    onSelectIcon: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    val iconsByCategory = remember(allIcons) { allIcons.groupBy { it.category } }
+
+    TempoModalBottomSheet(onDismissRequest = onDismissRequest) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 24.dp)
+                    .padding(top = 8.dp, bottom = 32.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.icon_picker_all_icons_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+
+            IconCategory.entries.forEach { category ->
+                val categoryIcons = iconsByCategory[category].orEmpty()
+                if (categoryIcons.isNotEmpty()) {
+                    Text(
+                        text = stringResource(category.labelRes),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
+                    )
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        maxItemsInEachRow = ITEMS_PER_ROW,
+                    ) {
+                        categoryIcons.forEach { tempoIcon ->
+                            IconOption(
+                                tempoIcon = tempoIcon,
+                                isSelected = selectedIconName == tempoIcon.iconName,
+                                enabled = true,
+                                onClick = { onSelectIcon(tempoIcon.iconName) },
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }

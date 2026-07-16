@@ -507,4 +507,17 @@
     <string name="keywords_shield">escudo, proteger, dejar, parar, bloquear, evitar, guardia</string>
     <string name="keywords_psychiatry">psiquiatría, mente, mental, terapia, cerebro, construir, crecimiento</string>
     <string name="keywords_smoke_free">sin humo, fumar, cigarro, tabaco, dejar, parar</string>
+
+    <!-- HABIT ICON CATEGORIES -->
+    <string name="icon_category_fitness_sports">Fitness y deportes</string>
+    <string name="icon_category_health_wellness">Salud y bienestar</string>
+    <string name="icon_category_food_nutrition">Comida y nutrición</string>
+    <string name="icon_category_productivity_work">Productividad y trabajo</string>
+    <string name="icon_category_home_daily_life">Hogar y vida diaria</string>
+    <string name="icon_category_communication_social">Comunicación y social</string>
+    <string name="icon_category_entertainment_hobbies">Entretenimiento y pasatiempos</string>
+    <string name="icon_category_personal_development">Desarrollo personal</string>
+    <string name="icon_category_miscellaneous">Varios</string>
+    <string name="icon_picker_browse_categories">Explorar todos los iconos por categoría</string>
+    <string name="icon_picker_all_icons_title">Todos los iconos</string>
 </resources>

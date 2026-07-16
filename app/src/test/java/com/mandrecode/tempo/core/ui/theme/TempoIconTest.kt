@@ -9,6 +9,7 @@ import io.mockk.unmockkAll
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.random.Random
 
 class TempoIconTest {
     private lateinit var context: Context
@@ -329,5 +330,56 @@ class TempoIconTest {
         icons.forEach { icon ->
             assertThat(icon.iconRes).isGreaterThan(0)
         }
+    }
+
+    @Test
+    fun `every icon category has at least one icon`() {
+        val icons = TempoIcon.getAllIcons()
+        val categoriesInUse = icons.map { it.category }.toSet()
+
+        assertThat(categoriesInUse).containsExactlyElementsIn(IconCategory.entries)
+    }
+
+    // --- sampleAcrossCategories TESTS ---
+
+    @Test
+    fun `sampleAcrossCategories fills distinct categories when slots fit`() {
+        val icons = TempoIcon.getAllIcons()
+        val slotCount = 5
+
+        val sampled = TempoIcon.sampleAcrossCategories(icons, slotCount, random = Random(42))
+
+        assertThat(sampled).hasSize(slotCount)
+        assertThat(sampled.map { it.category }.toSet()).hasSize(slotCount)
+        assertThat(sampled.toSet()).hasSize(slotCount)
+    }
+
+    @Test
+    fun `sampleAcrossCategories never returns duplicate icons when wrapping`() {
+        val icons = TempoIcon.getAllIcons()
+        val slotCount = icons.size + 10
+
+        val sampled = TempoIcon.sampleAcrossCategories(icons, slotCount, random = Random(7))
+
+        assertThat(sampled).hasSize(icons.size)
+        assertThat(sampled.toSet()).hasSize(icons.size)
+    }
+
+    @Test
+    fun `sampleAcrossCategories is deterministic for a given seed`() {
+        val icons = TempoIcon.getAllIcons()
+
+        val first = TempoIcon.sampleAcrossCategories(icons, 6, random = Random(99))
+        val second = TempoIcon.sampleAcrossCategories(icons, 6, random = Random(99))
+
+        assertThat(first).isEqualTo(second)
+    }
+
+    @Test
+    fun `sampleAcrossCategories returns empty list for non-positive slot count`() {
+        val icons = TempoIcon.getAllIcons()
+
+        assertThat(TempoIcon.sampleAcrossCategories(icons, 0)).isEmpty()
+        assertThat(TempoIcon.sampleAcrossCategories(icons, -1)).isEmpty()
     }
 }
