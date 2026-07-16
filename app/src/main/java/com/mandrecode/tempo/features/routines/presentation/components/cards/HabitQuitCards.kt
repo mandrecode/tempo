@@ -58,6 +58,7 @@ fun QuitHabitCard(
     val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
+        onClick = onEdit,
         modifier =
             modifier
                 .fillMaxWidth()
@@ -79,6 +80,7 @@ fun QuitHabitCard(
             cardShape = state.cardShape,
             contentColor = contentColor,
             canToggle = state.canToggle,
+            enableClick = false,
             trailingContent =
                 if (state.streak > 0) {
                     {

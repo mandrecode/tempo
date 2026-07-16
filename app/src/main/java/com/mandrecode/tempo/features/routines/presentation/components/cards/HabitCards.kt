@@ -90,6 +90,7 @@ internal fun HabitItem(
     isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
     isSelected: Boolean = false,
+    enableClick: Boolean = true,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -176,7 +177,7 @@ internal fun HabitItem(
                 .clip(cardShape)
                 .background(selectionColor)
                 .semantics { selected = isSelected }
-                .clickable { onClick() }
+                .then(if (enableClick) Modifier.clickable { onClick() } else Modifier)
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -454,6 +455,7 @@ fun HabitCard(
         }
 
         Card(
+            onClick = onEdit,
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -477,6 +479,7 @@ fun HabitCard(
                 horizontalPadding = 16.dp,
                 verticalPadding = 16.dp,
                 canToggle = canToggle,
+                enableClick = false,
             )
         }
     }
