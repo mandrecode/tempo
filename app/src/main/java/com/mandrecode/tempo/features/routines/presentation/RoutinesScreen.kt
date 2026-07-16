@@ -36,6 +36,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.ClearRemindersConfirmDialog
@@ -123,7 +124,7 @@ fun RoutinesScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.adaptiveScreenContentLayout(isRailLayout),
+            modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0),
             topBar = topBar,

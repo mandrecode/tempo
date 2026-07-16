@@ -4,7 +4,6 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,10 +38,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -52,12 +48,10 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -84,7 +78,6 @@ private val SHEET_HANDLE_EDGE_PADDING = 8.dp
 private val SHEET_HANDLE_LENGTH = 32.dp
 private val SHEET_HANDLE_THICKNESS = 4.dp
 private val SHEET_MAX_WIDTH = 640.dp
-private val SIDE_SHEET_WIDTH = 412.dp
 
 internal enum class TempoModalSheetDirection {
     Top,
@@ -258,93 +251,6 @@ private fun TempoModalSheetColumn(
                         TempoModalSheetDirection.End -> Alignment.CenterStart
                     },
                 ),
-        )
-    }
-}
-
-@Composable
-private fun rememberTempoModalSheetState(
-    direction: TempoModalSheetDirection,
-    onDismissRequest: () -> Unit,
-    hasUnsavedChanges: Boolean,
-): TempoModalSheetState {
-    val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
-    val currentOnDismiss by rememberUpdatedState(onDismissRequest)
-    val scope = rememberCoroutineScope()
-    val windowSize = LocalWindowInfo.current.containerSize
-    val density = LocalDensity.current
-    val windowHeightPx = windowSize.height.toFloat()
-    val windowHeightDp = with(density) { windowHeightPx.toDp() }
-    // The dismiss axis is vertical for top/bottom sheets (the window height guarantees the sheet
-    // fully exits) and horizontal for side sheets (the sheet's own width is enough to hide it).
-    val axisSizePx =
-        if (direction.isHorizontal) {
-            with(density) { minOf(SIDE_SHEET_WIDTH.toPx(), windowSize.width.toFloat()) }
-        } else {
-            windowHeightPx
-        }
-    val currentAxisSizePx by rememberUpdatedState(axisSizePx)
-    val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, windowHeightDp)
-    val offset = remember { Animatable(direction.hiddenOffset(axisSizePx)) }
-    val dismissing = remember { mutableStateOf(false) }
-    val showDiscardDialog = remember { mutableStateOf(false) }
-    val forceDismiss = remember { mutableStateOf(false) }
-    val isExpandedToStatusBar = remember { mutableStateOf(false) }
-
-    lateinit var state: TempoModalSheetState
-    val animateRestore: () -> Unit = {
-        scope.launch { state.restore() }
-    }
-    val animateDismiss: () -> Unit = {
-        if (!dismissing.value) {
-            dismissing.value = true
-            scope.launch {
-                try {
-                    offset.animateTo(
-                        direction.hiddenOffset(currentAxisSizePx),
-                        animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS),
-                    )
-                } finally {
-                    currentOnDismiss()
-                }
-            }
-        }
-    }
-    val onRequestDismiss: () -> Unit = {
-        if (currentHasUnsavedChanges && !forceDismiss.value) {
-            animateRestore()
-            showDiscardDialog.value = true
-        } else {
-            animateDismiss()
-        }
-    }
-
-    state =
-        TempoModalSheetState(
-            direction = direction,
-            maxSheetHeight = maxSheetHeight,
-            dismissAxisSizePx = currentAxisSizePx,
-            offset = offset,
-            dismissing = dismissing,
-            showDiscardDialog = showDiscardDialog,
-            forceDismiss = forceDismiss,
-            isExpandedToStatusBar = isExpandedToStatusBar,
-            animateDismiss = animateDismiss,
-            onRequestDismiss = onRequestDismiss,
-        )
-    return state
-}
-
-@Composable
-private fun rememberTempoModalSheetMaxHeight(
-    direction: TempoModalSheetDirection,
-    screenHeightDp: Dp,
-): Dp {
-    val statusBarTopPadding = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
-    return remember(direction, screenHeightDp, statusBarTopPadding) {
-        direction.maxHeight(
-            screenHeight = screenHeightDp,
-            topInset = statusBarTopPadding,
         )
     }
 }

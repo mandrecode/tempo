@@ -35,6 +35,7 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
@@ -186,7 +187,7 @@ fun TasksScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         Scaffold(
-            modifier = Modifier.adaptiveScreenContentLayout(isRailLayout),
+            modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0),
             topBar = topBar,

@@ -3,10 +3,7 @@ package com.mandrecode.tempo.core.ui.navigation
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -14,18 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,13 +22,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -94,172 +78,6 @@ sealed interface PendingNotificationAction {
 // Route name constants for persistence
 const val ROUTINES_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES
 const val TASKS_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_TASKS
-
-private data class NavigationItem<T : Any>(
-    val route: T,
-    val titleRes: Int,
-    val selectedIcon: Int,
-    val unselectedIcon: Int,
-)
-
-private val navigationItems =
-    listOf(
-        NavigationItem(
-            route = RoutinesRoute,
-            titleRes = R.string.routines,
-            selectedIcon = R.drawable.ic_routine,
-            unselectedIcon = R.drawable.ic_routine_outlined,
-        ),
-        NavigationItem(
-            route = TasksRoute,
-            titleRes = R.string.tasks,
-            selectedIcon = R.drawable.ic_tasks,
-            unselectedIcon = R.drawable.ic_tasks_outlined,
-        ),
-    )
-
-internal val FloatingToolbarItemSize = 48.dp
-internal val FloatingToolbarActionButtonSize = 52.dp
-internal val FloatingToolbarItemSpacing = 8.dp
-internal val FloatingToolbarRailSurfacePadding = 8.dp
-private val FloatingToolbarShape = RoundedCornerShape(36.dp)
-
-@Composable
-fun TempoBottomNavigation(
-    navController: NavHostController,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
-    onRouteChange: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val isRoutinesTabEnabled by navigationPreferencesRepository
-        .isRoutinesTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-    val isTasksTabEnabled by navigationPreferencesRepository
-        .isTasksTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-
-    val visibleNavigationItems =
-        navigationItems.filter { item ->
-            when (item.route) {
-                RoutinesRoute -> isRoutinesTabEnabled
-                TasksRoute -> isTasksTabEnabled
-                else -> true
-            }
-        }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-
-    val isRailLayout = isFloatingNavigationRailLayout()
-
-    Surface(
-        modifier = modifier,
-        shape = FloatingToolbarShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-    ) {
-        if (isRailLayout) {
-            Column(
-                modifier = Modifier.padding(horizontal = FloatingToolbarRailSurfacePadding, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                visibleNavigationItems.forEach { item ->
-                    val selected = currentDestination?.hasRoute(item.route::class) == true
-                    ToolbarNavigationButton(
-                        item = item,
-                        selected = selected,
-                        onClick = { if (!selected) navigateTo(navController, item, onRouteChange) },
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                visibleNavigationItems.forEach { item ->
-                    val selected = currentDestination?.hasRoute(item.route::class) == true
-                    ToolbarNavigationButton(
-                        item = item,
-                        selected = selected,
-                        onClick = { if (!selected) navigateTo(navController, item, onRouteChange) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun navigateTo(
-    navController: NavHostController,
-    item: NavigationItem<*>,
-    onRouteChange: (String) -> Unit,
-) {
-    navController.navigate(item.route) {
-        popUpTo(navController.topLevelPopUpToId()) {
-            saveState = true
-        }
-        launchSingleTop = true
-        restoreState = true
-    }
-    val routeName =
-        when (item.route) {
-            RoutinesRoute -> ROUTINES_ROUTE_NAME
-            TasksRoute -> TASKS_ROUTE_NAME
-            else -> item.route::class.simpleName ?: ""
-        }
-    if (routeName.isNotEmpty()) {
-        onRouteChange(routeName)
-    }
-}
-
-@Composable
-private fun ToolbarNavigationButton(
-    item: NavigationItem<*>,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val iconRes =
-        if (selected) {
-            item.selectedIcon
-        } else {
-            item.unselectedIcon
-        }
-
-    if (selected) {
-        FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            shape = CircleShape,
-            colors =
-                IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = stringResource(item.titleRes),
-            )
-        }
-    } else {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            colors =
-                IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = stringResource(item.titleRes),
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
