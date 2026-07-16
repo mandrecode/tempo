@@ -1,10 +1,7 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -39,15 +37,37 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.IconCategory
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
+import com.mandrecode.tempo.core.ui.util.rememberPressableChipAnimation
 import com.mandrecode.tempo.core.ui.util.rememberPressableIconButtonAnimation
 
-// Using 6 items per row for a balanced grid
-private const val ITEMS_PER_ROW = 6
-private const val FIRST_ROW_ICONS_COUNT = ITEMS_PER_ROW - 1
+private val ICON_OPTION_SIZE = 48.dp
+private val ROW_ITEM_MIN_GAP = 4.dp
+private val ROW_HORIZONTAL_PADDING = 8.dp // 4dp start + 4dp end, matches the FlowRow's own padding
+
+// Default/floor for narrow (compact phone) containers - matches the picker's original fixed size.
+private const val DEFAULT_ITEMS_PER_ROW = 6
+
+// Ceiling: one row slot per icon category (+1 for the trigger) - beyond this, extra slots would
+// only add a second icon from a category already represented, which doesn't add more variety.
+private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
+
+/**
+ * How many 48dp icon slots (including the trailing trigger) comfortably fit across
+ * [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing, clamped to
+ * [[DEFAULT_ITEMS_PER_ROW], [MAX_ITEMS_PER_ROW]] so compact phones never shrink below today's
+ * row size and wide windows don't grow it past one slot per category.
+ */
+internal fun calculateItemsPerRow(availableWidth: Dp): Int {
+    val usableWidth = availableWidth - ROW_HORIZONTAL_PADDING
+    val itemSpan = ICON_OPTION_SIZE + ROW_ITEM_MIN_GAP
+    val fitting = ((usableWidth + ROW_ITEM_MIN_GAP).value / itemSpan.value).toInt()
+    return fitting.coerceIn(DEFAULT_ITEMS_PER_ROW, MAX_ITEMS_PER_ROW)
+}
 
 /**
  * Icon picker component for selecting habit icons.
@@ -65,92 +85,99 @@ fun IconPicker(
     enabled: Boolean = true,
     disabledMessage: String? = null,
 ) {
-    val allIcons = remember { TempoIcon.getAllIcons() }
-    var showCategoryModal by remember { mutableStateOf(false) }
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val itemsPerRow = calculateItemsPerRow(maxWidth)
+        val firstRowIconsCount = itemsPerRow - 1
 
-    // Sampled once per picker instance so the row doesn't reshuffle on unrelated
-    // recompositions (e.g. typing in another field of the same form).
-    val sampledIcons =
-        remember { TempoIcon.sampleAcrossCategories(allIcons, FIRST_ROW_ICONS_COUNT) }
+        val allIcons = remember { TempoIcon.getAllIcons() }
+        var showCategoryModal by remember { mutableStateOf(false) }
 
-    val iconsToDisplay =
-        when {
-            selectedIconName == null -> sampledIcons
-            sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
-            else -> {
-                val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
-                if (selectedIcon != null) {
-                    listOf(selectedIcon) + sampledIcons.take(FIRST_ROW_ICONS_COUNT - 1)
-                } else {
-                    sampledIcons
+        // Re-sampled only when the row's slot count actually changes (e.g. the window is
+        // resized), not on unrelated recompositions (e.g. typing in another field).
+        val sampledIcons =
+            remember(firstRowIconsCount) {
+                TempoIcon.sampleAcrossCategories(allIcons, firstRowIconsCount)
+            }
+
+        val iconsToDisplay =
+            when {
+                selectedIconName == null -> sampledIcons
+                sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
+                else -> {
+                    val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
+                    if (selectedIcon != null) {
+                        listOf(selectedIcon) + sampledIcons.take(firstRowIconsCount - 1)
+                    } else {
+                        sampledIcons
+                    }
                 }
             }
+
+        if (showCategoryModal) {
+            IconCategoryModal(
+                allIcons = allIcons,
+                selectedIconName = selectedIconName,
+                onSelectIcon = {
+                    onSelectIcon(it)
+                    showCategoryModal = false
+                },
+                onDismissRequest = { showCategoryModal = false },
+            )
         }
 
-    if (showCategoryModal) {
-        IconCategoryModal(
-            allIcons = allIcons,
-            selectedIconName = selectedIconName,
-            onSelectIcon = {
-                onSelectIcon(it)
-                showCategoryModal = false
-            },
-            onDismissRequest = { showCategoryModal = false },
-        )
-    }
-
-    Column(
-        modifier = modifier.fillMaxWidth(),
-    ) {
-        FlowRow(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 4.dp, end = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            maxItemsInEachRow = ITEMS_PER_ROW,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            iconsToDisplay.forEach { tempoIcon ->
-                IconOption(
-                    tempoIcon = tempoIcon,
-                    isSelected = selectedIconName == tempoIcon.iconName,
+            FlowRow(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, end = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = itemsPerRow,
+            ) {
+                iconsToDisplay.forEach { tempoIcon ->
+                    IconOption(
+                        tempoIcon = tempoIcon,
+                        isSelected = selectedIconName == tempoIcon.iconName,
+                        enabled = enabled,
+                        onClick = {
+                            if (selectedIconName == tempoIcon.iconName) {
+                                onClearIcon()
+                            } else {
+                                onSelectIcon(tempoIcon.iconName)
+                            }
+                        },
+                    )
+                }
+
+                // Add spacers to push the trigger to the bottom right and respect the grid
+                // This ensures that partial rows have the same spacing as full rows
+                val totalVisible = iconsToDisplay.size + 1
+                val remainder = totalVisible % itemsPerRow
+                if (remainder != 0) {
+                    val spacersNeeded = itemsPerRow - remainder
+                    repeat(spacersNeeded) {
+                        Box(modifier = Modifier.size(48.dp))
+                    }
+                }
+
+                BrowseCategoriesButton(
+                    onClick = { showCategoryModal = true },
                     enabled = enabled,
-                    onClick = {
-                        if (selectedIconName == tempoIcon.iconName) {
-                            onClearIcon()
-                        } else {
-                            onSelectIcon(tempoIcon.iconName)
-                        }
-                    },
                 )
             }
 
-            // Add spacers to push the trigger to the bottom right and respect the grid
-            // This ensures that partial rows have the same spacing as full rows
-            val totalVisible = iconsToDisplay.size + 1
-            val remainder = totalVisible % ITEMS_PER_ROW
-            if (remainder != 0) {
-                val spacersNeeded = ITEMS_PER_ROW - remainder
-                repeat(spacersNeeded) {
-                    Box(modifier = Modifier.size(48.dp))
-                }
+            if (!enabled && disabledMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = disabledMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
-
-            BrowseCategoriesButton(
-                onClick = { showCategoryModal = true },
-                enabled = enabled,
-            )
-        }
-
-        if (!enabled && disabledMessage != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = disabledMessage,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.padding(start = 8.dp),
-            )
         }
     }
 }
@@ -169,18 +196,18 @@ private fun IconOption(
     val containerSize = 48.dp
     val iconBoxSize = 40.dp
     val iconSize = 24.dp
+    val interactionSource = remember { MutableInteractionSource() }
 
     // To make the inner box follow the "exact same shape" as the 16dp outer ring,
     // we use a 12dp radius for the 40dp box (16dp outer - 4dp padding = 12dp inner).
-    // This creates perfectly parallel/concentric curves.
-    val animatedCornerRadius by animateDpAsState(
-        targetValue = if (isSelected) 12.dp else 16.dp,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
-        label = "icon_corner_radius",
+    // This creates perfectly parallel/concentric curves. Shares the same reactive
+    // press-morph convention as CategoryChipRow/ExpressiveChip.
+    val animatedCornerRadius by rememberPressableChipAnimation(
+        isSelected = isSelected,
+        interactionSource = interactionSource,
+        selectedRadius = 12.dp,
+        unselectedRadius = 16.dp,
+        pressedRadius = 8.dp,
     )
 
     val containerColor by animateColorAsState(
@@ -216,7 +243,7 @@ private fun IconOption(
             Modifier
                 .size(containerSize)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     indication = null,
                     enabled = enabled,
                     onClick = {
