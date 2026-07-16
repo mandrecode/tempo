@@ -14,6 +14,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -25,6 +27,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
@@ -79,6 +82,8 @@ internal fun HabitBottomSheetContent(
     onDeleteHabitChain: (() -> Unit)? = null,
     onSetRepeatDays: ((Set<DayOfWeek>?) -> Unit)? = null,
     onToggleHabitCompletion: ((habitId: Long, isCompleted: Boolean) -> Unit)? = null,
+    placement: SheetPlacement? = null,
+    dismissRequestKey: Int = 0,
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -87,9 +92,12 @@ internal fun HabitBottomSheetContent(
             HabitSheetTab.HABIT -> formState.editingHabit?.id
             HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.id
         }
-    val editorKey = remember(formState.selectedTab, editingTargetId) { formState.selectedTab to editingTargetId }
+    val editorKey =
+        remember(formState.editorSessionId, formState.selectedTab, editingTargetId) {
+            Triple(formState.editorSessionId, formState.selectedTab, editingTargetId)
+        }
 
-    var title by remember(editorKey) {
+    var title by rememberSaveable(editorKey) {
         mutableStateOf(
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT -> formState.editingHabit?.title ?: ""
@@ -104,15 +112,30 @@ internal fun HabitBottomSheetContent(
                 HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.description.orEmpty()
             }
         }
+    var savedDescription by
+        rememberSaveable(editorKey, stateSaver = TextFieldValue.Saver) {
+            mutableStateOf(TextFieldValue(initialDescription))
+        }
     val descriptionState =
         remember(editorKey) {
-            DescriptionEditorState(TextFieldValue(initialDescription))
+            DescriptionEditorState(savedDescription)
         }
+    val updateDescription: (TextFieldValue) -> Unit = { value ->
+        savedDescription = value
+        descriptionState.update(value)
+    }
     var isDescriptionDirty by
-        remember(editorKey) {
+        rememberSaveable(editorKey) {
             mutableStateOf(false)
         }
-    var selectedHabitIds by remember(editorKey) {
+    var selectedHabitIds by rememberSaveable(
+        editorKey,
+        stateSaver =
+            listSaver(
+                save = { it },
+                restore = { it },
+            ),
+    ) {
         mutableStateOf(
             formState.editingHabitChain?.habitIds ?: emptyList(),
         )
@@ -486,6 +509,8 @@ internal fun HabitBottomSheetContent(
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && title.isNotBlank()) false else hasUnsavedChanges,
         adaptivePlacement = true,
+        placement = placement,
+        dismissRequestKey = dismissRequestKey,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(
@@ -523,7 +548,7 @@ internal fun HabitBottomSheetContent(
                             } else if (newValue.length > MAX_TITLE_LENGTH) {
                                 val overflow = newValue.substring(MAX_TITLE_LENGTH)
                                 title = newValue.substring(0, MAX_TITLE_LENGTH)
-                                descriptionState.update(
+                                updateDescription(
                                     TextFieldValue(
                                         text = overflow + descriptionState.value.text,
                                         selection = TextRange(overflow.length),
@@ -538,7 +563,7 @@ internal fun HabitBottomSheetContent(
                             }
                         },
                         onDescriptionChanged = {
-                            descriptionState.update(it)
+                            updateDescription(it)
                             isDescriptionDirty = descriptionState.value.text != initialDescription
                             onClearErrors()
                         },

@@ -13,13 +13,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.util.getIconForSortOption
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.ClearCompletedButton
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.SortButton
+import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 
 internal val TASK_ACTIONS_BUTTON_SIZE = 48.dp
 internal val TASK_ACTIONS_BUTTON_SPACING = 6.dp
@@ -87,11 +96,7 @@ internal fun VerticalTaskActionButtons(
             enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
             exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
         ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-                expanded = expanded,
-            )
+            SortMenuAnchor(tasksState = tasksState, expanded = expanded)
         }
         AnimatedVisibility(
             visible = showActions && tasksState.hasCompletedTasks,
@@ -102,6 +107,42 @@ internal fun VerticalTaskActionButtons(
                 onClick = tasksState.onClearCompleted,
                 expanded = expanded,
             )
+        }
+    }
+}
+
+@Composable
+private fun SortMenuAnchor(
+    tasksState: TasksFloatingBarState,
+    expanded: Boolean,
+) {
+    Box {
+        SortButton(
+            sortOption = tasksState.sortOption,
+            onClick = tasksState.onSort,
+            expanded = expanded,
+        )
+        DropdownMenu(
+            expanded = tasksState.sortMenuExpanded,
+            onDismissRequest = tasksState.onDismissSort,
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            SortOption.entries.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(text = stringResource(option.labelResId)) },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(getIconForSortOption(option)),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    },
+                    onClick = {
+                        tasksState.onSelectSortOption(option)
+                        tasksState.onDismissSort()
+                    },
+                )
+            }
         }
     }
 }

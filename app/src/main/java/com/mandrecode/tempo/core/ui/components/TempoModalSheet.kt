@@ -28,6 +28,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -40,6 +41,7 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
@@ -125,6 +127,80 @@ internal fun TempoModalSheet(
             modifier = modifier,
             content = content,
         )
+    }
+}
+
+/**
+ * Non-modal counterpart used by very large windows. It deliberately keeps dismissal on the same
+ * guarded predictive-back path as modal sheets while leaving the adjacent content interactive.
+ */
+@Composable
+internal fun TempoDockedSheet(
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    hasUnsavedChanges: Boolean = false,
+    dismissRequestKey: Int = 0,
+    content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
+) {
+    val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
+    val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
+    val initialDismissRequestKey = remember { dismissRequestKey }
+    val showDiscardDialog = remember { androidx.compose.runtime.mutableStateOf(false) }
+    val requestDismiss: () -> Unit = {
+        if (currentHasUnsavedChanges) {
+            showDiscardDialog.value = true
+        } else {
+            currentOnDismissRequest()
+        }
+    }
+
+    LaunchedEffect(dismissRequestKey) {
+        if (dismissRequestKey != initialDismissRequestKey) {
+            requestDismiss()
+        }
+    }
+
+    if (showDiscardDialog.value) {
+        DiscardChangesConfirmDialog(
+            onCancelDiscard = { showDiscardDialog.value = false },
+            onConfirmDiscard = {
+                showDiscardDialog.value = false
+                currentOnDismissRequest()
+            },
+        )
+    }
+
+    TempoModalSheetPredictiveBackHandler(
+        onProgress = {},
+        onRestore = {},
+        onDismiss = requestDismiss,
+    )
+
+    Surface(
+        modifier =
+            modifier
+                .fillMaxSize()
+                .semantics {
+                    dismiss {
+                        requestDismiss()
+                        true
+                    }
+                },
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        shadowElevation = SHEET_SHADOW_ELEVATION,
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding()
+                    .imePadding(),
+        ) {
+            content(requestDismiss)
+        }
     }
 }
 

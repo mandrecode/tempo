@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement.DockedPane
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 
 @Composable
@@ -17,15 +19,10 @@ internal fun isFloatingNavigationRailLayout(): Boolean =
         .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
 
 /**
- * Expanded rail tier: tabs carry labels and the add action shows its label. Requires expanded
- * width plus non-compact height — labels spend vertical space that landscape phones don't have.
+ * Expanded rail tier: tabs carry labels and the add action shows its label on large windows.
  */
 @Composable
-internal fun isExpandedFloatingRailLayout(): Boolean {
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    return windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND) &&
-        windowSizeClass.isHeightAtLeastBreakpoint(WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND)
-}
+internal fun isExpandedFloatingRailLayout(): Boolean = rememberSheetPlacement() == DockedPane
 
 /**
  * Start clearance top-level screens must reserve for the floating rail in the current window;

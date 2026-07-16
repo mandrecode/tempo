@@ -15,9 +15,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -26,6 +29,7 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 fun SettingsButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    selected: Boolean = false,
 ) {
     val (interactionSource, cornerRadiusState) =
         rememberPressableButtonAnimation(
@@ -35,43 +39,15 @@ fun SettingsButton(
         )
     val isPressed by interactionSource.collectIsPressedAsState()
     val cornerRadius by cornerRadiusState
-    val containerColor by animateColorAsState(
-        targetValue =
-            if (isPressed) {
-                MaterialTheme.colorScheme.primaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer
-            },
-        label = "settingsButtonContainerColor",
-    )
-    val contentColor by animateColorAsState(
-        targetValue =
-            if (isPressed) {
-                MaterialTheme.colorScheme.onPrimaryContainer
-            } else {
-                MaterialTheme.colorScheme.primary
-            },
-        label = "settingsButtonContentColor",
-    )
-    val borderColor by animateColorAsState(
-        targetValue =
-            if (isPressed) {
-                MaterialTheme.colorScheme.primary
-            } else {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.48f)
-            },
-        label = "settingsButtonBorderColor",
-    )
+    val colors = settingsButtonColors(selected = selected, isPressed = isPressed)
     val shape = RoundedCornerShape(cornerRadius)
 
     Box(
         contentAlignment = Alignment.Center,
         modifier =
             modifier
-                .size(40.dp)
-                .clip(shape)
-                .background(containerColor)
-                .border(1.dp, borderColor, shape)
+                .size(48.dp)
+                .semantics { this.selected = selected }
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -79,10 +55,62 @@ fun SettingsButton(
                     onClick = onClick,
                 ),
     ) {
-        Icon(
-            painter = painterResource(id = R.drawable.ic_settings),
-            contentDescription = stringResource(R.string.settings),
-            tint = contentColor,
-        )
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier =
+                Modifier
+                    .size(40.dp)
+                    .clip(shape)
+                    .background(colors.container)
+                    .border(1.dp, colors.border, shape),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = stringResource(R.string.settings),
+                tint = colors.content,
+            )
+        }
     }
+}
+
+private data class SettingsButtonColors(
+    val container: Color,
+    val content: Color,
+    val border: Color,
+)
+
+@Composable
+private fun settingsButtonColors(
+    selected: Boolean,
+    isPressed: Boolean,
+): SettingsButtonColors {
+    val colorScheme = MaterialTheme.colorScheme
+    val container by animateColorAsState(
+        targetValue =
+            when {
+                isPressed -> colorScheme.primaryContainer
+                selected -> colorScheme.secondaryContainer
+                else -> colorScheme.surfaceContainer
+            },
+        label = "settingsButtonContainerColor",
+    )
+    val content by animateColorAsState(
+        targetValue =
+            when {
+                isPressed -> colorScheme.onPrimaryContainer
+                selected -> colorScheme.onSecondaryContainer
+                else -> colorScheme.primary
+            },
+        label = "settingsButtonContentColor",
+    )
+    val border by animateColorAsState(
+        targetValue =
+            if (isPressed || selected) {
+                colorScheme.primary
+            } else {
+                colorScheme.primary.copy(alpha = 0.48f)
+            },
+        label = "settingsButtonBorderColor",
+    )
+    return SettingsButtonColors(container = container, content = content, border = border)
 }

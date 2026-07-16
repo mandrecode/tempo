@@ -5,43 +5,50 @@ import org.junit.Test
 
 class SheetPlacementTest {
     @Test
-    fun givenPortraitPhone_whenResolvingPlacement_thenUsesVerticalSheet() {
-        assertThat(sheetPlacement(windowWidthDp = 411, windowHeightDp = 891))
-            .isEqualTo(SheetPlacement.Vertical)
+    fun givenPortraitPhone_whenResolvingPlacement_thenUsesBottomSheet() {
+        assertThat(sheetPlacement(windowWidthDp = 411))
+            .isEqualTo(SheetPlacement.BottomSheet)
     }
 
     @Test
-    fun givenLandscapePhone_whenResolvingPlacement_thenUsesSideSheet() {
-        // Height-compact windows collide with the keyboard when using bottom sheets.
-        assertThat(sheetPlacement(windowWidthDp = 780, windowHeightDp = 360))
-            .isEqualTo(SheetPlacement.Side)
+    fun givenLandscapePhone_whenResolvingPlacement_thenUsesBottomSheet() {
+        assertThat(sheetPlacement(windowWidthDp = 780))
+            .isEqualTo(SheetPlacement.BottomSheet)
     }
 
     @Test
-    fun givenUnfoldedFoldablePortrait_whenResolvingPlacement_thenUsesVerticalSheet() {
-        assertThat(sheetPlacement(windowWidthDp = 673, windowHeightDp = 841))
-            .isEqualTo(SheetPlacement.Vertical)
+    fun givenUnfoldedFoldablePortrait_whenResolvingPlacement_thenUsesBottomSheet() {
+        assertThat(sheetPlacement(windowWidthDp = 673))
+            .isEqualTo(SheetPlacement.BottomSheet)
     }
 
     @Test
-    fun givenExpandedWidth_whenResolvingPlacement_thenUsesSideSheet() {
-        assertThat(sheetPlacement(windowWidthDp = 840, windowHeightDp = 800))
-            .isEqualTo(SheetPlacement.Side)
-        assertThat(sheetPlacement(windowWidthDp = 1280, windowHeightDp = 800))
-            .isEqualTo(SheetPlacement.Side)
+    fun givenExpandedWidth_whenResolvingPlacement_thenUsesBottomSheet() {
+        assertThat(sheetPlacement(windowWidthDp = 840))
+            .isEqualTo(SheetPlacement.BottomSheet)
+        assertThat(sheetPlacement(windowWidthDp = 1199))
+            .isEqualTo(SheetPlacement.BottomSheet)
     }
 
     @Test
-    fun givenMediumTabletPortrait_whenResolvingPlacement_thenUsesVerticalSheet() {
-        assertThat(sheetPlacement(windowWidthDp = 800, windowHeightDp = 1280))
-            .isEqualTo(SheetPlacement.Vertical)
+    fun givenMediumTabletPortrait_whenResolvingPlacement_thenUsesBottomSheet() {
+        assertThat(sheetPlacement(windowWidthDp = 800))
+            .isEqualTo(SheetPlacement.BottomSheet)
     }
 
     @Test
-    fun givenDimensionsJustBelowBreakpoints_whenResolvingPlacement_thenDoesNotRoundUp() {
-        assertThat(sheetPlacement(windowWidthDp = 839, windowHeightDp = 480))
-            .isEqualTo(SheetPlacement.Vertical)
-        assertThat(sheetPlacement(windowWidthDp = 839, windowHeightDp = 479))
-            .isEqualTo(SheetPlacement.Side)
+    fun givenDockedPaneBreakpoint_whenResolvingPlacement_thenDoesNotRoundUp() {
+        assertThat(sheetPlacement(windowWidthDp = 1199))
+            .isEqualTo(SheetPlacement.BottomSheet)
+        assertThat(sheetPlacement(windowWidthDp = 1200))
+            .isEqualTo(SheetPlacement.DockedPane)
+    }
+
+    @Test
+    fun givenLargeWindow_whenResolvingPlacement_thenUsesDockedPane() {
+        assertThat(sheetPlacement(windowWidthDp = 1200))
+            .isEqualTo(SheetPlacement.DockedPane)
+        assertThat(sheetPlacement(windowWidthDp = 1600))
+            .isEqualTo(SheetPlacement.DockedPane)
     }
 }

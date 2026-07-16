@@ -25,6 +25,7 @@ import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
+import com.mandrecode.tempo.core.ui.navigation.SettingsRoute
 import com.mandrecode.tempo.core.ui.navigation.TasksRoute
 import com.mandrecode.tempo.core.ui.navigation.TempoNavigator
 import com.mandrecode.tempo.core.ui.navigation.rememberTempoNavigator
@@ -66,10 +67,11 @@ class MainActivityNavigationTest {
 
         composeTestRule.runOnIdle {
             navigator.completeOnboarding(RoutinesRoute)
-            listOf(TasksRoute, RoutinesRoute, TasksRoute).forEach(navigator::navigateToTopLevel)
+            listOf(TasksRoute, SettingsRoute, RoutinesRoute, TasksRoute).forEach(navigator::navigateToTopLevel)
 
             assertThat(navigator.routinesBackStack).containsExactly(RoutinesRoute)
             assertThat(navigator.tasksBackStack).containsExactly(TasksRoute)
+            assertThat(navigator.settingsBackStack).containsExactly(SettingsRoute)
         }
     }
 
@@ -105,6 +107,7 @@ class MainActivityNavigationTest {
                     when (navigator.section) {
                         TempoNavigator.Section.ROUTINES -> routinesEntries
                         TempoNavigator.Section.TASKS -> tasksEntries
+                        TempoNavigator.Section.SETTINGS -> error("Unexpected settings section")
                         TempoNavigator.Section.ONBOARDING -> error("Unexpected onboarding section")
                     },
                 onBack = { navigator.pop() },

@@ -56,11 +56,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
@@ -100,6 +103,7 @@ fun TaskItem(
     subtasks: List<Task> = emptyList(),
     isSubtasksExpanded: Boolean = true,
     initialDescriptionExpanded: Boolean = false,
+    isSelected: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -109,7 +113,9 @@ fun TaskItem(
 
     val cardColor by animateColorAsState(
         targetValue =
-            if (task.isCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (task.isCompleted) {
                 MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
             } else {
                 MaterialTheme.colorScheme.surfaceContainer
@@ -169,6 +175,7 @@ fun TaskItem(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
         onClick = { onEdit(task) },
@@ -177,11 +184,11 @@ fun TaskItem(
                 .fillMaxWidth()
                 .graphicsLayer {
                     translationY = cardOffset.toPx()
-                }.clip(cardShape)
+                }.semantics { selected = isSelected }
                 .scale(cardScale),
         shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

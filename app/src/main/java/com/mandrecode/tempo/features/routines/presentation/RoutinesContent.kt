@@ -66,6 +66,8 @@ fun RoutinesContent(
     modifier: Modifier = Modifier,
     onScrolledFromTopChange: (Boolean) -> Unit = {},
     showAddHabitButton: Boolean = true,
+    selectedHabitId: Long? = null,
+    selectedHabitChainId: Long? = null,
 ) {
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
@@ -170,6 +172,8 @@ fun RoutinesContent(
                                 habitsById = habitsById,
                                 onEvent = onEvent,
                                 showTimeline = showTimeline,
+                                selectedHabitId = selectedHabitId,
+                                selectedHabitChainId = selectedHabitChainId,
                                 modifier = Modifier.animateItem(),
                             )
                         }
@@ -187,6 +191,8 @@ fun RoutinesContent(
                                 habitsById = habitsById,
                                 onEvent = onEvent,
                                 showTimeline = false,
+                                selectedHabitId = selectedHabitId,
+                                selectedHabitChainId = selectedHabitChainId,
                                 modifier = Modifier.animateItem(),
                             )
                         }
@@ -196,6 +202,7 @@ fun RoutinesContent(
                             hasItemsAbove = allBuildItems.isNotEmpty(),
                             selectedDate = uiState.selectedDate,
                             onEvent = onEvent,
+                            selectedHabitId = selectedHabitId,
                         )
                     }
                 }
@@ -242,6 +249,8 @@ internal fun TimelineItemCard(
     onEvent: (RoutinesContract.UiEvent) -> Unit,
     showTimeline: Boolean,
     modifier: Modifier = Modifier,
+    selectedHabitId: Long? = null,
+    selectedHabitChainId: Long? = null,
 ) {
     Box(modifier = modifier) {
         if (item.isChain && item.chainId != null) {
@@ -266,6 +275,8 @@ internal fun TimelineItemCard(
                     chainHabits = chainHabits,
                     selectedDate = uiState.selectedDate,
                     isExpanded = uiState.expandedChainIds.contains(habitChain.id),
+                    isSelected = habitChain.id == selectedHabitChainId,
+                    selectedHabitId = selectedHabitId,
                     onEdit = { onEvent(RoutinesContract.UiEvent.ShowHabitChainBottomSheet(habitChain)) },
                     onToggleExpansion = { onEvent(RoutinesContract.UiEvent.ToggleChainExpanded(habitChain.id)) },
                     onAddHabit = {
@@ -309,6 +320,7 @@ internal fun TimelineItemCard(
                     },
                     timeLabel = timeLabel,
                     showTimeline = showTimeline,
+                    isSelected = habit.id == selectedHabitId,
                 )
             }
         }
@@ -372,6 +384,7 @@ private fun LazyListScope.quitHabitsSection(
     hasItemsAbove: Boolean,
     selectedDate: LocalDate,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
+    selectedHabitId: Long? = null,
 ) {
     if (quitHabits.isEmpty()) return
     if (hasItemsAbove) {
@@ -393,6 +406,7 @@ private fun LazyListScope.quitHabitsSection(
             habit = habit,
             selectedDate = selectedDate,
             onEdit = { onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet(habit)) },
+            isSelected = habit.id == selectedHabitId,
             onToggle = { habitId, isCompleted ->
                 onEvent(RoutinesContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
             },

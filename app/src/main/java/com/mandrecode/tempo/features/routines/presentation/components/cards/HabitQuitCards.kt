@@ -21,8 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -41,18 +44,31 @@ fun QuitHabitCard(
     onEdit: () -> Unit,
     modifier: Modifier = Modifier,
     onToggle: ((Long, Boolean) -> Unit)? = null,
+    isSelected: Boolean = false,
 ) {
     val state = rememberQuitHabitCardState(habit = habit, selectedDate = selectedDate)
+    val selectionColors =
+        rememberQuitHabitSelectionColors(
+            selected = isSelected,
+            containerColor = state.containerColor,
+            contentColor = state.contentColor,
+        )
+    val containerColor = selectionColors.container
+    val contentColor = selectionColors.content
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .semantics { selected = isSelected },
         shape = state.cardShape,
         colors =
             CardDefaults.cardColors(
-                containerColor = state.containerColor,
-                contentColor = state.contentColor,
+                containerColor = containerColor,
+                contentColor = contentColor,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
     ) {
         HabitItem(
             habit = habit,
@@ -61,7 +77,7 @@ fun QuitHabitCard(
             onClick = onEdit,
             color = state.resolvedHabitColor,
             cardShape = state.cardShape,
-            contentColor = state.contentColor,
+            contentColor = contentColor,
             canToggle = state.canToggle,
             trailingContent =
                 if (state.streak > 0) {
@@ -69,7 +85,7 @@ fun QuitHabitCard(
                         StreakBadge(
                             streak = state.streak,
                             isCompleted = state.isCompleted,
-                            contentColor = state.contentColor,
+                            contentColor = contentColor,
                             accentColor = state.accentColor,
                         )
                     }
@@ -78,6 +94,30 @@ fun QuitHabitCard(
                 },
         )
     }
+}
+
+private data class QuitHabitSelectionColors(
+    val container: Color,
+    val content: Color,
+)
+
+@Composable
+private fun rememberQuitHabitSelectionColors(
+    selected: Boolean,
+    containerColor: Color,
+    contentColor: Color,
+): QuitHabitSelectionColors {
+    val animatedContainer by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else containerColor,
+        animationSpec = tween(220),
+        label = "quit_habit_selection_container_color",
+    )
+    val animatedContent by animateColorAsState(
+        targetValue = contentColor,
+        animationSpec = tween(220),
+        label = "quit_habit_selection_content_color",
+    )
+    return QuitHabitSelectionColors(container = animatedContainer, content = animatedContent)
 }
 
 private data class QuitHabitCardState(

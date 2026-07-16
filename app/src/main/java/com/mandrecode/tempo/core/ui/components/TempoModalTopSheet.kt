@@ -3,31 +3,21 @@ package com.mandrecode.tempo.core.ui.components
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
-import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 
 /**
  * A modal sheet that slides down from the top of the screen.
  *
- * With [adaptivePlacement] the sheet follows the window's [SheetPlacement] and presents as a
- * full-height side sheet on expanded or height-compact windows.
+ * Top sheets retain their direction below the docked-pane breakpoint.
  */
 @Composable
 fun TempoModalTopSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnsavedChanges: Boolean = false,
-    adaptivePlacement: Boolean = false,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
-    val direction =
-        if (adaptivePlacement && rememberSheetPlacement() == SheetPlacement.Side) {
-            TempoModalSheetDirection.End
-        } else {
-            TempoModalSheetDirection.Top
-        }
     TempoModalSheet(
-        direction = direction,
+        direction = TempoModalSheetDirection.Top,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         hasUnsavedChanges = hasUnsavedChanges,

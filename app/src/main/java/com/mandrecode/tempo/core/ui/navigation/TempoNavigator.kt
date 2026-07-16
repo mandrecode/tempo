@@ -16,12 +16,14 @@ import androidx.navigation3.runtime.rememberNavBackStack
 internal class TempoNavigator(
     internal val routinesBackStack: NavBackStack<NavKey>,
     internal val tasksBackStack: NavBackStack<NavKey>,
+    internal val settingsBackStack: NavBackStack<NavKey>,
     internal val onboardingBackStack: NavBackStack<NavKey>,
     sectionState: MutableState<Section>,
 ) {
     internal enum class Section {
         ROUTINES,
         TASKS,
+        SETTINGS,
         ONBOARDING,
     }
 
@@ -33,15 +35,36 @@ internal class TempoNavigator(
             when (section) {
                 Section.ROUTINES -> routinesBackStack
                 Section.TASKS -> tasksBackStack
+                Section.SETTINGS -> settingsBackStack
                 Section.ONBOARDING -> onboardingBackStack
             }
 
     val currentRoute: NavKey
-        get() = activeBackStack.last()
+        get() = activeBackStack.last { it !is EditorRoute }
+
+    val topLevelRoute: NavKey
+        get() =
+            when (section) {
+                Section.ROUTINES -> RoutinesRoute
+                Section.TASKS -> TasksRoute
+                Section.SETTINGS -> SettingsRoute
+                Section.ONBOARDING -> onboardingBackStack.first()
+            }
 
     fun navigate(route: NavKey) {
         if (activeBackStack.lastOrNull() != route) {
             activeBackStack.add(route)
+        }
+    }
+
+    fun setEditorVisible(
+        route: EditorRoute,
+        visible: Boolean,
+    ) {
+        val isVisible = activeBackStack.lastOrNull() == route
+        when {
+            visible && !isVisible -> activeBackStack.add(route)
+            !visible && isVisible -> activeBackStack.removeAt(activeBackStack.lastIndex)
         }
     }
 
@@ -66,6 +89,7 @@ internal class TempoNavigator(
         when (this) {
             RoutinesRoute -> Section.ROUTINES
             TasksRoute -> Section.TASKS
+            SettingsRoute -> Section.SETTINGS
             else -> error("$this is not a top-level route")
         }
 }
@@ -74,21 +98,24 @@ internal class TempoNavigator(
 internal fun rememberTempoNavigator(startDestination: NavKey): TempoNavigator {
     val routinesBackStack = rememberNavBackStack(RoutinesRoute)
     val tasksBackStack = rememberNavBackStack(TasksRoute)
+    val settingsBackStack = rememberNavBackStack(SettingsRoute)
     val onboardingStart = startDestination.takeIf { it is OnboardingRoute } ?: OnboardingRoute()
     val onboardingBackStack = rememberNavBackStack(onboardingStart)
     val initialSection =
         when (startDestination) {
             RoutinesRoute -> TempoNavigator.Section.ROUTINES
             TasksRoute -> TempoNavigator.Section.TASKS
+            SettingsRoute -> TempoNavigator.Section.SETTINGS
             is OnboardingRoute -> TempoNavigator.Section.ONBOARDING
             else -> error("Unsupported start destination: $startDestination")
         }
     val sectionState = rememberSaveable { mutableStateOf(initialSection) }
 
-    return remember(routinesBackStack, tasksBackStack, onboardingBackStack) {
+    return remember(routinesBackStack, tasksBackStack, settingsBackStack, onboardingBackStack) {
         TempoNavigator(
             routinesBackStack = routinesBackStack,
             tasksBackStack = tasksBackStack,
+            settingsBackStack = settingsBackStack,
             onboardingBackStack = onboardingBackStack,
             sectionState = sectionState,
         )

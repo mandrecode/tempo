@@ -50,9 +50,12 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
@@ -84,6 +87,8 @@ fun HabitChainCard(
     onHabitClick: ((Long) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    isSelected: Boolean = false,
+    selectedHabitId: Long? = null,
 ) {
     val dateStr = selectedDate.toString()
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -132,7 +137,9 @@ fun HabitChainCard(
 
     val containerColor by animateColorAsState(
         targetValue =
-            if (allCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (allCompleted) {
                 resolvedChainColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedChainColor?.copy(alpha = 0.15f)
@@ -164,6 +171,7 @@ fun HabitChainCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     val arrowRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -218,7 +226,7 @@ fun HabitChainCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(cardShape)
+                    .semantics { selected = isSelected }
                     .clickable { onEdit() },
             shape = cardShape,
             colors =
@@ -226,7 +234,7 @@ fun HabitChainCard(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Large faded background icon in the top right
@@ -526,6 +534,7 @@ fun HabitChainCard(
                                         canToggle = canToggle,
                                         isInsideChain = true,
                                         isContainerCompleted = allCompleted,
+                                        isSelected = habit.id == selectedHabitId,
                                     )
                                 }
                             }

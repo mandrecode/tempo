@@ -27,3 +27,18 @@ private fun SettingsButtonPreview() {
         }
     }
 }
+
+@Preview(name = "Selected", showBackground = true)
+@Composable
+private fun SelectedSettingsButtonPreview() {
+    TempoTheme {
+        Surface(color = MaterialTheme.colorScheme.background) {
+            Box(modifier = Modifier.padding(24.dp)) {
+                SettingsButton(
+                    onClick = {},
+                    selected = true,
+                )
+            }
+        }
+    }
+}

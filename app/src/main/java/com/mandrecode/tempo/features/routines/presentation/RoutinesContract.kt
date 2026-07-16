@@ -52,6 +52,7 @@ object RoutinesContract {
 
     data class HabitFormState(
         val isVisible: Boolean = false,
+        val editorSessionId: Long = 0L,
         val editingHabit: Habit? = null,
         val editingHabitChain: HabitChain? = null,
         val targetChainId: Long? = null,

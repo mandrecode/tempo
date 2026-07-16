@@ -1,8 +1,13 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -33,11 +38,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
@@ -54,6 +62,7 @@ internal fun floatingControlsMotionSpec() =
 @Composable
 internal fun PersistentFloatingBar(
     currentRoute: NavKey,
+    topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -63,11 +72,13 @@ internal fun PersistentFloatingBar(
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    val isTasksRoute = currentRoute == TasksRoute
+    val isTasksRoute = topLevelRoute == TasksRoute
+    val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
     val visible =
         when {
             currentRoute == RoutinesRoute -> routinesState.visible
-            isTasksRoute -> tasksState.visible
+            currentRoute == TasksRoute -> tasksState.visible
+            isRailSettingsDestination -> true
             else -> false
         }
 
@@ -97,8 +108,8 @@ internal fun PersistentFloatingBar(
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
-                isSingleTabMode = isSingleTabMode,
                 onOpenSettings = onOpenSettings,
+                settingsSelected = currentRoute == SettingsRoute,
             )
         } else {
             PersistentPortraitFloatingBar(
@@ -118,19 +129,10 @@ private fun PersistentLandscapeFloatingBar(
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
     onOpenSettings: () -> Unit,
+    settingsSelected: Boolean,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
@@ -157,43 +159,80 @@ private fun PersistentLandscapeFloatingBar(
                         bottom = FloatingToolbarItemSpacing,
                     ),
             )
-            TempoSoloActionButton(
-                iconRes = R.drawable.ic_add,
-                label = addAction.label,
-                expanded = true,
-                onClick = addAction.onClick,
-            )
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
+                TempoSoloActionButton(
+                    iconRes = R.drawable.ic_add,
+                    label = addAction.label,
+                    expanded = true,
+                    onClick = addAction.onClick,
+                )
+            }
         } else {
-            AddActionButton(addAction)
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
+                AddActionButton(addAction)
+            }
         }
 
         navigationContent()
 
         VerticalTaskActionButtons(
             tasksState = tasksState,
-            showActions = isTasksRoute,
+            showActions = isTasksRoute && !settingsSelected,
             modifier = Modifier.padding(start = if (isExpandedRail) FloatingToolbarRailSurfacePadding else 0.dp),
             expanded = isExpandedRail,
         )
 
-        if (isExpandedRail) {
-            Spacer(modifier = Modifier.weight(1f))
-            SettingsRailButton(onClick = onOpenSettings)
-        }
+        Spacer(modifier = Modifier.weight(1f))
+        SettingsRailButton(
+            selected = settingsSelected,
+            expanded = isExpandedRail,
+            onClick = onOpenSettings,
+        )
     }
 }
 
 @Composable
-private fun SettingsRailButton(onClick: () -> Unit) {
+private fun SettingsRailButton(
+    selected: Boolean,
+    expanded: Boolean,
+    onClick: () -> Unit,
+) {
+    if (!expanded) {
+        SettingsButton(
+            onClick = onClick,
+            selected = selected,
+        )
+        return
+    }
+
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         modifier =
             Modifier
                 .width(FloatingRailExpandedSurfaceWidth)
-                .height(FloatingToolbarItemSize),
+                .height(FloatingToolbarItemSize)
+                .semantics { this.selected = selected },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),

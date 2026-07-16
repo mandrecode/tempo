@@ -8,12 +8,12 @@
 
 ## 2. Supporting pane (PR 2)
 
-- [ ] 2.1 Extend `sheetPlacement` to three-way (`BottomSheet | SideSheet | DockedPane` at ≥1200dp) with unit tests.
-- [ ] 2.2 Implement the supporting-pane scene (Material `adaptive-navigation3` strategy, or custom scene per design fallback) hosting the editor beside content.
-- [ ] 2.3 Promote editor visibility into the back stack at ≥1200dp; keep UiState modal ownership below; verify draft survives breakpoint crossings and rotation.
-- [ ] 2.4 Wire back/predictive-back and the unsaved-changes guard for the docked pane.
-- [ ] 2.5 Retune rail tiers: collapsed rail at 600–1199dp and labeled rail at ≥1200dp; make Settings a selected rail destination at ≥1200dp while preserving pushed Settings below.
-- [ ] 2.6 Present Sort as a bottom sheet at compact widths and an anchored M3 Expressive menu at medium and larger widths.
+- [x] 2.1 Extend `sheetPlacement` to dock editors at ≥1200dp while retaining bottom sheets below, with unit tests.
+- [x] 2.2 Implement the supporting-pane scene (Material `adaptive-navigation3` strategy, or custom scene per design fallback) hosting the editor beside content.
+- [x] 2.3 Promote editor visibility into the back stack at ≥1200dp; keep UiState modal ownership below; verify draft survives breakpoint crossings and rotation.
+- [x] 2.4 Wire back/predictive-back and the unsaved-changes guard for the docked pane.
+- [x] 2.5 Retune rail tiers: collapsed rail at 600–1199dp and labeled rail at ≥1200dp; keep Settings as a selected Nav3 destination on both rails while preserving the compact pushed transition.
+- [x] 2.6 Present Sort as a bottom sheet at compact widths and an anchored M3 Expressive menu at medium and larger widths.
 
 ## 3. Pointer and keyboard (PR 3)
 
@@ -27,4 +27,4 @@
 - [x] 4.2 `openspec validate feat-151-nav3-supporting-pane` (when the CLI is available).
 - [ ] 4.3 Device matrix: Pixel 10 (portrait/landscape), Pixel Tablet, Medium Tablet, resizable/desktop AVD ≥1200dp; hardware keyboard + mouse attached for hover/Escape/focus checks.
 - [x] 4.4 `:app:connectedDebugAndroidTest` on the Pixel 10 AVD after PR 1.
-- [ ] 4.5 `:app:connectedDebugAndroidTest` on the Pixel 10 AVD after PR 2.
+- [x] 4.5 `:app:connectedDebugAndroidTest` on the Pixel 10 AVD after PR 2.

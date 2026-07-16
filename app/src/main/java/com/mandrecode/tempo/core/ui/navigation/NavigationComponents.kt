@@ -51,7 +51,7 @@ internal val ReadableContentMaxWidth = 840.dp
 
 /**
  * Lays out top-level screen content adaptively: reserves [railClearance] for the floating rail
- * (zero on screens that never show it, such as Settings) and caps content at a readable width,
+ * and caps content at a readable width,
  * centered in the remaining space, on wide windows. Obtain the clearance for the current window
  * from [floatingRailContentClearance].
  */

@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -60,6 +61,24 @@ class TaskCardTest {
         }
 
         composeTestRule.onNodeWithText("Test Task").assertIsDisplayed()
+    }
+
+    @Test
+    fun selectedTask_exposesSelectedState() {
+        val task = Task(id = 1, title = "Selected task", description = "")
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskItem(
+                    task = task,
+                    onToggleCompletion = {},
+                    onEdit = {},
+                    isSelected = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Selected task").assertIsSelected()
     }
 
     @Test
