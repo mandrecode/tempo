@@ -367,9 +367,8 @@ private fun IconCategoryModal(
                     )
                     FlowRow(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp),
-                        maxItemsInEachRow = ITEMS_PER_ROW,
                     ) {
                         categoryIcons.forEach { tempoIcon ->
                             IconOption(
