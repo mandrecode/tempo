@@ -61,7 +61,7 @@ internal fun rememberTempoModalSheetState(
     val scope = rememberCoroutineScope()
     val currentAxisSizePx by rememberUpdatedState(rememberDismissAxisSizePx(direction))
     val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, rememberWindowHeightDp())
-    val offset = remember { Animatable(direction.hiddenOffset(currentAxisSizePx)) }
+    val offset = remember(direction) { Animatable(direction.hiddenOffset(currentAxisSizePx)) }
     val dismissing = remember { mutableStateOf(false) }
     val showDiscardDialog = remember { mutableStateOf(false) }
     val forceDismiss = remember { mutableStateOf(false) }

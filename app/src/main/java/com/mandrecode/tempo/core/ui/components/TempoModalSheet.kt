@@ -106,7 +106,7 @@ internal fun TempoModalSheet(
         )
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(state.offset) {
         state.offset.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS))
     }
 
