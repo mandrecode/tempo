@@ -120,6 +120,7 @@ fun IconPicker(
             IconCategoryModal(
                 allIcons = allIcons,
                 selectedIconName = selectedIconName,
+                enabled = enabled,
                 onSelectIcon = {
                     onSelectIcon(it)
                     showCategoryModal = false
@@ -367,6 +368,7 @@ private fun BrowseCategoriesButton(
 private fun IconCategoryModal(
     allIcons: List<TempoIcon>,
     selectedIconName: String?,
+    enabled: Boolean,
     onSelectIcon: (String) -> Unit,
     onDismissRequest: () -> Unit,
 ) {
@@ -404,7 +406,7 @@ private fun IconCategoryModal(
                             IconOption(
                                 tempoIcon = tempoIcon,
                                 isSelected = selectedIconName == tempoIcon.iconName,
-                                enabled = true,
+                                enabled = enabled,
                                 onClick = { onSelectIcon(tempoIcon.iconName) },
                             )
                         }
