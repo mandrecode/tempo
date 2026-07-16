@@ -43,7 +43,7 @@ fun SortButton(
             icon = {
                 Icon(
                     painter = painterResource(getIconForSortOption(sortOption)),
-                    contentDescription = stringResource(R.string.sort_tasks_by_format, sortOption.value),
+                    contentDescription = null,
                 )
             },
             onClick = onClick,
@@ -120,7 +120,7 @@ fun ClearCompletedButton(
             icon = {
                 Icon(
                     painter = painterResource(R.drawable.ic_remove_done),
-                    contentDescription = stringResource(R.string.delete_all_completed_tasks),
+                    contentDescription = null,
                 )
             },
             onClick = onClick,

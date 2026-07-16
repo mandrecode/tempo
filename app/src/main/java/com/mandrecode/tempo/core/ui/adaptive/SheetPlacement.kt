@@ -23,8 +23,8 @@ enum class SheetPlacement {
  * would compete for the same space.
  */
 fun sheetPlacement(
-    windowWidthDp: Float,
-    windowHeightDp: Float,
+    windowWidthDp: Int,
+    windowHeightDp: Int,
 ): SheetPlacement =
     if (windowWidthDp >= WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND ||
         windowHeightDp < WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
@@ -41,8 +41,18 @@ fun rememberSheetPlacement(): SheetPlacement {
     return remember(windowSize, density) {
         with(density) {
             sheetPlacement(
-                windowWidthDp = windowSize.width.toDp().value,
-                windowHeightDp = windowSize.height.toDp().value,
+                // WindowSizeClass truncates float dp dimensions to integers before matching.
+                // Use the same convention so sheets and navigation cannot disagree at a breakpoint.
+                windowWidthDp =
+                    windowSize.width
+                        .toDp()
+                        .value
+                        .toInt(),
+                windowHeightDp =
+                    windowSize.height
+                        .toDp()
+                        .value
+                        .toInt(),
             )
         }
     }
