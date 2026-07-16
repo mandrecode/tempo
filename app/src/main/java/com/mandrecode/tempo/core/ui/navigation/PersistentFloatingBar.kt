@@ -152,7 +152,7 @@ private fun PersistentLandscapeFloatingBar(
     ) {
         if (isExpandedRail) {
             Text(
-                text = stringResource(if (isTasksRoute) R.string.tasks else R.string.routines),
+                text = stringResource(R.string.app_name),
                 style = MaterialTheme.typography.topBarTitle,
                 color = MaterialTheme.colorScheme.primary,
                 modifier =

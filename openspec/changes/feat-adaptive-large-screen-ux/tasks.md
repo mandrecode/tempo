@@ -20,6 +20,7 @@
 - [x] 3.2 Keep the rail visible when modal sheets open in rail layouts.
 - [x] 3.3 Expanded rail sidebar: screen title on top, labeled sort/clear actions, labeled Settings pinned at the bottom; top bar collapses to a status-bar inset so content fills the top.
 - [x] 3.4 New `clear_completed` string with es translation.
+- [x] 3.5 Rail header shows the app name instead of the screen title (the selected tab already identifies the screen).
 
 ## 4. Verification
 

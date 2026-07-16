@@ -31,11 +31,11 @@ When the window is at least 840dp wide and at least 480dp tall, the rail SHALL p
 - **THEN** screen content is laid out entirely outside the expanded rail footprint, with clearance derived from the same source of truth as the rail metrics
 
 ### Requirement: The expanded rail acts as the screen's command sidebar
-On the expanded rail tier, the screen title SHALL render at the top of the rail, contextual secondary actions SHALL show icon and label, a labeled Settings entry SHALL be pinned at the rail's bottom, and the screen's top bar SHALL collapse so content fills the freed vertical space.
+On the expanded rail tier, the app name SHALL render at the top of the rail (the selected tab already identifies the screen), contextual secondary actions SHALL show icon and label, a labeled Settings entry SHALL be pinned at the rail's bottom, and the screen's top bar SHALL collapse so content fills the freed vertical space.
 
-#### Scenario: Title lives in the rail
+#### Scenario: App identity lives in the rail
 - **WHEN** Routines or Tasks is shown on the expanded rail tier
-- **THEN** the screen title appears at the top of the rail and the content area starts directly below the status bar
+- **THEN** the app name appears at the top of the rail and the content area starts directly below the status bar
 
 #### Scenario: Labeled contextual actions
 - **WHEN** the Tasks screen is shown on the expanded rail tier
