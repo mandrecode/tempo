@@ -34,14 +34,8 @@ fun TempoModalBottomSheet(
         )
         return
     }
-    val direction =
-        if (resolvedPlacement == SheetPlacement.SideSheet) {
-            TempoModalSheetDirection.End
-        } else {
-            TempoModalSheetDirection.Bottom
-        }
     TempoModalSheet(
-        direction = direction,
+        direction = TempoModalSheetDirection.Bottom,
         onDismissRequest = onDismissRequest,
         modifier = modifier,
         hasUnsavedChanges = hasUnsavedChanges,

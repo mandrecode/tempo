@@ -37,11 +37,11 @@ class SheetPlacementTest {
     }
 
     @Test
-    fun givenDimensionsJustBelowBreakpoints_whenResolvingPlacement_thenDoesNotRoundUp() {
-        assertThat(sheetPlacement(windowWidthDp = 839))
+    fun givenDockedPaneBreakpoint_whenResolvingPlacement_thenDoesNotRoundUp() {
+        assertThat(sheetPlacement(windowWidthDp = 1199))
             .isEqualTo(SheetPlacement.BottomSheet)
-        assertThat(sheetPlacement(windowWidthDp = 839))
-            .isEqualTo(SheetPlacement.BottomSheet)
+        assertThat(sheetPlacement(windowWidthDp = 1200))
+            .isEqualTo(SheetPlacement.DockedPane)
     }
 
     @Test

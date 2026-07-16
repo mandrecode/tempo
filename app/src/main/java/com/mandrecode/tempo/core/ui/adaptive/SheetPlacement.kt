@@ -12,9 +12,6 @@ enum class SheetPlacement {
     /** The editor keeps its native vertical direction (bottom or top). */
     BottomSheet,
 
-    /** The editor is presented as a modal full-height side sheet at the end edge. */
-    SideSheet,
-
     /** The editor is presented beside live content without a scrim. */
     DockedPane,
 }

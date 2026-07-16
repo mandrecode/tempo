@@ -8,7 +8,7 @@
 
 ## 2. Supporting pane (PR 2)
 
-- [x] 2.1 Extend `sheetPlacement` to three-way (`BottomSheet | SideSheet | DockedPane` at ≥1200dp) with unit tests.
+- [x] 2.1 Extend `sheetPlacement` to dock editors at ≥1200dp while retaining bottom sheets below, with unit tests.
 - [x] 2.2 Implement the supporting-pane scene (Material `adaptive-navigation3` strategy, or custom scene per design fallback) hosting the editor beside content.
 - [x] 2.3 Promote editor visibility into the back stack at ≥1200dp; keep UiState modal ownership below; verify draft survives breakpoint crossings and rotation.
 - [x] 2.4 Wire back/predictive-back and the unsaved-changes guard for the docked pane.
