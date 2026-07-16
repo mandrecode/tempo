@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -38,6 +39,8 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.dockedEditorEnterTransition
+import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
@@ -227,10 +230,7 @@ fun TasksScreen(
                             uiState = uiState,
                             onEvent = onContentEvent,
                             onScrolledFromTopChange = { isListScrolledFromTop.value = it },
-                            selectedTaskId =
-                                uiState.taskForm.editingTask
-                                    ?.id
-                                    .takeIf { isDockedEditor },
+                            selectedTaskId = uiState.taskForm.editingTask?.id,
                         )
 
                         Box(
@@ -253,7 +253,11 @@ fun TasksScreen(
                     }
                 }
             }
-            if (isDockedEditor && uiState.taskForm.isVisible) {
+            AnimatedVisibility(
+                visible = isDockedEditor && uiState.taskForm.isVisible,
+                enter = dockedEditorEnterTransition(),
+                exit = dockedEditorExitTransition(),
+            ) {
                 Box(
                     modifier =
                         Modifier

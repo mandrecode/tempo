@@ -1,8 +1,13 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -152,7 +157,11 @@ private fun PersistentLandscapeFloatingBar(
                         bottom = FloatingToolbarItemSpacing,
                     ),
             )
-            if (!settingsSelected) {
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
                 TempoSoloActionButton(
                     iconRes = R.drawable.ic_add,
                     label = addAction.label,
@@ -160,8 +169,14 @@ private fun PersistentLandscapeFloatingBar(
                     onClick = addAction.onClick,
                 )
             }
-        } else if (!settingsSelected) {
-            AddActionButton(addAction)
+        } else {
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
+                AddActionButton(addAction)
+            }
         }
 
         navigationContent()

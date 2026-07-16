@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.routines.presentation
 
 import android.content.Context
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,6 +40,8 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.dockedEditorEnterTransition
+import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
@@ -178,14 +181,8 @@ fun RoutinesScreen(
                         onEvent = onContentEvent,
                         onScrolledFromTopChange = { isListScrolledFromTop.value = it },
                         showAddHabitButton = !showAddHabitRailButton,
-                        selectedHabitId =
-                            uiState.habitForm.editingHabit
-                                ?.id
-                                .takeIf { isDockedEditor },
-                        selectedHabitChainId =
-                            uiState.habitForm.editingHabitChain
-                                ?.id
-                                .takeIf { isDockedEditor },
+                        selectedHabitId = uiState.habitForm.editingHabit?.id,
+                        selectedHabitChainId = uiState.habitForm.editingHabitChain?.id,
                     )
 
                     RoutinesDialogs(
@@ -201,7 +198,11 @@ fun RoutinesScreen(
                 }
             }
         }
-        if (isDockedEditor && uiState.habitForm.isVisible) {
+        AnimatedVisibility(
+            visible = isDockedEditor && uiState.habitForm.isVisible,
+            enter = dockedEditorEnterTransition(),
+            exit = dockedEditorExitTransition(),
+        ) {
             Box(
                 modifier =
                     Modifier
