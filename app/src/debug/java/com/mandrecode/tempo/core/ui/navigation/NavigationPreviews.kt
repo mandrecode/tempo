@@ -4,8 +4,11 @@ import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilledIconButton
@@ -14,9 +17,11 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -261,5 +266,106 @@ private fun TasksOnlyLandscapePreview() {
             },
             isRailLayout = true,
         )
+    }
+}
+
+/**
+ * Preview-only stand-in for the expanded rail pill (production rows live in
+ * [TempoBottomNavigation]): icon+label rows at [FloatingRailExpandedSurfaceWidth], selected row
+ * highlighted as a full pill.
+ */
+@Composable
+private fun ExpandedRailPillPreviewStub(routinesSelected: Boolean) {
+    Surface(
+        shape = RoundedCornerShape(36.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+    ) {
+        Column(
+            modifier =
+                Modifier
+                    .width(FloatingRailExpandedSurfaceWidth)
+                    .padding(horizontal = 8.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+        ) {
+            ExpandedRailRowStub(
+                iconRes = if (routinesSelected) R.drawable.ic_routine else R.drawable.ic_routine_outlined,
+                titleRes = R.string.routines,
+                selected = routinesSelected,
+            )
+            ExpandedRailRowStub(
+                iconRes = if (routinesSelected) R.drawable.ic_tasks_outlined else R.drawable.ic_tasks,
+                titleRes = R.string.tasks,
+                selected = !routinesSelected,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ExpandedRailRowStub(
+    iconRes: Int,
+    titleRes: Int,
+    selected: Boolean,
+) {
+    Surface(
+        onClick = {},
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(FloatingToolbarItemSize),
+        shape = CircleShape,
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                Color.Transparent
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = null,
+            )
+            Text(
+                text = stringResource(titleRes),
+                style = MaterialTheme.typography.labelLarge,
+            )
+        }
+    }
+}
+
+@Preview(name = "Expanded rail hierarchy · light", showBackground = true, device = "id:pixel_tablet")
+@Preview(
+    name = "Expanded rail hierarchy · dark",
+    showBackground = true,
+    device = "id:pixel_tablet",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun ExpandedRailHierarchyPreview() {
+    TempoTheme {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+            horizontalAlignment = Alignment.Start,
+        ) {
+            TempoSoloActionButton(
+                iconRes = R.drawable.ic_add,
+                label = stringResource(R.string.add_task),
+                onClick = {},
+                expanded = true,
+            )
+            ExpandedRailPillPreviewStub(routinesSelected = false)
+        }
     }
 }

@@ -23,13 +23,15 @@ Phase 1 (fix-142) established: `WindowSizeClass` via `currentWindowAdaptiveInfo(
 
 - **Placement rule as a pure function** `sheetPlacement(widthDp, heightDp): SheetPlacement` (`BottomSheet` | `SideSheet`) in `core/ui`, unit-tested against the device matrix, mirroring the fix-142 derived-metrics + guard-test pattern. Breakpoints: side when `width ≥ 840` **or** `height < 480`. Rationale: ≥840dp is M3's expanded threshold (two-column feel the issue asks for); height-compact landscape phones are where bottom sheets and the keyboard collide — the full-height side panel is strictly better there.
 
-- **Sort presentation is a menu, not a sheet, in rail layouts.** Three radio options do not justify a full-height panel; an anchored `DropdownMenu` from the sort button preserves the interaction cost hierarchy. The sort contract events are unchanged — only presentation switches on the same rail-layout flag. Compact (bottom-bar) layouts keep the bottom sheet.
+- **Sort stays a sheet everywhere** (design review): an anchored-menu variant was built and reverted — the sheet keeps one presentation model across the app and follows the same placement rule as the editors. The rail also stays visible beneath modal sheet scrims instead of hiding (review feedback: the disappearing rail read as a glitch).
+
+- **Expanded rail is the screen's command sidebar** (design review): screen title at the rail's top, labeled sort/clear actions, labeled Settings pinned at the bottom, and the screen top bar collapses to a status-bar inset so content reclaims the vertical space.
 
 - **Rail = one top-left anchored column ordered by importance** (per design review): `[Add primary] → [tabs pill] → [contextual actions]`, in *all* rail layouts. The Add button is the screen's primary action and reads first; sort/clear are secondary and sit below the navigation. This deletes the centered-anchor + `TASK_ACTIONS_*` offset choreography — contextual actions become a plain slot in the rail column filled by the current screen's floating-bar state, so Routines/Settings gain no rail knowledge.
 
 - **Expanded tier keyed on `width ≥ 840 AND height ≥ 480`.** Labels spend vertical space; landscape phones (height < 480) keep the compact icon rail. Rail metrics extend the existing single source of truth: expanded rail width (~220dp) derives content clearance for that tier exactly as `FloatingRailContentStartPadding` does today, guarded by the same test style. Selected-tab treatment generalizes the current `secondaryContainer` circle to a full-width row pill; Add reuses `TempoSoloActionButton` (already an ExtendedFAB).
 
-- **Rider renames**: `adaptiveScreenContentLayout(isRailLayout:)` → `reserveRailClearance:` (call sites: Routines/Tasks pass the rail flag, Settings passes `false` because `PersistentFloatingBar` never renders on Settings); `ColorDrawable` scrim → Compose `Box` scrim.
+- **Rider cleanup**: `adaptiveScreenContentLayout` takes an explicit `railClearance: Dp` resolved by `floatingRailContentClearance()`; Settings passes `0.dp` because `PersistentFloatingBar` never renders there. The dialog window's transparent `ColorDrawable` remains because it is Android window plumbing, while the scrim is already Compose-drawn.
 
 ## Risks / Trade-offs
 
@@ -39,7 +41,7 @@ Phase 1 (fix-142) established: `WindowSizeClass` via `currentWindowAdaptiveInfo(
 
 ## Migration Plan
 
-Two PRs: (1) sheet axis + placement rule + sort menu; (2) rail hierarchy + expanded tier + renames. Each is a clean revert. No data changes.
+Staged commits in PR #149: (1) sheet axis + placement rule; (2) rail hierarchy + expanded tier + cleanup. No data changes.
 
 ## Open Questions
 
