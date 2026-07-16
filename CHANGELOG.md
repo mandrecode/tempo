@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.3](https://github.com/mandrecode/tempo/compare/v0.9.2...v0.9.3) (2026-07-16)
+
+
+### Bug Fixes
+
+* **#17:** improve icon word detection for English and Spanish ([#148](https://github.com/mandrecode/tempo/issues/148)) ([95d0305](https://github.com/mandrecode/tempo/commit/95d030577b9f2ae9143fee48f52793a6d4274343))
+
 ## [0.9.2](https://github.com/mandrecode/tempo/compare/v0.9.1...v0.9.2) (2026-07-15)
 
 
