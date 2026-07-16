@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -126,6 +127,7 @@ private fun PersistentLandscapeFloatingBar(
         modifier =
             Modifier
                 .fillMaxHeight()
+                .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
