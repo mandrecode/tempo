@@ -19,11 +19,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 
 @Composable
 fun SettingsScreen(
@@ -63,7 +63,7 @@ internal fun SettingsScaffold(
         contentWindowInsets = WindowInsets(0),
         modifier =
             modifier
-                .adaptiveScreenContentLayout(railClearance = 0.dp)
+                .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TwoRowsTopAppBar(

@@ -30,6 +30,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -126,6 +127,14 @@ fun TempoNavHost(
         rememberEditorSupportingPaneSceneStrategy(
             enabled = rememberSheetPlacement() == SheetPlacement.DockedPane,
         )
+    val settingsAsTopLevel = isExpandedFloatingRailLayout()
+    val openSettings: () -> Unit = {
+        if (settingsAsTopLevel) {
+            navigator.navigateToTopLevel(SettingsRoute)
+        } else {
+            navigator.navigate(SettingsRoute)
+        }
+    }
 
     Box(
         modifier =
@@ -133,13 +142,11 @@ fun TempoNavHost(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
-        NavDisplay(
+        TempoNavDisplay(
             entries = activeEntries,
-            modifier = Modifier.fillMaxSize(),
-            onBack = { navigator.pop() },
-            sceneStrategies = listOf(editorSceneStrategy),
-            transitionSpec = { navigationTransition(initialState, targetState) },
-            popTransitionSpec = { navigationPopTransition(initialState, targetState) },
+            navigator = navigator,
+            editorSceneStrategy = editorSceneStrategy,
+            settingsAsTopLevel = settingsAsTopLevel,
         )
 
         PersistentFloatingBar(
@@ -149,10 +156,39 @@ fun TempoNavHost(
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,
-            onOpenSettings = { navigator.navigate(SettingsRoute) },
+            onOpenSettings = openSettings,
             onRouteChange = onRouteChange,
         )
     }
+}
+
+@Composable
+private fun TempoNavDisplay(
+    entries: List<NavEntry<NavKey>>,
+    navigator: TempoNavigator,
+    editorSceneStrategy: SceneStrategy<NavKey>,
+    settingsAsTopLevel: Boolean,
+) {
+    NavDisplay(
+        entries = entries,
+        modifier = Modifier.fillMaxSize(),
+        onBack = { navigator.pop() },
+        sceneStrategies = listOf(editorSceneStrategy),
+        transitionSpec = {
+            navigationTransition(
+                initialScene = initialState,
+                targetScene = targetState,
+                settingsAsTopLevel = settingsAsTopLevel,
+            )
+        },
+        popTransitionSpec = {
+            navigationPopTransition(
+                initialScene = initialState,
+                targetScene = targetState,
+                settingsAsTopLevel = settingsAsTopLevel,
+            )
+        },
+    )
 }
 
 @Composable
@@ -199,9 +235,11 @@ private fun rememberActiveEntries(
     val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
     val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
     val onboardingEntries = rememberDecoratedNavEntries(navigator.onboardingBackStack, decorators, entries)
+    val settingsEntries = rememberDecoratedNavEntries(navigator.settingsBackStack, decorators, entries)
     return when (navigator.section) {
         TempoNavigator.Section.ROUTINES -> routinesEntries
         TempoNavigator.Section.TASKS -> tasksEntries
+        TempoNavigator.Section.SETTINGS -> settingsEntries
         TempoNavigator.Section.ONBOARDING -> onboardingEntries
     }
 }
@@ -289,10 +327,15 @@ private fun RouteTopBarOrStatusInset(
     title: String,
     onOpenSettings: () -> Unit,
 ) {
+    val isRailLayout = isFloatingNavigationRailLayout()
     if (isExpandedFloatingRailLayout()) {
         Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
     } else {
-        RouteTopBar(title = title, onOpenSettings = onOpenSettings)
+        RouteTopBar(
+            title = title,
+            onOpenSettings = onOpenSettings,
+            showSettingsAction = !isRailLayout,
+        )
     }
 }
 
@@ -300,6 +343,7 @@ private fun RouteTopBarOrStatusInset(
 private fun RouteTopBar(
     title: String,
     onOpenSettings: () -> Unit,
+    showSettingsAction: Boolean,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
     val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
@@ -309,8 +353,10 @@ private fun RouteTopBar(
         title = title,
         titleModifier = Modifier.padding(start = titleStartPadding),
         actions = {
-            SettingsButton(onClick = onOpenSettings)
-            Spacer(modifier = Modifier.width(settingsEndPadding))
+            if (showSettingsAction) {
+                SettingsButton(onClick = onOpenSettings)
+                Spacer(modifier = Modifier.width(settingsEndPadding))
+            }
         },
     )
 }

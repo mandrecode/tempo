@@ -56,6 +56,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -100,6 +102,7 @@ fun TaskItem(
     subtasks: List<Task> = emptyList(),
     isSubtasksExpanded: Boolean = true,
     initialDescriptionExpanded: Boolean = false,
+    isSelected: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -109,7 +112,9 @@ fun TaskItem(
 
     val cardColor by animateColorAsState(
         targetValue =
-            if (task.isCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (task.isCompleted) {
                 MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
             } else {
                 MaterialTheme.colorScheme.surfaceContainer
@@ -178,6 +183,13 @@ fun TaskItem(
                 .graphicsLayer {
                     translationY = cardOffset.toPx()
                 }.clip(cardShape)
+                .then(
+                    if (isSelected) {
+                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
+                    } else {
+                        Modifier
+                    },
+                ).semantics { selected = isSelected }
                 .scale(cardScale),
         shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = cardColor),

@@ -37,6 +37,7 @@ fun TaskBottomSheet(
     onDelete: (() -> Unit)? = null,
     onToggleCompletion: ((Task) -> Unit)? = null,
     placement: SheetPlacement? = null,
+    dismissRequestKey: Int = 0,
 ) {
     TaskBottomSheetContent(
         categories = categories,
@@ -60,5 +61,6 @@ fun TaskBottomSheet(
         onDelete = onDelete,
         onToggleCompletion = onToggleCompletion,
         placement = placement,
+        dismissRequestKey = dismissRequestKey,
     )
 }

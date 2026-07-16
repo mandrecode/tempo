@@ -20,9 +20,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +40,8 @@ import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
+import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
+import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
@@ -130,20 +134,16 @@ fun TasksScreen(
         }
     }
 
-    if (uiState.showPermissionRevokedDialog) {
-        PermissionRevokedDialog(
-            permissionInfo = uiState.permissionInfo,
-            context = context,
-            dismissPermissionRevokedDialog = { viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRevokedDialog) },
-            confirmClearAllReminders = { viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders) },
-            notificationPrefixRes = R.string.permission_revoked_notifications_prefix,
-            fallbackRes = R.string.permission_revoked_fallback_tasks,
-        )
-    }
-
     val isRailLayout = isFloatingNavigationRailLayout()
     val editorPlacement = rememberSheetPlacement()
     val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
+    val railContentClearance =
+        when {
+            !isRailLayout -> 0.dp
+            isDockedEditor -> FloatingRailExpandedContentStartPadding
+            else -> FloatingRailContentStartPadding
+        }
+    var editorDismissRequestKey by remember { mutableIntStateOf(0) }
     val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
     LaunchedEffect(isDockedEditor, uiState.taskForm.isVisible) {
         currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.taskForm.isVisible)
@@ -167,6 +167,19 @@ fun TasksScreen(
             { viewModel.onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) }
         }
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
+    val onContentEvent: (TasksContract.UiEvent) -> Unit = { event ->
+        val isSelectedCardActivated =
+            isDockedEditor &&
+                uiState.taskForm.isVisible &&
+                event is TasksContract.UiEvent.ShowTaskDialog &&
+                event.task?.id != null &&
+                event.task.id == uiState.taskForm.editingTask?.id
+        if (isSelectedCardActivated) {
+            editorDismissRequestKey++
+        } else {
+            viewModel.onEvent(event)
+        }
+    }
 
     SideEffect {
         onFloatingBarStateChange(
@@ -185,6 +198,7 @@ fun TasksScreen(
         )
     }
 
+    val currentEditorDismissRequestKey = rememberUpdatedState(editorDismissRequestKey)
     val editorContent =
         remember(viewModel) {
             movableContentOf { state: TasksContract.UiState, placement: SheetPlacement ->
@@ -192,156 +206,181 @@ fun TasksScreen(
                     uiState = state,
                     onEvent = viewModel::onEvent,
                     placement = placement,
+                    dismissRequestKey = currentEditorDismissRequestKey.value,
                 )
             }
         }
 
-    Row(modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
-            Scaffold(
-                modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
-                containerColor = MaterialTheme.colorScheme.background,
-                contentWindowInsets = WindowInsets(0),
-                topBar = topBar,
-            ) {
-                Box(
-                    modifier = Modifier.padding(it).fillMaxSize(),
+    Box(modifier = modifier.fillMaxSize()) {
+        Row(modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                Scaffold(
+                    modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
+                    containerColor = MaterialTheme.colorScheme.background,
+                    contentWindowInsets = WindowInsets(0),
+                    topBar = topBar,
                 ) {
-                    TasksContent(
-                        uiState = uiState,
-                        onEvent = viewModel::onEvent,
-                        onScrolledFromTopChange = { isListScrolledFromTop.value = it },
-                    )
-
                     Box(
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .navigationBarsPadding()
-                                .padding(
-                                    bottom =
-                                        if (isRailLayout) {
-                                            20.dp
-                                        } else {
-                                            FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
-                                        },
-                                ),
-                        contentAlignment = Alignment.BottomCenter,
+                        modifier = Modifier.padding(it).fillMaxSize(),
                     ) {
-                        ExpressiveSnackbarHost(snackbarHostState)
+                        TasksContent(
+                            uiState = uiState,
+                            onEvent = onContentEvent,
+                            onScrolledFromTopChange = { isListScrolledFromTop.value = it },
+                            selectedTaskId =
+                                uiState.taskForm.editingTask
+                                    ?.id
+                                    .takeIf { isDockedEditor },
+                        )
+
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .navigationBarsPadding()
+                                    .padding(
+                                        bottom =
+                                            if (isRailLayout) {
+                                                20.dp
+                                            } else {
+                                                FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
+                                            },
+                                    ),
+                            contentAlignment = Alignment.BottomCenter,
+                        ) {
+                            ExpressiveSnackbarHost(snackbarHostState)
+                        }
                     }
                 }
             }
-        }
-        if (isDockedEditor && uiState.taskForm.isVisible) {
-            Box(
-                modifier =
-                    Modifier
-                        .width(DOCKED_EDITOR_WIDTH)
-                        .fillMaxHeight()
-                        .padding(
-                            end = DOCKED_EDITOR_PADDING,
-                            top = DOCKED_EDITOR_PADDING,
-                            bottom = DOCKED_EDITOR_PADDING,
-                        ),
-            ) {
-                editorContent(uiState, editorPlacement)
+            if (isDockedEditor && uiState.taskForm.isVisible) {
+                Box(
+                    modifier =
+                        Modifier
+                            .width(DOCKED_EDITOR_WIDTH)
+                            .fillMaxHeight()
+                            .padding(
+                                end = DOCKED_EDITOR_PADDING,
+                                top = DOCKED_EDITOR_PADDING,
+                                bottom = DOCKED_EDITOR_PADDING,
+                            ),
+                ) {
+                    editorContent(uiState, editorPlacement)
+                }
             }
         }
-    }
 
-    if (!isDockedEditor && uiState.taskForm.isVisible) {
-        editorContent(uiState, editorPlacement)
-    }
+        if (uiState.showPermissionRevokedDialog) {
+            PermissionRevokedDialog(
+                permissionInfo = uiState.permissionInfo,
+                context = context,
+                dismissPermissionRevokedDialog = {
+                    viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRevokedDialog)
+                },
+                confirmClearAllReminders = {
+                    viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders)
+                },
+                notificationPrefixRes = R.string.permission_revoked_notifications_prefix,
+                fallbackRes = R.string.permission_revoked_fallback_tasks,
+            )
+        }
 
-    if (!uiState.showPermissionRevokedDialog) {
-        HandleReminderPermissions(
-            show = uiState.showPermissionRequestDialog,
-            onGrantPermissions = {
-                viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
-                viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
-            },
-            onDismiss = {
-                viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
-            },
-        )
-    }
+        if (!isDockedEditor && uiState.taskForm.isVisible) {
+            editorContent(uiState, editorPlacement)
+        }
 
-    if (uiState.categoryForm.isVisible) {
-        val editingCategory = uiState.categoryForm.editingCategory
-        CategoryEditSheet(
-            category = editingCategory,
-            categories = uiState.categories,
-            nameError = uiState.categoryForm.nameError,
-            onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideCategoryDialog) },
-            onClearError = { viewModel.onEvent(TasksContract.UiEvent.ClearCategoryError) },
-            onSave = { name, color, icon, isDefault ->
-                if (editingCategory != null) {
-                    viewModel.onEvent(
-                        TasksContract.UiEvent.UpdateCategory(
-                            editingCategory.copy(
+        if (!uiState.showPermissionRevokedDialog) {
+            HandleReminderPermissions(
+                show = uiState.showPermissionRequestDialog,
+                onGrantPermissions = {
+                    viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
+                    viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
+                },
+                onDismiss = {
+                    viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
+                },
+            )
+        }
+
+        if (uiState.categoryForm.isVisible) {
+            val editingCategory = uiState.categoryForm.editingCategory
+            CategoryEditSheet(
+                category = editingCategory,
+                categories = uiState.categories,
+                nameError = uiState.categoryForm.nameError,
+                onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideCategoryDialog) },
+                onClearError = { viewModel.onEvent(TasksContract.UiEvent.ClearCategoryError) },
+                onSave = { name, color, icon, isDefault ->
+                    if (editingCategory != null) {
+                        viewModel.onEvent(
+                            TasksContract.UiEvent.UpdateCategory(
+                                editingCategory.copy(
+                                    name = name,
+                                    color = color,
+                                    icon = icon,
+                                    isDefault = isDefault,
+                                ),
+                            ),
+                        )
+                    } else {
+                        viewModel.onEvent(
+                            TasksContract.UiEvent.AddCategory(
                                 name = name,
                                 color = color,
                                 icon = icon,
-                                isDefault = isDefault,
                             ),
-                        ),
-                    )
-                } else {
-                    viewModel.onEvent(
-                        TasksContract.UiEvent.AddCategory(
-                            name = name,
-                            color = color,
-                            icon = icon,
-                        ),
-                    )
-                }
-            },
-            onDelete =
-                if (editingCategory != null && !editingCategory.isDefault) {
-                    {
-                        viewModel.onEvent(TasksContract.UiEvent.RequestDeleteCategory(editingCategory))
+                        )
                     }
-                } else {
-                    null
                 },
-        )
-    }
-
-    uiState.categoryToDelete?.let { categoryToDelete ->
-        if (uiState.showDeleteCategoryConfirmationDialog) {
-            DeleteCategoryDialog(
-                onCancelDeleteCategory = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteCategory) },
-                onDeleteCategory = { viewModel.onEvent(TasksContract.UiEvent.DeleteCategory(it)) },
-                categoryToDelete = categoryToDelete,
+                onDelete =
+                    if (editingCategory != null && !editingCategory.isDefault) {
+                        {
+                            viewModel.onEvent(TasksContract.UiEvent.RequestDeleteCategory(editingCategory))
+                        }
+                    } else {
+                        null
+                    },
+                modifier = Modifier.padding(start = railContentClearance),
             )
         }
-    }
 
-    if (uiState.showDeleteTaskConfirmationDialog && uiState.taskToDelete != null) {
-        DeleteTaskConfirmDialog(
-            onCancelDeleteTask = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteTask) },
-            onConfirmDeleteTask = { viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteTask(it)) },
-            taskToDelete = uiState.taskToDelete,
-            subtasksCount = uiState.taskToDeleteSubtasksCount,
-        )
-    }
+        uiState.categoryToDelete?.let { categoryToDelete ->
+            if (uiState.showDeleteCategoryConfirmationDialog) {
+                DeleteCategoryDialog(
+                    onCancelDeleteCategory = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteCategory) },
+                    onDeleteCategory = { viewModel.onEvent(TasksContract.UiEvent.DeleteCategory(it)) },
+                    categoryToDelete = categoryToDelete,
+                )
+            }
+        }
 
-    if (uiState.showDeleteCompletedConfirmationDialog) {
-        DeleteCompletedConfirmationDialog(
-            onCancelDeleteCompletedTasks = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteCompletedTasks) },
-            onConfirmDeleteCompletedTasks = { viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteCompletedTasks) },
-        )
-    }
+        if (uiState.showDeleteTaskConfirmationDialog && uiState.taskToDelete != null) {
+            DeleteTaskConfirmDialog(
+                onCancelDeleteTask = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteTask) },
+                onConfirmDeleteTask = { viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteTask(it)) },
+                taskToDelete = uiState.taskToDelete,
+                subtasksCount = uiState.taskToDeleteSubtasksCount,
+            )
+        }
 
-    if (uiState.showSortBottomSheet && !isRailLayout) {
-        SortBottomSheet(
-            currentSortOption = uiState.sortOption,
-            onSelectSortOption = {
-                viewModel.onEvent(TasksContract.UiEvent.SetSortOption(it))
-            },
-            onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
-        )
+        if (uiState.showDeleteCompletedConfirmationDialog) {
+            DeleteCompletedConfirmationDialog(
+                onCancelDeleteCompletedTasks = { viewModel.onEvent(TasksContract.UiEvent.CancelDeleteCompletedTasks) },
+                onConfirmDeleteCompletedTasks = {
+                    viewModel.onEvent(TasksContract.UiEvent.ConfirmDeleteCompletedTasks)
+                },
+            )
+        }
+
+        if (uiState.showSortBottomSheet && !isRailLayout) {
+            SortBottomSheet(
+                currentSortOption = uiState.sortOption,
+                onSelectSortOption = {
+                    viewModel.onEvent(TasksContract.UiEvent.SetSortOption(it))
+                },
+                onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
+            )
+        }
     }
 }
 
@@ -350,19 +389,11 @@ private fun TaskEditor(
     uiState: TasksContract.UiState,
     onEvent: (TasksContract.UiEvent) -> Unit,
     placement: SheetPlacement,
+    dismissRequestKey: Int,
 ) {
-    val categoryIdFromContext =
-        when {
-            uiState.taskForm.editingTask != null -> uiState.taskForm.editingTask.categoryId
-
-            uiState.taskForm.parentTask != null -> uiState.taskForm.parentTask.categoryId
-
-            else -> uiState.selectedCategoryId
-        }
-
     TaskBottomSheet(
         categories = uiState.categories,
-        selectedCategoryIdFromFilter = categoryIdFromContext,
+        selectedCategoryIdFromFilter = uiState.taskEditorCategoryId(),
         formState = uiState.taskForm,
         onSetPriority = { onEvent(TasksContract.UiEvent.SetPriority(it)) },
         onClearPriority = { onEvent(TasksContract.UiEvent.ClearPriority) },
@@ -405,6 +436,20 @@ private fun TaskEditor(
                 { onEvent(TasksContract.UiEvent.RequestDeleteTask(editingTask)) }
             },
         onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
+        modifier =
+            if (placement == SheetPlacement.DockedPane) {
+                Modifier
+            } else {
+                Modifier.padding(start = floatingRailContentClearance())
+            },
         placement = placement,
+        dismissRequestKey = dismissRequestKey,
     )
 }
+
+private fun TasksContract.UiState.taskEditorCategoryId(): Long =
+    when {
+        taskForm.editingTask != null -> taskForm.editingTask.categoryId
+        taskForm.parentTask != null -> taskForm.parentTask.categoryId
+        else -> selectedCategoryId
+    }

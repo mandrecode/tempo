@@ -9,8 +9,7 @@ import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 /**
  * A modal sheet that slides down from the top of the screen.
  *
- * With [adaptivePlacement] the sheet follows the window's [SheetPlacement] and presents as a
- * full-height side sheet on expanded or height-compact windows.
+ * Top sheets retain their direction below the docked-pane breakpoint.
  */
 @Composable
 fun TempoModalTopSheet(

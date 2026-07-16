@@ -73,6 +73,7 @@ internal fun TaskBottomSheetContent(
     onDelete: (() -> Unit)? = null,
     onToggleCompletion: ((Task) -> Unit)? = null,
     placement: SheetPlacement? = null,
+    dismissRequestKey: Int = 0,
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -335,6 +336,7 @@ internal fun TaskBottomSheetContent(
         hasUnsavedChanges = if (autoSaveEnabled && taskTitle.isNotBlank()) false else hasUnsavedChanges,
         adaptivePlacement = true,
         placement = placement,
+        dismissRequestKey = dismissRequestKey,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(

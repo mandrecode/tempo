@@ -46,7 +46,23 @@ Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp throu
 
 #### Scenario: Settings is a large-window destination
 - **WHEN** the window is at least 1200dp wide and the user selects Settings
-- **THEN** Settings replaces the content pane in place while the rail remains visible and selected
+- **THEN** Settings replaces the content pane in place with the same transition as the other tabs while the rail remains visible and selected
+- **AND** add, sort, and clear-completed actions from the previous tab are hidden
+
+#### Scenario: Settings remains in a collapsed rail
+- **WHEN** a compact-landscape or medium window uses the collapsed navigation rail
+- **THEN** Settings is pinned in the same rail column instead of appearing in the screen top bar
+
+#### Scenario: Medium editors align to screen content
+- **WHEN** a task or habit editor opens below the 1200dp docked-pane breakpoint
+- **THEN** it rises from the bottom and its modal bounds start after any visible navigation rail
+- **AND** the category editor continues to descend from the top
+
+#### Scenario: Selected card controls its docked editor
+- **GIVEN** a task, habit, or habit-chain editor is docked beside the list
+- **THEN** its source card has selected styling
+- **WHEN** the user activates that selected card again
+- **THEN** the editor pane closes
 
 ### Requirement: Sort adapts from sheet to anchored menu
 Sort SHALL use a bottom sheet below 600dp and an anchored menu at widths of 600dp and above.

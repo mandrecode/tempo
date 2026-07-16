@@ -65,12 +65,12 @@ internal fun PersistentFloatingBar(
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = topLevelRoute == TasksRoute
-    val isLargeSettingsDestination = currentRoute == SettingsRoute && isExpandedFloatingRailLayout()
+    val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
     val visible =
         when {
             currentRoute == RoutinesRoute -> routinesState.visible
             currentRoute == TasksRoute -> tasksState.visible
-            isLargeSettingsDestination -> true
+            isRailSettingsDestination -> true
             else -> false
         }
 
@@ -100,7 +100,6 @@ internal fun PersistentFloatingBar(
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
-                isSingleTabMode = isSingleTabMode,
                 onOpenSettings = onOpenSettings,
                 settingsSelected = currentRoute == SettingsRoute,
             )
@@ -122,20 +121,10 @@ private fun PersistentLandscapeFloatingBar(
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
     onOpenSettings: () -> Unit,
     settingsSelected: Boolean,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode && !settingsSelected) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
@@ -170,7 +159,7 @@ private fun PersistentLandscapeFloatingBar(
                     onClick = addAction.onClick,
                 )
             }
-        } else {
+        } else if (!settingsSelected) {
             AddActionButton(addAction)
         }
 
@@ -183,19 +172,19 @@ private fun PersistentLandscapeFloatingBar(
             expanded = isExpandedRail,
         )
 
-        if (isExpandedRail) {
-            Spacer(modifier = Modifier.weight(1f))
-            SettingsRailButton(
-                selected = settingsSelected,
-                onClick = onOpenSettings,
-            )
-        }
+        Spacer(modifier = Modifier.weight(1f))
+        SettingsRailButton(
+            selected = settingsSelected,
+            expanded = isExpandedRail,
+            onClick = onOpenSettings,
+        )
     }
 }
 
 @Composable
 private fun SettingsRailButton(
     selected: Boolean,
+    expanded: Boolean,
     onClick: () -> Unit,
 ) {
     Surface(
@@ -215,7 +204,7 @@ private fun SettingsRailButton(
             },
         modifier =
             Modifier
-                .width(FloatingRailExpandedSurfaceWidth)
+                .width(if (expanded) FloatingRailExpandedSurfaceWidth else FloatingRailSurfaceWidth)
                 .height(FloatingToolbarItemSize),
     ) {
         Row(
@@ -225,12 +214,14 @@ private fun SettingsRailButton(
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = null,
+                contentDescription = if (expanded) null else stringResource(R.string.settings),
             )
-            Text(
-                text = stringResource(R.string.settings),
-                style = MaterialTheme.typography.labelLarge,
-            )
+            if (expanded) {
+                Text(
+                    text = stringResource(R.string.settings),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
     }
 }

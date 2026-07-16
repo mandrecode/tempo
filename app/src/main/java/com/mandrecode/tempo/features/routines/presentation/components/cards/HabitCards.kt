@@ -48,6 +48,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -86,6 +88,7 @@ internal fun HabitItem(
     canToggle: Boolean = true,
     isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
+    isSelected: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -159,6 +162,13 @@ internal fun HabitItem(
             modifier
                 .fillMaxWidth()
                 .clip(cardShape)
+                .background(
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.secondaryContainer
+                    } else {
+                        Color.Transparent
+                    },
+                ).semantics { selected = isSelected }
                 .clickable { onClick() }
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -339,6 +349,7 @@ fun HabitCard(
     onToggle: ((Long, Boolean) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    isSelected: Boolean = false,
 ) {
     val dateStr = selectedDate.toString()
     val isCompleted =
@@ -372,7 +383,9 @@ fun HabitCard(
 
     val containerColor by animateColorAsState(
         targetValue =
-            if (isCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (isCompleted) {
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedHabitColor?.copy(alpha = 0.15f)
@@ -384,7 +397,9 @@ fun HabitCard(
 
     val contentColor by animateColorAsState(
         targetValue =
-            if (isCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else if (isCompleted) {
                 MaterialTheme.colorScheme.onPrimary
             } else {
                 MaterialTheme.colorScheme.onSurface
@@ -433,7 +448,16 @@ fun HabitCard(
         }
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
+                        } else {
+                            Modifier
+                        },
+                    ).semantics { selected = isSelected },
             shape = cardShape,
             colors =
                 CardDefaults.cardColors(
@@ -453,6 +477,7 @@ fun HabitCard(
                 horizontalPadding = 16.dp,
                 verticalPadding = 16.dp,
                 canToggle = canToggle,
+                isSelected = isSelected,
             )
         }
     }

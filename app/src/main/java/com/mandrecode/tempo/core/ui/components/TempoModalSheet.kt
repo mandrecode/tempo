@@ -139,6 +139,7 @@ internal fun TempoDockedSheet(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
     hasUnsavedChanges: Boolean = false,
+    dismissRequestKey: Int = 0,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
@@ -149,6 +150,12 @@ internal fun TempoDockedSheet(
             showDiscardDialog.value = true
         } else {
             currentOnDismissRequest()
+        }
+    }
+
+    LaunchedEffect(dismissRequestKey) {
+        if (dismissRequestKey > 0) {
+            requestDismiss()
         }
     }
 

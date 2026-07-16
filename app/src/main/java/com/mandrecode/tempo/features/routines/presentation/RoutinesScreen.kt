@@ -21,9 +21,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -39,6 +41,8 @@ import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
+import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
+import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
@@ -116,11 +120,22 @@ fun RoutinesScreen(
     val isRailLayout = isFloatingNavigationRailLayout()
     val editorPlacement = rememberSheetPlacement()
     val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
+    val railContentClearance = routinesRailClearance(isRailLayout, isDockedEditor)
+    var editorDismissRequestKey by remember { mutableIntStateOf(0) }
     val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
     LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
         currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.habitForm.isVisible)
     }
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
+    val onContentEvent: (RoutinesContract.UiEvent) -> Unit = { event ->
+        handleRoutinesContentEvent(
+            event = event,
+            uiState = uiState,
+            isDockedEditor = isDockedEditor,
+            requestEditorDismiss = { editorDismissRequestKey++ },
+            onEvent = viewModel::onEvent,
+        )
+    }
     val onShowHabitBottomSheet =
         remember(viewModel) {
             { viewModel.onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet()) }
@@ -136,6 +151,7 @@ fun RoutinesScreen(
         )
     }
 
+    val currentEditorDismissRequestKey = rememberUpdatedState(editorDismissRequestKey)
     val editorContent =
         remember(viewModel) {
             movableContentOf { state: RoutinesContract.UiState, placement: SheetPlacement ->
@@ -143,6 +159,7 @@ fun RoutinesScreen(
                     uiState = state,
                     onEvent = viewModel::onEvent,
                     placement = placement,
+                    dismissRequestKey = currentEditorDismissRequestKey.value,
                 )
             }
         }
@@ -150,7 +167,7 @@ fun RoutinesScreen(
     Row(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
             Scaffold(
-                modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
+                modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0),
                 topBar = topBar,
@@ -158,9 +175,17 @@ fun RoutinesScreen(
                 Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                     RoutinesContent(
                         uiState = uiState,
-                        onEvent = viewModel::onEvent,
+                        onEvent = onContentEvent,
                         onScrolledFromTopChange = { isListScrolledFromTop.value = it },
                         showAddHabitButton = !showAddHabitRailButton,
+                        selectedHabitId =
+                            uiState.habitForm.editingHabit
+                                ?.id
+                                .takeIf { isDockedEditor },
+                        selectedHabitChainId =
+                            uiState.habitForm.editingHabitChain
+                                ?.id
+                                .takeIf { isDockedEditor },
                     )
 
                     RoutinesDialogs(
@@ -198,11 +223,51 @@ fun RoutinesScreen(
     }
 }
 
+private fun routinesRailClearance(
+    isRailLayout: Boolean,
+    isDockedEditor: Boolean,
+) = when {
+    !isRailLayout -> 0.dp
+    isDockedEditor -> FloatingRailExpandedContentStartPadding
+    else -> FloatingRailContentStartPadding
+}
+
+private fun handleRoutinesContentEvent(
+    event: RoutinesContract.UiEvent,
+    uiState: RoutinesContract.UiState,
+    isDockedEditor: Boolean,
+    requestEditorDismiss: () -> Unit,
+    onEvent: (RoutinesContract.UiEvent) -> Unit,
+) {
+    if (event.targetsOpenDockedEditor(uiState, isDockedEditor)) {
+        requestEditorDismiss()
+    } else {
+        onEvent(event)
+    }
+}
+
+private fun RoutinesContract.UiEvent.targetsOpenDockedEditor(
+    uiState: RoutinesContract.UiState,
+    isDockedEditor: Boolean,
+): Boolean {
+    if (!isDockedEditor || !uiState.habitForm.isVisible) return false
+    return when (this) {
+        is RoutinesContract.UiEvent.ShowHabitBottomSheet ->
+            habit?.id != null && habit.id == uiState.habitForm.editingHabit?.id
+
+        is RoutinesContract.UiEvent.ShowHabitChainBottomSheet ->
+            habitChain?.id != null && habitChain.id == uiState.habitForm.editingHabitChain?.id
+
+        else -> false
+    }
+}
+
 @Composable
 private fun HabitEditor(
     uiState: RoutinesContract.UiState,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
     placement: SheetPlacement,
+    dismissRequestKey: Int,
 ) {
     HabitBottomSheet(
         formState = uiState.habitForm,
@@ -249,7 +314,14 @@ private fun HabitEditor(
         onToggleHabitCompletion = { habitId, isCompleted ->
             onEvent(RoutinesContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
         },
+        modifier =
+            if (placement == SheetPlacement.DockedPane) {
+                Modifier
+            } else {
+                Modifier.padding(start = floatingRailContentClearance())
+            },
         placement = placement,
+        dismissRequestKey = dismissRequestKey,
     )
 }
 

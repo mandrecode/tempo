@@ -12,6 +12,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -50,6 +51,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
@@ -84,6 +87,8 @@ fun HabitChainCard(
     onHabitClick: ((Long) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    isSelected: Boolean = false,
+    selectedHabitId: Long? = null,
 ) {
     val dateStr = selectedDate.toString()
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
@@ -132,7 +137,9 @@ fun HabitChainCard(
 
     val containerColor by animateColorAsState(
         targetValue =
-            if (allCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (allCompleted) {
                 resolvedChainColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedChainColor?.copy(alpha = 0.15f)
@@ -144,7 +151,9 @@ fun HabitChainCard(
 
     val contentColor by animateColorAsState(
         targetValue =
-            if (allCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else if (allCompleted) {
                 MaterialTheme.colorScheme.onPrimary
             } else {
                 MaterialTheme.colorScheme.onSurface
@@ -219,6 +228,13 @@ fun HabitChainCard(
                 Modifier
                     .fillMaxWidth()
                     .clip(cardShape)
+                    .then(
+                        if (isSelected) {
+                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
+                        } else {
+                            Modifier
+                        },
+                    ).semantics { selected = isSelected }
                     .clickable { onEdit() },
             shape = cardShape,
             colors =
@@ -521,11 +537,17 @@ fun HabitChainCard(
                                         onClick = { onHabitClick?.invoke(habit.id) },
                                         color = resolvedChainColor,
                                         cardShape = cardShape,
-                                        contentColor = contentColor,
+                                        contentColor =
+                                            if (habit.id == selectedHabitId) {
+                                                MaterialTheme.colorScheme.onSecondaryContainer
+                                            } else {
+                                                contentColor
+                                            },
                                         horizontalPadding = 16.dp,
                                         canToggle = canToggle,
                                         isInsideChain = true,
                                         isContainerCompleted = allCompleted,
+                                        isSelected = habit.id == selectedHabitId,
                                     )
                                 }
                             }

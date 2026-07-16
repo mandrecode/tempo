@@ -42,6 +42,7 @@ fun HabitBottomSheet(
     onSetRepeatDays: ((Set<DayOfWeek>?) -> Unit)? = null,
     onToggleHabitCompletion: ((habitId: Long, isCompleted: Boolean) -> Unit)? = null,
     placement: SheetPlacement? = null,
+    dismissRequestKey: Int = 0,
 ) {
     HabitBottomSheetContent(
         formState = formState,
@@ -68,5 +69,6 @@ fun HabitBottomSheet(
         onSetRepeatDays = onSetRepeatDays,
         onToggleHabitCompletion = onToggleHabitCompletion,
         placement = placement,
+        dismissRequestKey = dismissRequestKey,
     )
 }
