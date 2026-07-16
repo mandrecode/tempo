@@ -26,15 +26,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.theme.spacing
 
-private data class NavigationItem<T : Any>(
+private data class NavigationItem<T : NavKey>(
     val route: T,
     val titleRes: Int,
     val selectedIcon: Int,
@@ -65,8 +62,9 @@ private val FloatingToolbarShape = RoundedCornerShape(36.dp)
 
 @Composable
 fun TempoBottomNavigation(
-    navController: NavHostController,
+    currentRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    onNavigateToTopLevel: (NavKey) -> Unit,
     onRouteChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
@@ -85,13 +83,10 @@ fun TempoBottomNavigation(
                 else -> true
             }
         }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
     val onItemClick: (NavigationItem<*>) -> Unit = { item ->
-        navigateTo(navController, item, onRouteChange)
+        navigateTo(item, onNavigateToTopLevel, onRouteChange)
     }
 
     Surface(
@@ -105,21 +100,21 @@ fun TempoBottomNavigation(
             isExpandedRail ->
                 ExpandedRailPill(
                     items = visibleNavigationItems,
-                    currentDestination = currentDestination,
+                    currentRoute = currentRoute,
                     onItemClick = onItemClick,
                 )
 
             isRailLayout ->
                 CompactRailPill(
                     items = visibleNavigationItems,
-                    currentDestination = currentDestination,
+                    currentRoute = currentRoute,
                     onItemClick = onItemClick,
                 )
 
             else ->
                 BottomBarPill(
                     items = visibleNavigationItems,
-                    currentDestination = currentDestination,
+                    currentRoute = currentRoute,
                     onItemClick = onItemClick,
                 )
         }
@@ -129,7 +124,7 @@ fun TempoBottomNavigation(
 @Composable
 private fun ExpandedRailPill(
     items: List<NavigationItem<*>>,
-    currentDestination: NavDestination?,
+    currentRoute: NavKey,
     onItemClick: (NavigationItem<*>) -> Unit,
 ) {
     Column(
@@ -140,7 +135,7 @@ private fun ExpandedRailPill(
         verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
     ) {
         items.forEach { item ->
-            val selected = currentDestination?.hasRoute(item.route::class) == true
+            val selected = currentRoute == item.route
             ExpandedRailNavigationRow(
                 item = item,
                 selected = selected,
@@ -153,7 +148,7 @@ private fun ExpandedRailPill(
 @Composable
 private fun CompactRailPill(
     items: List<NavigationItem<*>>,
-    currentDestination: NavDestination?,
+    currentRoute: NavKey,
     onItemClick: (NavigationItem<*>) -> Unit,
 ) {
     Column(
@@ -162,7 +157,7 @@ private fun CompactRailPill(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         items.forEach { item ->
-            val selected = currentDestination?.hasRoute(item.route::class) == true
+            val selected = currentRoute == item.route
             ToolbarNavigationButton(
                 item = item,
                 selected = selected,
@@ -175,7 +170,7 @@ private fun CompactRailPill(
 @Composable
 private fun BottomBarPill(
     items: List<NavigationItem<*>>,
-    currentDestination: NavDestination?,
+    currentRoute: NavKey,
     onItemClick: (NavigationItem<*>) -> Unit,
 ) {
     Row(
@@ -184,7 +179,7 @@ private fun BottomBarPill(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         items.forEach { item ->
-            val selected = currentDestination?.hasRoute(item.route::class) == true
+            val selected = currentRoute == item.route
             ToolbarNavigationButton(
                 item = item,
                 selected = selected,
@@ -195,17 +190,11 @@ private fun BottomBarPill(
 }
 
 private fun navigateTo(
-    navController: NavHostController,
     item: NavigationItem<*>,
+    onNavigateToTopLevel: (NavKey) -> Unit,
     onRouteChange: (String) -> Unit,
 ) {
-    navController.navigate(item.route) {
-        popUpTo(navController.topLevelPopUpToId()) {
-            saveState = true
-        }
-        launchSingleTop = true
-        restoreState = true
-    }
+    onNavigateToTopLevel(item.route)
     val routeName =
         when (item.route) {
             RoutinesRoute -> ROUTINES_ROUTE_NAME

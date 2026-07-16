@@ -36,3 +36,21 @@ Migrating to the new navigation runtime SHALL preserve existing navigation behav
 #### Scenario: Notification deep-link still lands correctly
 - **WHEN** the user taps a task reminder notification
 - **THEN** the app opens Tasks and surfaces the referenced task exactly as it did before the migration
+
+### Requirement: Adaptive navigation follows M3 breakpoint tiers
+Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp through 1199dp, and a labeled rail at 1200dp and wider.
+
+#### Scenario: Expanded width keeps the collapsed rail
+- **WHEN** the window width is between 840dp and 1199dp
+- **THEN** navigation uses the collapsed icon rail rather than the labeled sidebar
+
+#### Scenario: Settings is a large-window destination
+- **WHEN** the window is at least 1200dp wide and the user selects Settings
+- **THEN** Settings replaces the content pane in place while the rail remains visible and selected
+
+### Requirement: Sort adapts from sheet to anchored menu
+Sort SHALL use a bottom sheet below 600dp and an anchored menu at widths of 600dp and above.
+
+#### Scenario: Medium window opens anchored sort
+- **WHEN** the user invokes Sort in a window at least 600dp wide
+- **THEN** an M3 Expressive menu opens anchored to the rail Sort action

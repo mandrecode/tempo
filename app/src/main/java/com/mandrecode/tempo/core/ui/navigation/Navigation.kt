@@ -1,8 +1,5 @@
 package com.mandrecode.tempo.core.ui.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -26,17 +23,18 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
-import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingContract
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
@@ -48,18 +46,18 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 @Serializable
-object RoutinesRoute
+object RoutinesRoute : NavKey
 
 @Serializable
-object TasksRoute
+object TasksRoute : NavKey
 
 @Serializable
-object SettingsRoute
+object SettingsRoute : NavKey
 
 @Serializable
 data class OnboardingRoute(
     val isReplay: Boolean = false,
-)
+) : NavKey
 
 sealed interface PendingNotificationAction {
     data class OpenTask(
@@ -77,7 +75,6 @@ sealed interface PendingNotificationAction {
     ) : PendingNotificationAction
 }
 
-// Route name constants for persistence
 const val ROUTINES_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES
 const val TASKS_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_TASKS
 
@@ -86,25 +83,33 @@ const val TASKS_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_TASKS
 fun TempoNavHost(
     navigationPreferencesRepository: NavigationPreferencesRepository,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
     routinesNavigationTrigger: Long = 0L,
     tasksNavigationTrigger: Long = 0L,
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
-    startDestination: Any = RoutinesRoute,
+    startDestination: NavKey = RoutinesRoute,
     onRouteChange: (String) -> Unit = {},
 ) {
+    val navigator = rememberTempoNavigator(startDestination)
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
 
     NotificationNavigationEffects(
-        navController = navController,
+        navigator = navigator,
         routinesNavigationTrigger = routinesNavigationTrigger,
         tasksNavigationTrigger = tasksNavigationTrigger,
         onRouteChange = onRouteChange,
     )
+
+    val activeEntries =
+        rememberActiveEntries(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
+            onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
+        )
 
     Box(
         modifier =
@@ -112,102 +117,78 @@ fun TempoNavHost(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
-        TempoNavGraph(
-            navController = navController,
-            startDestination = startDestination,
-            navigationPreferencesRepository = navigationPreferencesRepository,
-            pendingNotificationAction = pendingNotificationAction,
-            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-            onRoutinesFloatingBarStateChange = { state ->
-                if (routinesFloatingBarState != state) {
-                    routinesFloatingBarState = state
-                }
-            },
-            onTasksFloatingBarStateChange = { state ->
-                if (tasksFloatingBarState != state) {
-                    tasksFloatingBarState = state
-                }
-            },
+        NavDisplay(
+            entries = activeEntries,
+            modifier = Modifier.fillMaxSize(),
+            onBack = { navigator.pop() },
+            transitionSpec = { navigationTransition(initialState, targetState) },
+            popTransitionSpec = { navigationPopTransition(initialState, targetState) },
         )
 
         PersistentFloatingBar(
-            currentDestination = currentDestination,
-            navController = navController,
+            currentRoute = navigator.currentRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
+            onNavigateToTopLevel = navigator::navigateToTopLevel,
+            onOpenSettings = { navigator.navigate(SettingsRoute) },
             onRouteChange = onRouteChange,
         )
     }
 }
 
 @Composable
-private fun TempoNavGraph(
-    navController: NavHostController,
-    startDestination: Any,
+private fun rememberActiveEntries(
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
-) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = Modifier.fillMaxSize(),
-        enterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        exitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        popExitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-    ) {
-        composable<RoutinesRoute>(
-            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
-        ) {
-            RoutinesDestination(
-                navController = navController,
-                navigationPreferencesRepository = navigationPreferencesRepository,
-                pendingNotificationAction = pendingNotificationAction,
-                onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
-            )
+): List<NavEntry<NavKey>> {
+    val decorators =
+        listOf<NavEntryDecorator<NavKey>>(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        )
+    val entries =
+        entryProvider<NavKey> {
+            entry<RoutinesRoute> {
+                RoutinesDestination(
+                    navigator = navigator,
+                    navigationPreferencesRepository = navigationPreferencesRepository,
+                    pendingNotificationAction = pendingNotificationAction,
+                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+                    onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
+                )
+            }
+            entry<TasksRoute> {
+                TasksDestination(
+                    navigator = navigator,
+                    navigationPreferencesRepository = navigationPreferencesRepository,
+                    pendingNotificationAction = pendingNotificationAction,
+                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+                    onFloatingBarStateChange = onTasksFloatingBarStateChange,
+                )
+            }
+            entry<OnboardingRoute> { route ->
+                OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
+            }
+            entry<SettingsRoute> { SettingsDestination(navigator = navigator) }
         }
-
-        composable<TasksRoute>(
-            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
-        ) {
-            TasksDestination(
-                navController = navController,
-                navigationPreferencesRepository = navigationPreferencesRepository,
-                pendingNotificationAction = pendingNotificationAction,
-                onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                onFloatingBarStateChange = onTasksFloatingBarStateChange,
-            )
-        }
-
-        composable<OnboardingRoute>(
-            exitTransition = { onboardingHandoffExitTransition(targetState.destination) },
-        ) { backStackEntry ->
-            val route = backStackEntry.toRoute<OnboardingRoute>()
-            OnboardingDestination(
-                navController = navController,
-                isReplay = route.isReplay,
-            )
-        }
-
-        composable<SettingsRoute>(
-            enterTransition = { settingsEnterTransition() },
-            exitTransition = { settingsExitTransition() },
-            popEnterTransition = { settingsPopEnterTransition() },
-            popExitTransition = { settingsExitTransition() },
-        ) {
-            SettingsDestination(navController = navController)
-        }
+    val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
+    val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
+    val onboardingEntries = rememberDecoratedNavEntries(navigator.onboardingBackStack, decorators, entries)
+    return when (navigator.section) {
+        TempoNavigator.Section.ROUTINES -> routinesEntries
+        TempoNavigator.Section.TASKS -> tasksEntries
+        TempoNavigator.Section.ONBOARDING -> onboardingEntries
     }
 }
 
 @Composable
 private fun NotificationNavigationEffects(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     routinesNavigationTrigger: Long,
     tasksNavigationTrigger: Long,
     onRouteChange: (String) -> Unit,
@@ -216,26 +197,14 @@ private fun NotificationNavigationEffects(
 
     LaunchedEffect(routinesNavigationTrigger) {
         if (routinesNavigationTrigger > 0) {
-            navController.navigate(RoutinesRoute) {
-                popUpTo(navController.topLevelPopUpToId()) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+            navigator.navigateToTopLevel(RoutinesRoute)
             currentOnRouteChange(ROUTINES_ROUTE_NAME)
         }
     }
 
     LaunchedEffect(tasksNavigationTrigger) {
         if (tasksNavigationTrigger > 0) {
-            navController.navigate(TasksRoute) {
-                popUpTo(navController.topLevelPopUpToId()) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+            navigator.navigateToTopLevel(TasksRoute)
             currentOnRouteChange(TASKS_ROUTE_NAME)
         }
     }
@@ -243,7 +212,7 @@ private fun NotificationNavigationEffects(
 
 @Composable
 private fun RoutinesDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
@@ -255,7 +224,7 @@ private fun RoutinesDestination(
         topBar = {
             RouteTopBarOrStatusInset(
                 title = stringResource(R.string.routines),
-                navController = navController,
+                onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
         showAddHabitRailButton = true,
@@ -267,7 +236,7 @@ private fun RoutinesDestination(
 
 @Composable
 private fun TasksDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
@@ -279,7 +248,7 @@ private fun TasksDestination(
         topBar = {
             RouteTopBarOrStatusInset(
                 title = stringResource(R.string.tasks),
-                navController = navController,
+                onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
         showAddTaskRailButton = true,
@@ -289,29 +258,22 @@ private fun TasksDestination(
     )
 }
 
-/**
- * On expanded rails the title and settings entry live in the rail itself, so the top bar
- * collapses to a status-bar inset and content reclaims the vertical space.
- */
 @Composable
 private fun RouteTopBarOrStatusInset(
     title: String,
-    navController: NavHostController,
+    onOpenSettings: () -> Unit,
 ) {
     if (isExpandedFloatingRailLayout()) {
         Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
     } else {
-        RouteTopBar(
-            title = title,
-            navController = navController,
-        )
+        RouteTopBar(title = title, onOpenSettings = onOpenSettings)
     }
 }
 
 @Composable
 private fun RouteTopBar(
     title: String,
-    navController: NavHostController,
+    onOpenSettings: () -> Unit,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
     val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
@@ -321,49 +283,36 @@ private fun RouteTopBar(
         title = title,
         titleModifier = Modifier.padding(start = titleStartPadding),
         actions = {
-            SettingsButton(
-                onClick = {
-                    navController.navigate(SettingsRoute) {
-                        launchSingleTop = true
-                    }
-                },
-            )
+            SettingsButton(onClick = onOpenSettings)
             Spacer(modifier = Modifier.width(settingsEndPadding))
         },
     )
 }
 
 @Composable
-private fun SettingsDestination(navController: NavHostController) {
+private fun SettingsDestination(navigator: TempoNavigator) {
     SettingsScreen(
-        onBackClick = { navController.popBackStack() },
-        onOnboardingClick = {
-            navController.navigate(OnboardingRoute(isReplay = true)) {
-                launchSingleTop = true
-            }
-        },
+        onBackClick = { navigator.pop() },
+        onOnboardingClick = { navigator.navigate(OnboardingRoute(isReplay = true)) },
     )
 }
 
 @Composable
 private fun OnboardingDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     isReplay: Boolean,
 ) {
     OnboardingScreen(
         onExit = { defaultTab ->
             if (isReplay) {
-                navController.popBackStack()
+                navigator.pop()
             } else {
-                val destination =
+                navigator.completeOnboarding(
                     when (defaultTab) {
                         OnboardingContract.DefaultTab.ROUTINES -> RoutinesRoute
                         OnboardingContract.DefaultTab.TASKS -> TasksRoute
-                    }
-                navController.navigate(destination) {
-                    popUpTo<OnboardingRoute> { inclusive = true }
-                    launchSingleTop = true
-                }
+                    },
+                )
             }
         },
     )

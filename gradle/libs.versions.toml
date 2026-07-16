@@ -8,7 +8,6 @@ detekt = "2.0.0-alpha.5"
 coreSplashScreen = "1.2.0"
 espressoCore = "3.7.0"
 hilt = "2.59.2"
-hiltNavigationCompose = "1.4.0"
 androidxHilt = "1.4.0"
 benchmark = "1.4.1"
 junit = "4.13.2"
@@ -52,7 +51,6 @@ androidx-room-common = { group = "androidx.room", name = "room-common", version.
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
 androidx-room-testing = { group = "androidx.room", name = "room-testing", version.ref = "room" }
-androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "androidxHilt" }
 androidx-hilt-compiler = { module = "androidx.hilt:hilt-compiler", version.ref = "androidxHilt" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }

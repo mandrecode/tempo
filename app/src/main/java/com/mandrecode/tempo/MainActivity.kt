@@ -19,7 +19,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.compose.rememberNavController
+import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
@@ -81,7 +81,6 @@ class MainActivity : ComponentActivity() {
                 }
 
                 is MainUiState.Success -> {
-                    val navController = rememberNavController()
                     val startDestination = rememberStartDestination(state)
 
                     TempoTheme(
@@ -99,7 +98,6 @@ class MainActivity : ComponentActivity() {
                         ) {
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,
-                                navController = navController,
                                 routinesNavigationTrigger = routinesNavigationTrigger.longValue,
                                 tasksNavigationTrigger = tasksNavigationTrigger.longValue,
                                 pendingNotificationAction = pendingNotificationAction,
@@ -217,7 +215,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-internal fun rememberStartDestination(state: MainUiState.Success): Any =
+internal fun rememberStartDestination(state: MainUiState.Success): NavKey =
     remember {
         when {
             !state.isOnboardingCompleted -> OnboardingRoute()

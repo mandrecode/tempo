@@ -1,13 +1,24 @@
 package com.mandrecode.tempo
 
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.performClick
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
@@ -15,7 +26,8 @@ import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
 import com.mandrecode.tempo.core.ui.navigation.TasksRoute
-import com.mandrecode.tempo.core.ui.navigation.topLevelPopUpToId
+import com.mandrecode.tempo.core.ui.navigation.TempoNavigator
+import com.mandrecode.tempo.core.ui.navigation.rememberTempoNavigator
 import org.junit.Rule
 import org.junit.Test
 
@@ -26,7 +38,7 @@ class MainActivityNavigationTest {
     @Test
     fun givenActiveGraph_whenDefaultTabChanges_thenStartDestinationRemainsStable() {
         var state by mutableStateOf(successState())
-        var destination: Any? = null
+        var destination: NavKey? = null
         composeTestRule.setContent {
             destination = rememberStartDestination(state)
         }
@@ -46,33 +58,63 @@ class MainActivityNavigationTest {
     }
 
     @Test
-    fun givenOnboardingStartRemoved_whenSwitchingTabs_thenTopLevelBackStackDoesNotGrow() {
-        lateinit var navController: NavHostController
+    fun givenOnboardingStartRemoved_whenSwitchingTabs_thenTopLevelBackStacksDoNotGrow() {
+        lateinit var navigator: TempoNavigator
         composeTestRule.setContent {
-            navController = rememberNavController()
-            NavHost(
-                navController = navController,
-                startDestination = OnboardingRoute(),
-            ) {
-                composable<OnboardingRoute> { }
-                composable<RoutinesRoute> { }
-                composable<TasksRoute> { }
-            }
+            navigator = rememberTempoNavigator(OnboardingRoute())
         }
 
         composeTestRule.runOnIdle {
-            navController.navigate(RoutinesRoute) {
-                popUpTo<OnboardingRoute> { inclusive = true }
-            }
+            navigator.completeOnboarding(RoutinesRoute)
+            listOf(TasksRoute, RoutinesRoute, TasksRoute).forEach(navigator::navigateToTopLevel)
 
-            listOf(TasksRoute, RoutinesRoute, TasksRoute).forEach { destination ->
-                navController.navigate(destination) {
-                    popUpTo(navController.topLevelPopUpToId())
-                    launchSingleTop = true
-                }
-                assertThat(navController.previousBackStackEntry).isNull()
-            }
+            assertThat(navigator.routinesBackStack).containsExactly(RoutinesRoute)
+            assertThat(navigator.tasksBackStack).containsExactly(TasksRoute)
         }
+    }
+
+    @Test
+    fun givenTabSaveableState_whenSwitchingAwayAndBack_thenStateIsRestored() {
+        lateinit var navigator: TempoNavigator
+        composeTestRule.setContent {
+            navigator = rememberTempoNavigator(RoutinesRoute)
+            val decorators =
+                listOf<NavEntryDecorator<NavKey>>(
+                    rememberSaveableStateHolderNavEntryDecorator(),
+                )
+            val provider =
+                entryProvider<NavKey> {
+                    entry<RoutinesRoute> {
+                        var count by rememberSaveable { mutableIntStateOf(0) }
+                        Button(
+                            onClick = { count++ },
+                            modifier = Modifier.testTag(ROUTINES_STATE_TAG),
+                        ) {
+                            Text(count.toString())
+                        }
+                    }
+                    entry<TasksRoute> { Text("Tasks") }
+                }
+            val routinesEntries =
+                rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, provider)
+            val tasksEntries =
+                rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, provider)
+
+            NavDisplay(
+                entries =
+                    when (navigator.section) {
+                        TempoNavigator.Section.ROUTINES -> routinesEntries
+                        TempoNavigator.Section.TASKS -> tasksEntries
+                        TempoNavigator.Section.ONBOARDING -> error("Unexpected onboarding section")
+                    },
+                onBack = { navigator.pop() },
+            )
+        }
+
+        composeTestRule.onNodeWithTag(ROUTINES_STATE_TAG).performClick().assertTextEquals("1")
+        composeTestRule.runOnIdle { navigator.navigateToTopLevel(TasksRoute) }
+        composeTestRule.runOnIdle { navigator.navigateToTopLevel(RoutinesRoute) }
+        composeTestRule.onNodeWithTag(ROUTINES_STATE_TAG).assertTextEquals("1")
     }
 
     private fun successState(): MainUiState.Success =
@@ -84,4 +126,8 @@ class MainActivityNavigationTest {
             isTasksTabEnabled = true,
             isOnboardingCompleted = true,
         )
+
+    private companion object {
+        const val ROUTINES_STATE_TAG = "routines_state"
+    }
 }
