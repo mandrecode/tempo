@@ -224,7 +224,10 @@ fun RoutinesScreen(
                             bottom = DockedEditorPadding,
                         ),
             ) {
-                editorContent(frozenUiState, editorPlacement)
+                editorContent(
+                    if (uiState.habitForm.isVisible) uiState else frozenUiState,
+                    editorPlacement,
+                )
             }
         }
     }

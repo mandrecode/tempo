@@ -278,7 +278,10 @@ fun TasksScreen(
                                 bottom = DockedEditorPadding,
                             ),
                 ) {
-                    editorContent(frozenUiState, editorPlacement)
+                    editorContent(
+                        if (uiState.taskForm.isVisible) uiState else frozenUiState,
+                        editorPlacement,
+                    )
                 }
             }
         }
