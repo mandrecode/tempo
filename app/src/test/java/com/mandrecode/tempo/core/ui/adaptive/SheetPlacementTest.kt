@@ -5,7 +5,7 @@ import org.junit.Test
 
 class SheetPlacementTest {
     @Test
-    fun givenPortraitPhone_whenResolvingPlacement_thenUsesVerticalSheet() {
+    fun givenPortraitPhone_whenResolvingPlacement_thenUsesBottomSheet() {
         assertThat(sheetPlacement(windowWidthDp = 411))
             .isEqualTo(SheetPlacement.BottomSheet)
     }
@@ -17,7 +17,7 @@ class SheetPlacementTest {
     }
 
     @Test
-    fun givenUnfoldedFoldablePortrait_whenResolvingPlacement_thenUsesVerticalSheet() {
+    fun givenUnfoldedFoldablePortrait_whenResolvingPlacement_thenUsesBottomSheet() {
         assertThat(sheetPlacement(windowWidthDp = 673))
             .isEqualTo(SheetPlacement.BottomSheet)
     }
@@ -31,7 +31,7 @@ class SheetPlacementTest {
     }
 
     @Test
-    fun givenMediumTabletPortrait_whenResolvingPlacement_thenUsesVerticalSheet() {
+    fun givenMediumTabletPortrait_whenResolvingPlacement_thenUsesBottomSheet() {
         assertThat(sheetPlacement(windowWidthDp = 800))
             .isEqualTo(SheetPlacement.BottomSheet)
     }

@@ -6,7 +6,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 
 /**
- * How a modal editor sheet is presented for the current window.
+ * How an editor is presented for the current window.
  */
 enum class SheetPlacement {
     /** The editor keeps its native vertical direction (bottom or top). */
