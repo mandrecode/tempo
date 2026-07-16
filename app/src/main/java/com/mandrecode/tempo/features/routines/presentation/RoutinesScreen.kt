@@ -105,7 +105,6 @@ fun RoutinesScreen(
     }
 
     val isRailLayout = isFloatingNavigationRailLayout()
-    val shouldShowFloatingRail = !isRailLayout || !uiState.habitForm.isVisible
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onShowHabitBottomSheet =
         remember(viewModel) {
@@ -115,7 +114,7 @@ fun RoutinesScreen(
     SideEffect {
         onFloatingBarStateChange(
             RoutinesFloatingBarState(
-                visible = shouldShowFloatingRail && showAddHabitRailButton,
+                visible = showAddHabitRailButton,
                 compactSoloAction = compactSoloAction,
                 onAddHabit = onShowHabitBottomSheet,
             ),

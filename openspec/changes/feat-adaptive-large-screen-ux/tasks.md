@@ -14,10 +14,18 @@
 - [x] 2.4 Replace `adaptiveScreenContentLayout(isRailLayout:)` with an explicit `railClearance: Dp` parameter resolved by `floatingRailContentClearance()` (answers Copilot thread on PR #145 — Settings passes `0.dp` because it never shows the rail).
 - [x] 2.5 Add expanded-rail hierarchy previews in `NavigationPreviews`.
 
-## 3. Verification
+## 3. Design review round (Pixel Tablet feedback)
 
-- [x] 3.1 Unit tests: placement rule matrix, axis transforms, expanded-rail clearance guard.
-- [x] 3.2 Run `./gradlew testDebugUnitTest`, `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, `./gradlew :app:detekt`.
-- [ ] 3.3 Run `openspec validate feat-adaptive-large-screen-ux` (when the CLI is available).
-- [x] 3.4 Device matrix smoke (android CLI AVDs): Pixel 10 portrait+landscape (rail hierarchy, sort menu, side sheet, status-bar inset), Pixel Tablet portrait (compact top-anchored rail) + landscape (expanded labeled rail, side sheet above keyboard), portrait regression.
-- [x] 3.5 Landscape-phone side-sheet hypothesis validated on the Pixel 10 AVD: full-height panel coexists with the keyboard; `height < 480` arm kept.
+- [x] 3.1 Revert sort to a sheet (adaptive placement); remove the anchored menu and its floating-bar plumbing.
+- [x] 3.2 Keep the rail visible when modal sheets open in rail layouts.
+- [x] 3.3 Expanded rail sidebar: screen title on top, labeled sort/clear actions, labeled Settings pinned at the bottom; top bar collapses to a status-bar inset so content fills the top.
+- [x] 3.4 New `clear_completed` string with es translation.
+
+## 4. Verification
+
+- [x] 4.1 Unit tests: placement rule matrix, axis transforms, expanded-rail clearance guard.
+- [x] 4.2 Run `./gradlew testDebugUnitTest`, `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, `./gradlew :app:detekt`.
+- [ ] 4.3 Run `openspec validate feat-adaptive-large-screen-ux` (when the CLI is available).
+- [x] 4.4 Device matrix smoke (android CLI AVDs): Pixel 10 portrait+landscape (rail hierarchy, sort menu, side sheet, status-bar inset), Pixel Tablet portrait (compact top-anchored rail) + landscape (expanded labeled rail, side sheet above keyboard), portrait regression.
+- [x] 4.5 Landscape-phone side-sheet hypothesis validated on the Pixel 10 AVD: full-height panel coexists with the keyboard; `height < 480` arm kept.
+- [ ] 4.6 Re-verify the design-review round on Pixel Tablet + Pixel 10 AVDs.

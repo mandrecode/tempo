@@ -8,14 +8,22 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -23,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,6 +40,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavHostController
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.theme.topBarTitle
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
@@ -88,6 +98,11 @@ internal fun PersistentFloatingBar(
                 routinesState = routinesState,
                 tasksState = tasksState,
                 isSingleTabMode = isSingleTabMode,
+                onOpenSettings = {
+                    navController.navigate(SettingsRoute) {
+                        launchSingleTop = true
+                    }
+                },
             )
         } else {
             PersistentPortraitFloatingBar(
@@ -108,6 +123,7 @@ private fun PersistentLandscapeFloatingBar(
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     isSingleTabMode: Boolean,
+    onOpenSettings: () -> Unit,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
     if (isSingleTabMode) {
@@ -121,8 +137,9 @@ private fun PersistentLandscapeFloatingBar(
 
     val isExpandedRail = isExpandedFloatingRailLayout()
 
-    // Rail hierarchy: the primary add action reads first, navigation tabs second, and the
-    // contextual secondary actions (sort, clear completed) sit below the tabs.
+    // Rail hierarchy: screen title first on expanded rails, then the primary add action,
+    // navigation tabs, contextual secondary actions (sort, clear completed), and finally
+    // settings pinned to the bottom.
     Column(
         modifier =
             Modifier
@@ -134,6 +151,16 @@ private fun PersistentLandscapeFloatingBar(
         horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,
     ) {
         if (isExpandedRail) {
+            Text(
+                text = stringResource(if (isTasksRoute) R.string.tasks else R.string.routines),
+                style = MaterialTheme.typography.topBarTitle,
+                color = MaterialTheme.colorScheme.primary,
+                modifier =
+                    Modifier.padding(
+                        start = FloatingToolbarRailSurfacePadding,
+                        bottom = FloatingToolbarItemSpacing,
+                    ),
+            )
             TempoSoloActionButton(
                 iconRes = R.drawable.ic_add,
                 label = addAction.label,
@@ -150,7 +177,42 @@ private fun PersistentLandscapeFloatingBar(
             tasksState = tasksState,
             showActions = isTasksRoute,
             modifier = Modifier.padding(start = if (isExpandedRail) FloatingToolbarRailSurfacePadding else 0.dp),
+            expanded = isExpandedRail,
         )
+
+        if (isExpandedRail) {
+            Spacer(modifier = Modifier.weight(1f))
+            SettingsRailButton(onClick = onOpenSettings)
+        }
+    }
+}
+
+@Composable
+private fun SettingsRailButton(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier
+                .width(FloatingRailExpandedSurfaceWidth)
+                .height(FloatingToolbarItemSize),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = null,
+            )
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.labelLarge,
+            )
+        }
     }
 }
 

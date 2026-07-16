@@ -11,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -251,7 +253,7 @@ private fun RoutinesDestination(
     RoutinesScreen(
         isSingleTabMode = isSingleTabMode,
         topBar = {
-            RouteTopBar(
+            RouteTopBarOrStatusInset(
                 title = stringResource(R.string.routines),
                 navController = navController,
             )
@@ -275,7 +277,7 @@ private fun TasksDestination(
     TasksScreen(
         isSingleTabMode = isSingleTabMode,
         topBar = {
-            RouteTopBar(
+            RouteTopBarOrStatusInset(
                 title = stringResource(R.string.tasks),
                 navController = navController,
             )
@@ -285,6 +287,25 @@ private fun TasksDestination(
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
     )
+}
+
+/**
+ * On expanded rails the title and settings entry live in the rail itself, so the top bar
+ * collapses to a status-bar inset and content reclaims the vertical space.
+ */
+@Composable
+private fun RouteTopBarOrStatusInset(
+    title: String,
+    navController: NavHostController,
+) {
+    if (isExpandedFloatingRailLayout()) {
+        Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+    } else {
+        RouteTopBar(
+            title = title,
+            navController = navController,
+        )
+    }
 }
 
 @Composable

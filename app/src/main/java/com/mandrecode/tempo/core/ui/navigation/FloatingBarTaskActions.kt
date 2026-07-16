@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.ClearCompletedButton
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.SortButton
-import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortDropdownMenu
 
 internal val TASK_ACTIONS_BUTTON_SIZE = 48.dp
 internal val TASK_ACTIONS_BUTTON_SPACING = 6.dp
@@ -63,7 +62,10 @@ internal fun TaskActionButtons(
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {
-            SortButtonWithMenu(tasksState = tasksState)
+            SortButton(
+                sortOption = tasksState.sortOption,
+                onClick = tasksState.onSort,
+            )
         }
     }
 }
@@ -73,18 +75,23 @@ internal fun VerticalTaskActionButtons(
     tasksState: TasksFloatingBarState,
     showActions: Boolean,
     modifier: Modifier = Modifier,
+    expanded: Boolean = false,
 ) {
     Column(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(TASK_ACTIONS_BUTTON_SPACING),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalAlignment = if (expanded) Alignment.Start else Alignment.CenterHorizontally,
     ) {
         AnimatedVisibility(
             visible = showActions,
             enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
             exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
         ) {
-            SortButtonWithMenu(tasksState = tasksState)
+            SortButton(
+                sortOption = tasksState.sortOption,
+                onClick = tasksState.onSort,
+                expanded = expanded,
+            )
         }
         AnimatedVisibility(
             visible = showActions && tasksState.hasCompletedTasks,
@@ -93,23 +100,8 @@ internal fun VerticalTaskActionButtons(
         ) {
             ClearCompletedButton(
                 onClick = tasksState.onClearCompleted,
+                expanded = expanded,
             )
         }
-    }
-}
-
-@Composable
-internal fun SortButtonWithMenu(tasksState: TasksFloatingBarState) {
-    Box {
-        SortButton(
-            sortOption = tasksState.sortOption,
-            onClick = tasksState.onSort,
-        )
-        SortDropdownMenu(
-            currentSortOption = tasksState.sortOption,
-            expanded = tasksState.isSortMenuVisible,
-            onDismiss = tasksState.onDismissSortMenu,
-            onSelectSortOption = tasksState.onSelectSortOption,
-        )
     }
 }
