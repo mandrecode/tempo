@@ -251,18 +251,31 @@ enum class TempoIcon(
             normalizedText: String,
             context: Context,
         ): Int {
-            val keywords =
-                context
-                    .getString(icon.keywordsRes)
-                    .split(",")
-                    .map { it.trim().lowercase(Locale.ROOT) }
-                    .filter { it.isNotEmpty() }
+            val keywords = normalizedKeywords(icon, context)
             val matched = keywords.filter { keyword -> normalizedText.matchesKeyword(keyword) }
             // A keyword list often lists both a root and its own inflected form
             // (e.g. "remind" + "reminder", "sport" + "sports"). Prefix leniency makes both
             // match the same word, so collapse a matched keyword into the longer matched
             // keyword it's a prefix of, rather than counting it as a second distinct hit.
             return matched.count { keyword -> matched.none { other -> other != keyword && other.startsWith(keyword) } }
+        }
+
+        // suggestIcon() runs on every keystroke (LaunchedEffect on the title/name field), so
+        // cache the split+normalized keyword list instead of re-splitting and re-lowercasing
+        // it on every call. Keyed by the raw resource string itself (not just keywordsRes) so
+        // a locale change - which yields a different raw string - naturally invalidates it
+        // without having to track the current locale separately.
+        private fun normalizedKeywords(
+            icon: TempoIcon,
+            context: Context,
+        ): List<String> {
+            val rawKeywords = context.getString(icon.keywordsRes)
+            return keywordListCache.computeIfAbsent(rawKeywords) {
+                rawKeywords
+                    .split(",")
+                    .map { it.trim().lowercase(Locale.ROOT) }
+                    .filter { it.isNotEmpty() }
+            }
         }
 
         private fun String.matchesKeyword(keyword: String): Boolean {
@@ -291,5 +304,6 @@ enum class TempoIcon(
 
         private const val WHOLE_WORD_BOUNDARY_MAX_LENGTH = 4
         private val keywordPatternCache = ConcurrentHashMap<String, Regex>()
+        private val keywordListCache = ConcurrentHashMap<String, List<String>>()
     }
 }
