@@ -180,6 +180,7 @@ fun CategoryEditSheet(
         onDismissRequest = onDismiss,
         modifier = modifier,
         hasUnsavedChanges = hasChanges,
+        adaptivePlacement = true,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(

@@ -39,6 +39,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.ClearCompletedButton
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.SortButton
+import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortDropdownMenu
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
@@ -427,10 +428,7 @@ private fun TaskActionButtons(
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-            )
+            SortButtonWithMenu(tasksState = tasksState)
         }
     }
 }
@@ -471,10 +469,23 @@ private fun VerticalTaskActionButtons(
             enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
             exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
         ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-            )
+            SortButtonWithMenu(tasksState = tasksState)
         }
+    }
+}
+
+@Composable
+private fun SortButtonWithMenu(tasksState: TasksFloatingBarState) {
+    Box {
+        SortButton(
+            sortOption = tasksState.sortOption,
+            onClick = tasksState.onSort,
+        )
+        SortDropdownMenu(
+            currentSortOption = tasksState.sortOption,
+            expanded = tasksState.isSortMenuVisible,
+            onDismiss = tasksState.onDismissSortMenu,
+            onSelectSortOption = tasksState.onSelectSortOption,
+        )
     }
 }

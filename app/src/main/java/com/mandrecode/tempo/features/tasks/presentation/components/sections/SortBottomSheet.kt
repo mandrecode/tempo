@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -123,4 +125,51 @@ internal fun SortOptionItem(
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
     )
+}
+
+/**
+ * Rail-layout presentation of the sort options: an anchored menu instead of a sheet.
+ * Compose inside the box that contains the sort button so the menu anchors to it.
+ */
+@Composable
+fun SortDropdownMenu(
+    currentSortOption: SortOption,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onSelectSortOption: (SortOption) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = onDismiss,
+        modifier = modifier,
+    ) {
+        SortOption.entries.forEach { sortOption ->
+            DropdownMenuItem(
+                text = {
+                    Text(
+                        text = stringResource(sortOption.labelResId),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                },
+                leadingIcon = {
+                    Icon(
+                        painter = painterResource(getIconForSortOption(sortOption)),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                },
+                trailingIcon = {
+                    RadioButton(
+                        selected = currentSortOption == sortOption,
+                        onClick = null,
+                    )
+                },
+                onClick = {
+                    onSelectSortOption(sortOption)
+                    onDismiss()
+                },
+            )
+        }
+    }
 }

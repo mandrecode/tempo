@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -23,9 +25,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -45,6 +50,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
@@ -52,7 +58,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.dismiss
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -72,14 +78,18 @@ import androidx.compose.foundation.layout.Box as LayoutBox
 internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
-private val SHEET_HANDLE_TOUCH_TARGET_HEIGHT = 48.dp
+private val SHEET_HANDLE_TOUCH_TARGET_SIZE = 48.dp
 private val SHEET_HANDLE_CONTENT_INSET = 24.dp
 private val SHEET_HANDLE_EDGE_PADDING = 8.dp
+private val SHEET_HANDLE_LENGTH = 32.dp
+private val SHEET_HANDLE_THICKNESS = 4.dp
 private val SHEET_MAX_WIDTH = 640.dp
+private val SIDE_SHEET_WIDTH = 412.dp
 
 internal enum class TempoModalSheetDirection {
     Top,
     Bottom,
+    End,
 }
 
 @Composable
@@ -104,7 +114,7 @@ internal fun TempoModalSheet(
     }
 
     LaunchedEffect(Unit) {
-        state.offsetY.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS))
+        state.offset.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS))
     }
 
     Dialog(
@@ -173,17 +183,17 @@ private fun BoxScope.TempoModalSheetSurface(
     state: TempoModalSheetState,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
+    val layoutFactor = currentLayoutFactor()
     Surface(
         modifier =
             Modifier
-                .widthIn(max = SHEET_MAX_WIDTH)
-                .fillMaxWidth()
-                .heightIn(max = state.maxSheetHeight)
+                .then(state.sizeModifier())
                 .onSizeChanged { size ->
                     state.isExpandedToStatusBar.value =
-                        size.height >= state.currentScreenHeightPx.roundToInt()
+                        !state.direction.isHorizontal &&
+                        size.height >= state.dismissAxisSizePx.roundToInt()
                 }.align(state.direction.alignment)
-                .offset { IntOffset(0, state.offsetY.value.roundToInt()) }
+                .offset { state.direction.translationOffset(state.offset.value.roundToInt(), layoutFactor) }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -202,6 +212,19 @@ private fun BoxScope.TempoModalSheetSurface(
 }
 
 @Composable
+private fun TempoModalSheetState.sizeModifier(): Modifier =
+    if (direction.isHorizontal) {
+        Modifier
+            .width(with(LocalDensity.current) { dismissAxisSizePx.toDp() })
+            .fillMaxHeight()
+    } else {
+        Modifier
+            .widthIn(max = SHEET_MAX_WIDTH)
+            .fillMaxWidth()
+            .heightIn(max = maxSheetHeight)
+    }
+
+@Composable
 private fun TempoModalSheetColumn(
     state: TempoModalSheetState,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
@@ -214,7 +237,8 @@ private fun TempoModalSheetColumn(
                 Modifier
                     .fillMaxWidth()
                     .then(state.statusBarPaddingModifier)
-                    .then(state.navigationBarPaddingModifier),
+                    .then(state.navigationBarPaddingModifier)
+                    .then(state.horizontalContentPaddingModifier),
         ) {
             if (state.direction == TempoModalSheetDirection.Bottom) {
                 Spacer(modifier = Modifier.height(SHEET_HANDLE_CONTENT_INSET))
@@ -228,10 +252,10 @@ private fun TempoModalSheetColumn(
             state = state,
             modifier =
                 Modifier.align(
-                    if (state.direction == TempoModalSheetDirection.Bottom) {
-                        Alignment.TopCenter
-                    } else {
-                        Alignment.BottomCenter
+                    when (state.direction) {
+                        TempoModalSheetDirection.Bottom -> Alignment.TopCenter
+                        TempoModalSheetDirection.Top -> Alignment.BottomCenter
+                        TempoModalSheetDirection.End -> Alignment.CenterStart
                     },
                 ),
         )
@@ -247,13 +271,21 @@ private fun rememberTempoModalSheetState(
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
     val currentOnDismiss by rememberUpdatedState(onDismissRequest)
     val scope = rememberCoroutineScope()
-    val windowHeightPx =
-        LocalWindowInfo.current.containerSize.height
-            .toFloat()
-    val windowHeightDp = with(LocalDensity.current) { windowHeightPx.toDp() }
-    val currentScreenHeightPx by rememberUpdatedState(windowHeightPx)
+    val windowSize = LocalWindowInfo.current.containerSize
+    val density = LocalDensity.current
+    val windowHeightPx = windowSize.height.toFloat()
+    val windowHeightDp = with(density) { windowHeightPx.toDp() }
+    // The dismiss axis is vertical for top/bottom sheets (the window height guarantees the sheet
+    // fully exits) and horizontal for side sheets (the sheet's own width is enough to hide it).
+    val axisSizePx =
+        if (direction.isHorizontal) {
+            with(density) { minOf(SIDE_SHEET_WIDTH.toPx(), windowSize.width.toFloat()) }
+        } else {
+            windowHeightPx
+        }
+    val currentAxisSizePx by rememberUpdatedState(axisSizePx)
     val maxSheetHeight = rememberTempoModalSheetMaxHeight(direction, windowHeightDp)
-    val offsetY = remember { Animatable(direction.hiddenOffset(windowHeightPx)) }
+    val offset = remember { Animatable(direction.hiddenOffset(axisSizePx)) }
     val dismissing = remember { mutableStateOf(false) }
     val showDiscardDialog = remember { mutableStateOf(false) }
     val forceDismiss = remember { mutableStateOf(false) }
@@ -268,8 +300,8 @@ private fun rememberTempoModalSheetState(
             dismissing.value = true
             scope.launch {
                 try {
-                    offsetY.animateTo(
-                        direction.hiddenOffset(currentScreenHeightPx),
+                    offset.animateTo(
+                        direction.hiddenOffset(currentAxisSizePx),
                         animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS),
                     )
                 } finally {
@@ -291,8 +323,8 @@ private fun rememberTempoModalSheetState(
         TempoModalSheetState(
             direction = direction,
             maxSheetHeight = maxSheetHeight,
-            currentScreenHeightPx = currentScreenHeightPx,
-            offsetY = offsetY,
+            dismissAxisSizePx = currentAxisSizePx,
+            offset = offset,
             dismissing = dismissing,
             showDiscardDialog = showDiscardDialog,
             forceDismiss = forceDismiss,
@@ -320,7 +352,7 @@ private fun rememberTempoModalSheetMaxHeight(
 private val TempoModalSheetState.statusBarPaddingModifier: Modifier
     @Composable
     get() =
-        if (direction == TempoModalSheetDirection.Top || isExpandedToStatusBar.value) {
+        if (direction != TempoModalSheetDirection.Bottom || isExpandedToStatusBar.value) {
             Modifier.windowInsetsPadding(WindowInsets.statusBars)
         } else {
             Modifier
@@ -329,26 +361,49 @@ private val TempoModalSheetState.statusBarPaddingModifier: Modifier
 private val TempoModalSheetState.navigationBarPaddingModifier: Modifier
     @Composable
     get() =
-        if (direction == TempoModalSheetDirection.Bottom) {
-            Modifier.navigationBarsPadding()
+        when (direction) {
+            TempoModalSheetDirection.Bottom -> Modifier.navigationBarsPadding()
+            TempoModalSheetDirection.End ->
+                Modifier.windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(WindowInsetsSides.Bottom + WindowInsetsSides.End),
+                )
+
+            TempoModalSheetDirection.Top -> Modifier
+        }
+
+/**
+ * Side sheets are full-height, so the keyboard insets their content instead of moving the sheet,
+ * and the drag handle occupies the start edge instead of the top/bottom.
+ */
+private val TempoModalSheetState.horizontalContentPaddingModifier: Modifier
+    get() =
+        if (direction.isHorizontal) {
+            Modifier
+                .padding(start = SHEET_HANDLE_CONTENT_INSET)
+                .imePadding()
         } else {
             Modifier
         }
 
+@Composable
+private fun currentLayoutFactor(): Int = if (LocalLayoutDirection.current == LayoutDirection.Rtl) -1 else 1
+
 private fun Modifier.pointerInputForSheetDrag(
     state: TempoModalSheetState,
     scope: CoroutineScope,
+    layoutFactor: Int,
 ): Modifier =
-    pointerInput(state.direction, state.currentScreenHeightPx) {
+    pointerInput(state.direction, state.dismissAxisSizePx, layoutFactor) {
         var snapJob: Job? = null
-        detectSheetVerticalDragGestures(
+        detectSheetDragGestures(
             direction = state.direction,
+            layoutFactor = layoutFactor,
             onDragEnd = {
                 snapJob?.cancel()
                 if (
                     state.direction.shouldDismiss(
-                        offset = state.offsetY.value,
-                        screenHeightPx = state.currentScreenHeightPx,
+                        offset = state.offset.value,
+                        axisSizePx = state.dismissAxisSizePx,
                     )
                 ) {
                     state.onRequestDismiss()
@@ -360,14 +415,14 @@ private fun Modifier.pointerInputForSheetDrag(
                 snapJob?.cancel()
                 snapJob = scope.launch { state.restore() }
             },
-            onVerticalDrag = { dragAmount ->
+            onDrag = { dragAmount ->
                 val newOffset =
                     state.direction.coerceDragOffset(
-                        offset = state.offsetY.value + dragAmount,
-                        screenHeightPx = state.currentScreenHeightPx,
+                        offset = state.offset.value + dragAmount,
+                        axisSizePx = state.dismissAxisSizePx,
                     )
                 snapJob?.cancel()
-                snapJob = scope.launch { state.offsetY.snapTo(newOffset) }
+                snapJob = scope.launch { state.offset.snapTo(newOffset) }
             },
         )
     }
@@ -398,36 +453,49 @@ private fun TempoModalSheetDragHandle(
     modifier: Modifier = Modifier,
 ) {
     val scope = rememberCoroutineScope()
+    val layoutFactor = currentLayoutFactor()
     val dismissSheetLabel = stringResource(R.string.dismiss_sheet)
+    val horizontal = state.direction.isHorizontal
     LayoutBox(
         modifier =
             modifier
-                .fillMaxWidth()
-                .height(SHEET_HANDLE_TOUCH_TARGET_HEIGHT)
-                .semantics {
+                .then(
+                    if (horizontal) {
+                        Modifier
+                            .fillMaxHeight()
+                            .width(SHEET_HANDLE_TOUCH_TARGET_SIZE)
+                    } else {
+                        Modifier
+                            .fillMaxWidth()
+                            .height(SHEET_HANDLE_TOUCH_TARGET_SIZE)
+                    },
+                ).semantics {
                     contentDescription = dismissSheetLabel
                     dismiss {
                         state.onRequestDismiss()
                         true
                     }
-                }.pointerInputForSheetDrag(state, scope),
+                }.pointerInputForSheetDrag(state, scope, layoutFactor),
         contentAlignment =
-            if (state.direction == TempoModalSheetDirection.Bottom) {
-                Alignment.TopCenter
-            } else {
-                Alignment.BottomCenter
+            when (state.direction) {
+                TempoModalSheetDirection.Bottom -> Alignment.TopCenter
+                TempoModalSheetDirection.Top -> Alignment.BottomCenter
+                TempoModalSheetDirection.End -> Alignment.CenterStart
             },
     ) {
         Surface(
             modifier =
                 Modifier
                     .then(
-                        if (state.direction == TempoModalSheetDirection.Bottom) {
-                            Modifier.padding(top = SHEET_HANDLE_EDGE_PADDING)
-                        } else {
-                            Modifier.padding(bottom = SHEET_HANDLE_EDGE_PADDING)
+                        when (state.direction) {
+                            TempoModalSheetDirection.Bottom -> Modifier.padding(top = SHEET_HANDLE_EDGE_PADDING)
+                            TempoModalSheetDirection.Top -> Modifier.padding(bottom = SHEET_HANDLE_EDGE_PADDING)
+                            TempoModalSheetDirection.End -> Modifier.padding(start = SHEET_HANDLE_EDGE_PADDING)
                         },
-                    ).size(width = 32.dp, height = 4.dp),
+                    ).size(
+                        width = if (horizontal) SHEET_HANDLE_THICKNESS else SHEET_HANDLE_LENGTH,
+                        height = if (horizontal) SHEET_HANDLE_LENGTH else SHEET_HANDLE_THICKNESS,
+                    ),
             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
             shape = CircleShape,
         ) {}

@@ -9,8 +9,8 @@ import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 internal class TempoModalSheetState(
     val direction: TempoModalSheetDirection,
     val maxSheetHeight: Dp,
-    val currentScreenHeightPx: Float,
-    val offsetY: Animatable<Float, *>,
+    val dismissAxisSizePx: Float,
+    val offset: Animatable<Float, *>,
     val dismissing: MutableState<Boolean>,
     val showDiscardDialog: MutableState<Boolean>,
     val forceDismiss: MutableState<Boolean>,
@@ -19,16 +19,16 @@ internal class TempoModalSheetState(
     val onRequestDismiss: () -> Unit,
 ) {
     suspend fun restore() {
-        offsetY.animateTo(
+        offset.animateTo(
             0f,
             animationSpec = tween(TempoMotionTokens.DURATION_SHEET_MILLIS),
         )
     }
 
     suspend fun handlePredictiveBackProgress(progress: Float) {
-        offsetY.snapTo(
+        offset.snapTo(
             direction.dismissOffsetForProgress(
-                screenHeightPx = currentScreenHeightPx,
+                axisSizePx = dismissAxisSizePx,
                 progress = progress,
             ),
         )

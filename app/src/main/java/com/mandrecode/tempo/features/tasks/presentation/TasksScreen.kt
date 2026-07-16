@@ -42,6 +42,7 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCompletedConfirmationDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteTaskConfirmDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortBottomSheet
+import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 
 private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
@@ -132,11 +133,12 @@ fun TasksScreen(
     }
 
     val isRailLayout = isFloatingNavigationRailLayout()
-    val isSheetVisible =
+    // The sort menu anchors to the rail's sort button, so only editor sheets hide the rail.
+    val isEditorSheetVisible =
         uiState.taskForm.isVisible ||
             uiState.categoryForm.isVisible ||
-            uiState.showSortBottomSheet
-    val shouldShowFloatingRail = !isRailLayout || !isSheetVisible
+            (uiState.showSortBottomSheet && !isRailLayout)
+    val shouldShowFloatingRail = !isRailLayout || !isEditorSheetVisible
     val hasCompletedTasks =
         remember(uiState.tasks, uiState.selectedCategoryId) {
             uiState.tasks.any {
@@ -151,6 +153,14 @@ fun TasksScreen(
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.ShowSortMenu) }
         }
+    val onSelectSortOption =
+        remember(viewModel) {
+            { option: SortOption -> viewModel.onEvent(TasksContract.UiEvent.SetSortOption(option)) }
+        }
+    val onDismissSortMenu =
+        remember(viewModel) {
+            { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) }
+        }
     val onClearCompleted =
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) }
@@ -164,8 +174,11 @@ fun TasksScreen(
                 compactSoloAction = compactSoloAction,
                 hasCompletedTasks = hasCompletedTasks,
                 sortOption = uiState.sortOption,
+                isSortMenuVisible = isRailLayout && uiState.showSortBottomSheet,
                 onAddTask = onAddTask,
                 onSort = onSort,
+                onSelectSortOption = onSelectSortOption,
+                onDismissSortMenu = onDismissSortMenu,
                 onClearCompleted = onClearCompleted,
             ),
         )
@@ -356,7 +369,7 @@ fun TasksScreen(
         )
     }
 
-    if (uiState.showSortBottomSheet) {
+    if (uiState.showSortBottomSheet && !isRailLayout) {
         SortBottomSheet(
             currentSortOption = uiState.sortOption,
             onSelectSortOption = {
