@@ -79,7 +79,6 @@ fun QuitHabitCard(
             cardShape = state.cardShape,
             contentColor = contentColor,
             canToggle = state.canToggle,
-            isSelected = isSelected,
             trailingContent =
                 if (state.streak > 0) {
                     {
@@ -114,7 +113,7 @@ private fun rememberQuitHabitSelectionColors(
         label = "quit_habit_selection_container_color",
     )
     val animatedContent by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else contentColor,
+        targetValue = contentColor,
         animationSpec = tween(220),
         label = "quit_habit_selection_content_color",
     )

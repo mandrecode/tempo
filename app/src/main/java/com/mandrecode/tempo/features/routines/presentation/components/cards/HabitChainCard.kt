@@ -151,9 +151,7 @@ fun HabitChainCard(
 
     val contentColor by animateColorAsState(
         targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else if (allCompleted) {
+            if (allCompleted) {
                 MaterialTheme.colorScheme.onPrimary
             } else {
                 MaterialTheme.colorScheme.onSurface
@@ -531,12 +529,7 @@ fun HabitChainCard(
                                         onClick = { onHabitClick?.invoke(habit.id) },
                                         color = resolvedChainColor,
                                         cardShape = cardShape,
-                                        contentColor =
-                                            if (habit.id == selectedHabitId) {
-                                                MaterialTheme.colorScheme.onSecondaryContainer
-                                            } else {
-                                                contentColor
-                                            },
+                                        contentColor = contentColor,
                                         horizontalPadding = 16.dp,
                                         canToggle = canToggle,
                                         isInsideChain = true,

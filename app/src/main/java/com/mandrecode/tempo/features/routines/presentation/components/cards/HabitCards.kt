@@ -404,9 +404,7 @@ fun HabitCard(
 
     val contentColor by animateColorAsState(
         targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else if (isCompleted) {
+            if (isCompleted) {
                 MaterialTheme.colorScheme.onPrimary
             } else {
                 MaterialTheme.colorScheme.onSurface
@@ -479,7 +477,6 @@ fun HabitCard(
                 horizontalPadding = 16.dp,
                 verticalPadding = 16.dp,
                 canToggle = canToggle,
-                isSelected = isSelected,
             )
         }
     }
