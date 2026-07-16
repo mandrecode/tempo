@@ -35,23 +35,25 @@ fun selectableCardElevation(isSelected: Boolean): Dp {
  * card stays recognizably that color when selected — rather than jumping to an unrelated hue.
  *
  * Some resting card colors (an incomplete habit's tinted fill, for example) are themselves
- * translucent. Flattening [baseColor] against the screen background before tinting keeps the
- * selected result fully opaque — a Card's containerColor staying translucent produced visible
- * compositing glitches against the surrounding list.
+ * translucent. [baseColor] is always flattened against the screen background before use, in both
+ * the selected and unselected branches, so a Card's containerColor never carries translucency —
+ * leaving it translucent produced visible compositing glitches, including a brief flash mid-tween
+ * while animating between the two branches (interpolating alpha along the way).
  */
 @Composable
 fun selectedContainerColor(
     baseColor: Color,
     isSelected: Boolean,
-): Color =
-    if (isSelected) {
-        val opaqueBase = baseColor.compositeOver(MaterialTheme.colorScheme.background)
+): Color {
+    val opaqueBase = baseColor.compositeOver(MaterialTheme.colorScheme.background)
+    return if (isSelected) {
         MaterialTheme.colorScheme.secondary
             .copy(alpha = SELECTED_TINT_ALPHA)
             .compositeOver(opaqueBase)
     } else {
-        baseColor
+        opaqueBase
     }
+}
 
 /**
  * The selection accent as a translucent overlay, for rows already rendered on top of a resolved
