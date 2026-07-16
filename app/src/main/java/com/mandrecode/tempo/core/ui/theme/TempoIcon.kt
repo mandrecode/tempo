@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.mandrecode.tempo.R
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -232,7 +233,7 @@ enum class TempoIcon(
             text: String,
             context: Context,
         ): TempoIcon? {
-            val normalizedText = text.lowercase()
+            val normalizedText = text.lowercase(Locale.ROOT)
             var bestIcon: TempoIcon? = null
             var bestScore = 0
             for (icon in entries) {
@@ -254,7 +255,7 @@ enum class TempoIcon(
                 context
                     .getString(icon.keywordsRes)
                     .split(",")
-                    .map { it.trim().lowercase() }
+                    .map { it.trim().lowercase(Locale.ROOT) }
                     .filter { it.isNotEmpty() }
             val matched = keywords.filter { keyword -> normalizedText.matchesKeyword(keyword) }
             // A keyword list often lists both a root and its own inflected form
@@ -265,7 +266,7 @@ enum class TempoIcon(
         }
 
         private fun String.matchesKeyword(keyword: String): Boolean {
-            val pattern = keywordPatternCache.getOrPut(keyword) { buildKeywordPattern(keyword) }
+            val pattern = keywordPatternCache.computeIfAbsent(keyword, ::buildKeywordPattern)
             return pattern.containsMatchIn(this)
         }
 
