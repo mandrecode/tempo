@@ -31,7 +31,7 @@ Phase 1 (fix-142) established: `WindowSizeClass` via `currentWindowAdaptiveInfo(
 
 - **Expanded tier keyed on `width ≥ 840 AND height ≥ 480`.** Labels spend vertical space; landscape phones (height < 480) keep the compact icon rail. Rail metrics extend the existing single source of truth: expanded rail width (~220dp) derives content clearance for that tier exactly as `FloatingRailContentStartPadding` does today, guarded by the same test style. Selected-tab treatment generalizes the current `secondaryContainer` circle to a full-width row pill; Add reuses `TempoSoloActionButton` (already an ExtendedFAB).
 
-- **Rider renames**: `adaptiveScreenContentLayout(isRailLayout:)` → `reserveRailClearance:` (call sites: Routines/Tasks pass the rail flag, Settings passes `false` because `PersistentFloatingBar` never renders on Settings); `ColorDrawable` scrim → Compose `Box` scrim.
+- **Rider cleanup**: `adaptiveScreenContentLayout` takes an explicit `railClearance: Dp` resolved by `floatingRailContentClearance()`; Settings passes `0.dp` because `PersistentFloatingBar` never renders there. The dialog window's transparent `ColorDrawable` remains because it is Android window plumbing, while the scrim is already Compose-drawn.
 
 ## Risks / Trade-offs
 
@@ -41,7 +41,7 @@ Phase 1 (fix-142) established: `WindowSizeClass` via `currentWindowAdaptiveInfo(
 
 ## Migration Plan
 
-Two PRs: (1) sheet axis + placement rule + sort menu; (2) rail hierarchy + expanded tier + renames. Each is a clean revert. No data changes.
+Staged commits in PR #149: (1) sheet axis + placement rule; (2) rail hierarchy + expanded tier + cleanup. No data changes.
 
 ## Open Questions
 

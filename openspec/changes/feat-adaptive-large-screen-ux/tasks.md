@@ -26,7 +26,7 @@
 
 - [x] 4.1 Unit tests: placement rule matrix, axis transforms, expanded-rail clearance guard.
 - [x] 4.2 Run `./gradlew testDebugUnitTest`, `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, `./gradlew :app:detekt`.
-- [ ] 4.3 Run `openspec validate feat-adaptive-large-screen-ux` (when the CLI is available).
+- [x] 4.3 Run `openspec validate feat-adaptive-large-screen-ux` (when the CLI is available).
 - [x] 4.4 Device matrix smoke (android CLI AVDs): Pixel 10 portrait+landscape (rail hierarchy, sort menu, side sheet, status-bar inset), Pixel Tablet portrait (compact top-anchored rail) + landscape (expanded labeled rail, side sheet above keyboard), portrait regression.
 - [x] 4.5 Landscape-phone side-sheet hypothesis validated on the Pixel 10 AVD: full-height panel coexists with the keyboard; `height < 480` arm kept.
-- [ ] 4.6 Re-verify the design-review round on Pixel Tablet + Pixel 10 AVDs.
+- [x] 4.6 Re-verify the design-review round on Pixel Tablet + Pixel 10 AVDs.
