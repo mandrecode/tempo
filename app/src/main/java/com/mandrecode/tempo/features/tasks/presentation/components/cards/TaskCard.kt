@@ -64,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
@@ -111,15 +112,14 @@ fun TaskItem(
 
     var isDescriptionExpanded by remember(task.id) { mutableStateOf(initialDescriptionExpanded) }
 
+    val baseCardColor =
+        if (task.isCompleted) {
+            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+        } else {
+            MaterialTheme.colorScheme.surfaceContainer
+        }
     val cardColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else if (task.isCompleted) {
-                MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer
-            },
+        targetValue = selectedContainerColor(baseCardColor, isSelected),
         animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS),
         label = "card_color",
     )

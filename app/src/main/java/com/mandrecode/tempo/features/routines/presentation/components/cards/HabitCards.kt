@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
+import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -160,12 +162,7 @@ internal fun HabitItem(
     )
 
     val selectionColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                Color.Transparent
-            },
+        targetValue = selectedTintOverlayColor(isSelected),
         animationSpec = tween(220),
         label = "habit_item_selection_color",
     )
@@ -389,16 +386,15 @@ fun HabitCard(
             isDarkTheme = isDarkTheme,
         )
 
+    val baseContainerColor =
+        if (isCompleted) {
+            resolvedHabitColor ?: MaterialTheme.colorScheme.primary
+        } else {
+            resolvedHabitColor?.copy(alpha = 0.15f)
+                ?: MaterialTheme.colorScheme.surfaceContainer
+        }
     val containerColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else if (isCompleted) {
-                resolvedHabitColor ?: MaterialTheme.colorScheme.primary
-            } else {
-                resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainer
-            },
+        targetValue = selectedContainerColor(baseContainerColor, isSelected),
         animationSpec = tween(300),
         label = "habit_card_color",
     )

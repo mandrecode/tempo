@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -110,7 +111,7 @@ private fun rememberQuitHabitSelectionColors(
     contentColor: Color,
 ): QuitHabitSelectionColors {
     val animatedContainer by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else containerColor,
+        targetValue = selectedContainerColor(containerColor, selected),
         animationSpec = tween(220),
         label = "quit_habit_selection_container_color",
     )

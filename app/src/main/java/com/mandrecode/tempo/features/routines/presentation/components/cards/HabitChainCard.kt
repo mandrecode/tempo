@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
@@ -134,16 +135,15 @@ fun HabitChainCard(
             isDarkTheme = isDarkTheme,
         )
 
+    val baseContainerColor =
+        if (allCompleted) {
+            resolvedChainColor ?: MaterialTheme.colorScheme.primary
+        } else {
+            resolvedChainColor?.copy(alpha = 0.15f)
+                ?: MaterialTheme.colorScheme.surfaceContainer
+        }
     val containerColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else if (allCompleted) {
-                resolvedChainColor ?: MaterialTheme.colorScheme.primary
-            } else {
-                resolvedChainColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainer
-            },
+        targetValue = selectedContainerColor(baseContainerColor, isSelected),
         animationSpec = tween(300),
         label = "habit_chain_card_color",
     )
