@@ -144,6 +144,7 @@ internal fun TempoDockedSheet(
 ) {
     val currentOnDismissRequest by rememberUpdatedState(onDismissRequest)
     val currentHasUnsavedChanges by rememberUpdatedState(hasUnsavedChanges)
+    val initialDismissRequestKey = remember { dismissRequestKey }
     val showDiscardDialog = remember { androidx.compose.runtime.mutableStateOf(false) }
     val requestDismiss: () -> Unit = {
         if (currentHasUnsavedChanges) {
@@ -154,7 +155,7 @@ internal fun TempoDockedSheet(
     }
 
     LaunchedEffect(dismissRequestKey) {
-        if (dismissRequestKey > 0) {
+        if (dismissRequestKey != initialDismissRequestKey) {
             requestDismiss()
         }
     }
