@@ -166,6 +166,14 @@ fun RoutinesScreen(
                 )
             }
         }
+    // TempoDockedSheet resets habitForm the instant dismissal is requested, before the docked
+    // pane's own shrink-out animation finishes. Freezing the last visible state here stops the
+    // exiting pane from recomposing into a blank "new habit" form (revealing the Habit/Chain tab
+    // switcher) mid-animation.
+    var frozenUiState by remember { mutableStateOf(uiState) }
+    if (uiState.habitForm.isVisible) {
+        frozenUiState = uiState
+    }
 
     Row(modifier = modifier.fillMaxSize()) {
         Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
@@ -214,7 +222,7 @@ fun RoutinesScreen(
                             bottom = DockedEditorPadding,
                         ),
             ) {
-                editorContent(uiState, editorPlacement)
+                editorContent(frozenUiState, editorPlacement)
             }
         }
     }

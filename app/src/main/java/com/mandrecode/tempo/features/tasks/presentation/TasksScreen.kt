@@ -213,6 +213,13 @@ fun TasksScreen(
                 )
             }
         }
+    // TempoDockedSheet resets taskForm the instant dismissal is requested, before the docked
+    // pane's own shrink-out animation finishes. Freezing the last visible state here stops the
+    // exiting pane from recomposing into a blank "new task" form mid-animation.
+    var frozenUiState by remember { mutableStateOf(uiState) }
+    if (uiState.taskForm.isVisible) {
+        frozenUiState = uiState
+    }
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -269,7 +276,7 @@ fun TasksScreen(
                                 bottom = DockedEditorPadding,
                             ),
                 ) {
-                    editorContent(uiState, editorPlacement)
+                    editorContent(frozenUiState, editorPlacement)
                 }
             }
         }
