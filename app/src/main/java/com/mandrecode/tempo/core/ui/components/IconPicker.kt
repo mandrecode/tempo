@@ -62,12 +62,15 @@ private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
  * [[DEFAULT_ITEMS_PER_ROW], [MAX_ITEMS_PER_ROW]] so compact phones never shrink below today's
  * row size and wide windows don't grow it past one slot per category.
  */
-internal fun calculateItemsPerRow(availableWidth: Dp): Int {
-    val usableWidth = availableWidth - ROW_HORIZONTAL_PADDING
-    val itemSpan = ICON_OPTION_SIZE + ROW_ITEM_MIN_GAP
-    val fitting = ((usableWidth + ROW_ITEM_MIN_GAP).value / itemSpan.value).toInt()
-    return fitting.coerceIn(DEFAULT_ITEMS_PER_ROW, MAX_ITEMS_PER_ROW)
-}
+internal fun calculateItemsPerRow(availableWidth: Dp): Int =
+    calculateAdaptiveItemCount(
+        availableWidth = availableWidth,
+        itemSize = ICON_OPTION_SIZE,
+        minGap = ROW_ITEM_MIN_GAP,
+        horizontalPadding = ROW_HORIZONTAL_PADDING,
+        minCount = DEFAULT_ITEMS_PER_ROW,
+        maxCount = MAX_ITEMS_PER_ROW,
+    )
 
 /**
  * Icon picker component for selecting habit icons.
