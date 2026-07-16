@@ -1,10 +1,13 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -16,6 +19,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -29,6 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
@@ -45,6 +51,8 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortBottomSheet
 
 private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
+private val DOCKED_EDITOR_WIDTH = 412.dp
+private val DOCKED_EDITOR_PADDING = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +65,7 @@ fun TasksScreen(
     topBar: @Composable () -> Unit = {},
     showAddTaskRailButton: Boolean = false,
     onFloatingBarStateChange: (TasksFloatingBarState) -> Unit = {},
+    onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -133,6 +142,12 @@ fun TasksScreen(
     }
 
     val isRailLayout = isFloatingNavigationRailLayout()
+    val editorPlacement = rememberSheetPlacement()
+    val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
+    val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
+    LaunchedEffect(isDockedEditor, uiState.taskForm.isVisible) {
+        currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.taskForm.isVisible)
+    }
     val hasCompletedTasks =
         remember(uiState.tasks, uiState.selectedCategoryId) {
             uiState.tasks.any {
@@ -162,46 +177,81 @@ fun TasksScreen(
                 sortOption = uiState.sortOption,
                 onAddTask = onAddTask,
                 onSort = onSort,
+                sortMenuExpanded = isRailLayout && uiState.showSortBottomSheet,
+                onSelectSortOption = { viewModel.onEvent(TasksContract.UiEvent.SetSortOption(it)) },
+                onDismissSort = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
                 onClearCompleted = onClearCompleted,
             ),
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
-            containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0),
-            topBar = topBar,
-        ) {
-            Box(
-                modifier = Modifier.padding(it).fillMaxSize(),
-            ) {
-                TasksContent(
-                    uiState = uiState,
+    val editorContent =
+        remember(viewModel) {
+            movableContentOf { state: TasksContract.UiState, placement: SheetPlacement ->
+                TaskEditor(
+                    uiState = state,
                     onEvent = viewModel::onEvent,
-                    onScrolledFromTopChange = { isListScrolledFromTop.value = it },
+                    placement = placement,
                 )
+            }
+        }
 
+    Row(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Scaffold(
+                modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
+                containerColor = MaterialTheme.colorScheme.background,
+                contentWindowInsets = WindowInsets(0),
+                topBar = topBar,
+            ) {
                 Box(
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .navigationBarsPadding()
-                            .padding(
-                                bottom =
-                                    if (isRailLayout) {
-                                        20.dp
-                                    } else {
-                                        FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
-                                    },
-                            ),
-                    contentAlignment = Alignment.BottomCenter,
+                    modifier = Modifier.padding(it).fillMaxSize(),
                 ) {
-                    ExpressiveSnackbarHost(snackbarHostState)
+                    TasksContent(
+                        uiState = uiState,
+                        onEvent = viewModel::onEvent,
+                        onScrolledFromTopChange = { isListScrolledFromTop.value = it },
+                    )
+
+                    Box(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .navigationBarsPadding()
+                                .padding(
+                                    bottom =
+                                        if (isRailLayout) {
+                                            20.dp
+                                        } else {
+                                            FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
+                                        },
+                                ),
+                        contentAlignment = Alignment.BottomCenter,
+                    ) {
+                        ExpressiveSnackbarHost(snackbarHostState)
+                    }
                 }
             }
         }
+        if (isDockedEditor && uiState.taskForm.isVisible) {
+            Box(
+                modifier =
+                    Modifier
+                        .width(DOCKED_EDITOR_WIDTH)
+                        .fillMaxHeight()
+                        .padding(
+                            end = DOCKED_EDITOR_PADDING,
+                            top = DOCKED_EDITOR_PADDING,
+                            bottom = DOCKED_EDITOR_PADDING,
+                        ),
+            ) {
+                editorContent(uiState, editorPlacement)
+            }
+        }
+    }
+
+    if (!isDockedEditor && uiState.taskForm.isVisible) {
+        editorContent(uiState, editorPlacement)
     }
 
     if (!uiState.showPermissionRevokedDialog) {
@@ -213,74 +263,6 @@ fun TasksScreen(
             },
             onDismiss = {
                 viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
-            },
-        )
-    }
-
-    if (uiState.taskForm.isVisible) {
-        val categoryIdFromContext =
-            when {
-                uiState.taskForm.editingTask != null ->
-                    uiState.taskForm.editingTask?.categoryId
-                        ?: uiState.selectedCategoryId
-
-                uiState.taskForm.parentTask != null ->
-                    uiState.taskForm.parentTask?.categoryId
-                        ?: uiState.selectedCategoryId
-
-                else -> uiState.selectedCategoryId
-            }
-
-        TaskBottomSheet(
-            categories = uiState.categories,
-            selectedCategoryIdFromFilter = categoryIdFromContext,
-            formState = uiState.taskForm,
-            onSetPriority = { priority -> viewModel.onEvent(TasksContract.UiEvent.SetPriority(priority)) },
-            onClearPriority = { viewModel.onEvent(TasksContract.UiEvent.ClearPriority) },
-            onSetReminder = { year, month, day, hour, minute ->
-                viewModel.onEvent(TasksContract.UiEvent.SetReminder(year, month, day, hour, minute))
-            },
-            onClearReminder = { viewModel.onEvent(TasksContract.UiEvent.ClearReminder) },
-            onSetPeriodicity = { periodicity -> viewModel.onEvent(TasksContract.UiEvent.SetPeriodicity(periodicity)) },
-            onClearPeriodicity = { viewModel.onEvent(TasksContract.UiEvent.ClearPeriodicity) },
-            onSetPeriodicityInterval = { interval ->
-                viewModel.onEvent(TasksContract.UiEvent.SetPeriodicityInterval(interval))
-            },
-            onSetRepeatDays = { days -> viewModel.onEvent(TasksContract.UiEvent.SetRepeatDays(days)) },
-            onSetMonthDayOption = { option -> viewModel.onEvent(TasksContract.UiEvent.SetMonthDayOption(option)) },
-            onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideTaskDialog) },
-            onClearErrors = { viewModel.onEvent(TasksContract.UiEvent.ClearTaskErrors) },
-            onConfirm = { title, description, categoryId ->
-                viewModel.onEvent(
-                    TasksContract.UiEvent.CreateOrUpdateTask(
-                        title,
-                        description,
-                        categoryId,
-                        parentTaskId = uiState.taskForm.parentTaskId,
-                        autoSave = false,
-                    ),
-                )
-            },
-            onAutoSave = { title, description, categoryId ->
-                viewModel.onEvent(
-                    TasksContract.UiEvent.CreateOrUpdateTask(
-                        title,
-                        description,
-                        categoryId,
-                        parentTaskId = uiState.taskForm.parentTaskId,
-                        autoSave = true,
-                    ),
-                )
-            },
-            task = uiState.taskForm.editingTask,
-            onDelete =
-                uiState.taskForm.editingTask?.let { editingTask ->
-                    {
-                        viewModel.onEvent(TasksContract.UiEvent.RequestDeleteTask(editingTask))
-                    }
-                },
-            onToggleCompletion = { task ->
-                viewModel.onEvent(TasksContract.UiEvent.ToggleTaskCompletion(task))
             },
         )
     }
@@ -352,7 +334,7 @@ fun TasksScreen(
         )
     }
 
-    if (uiState.showSortBottomSheet) {
+    if (uiState.showSortBottomSheet && !isRailLayout) {
         SortBottomSheet(
             currentSortOption = uiState.sortOption,
             onSelectSortOption = {
@@ -361,4 +343,68 @@ fun TasksScreen(
             onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
         )
     }
+}
+
+@Composable
+private fun TaskEditor(
+    uiState: TasksContract.UiState,
+    onEvent: (TasksContract.UiEvent) -> Unit,
+    placement: SheetPlacement,
+) {
+    val categoryIdFromContext =
+        when {
+            uiState.taskForm.editingTask != null -> uiState.taskForm.editingTask.categoryId
+
+            uiState.taskForm.parentTask != null -> uiState.taskForm.parentTask.categoryId
+
+            else -> uiState.selectedCategoryId
+        }
+
+    TaskBottomSheet(
+        categories = uiState.categories,
+        selectedCategoryIdFromFilter = categoryIdFromContext,
+        formState = uiState.taskForm,
+        onSetPriority = { onEvent(TasksContract.UiEvent.SetPriority(it)) },
+        onClearPriority = { onEvent(TasksContract.UiEvent.ClearPriority) },
+        onSetReminder = { year, month, day, hour, minute ->
+            onEvent(TasksContract.UiEvent.SetReminder(year, month, day, hour, minute))
+        },
+        onClearReminder = { onEvent(TasksContract.UiEvent.ClearReminder) },
+        onSetPeriodicity = { onEvent(TasksContract.UiEvent.SetPeriodicity(it)) },
+        onClearPeriodicity = { onEvent(TasksContract.UiEvent.ClearPeriodicity) },
+        onSetPeriodicityInterval = { onEvent(TasksContract.UiEvent.SetPeriodicityInterval(it)) },
+        onSetRepeatDays = { onEvent(TasksContract.UiEvent.SetRepeatDays(it)) },
+        onSetMonthDayOption = { onEvent(TasksContract.UiEvent.SetMonthDayOption(it)) },
+        onDismiss = { onEvent(TasksContract.UiEvent.HideTaskDialog) },
+        onClearErrors = { onEvent(TasksContract.UiEvent.ClearTaskErrors) },
+        onConfirm = { title, description, categoryId ->
+            onEvent(
+                TasksContract.UiEvent.CreateOrUpdateTask(
+                    title = title,
+                    description = description,
+                    categoryId = categoryId,
+                    parentTaskId = uiState.taskForm.parentTaskId,
+                    autoSave = false,
+                ),
+            )
+        },
+        onAutoSave = { title, description, categoryId ->
+            onEvent(
+                TasksContract.UiEvent.CreateOrUpdateTask(
+                    title = title,
+                    description = description,
+                    categoryId = categoryId,
+                    parentTaskId = uiState.taskForm.parentTaskId,
+                    autoSave = true,
+                ),
+            )
+        },
+        task = uiState.taskForm.editingTask,
+        onDelete =
+            uiState.taskForm.editingTask?.let { editingTask ->
+                { onEvent(TasksContract.UiEvent.RequestDeleteTask(editingTask)) }
+            },
+        onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
+        placement = placement,
+    )
 }

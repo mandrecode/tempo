@@ -33,6 +33,8 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.spacing
@@ -53,6 +55,16 @@ object TasksRoute : NavKey
 
 @Serializable
 object SettingsRoute : NavKey
+
+@Serializable
+object RoutinesEditorRoute : EditorRoute {
+    override fun supports(mainRoute: NavKey): Boolean = mainRoute == RoutinesRoute
+}
+
+@Serializable
+object TasksEditorRoute : EditorRoute {
+    override fun supports(mainRoute: NavKey): Boolean = mainRoute == TasksRoute
+}
 
 @Serializable
 data class OnboardingRoute(
@@ -110,6 +122,10 @@ fun TempoNavHost(
             onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
             onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
         )
+    val editorSceneStrategy =
+        rememberEditorSupportingPaneSceneStrategy(
+            enabled = rememberSheetPlacement() == SheetPlacement.DockedPane,
+        )
 
     Box(
         modifier =
@@ -121,12 +137,14 @@ fun TempoNavHost(
             entries = activeEntries,
             modifier = Modifier.fillMaxSize(),
             onBack = { navigator.pop() },
+            sceneStrategies = listOf(editorSceneStrategy),
             transitionSpec = { navigationTransition(initialState, targetState) },
             popTransitionSpec = { navigationPopTransition(initialState, targetState) },
         )
 
         PersistentFloatingBar(
             currentRoute = navigator.currentRoute,
+            topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
@@ -153,7 +171,7 @@ private fun rememberActiveEntries(
         )
     val entries =
         entryProvider<NavKey> {
-            entry<RoutinesRoute> {
+            entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
                 RoutinesDestination(
                     navigator = navigator,
                     navigationPreferencesRepository = navigationPreferencesRepository,
@@ -162,7 +180,7 @@ private fun rememberActiveEntries(
                     onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
                 )
             }
-            entry<TasksRoute> {
+            entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
                 TasksDestination(
                     navigator = navigator,
                     navigationPreferencesRepository = navigationPreferencesRepository,
@@ -175,6 +193,8 @@ private fun rememberActiveEntries(
                 OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
             }
             entry<SettingsRoute> { SettingsDestination(navigator = navigator) }
+            entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
+            entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
         }
     val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
     val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
@@ -231,6 +251,9 @@ private fun RoutinesDestination(
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+        onDockedEditorVisibilityChange = { visible ->
+            navigator.setEditorVisible(RoutinesEditorRoute, visible)
+        },
     )
 }
 
@@ -255,6 +278,9 @@ private fun TasksDestination(
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+        onDockedEditorVisibilityChange = { visible ->
+            navigator.setEditorVisible(TasksEditorRoute, visible)
+        },
     )
 }
 
@@ -294,6 +320,7 @@ private fun SettingsDestination(navigator: TempoNavigator) {
     SettingsScreen(
         onBackClick = { navigator.pop() },
         onOnboardingClick = { navigator.navigate(OnboardingRoute(isReplay = true)) },
+        showBackButton = !isExpandedFloatingRailLayout(),
     )
 }
 

@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
@@ -35,6 +36,7 @@ fun TaskBottomSheet(
     task: Task? = null,
     onDelete: (() -> Unit)? = null,
     onToggleCompletion: ((Task) -> Unit)? = null,
+    placement: SheetPlacement? = null,
 ) {
     TaskBottomSheetContent(
         categories = categories,
@@ -57,5 +59,6 @@ fun TaskBottomSheet(
         task = task,
         onDelete = onDelete,
         onToggleCompletion = onToggleCompletion,
+        placement = placement,
     )
 }

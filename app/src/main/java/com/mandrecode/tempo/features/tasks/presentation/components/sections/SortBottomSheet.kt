@@ -41,7 +41,7 @@ fun SortBottomSheet(
             onDismiss()
         },
         modifier = modifier,
-        adaptivePlacement = true,
+        adaptivePlacement = false,
     ) { onRequestDismiss ->
         Column(
             modifier =

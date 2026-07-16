@@ -21,7 +21,7 @@ fun TempoModalTopSheet(
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     val direction =
-        if (adaptivePlacement && rememberSheetPlacement() == SheetPlacement.Side) {
+        if (adaptivePlacement && rememberSheetPlacement() == SheetPlacement.SideSheet) {
             TempoModalSheetDirection.End
         } else {
             TempoModalSheetDirection.Top

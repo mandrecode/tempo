@@ -54,6 +54,7 @@ internal fun floatingControlsMotionSpec() =
 @Composable
 internal fun PersistentFloatingBar(
     currentRoute: NavKey,
+    topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -63,11 +64,13 @@ internal fun PersistentFloatingBar(
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    val isTasksRoute = currentRoute == TasksRoute
+    val isTasksRoute = topLevelRoute == TasksRoute
+    val isLargeSettingsDestination = currentRoute == SettingsRoute && isExpandedFloatingRailLayout()
     val visible =
         when {
             currentRoute == RoutinesRoute -> routinesState.visible
-            isTasksRoute -> tasksState.visible
+            currentRoute == TasksRoute -> tasksState.visible
+            isLargeSettingsDestination -> true
             else -> false
         }
 
@@ -99,6 +102,7 @@ internal fun PersistentFloatingBar(
                 tasksState = tasksState,
                 isSingleTabMode = isSingleTabMode,
                 onOpenSettings = onOpenSettings,
+                settingsSelected = currentRoute == SettingsRoute,
             )
         } else {
             PersistentPortraitFloatingBar(
@@ -120,6 +124,7 @@ private fun PersistentLandscapeFloatingBar(
     tasksState: TasksFloatingBarState,
     isSingleTabMode: Boolean,
     onOpenSettings: () -> Unit,
+    settingsSelected: Boolean,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
     if (isSingleTabMode) {
@@ -178,18 +183,34 @@ private fun PersistentLandscapeFloatingBar(
 
         if (isExpandedRail) {
             Spacer(modifier = Modifier.weight(1f))
-            SettingsRailButton(onClick = onOpenSettings)
+            SettingsRailButton(
+                selected = settingsSelected,
+                onClick = onOpenSettings,
+            )
         }
     }
 }
 
 @Composable
-private fun SettingsRailButton(onClick: () -> Unit) {
+private fun SettingsRailButton(
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
     Surface(
-        onClick = onClick,
+        onClick = { if (!selected) onClick() },
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         modifier =
             Modifier
                 .width(FloatingRailExpandedSurfaceWidth)

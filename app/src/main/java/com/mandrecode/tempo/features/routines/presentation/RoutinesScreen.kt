@@ -2,10 +2,13 @@ package com.mandrecode.tempo.features.routines.presentation
 
 import android.content.Context
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -17,6 +20,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -30,6 +34,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
@@ -45,6 +51,8 @@ import com.mandrecode.tempo.features.routines.presentation.components.dialogs.De
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.EmptyHabitChainConfirmDialog
 
 private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
+private val DOCKED_EDITOR_WIDTH = 412.dp
+private val DOCKED_EDITOR_PADDING = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +65,7 @@ fun RoutinesScreen(
     topBar: @Composable () -> Unit = {},
     showAddHabitRailButton: Boolean = false,
     onFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit = {},
+    onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -105,6 +114,12 @@ fun RoutinesScreen(
     }
 
     val isRailLayout = isFloatingNavigationRailLayout()
+    val editorPlacement = rememberSheetPlacement()
+    val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
+    val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
+    LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
+        currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.habitForm.isVisible)
+    }
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onShowHabitBottomSheet =
         remember(viewModel) {
@@ -121,106 +136,121 @@ fun RoutinesScreen(
         )
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Scaffold(
-            modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
-            containerColor = MaterialTheme.colorScheme.background,
-            contentWindowInsets = WindowInsets(0),
-            topBar = topBar,
-        ) { innerPadding ->
-            Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
-                RoutinesContent(
-                    uiState = uiState,
+    val editorContent =
+        remember(viewModel) {
+            movableContentOf { state: RoutinesContract.UiState, placement: SheetPlacement ->
+                HabitEditor(
+                    uiState = state,
                     onEvent = viewModel::onEvent,
-                    onScrolledFromTopChange = { isListScrolledFromTop.value = it },
-                    showAddHabitButton = !showAddHabitRailButton,
-                )
-
-                // Show habit bottom sheet
-                if (uiState.habitForm.isVisible) {
-                    HabitBottomSheet(
-                        formState = uiState.habitForm,
-                        selectedDate = uiState.selectedDate,
-                        habits = uiState.habits,
-                        habitChains = uiState.habitChains,
-                        onSelectTab = { viewModel.onEvent(RoutinesContract.UiEvent.SetSelectedTab(it)) },
-                        onSetHabitType = { viewModel.onEvent(RoutinesContract.UiEvent.SetHabitType(it)) },
-                        onSetReminder = { y, mo, d, h, mi ->
-                            viewModel.onEvent(RoutinesContract.UiEvent.SetReminder(y, mo, d, h, mi))
-                        },
-                        onClearReminder = { viewModel.onEvent(RoutinesContract.UiEvent.ClearReminder) },
-                        onSetColorKey = { viewModel.onEvent(RoutinesContract.UiEvent.SetColorKey(it)) },
-                        onClearColor = { viewModel.onEvent(RoutinesContract.UiEvent.ClearColor) },
-                        onSetIcon = { viewModel.onEvent(RoutinesContract.UiEvent.SetIcon(it)) },
-                        onClearIcon = { viewModel.onEvent(RoutinesContract.UiEvent.ClearIcon) },
-                        onDismiss = { viewModel.onEvent(RoutinesContract.UiEvent.HideHabitBottomSheet) },
-                        onClearErrors = { viewModel.onEvent(RoutinesContract.UiEvent.ClearHabitErrors) },
-                        onConfirmHabit = { title, desc ->
-                            viewModel.onEvent(
-                                RoutinesContract.UiEvent.CreateOrUpdateHabit(title, desc, autoSave = false),
-                            )
-                        },
-                        onConfirmHabitChain = { title, desc, ids ->
-                            viewModel.onEvent(
-                                RoutinesContract.UiEvent.CreateOrUpdateHabitChain(
-                                    title,
-                                    desc,
-                                    ids,
-                                    autoSave = false,
-                                ),
-                            )
-                        },
-                        onAutoSaveHabit = { title, desc ->
-                            viewModel.onEvent(
-                                RoutinesContract.UiEvent.CreateOrUpdateHabit(title, desc, autoSave = true),
-                            )
-                        },
-                        onAutoSaveHabitChain = { title, desc, ids ->
-                            viewModel.onEvent(
-                                RoutinesContract.UiEvent.CreateOrUpdateHabitChain(
-                                    title,
-                                    desc,
-                                    ids,
-                                    autoSave = true,
-                                ),
-                            )
-                        },
-                        onDeleteHabit =
-                            uiState.habitForm.editingHabit?.let { editingHabit ->
-                                {
-                                    viewModel.onEvent(
-                                        RoutinesContract.UiEvent.ShowDeleteHabitConfirmation(editingHabit),
-                                    )
-                                }
-                            },
-                        onDeleteHabitChain =
-                            uiState.habitForm.editingHabitChain?.let { editingHabitChain ->
-                                {
-                                    viewModel.onEvent(
-                                        RoutinesContract.UiEvent.ShowDeleteHabitChainConfirmation(editingHabitChain),
-                                    )
-                                }
-                            },
-                        onSetRepeatDays = { viewModel.onEvent(RoutinesContract.UiEvent.SetRepeatDays(it)) },
-                        onToggleHabitCompletion = { habitId, isCompleted ->
-                            viewModel.onEvent(RoutinesContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
-                        },
-                    )
-                }
-
-                RoutinesDialogs(
-                    uiState = uiState,
-                    context = context,
-                    onEvent = viewModel::onEvent,
-                )
-
-                RoutinesSnackbar(
-                    snackbarHostState = snackbarHostState,
-                    isRailLayout = isRailLayout,
+                    placement = placement,
                 )
             }
         }
+
+    Row(modifier = modifier.fillMaxSize()) {
+        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+            Scaffold(
+                modifier = Modifier.adaptiveScreenContentLayout(railClearance = floatingRailContentClearance()),
+                containerColor = MaterialTheme.colorScheme.background,
+                contentWindowInsets = WindowInsets(0),
+                topBar = topBar,
+            ) { innerPadding ->
+                Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+                    RoutinesContent(
+                        uiState = uiState,
+                        onEvent = viewModel::onEvent,
+                        onScrolledFromTopChange = { isListScrolledFromTop.value = it },
+                        showAddHabitButton = !showAddHabitRailButton,
+                    )
+
+                    RoutinesDialogs(
+                        uiState = uiState,
+                        context = context,
+                        onEvent = viewModel::onEvent,
+                    )
+
+                    RoutinesSnackbar(
+                        snackbarHostState = snackbarHostState,
+                        isRailLayout = isRailLayout,
+                    )
+                }
+            }
+        }
+        if (isDockedEditor && uiState.habitForm.isVisible) {
+            Box(
+                modifier =
+                    Modifier
+                        .width(DOCKED_EDITOR_WIDTH)
+                        .fillMaxHeight()
+                        .padding(
+                            end = DOCKED_EDITOR_PADDING,
+                            top = DOCKED_EDITOR_PADDING,
+                            bottom = DOCKED_EDITOR_PADDING,
+                        ),
+            ) {
+                editorContent(uiState, editorPlacement)
+            }
+        }
     }
+
+    if (!isDockedEditor && uiState.habitForm.isVisible) {
+        editorContent(uiState, editorPlacement)
+    }
+}
+
+@Composable
+private fun HabitEditor(
+    uiState: RoutinesContract.UiState,
+    onEvent: (RoutinesContract.UiEvent) -> Unit,
+    placement: SheetPlacement,
+) {
+    HabitBottomSheet(
+        formState = uiState.habitForm,
+        selectedDate = uiState.selectedDate,
+        habits = uiState.habits,
+        habitChains = uiState.habitChains,
+        onSelectTab = { onEvent(RoutinesContract.UiEvent.SetSelectedTab(it)) },
+        onSetHabitType = { onEvent(RoutinesContract.UiEvent.SetHabitType(it)) },
+        onSetReminder = { year, month, day, hour, minute ->
+            onEvent(RoutinesContract.UiEvent.SetReminder(year, month, day, hour, minute))
+        },
+        onClearReminder = { onEvent(RoutinesContract.UiEvent.ClearReminder) },
+        onSetColorKey = { onEvent(RoutinesContract.UiEvent.SetColorKey(it)) },
+        onClearColor = { onEvent(RoutinesContract.UiEvent.ClearColor) },
+        onSetIcon = { onEvent(RoutinesContract.UiEvent.SetIcon(it)) },
+        onClearIcon = { onEvent(RoutinesContract.UiEvent.ClearIcon) },
+        onDismiss = { onEvent(RoutinesContract.UiEvent.HideHabitBottomSheet) },
+        onClearErrors = { onEvent(RoutinesContract.UiEvent.ClearHabitErrors) },
+        onConfirmHabit = { title, description ->
+            onEvent(RoutinesContract.UiEvent.CreateOrUpdateHabit(title, description, autoSave = false))
+        },
+        onConfirmHabitChain = { title, description, ids ->
+            onEvent(
+                RoutinesContract.UiEvent.CreateOrUpdateHabitChain(title, description, ids, autoSave = false),
+            )
+        },
+        onAutoSaveHabit = { title, description ->
+            onEvent(RoutinesContract.UiEvent.CreateOrUpdateHabit(title, description, autoSave = true))
+        },
+        onAutoSaveHabitChain = { title, description, ids ->
+            onEvent(
+                RoutinesContract.UiEvent.CreateOrUpdateHabitChain(title, description, ids, autoSave = true),
+            )
+        },
+        onDeleteHabit =
+            uiState.habitForm.editingHabit?.let { editingHabit ->
+                { onEvent(RoutinesContract.UiEvent.ShowDeleteHabitConfirmation(editingHabit)) }
+            },
+        onDeleteHabitChain =
+            uiState.habitForm.editingHabitChain?.let { editingHabitChain ->
+                { onEvent(RoutinesContract.UiEvent.ShowDeleteHabitChainConfirmation(editingHabitChain)) }
+            },
+        onSetRepeatDays = { onEvent(RoutinesContract.UiEvent.SetRepeatDays(it)) },
+        onToggleHabitCompletion = { habitId, isCompleted ->
+            onEvent(RoutinesContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
+        },
+        placement = placement,
+    )
 }
 
 @Suppress("LocalContextGetResourceValueCall")

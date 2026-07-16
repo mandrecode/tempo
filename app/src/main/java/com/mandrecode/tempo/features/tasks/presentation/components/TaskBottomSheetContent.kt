@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -30,6 +31,7 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
 import com.mandrecode.tempo.core.ui.util.DebouncedSnapshotEffect
@@ -70,22 +72,28 @@ internal fun TaskBottomSheetContent(
     task: Task? = null,
     onDelete: (() -> Unit)? = null,
     onToggleCompletion: ((Task) -> Unit)? = null,
+    placement: SheetPlacement? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val editingTargetId = task?.id
-    var taskTitle by remember(editingTargetId) { mutableStateOf(task?.title ?: "") }
+    var taskTitle by rememberSaveable(editingTargetId) { mutableStateOf(task?.title ?: "") }
     val initialDescription = remember(editingTargetId) { task?.description.orEmpty() }
+    var savedDescription by
+        rememberSaveable(editingTargetId, stateSaver = TextFieldValue.Saver) {
+            mutableStateOf(TextFieldValue(initialDescription))
+        }
     val descriptionState =
         remember(editingTargetId) {
-            DescriptionEditorState(TextFieldValue(initialDescription))
+            DescriptionEditorState(savedDescription)
         }
     val descriptionLinkVisualTransformation = rememberLinkStyling(descriptionState)
     val updateDescription: (TextFieldValue) -> Unit = { value ->
         descriptionLinkVisualTransformation.update(value.text)
+        savedDescription = value
         descriptionState.update(value)
     }
-    var isDescriptionDirty by remember(editingTargetId) { mutableStateOf(false) }
+    var isDescriptionDirty by rememberSaveable(editingTargetId) { mutableStateOf(false) }
 
     val defaultCategoryId = categories.firstOrNull { it.isDefault }?.id ?: categories.firstOrNull()?.id ?: 0L
     val initialCategoryId =
@@ -97,7 +105,7 @@ internal fun TaskBottomSheetContent(
             else -> defaultCategoryId
         }
     var selectedCategoryId by
-        remember(editingTargetId, selectedCategoryIdFromFilter, defaultCategoryId) {
+        rememberSaveable(editingTargetId, selectedCategoryIdFromFilter, defaultCategoryId) {
             mutableLongStateOf(initialCategoryId)
         }
     var isTitleError by remember(editingTargetId) { mutableStateOf(false) }
@@ -326,6 +334,7 @@ internal fun TaskBottomSheetContent(
         modifier = modifier,
         hasUnsavedChanges = if (autoSaveEnabled && taskTitle.isNotBlank()) false else hasUnsavedChanges,
         adaptivePlacement = true,
+        placement = placement,
     ) { onRequestDismiss ->
         val focusManager = LocalFocusManager.current
         Column(

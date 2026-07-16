@@ -19,10 +19,21 @@ fun TempoModalBottomSheet(
     modifier: Modifier = Modifier,
     hasUnsavedChanges: Boolean = false,
     adaptivePlacement: Boolean = false,
+    placement: SheetPlacement? = null,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
+    val resolvedPlacement = placement ?: if (adaptivePlacement) rememberSheetPlacement() else null
+    if (resolvedPlacement == SheetPlacement.DockedPane) {
+        TempoDockedSheet(
+            onDismissRequest = onDismissRequest,
+            modifier = modifier,
+            hasUnsavedChanges = hasUnsavedChanges,
+            content = content,
+        )
+        return
+    }
     val direction =
-        if (adaptivePlacement && rememberSheetPlacement() == SheetPlacement.Side) {
+        if (resolvedPlacement == SheetPlacement.SideSheet) {
             TempoModalSheetDirection.End
         } else {
             TempoModalSheetDirection.Bottom

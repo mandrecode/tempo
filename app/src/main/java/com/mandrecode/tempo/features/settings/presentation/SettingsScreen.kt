@@ -30,6 +30,7 @@ fun SettingsScreen(
     onBackClick: () -> Unit,
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showBackButton: Boolean = true,
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -40,6 +41,7 @@ fun SettingsScreen(
         onBackClick = onBackClick,
         onOnboardingClick = onOnboardingClick,
         modifier = modifier,
+        showBackButton = showBackButton,
     )
 }
 
@@ -51,6 +53,7 @@ internal fun SettingsScaffold(
     onBackClick: () -> Unit,
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showBackButton: Boolean = true,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val settingsContainerColor = MaterialTheme.colorScheme.background
@@ -76,11 +79,13 @@ internal fun SettingsScaffold(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
-                        )
+                    if (showBackButton) {
+                        IconButton(onClick = onBackClick) {
+                            Icon(
+                                Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back),
+                            )
+                        }
                     }
                 },
                 colors =

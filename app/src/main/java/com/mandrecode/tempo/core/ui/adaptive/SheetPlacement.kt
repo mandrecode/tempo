@@ -10,11 +10,14 @@ import androidx.window.core.layout.WindowSizeClass
  * How a modal editor sheet is presented for the current window.
  */
 enum class SheetPlacement {
-    /** The sheet keeps its native vertical direction (bottom or top). */
-    Vertical,
+    /** The editor keeps its native vertical direction (bottom or top). */
+    BottomSheet,
 
-    /** The sheet is presented as a full-height side sheet at the end edge. */
-    Side,
+    /** The editor is presented as a modal full-height side sheet at the end edge. */
+    SideSheet,
+
+    /** The editor is presented beside live content without a scrim. */
+    DockedPane,
 }
 
 /**
@@ -26,13 +29,17 @@ fun sheetPlacement(
     windowWidthDp: Int,
     windowHeightDp: Int,
 ): SheetPlacement =
-    if (windowWidthDp >= WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND ||
+    if (windowWidthDp >= LARGE_WINDOW_WIDTH_DP) {
+        SheetPlacement.DockedPane
+    } else if (windowWidthDp >= WindowSizeClass.WIDTH_DP_EXPANDED_LOWER_BOUND ||
         windowHeightDp < WindowSizeClass.HEIGHT_DP_MEDIUM_LOWER_BOUND
     ) {
-        SheetPlacement.Side
+        SheetPlacement.SideSheet
     } else {
-        SheetPlacement.Vertical
+        SheetPlacement.BottomSheet
     }
+
+const val LARGE_WINDOW_WIDTH_DP = 1200
 
 @Composable
 fun rememberSheetPlacement(): SheetPlacement {
