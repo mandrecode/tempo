@@ -31,7 +31,7 @@ fun sheetPlacement(windowWidthDp: Int): SheetPlacement =
         SheetPlacement.BottomSheet
     }
 
-const val LARGE_WINDOW_WIDTH_DP = 1200
+private const val LARGE_WINDOW_WIDTH_DP = 1200
 
 @Composable
 fun rememberSheetPlacement(): SheetPlacement {

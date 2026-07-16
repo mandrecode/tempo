@@ -28,7 +28,7 @@ private class EditorSupportingPaneSceneStrategy(
             EditorSupportingPaneScene(
                 mainEntry = mainEntry,
                 editorEntry = editorEntry,
-                previousEntries = entries.dropLast(1),
+                previousEntries = entries.dropLast(2),
             )
         } else {
             null
