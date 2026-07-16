@@ -171,8 +171,10 @@ fun RoutinesScreen(
     // exiting pane from recomposing into a blank "new habit" form (revealing the Habit/Chain tab
     // switcher) mid-animation.
     var frozenUiState by remember { mutableStateOf(uiState) }
-    if (uiState.habitForm.isVisible) {
-        frozenUiState = uiState
+    SideEffect {
+        if (uiState.habitForm.isVisible) {
+            frozenUiState = uiState
+        }
     }
 
     Row(modifier = modifier.fillMaxSize()) {

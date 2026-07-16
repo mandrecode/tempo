@@ -217,8 +217,10 @@ fun TasksScreen(
     // pane's own shrink-out animation finishes. Freezing the last visible state here stops the
     // exiting pane from recomposing into a blank "new task" form mid-animation.
     var frozenUiState by remember { mutableStateOf(uiState) }
-    if (uiState.taskForm.isVisible) {
-        frozenUiState = uiState
+    SideEffect {
+        if (uiState.taskForm.isVisible) {
+            frozenUiState = uiState
+        }
     }
 
     Box(modifier = modifier.fillMaxSize()) {
