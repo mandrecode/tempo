@@ -114,6 +114,7 @@ fun TempoNavHost(
         onRouteChange = onRouteChange,
     )
 
+    val editorPaneEnabled = rememberSheetPlacement() == SheetPlacement.DockedPane
     val activeEntries =
         rememberActiveEntries(
             navigator = navigator,
@@ -122,11 +123,9 @@ fun TempoNavHost(
             onConsumePendingNotificationAction = onConsumePendingNotificationAction,
             onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
             onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
+            includeEditorEntries = editorPaneEnabled,
         )
-    val editorSceneStrategy =
-        rememberEditorSupportingPaneSceneStrategy(
-            enabled = rememberSheetPlacement() == SheetPlacement.DockedPane,
-        )
+    val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val settingsAsTopLevel = isExpandedFloatingRailLayout()
     val openSettings: () -> Unit = {
         if (settingsAsTopLevel) {
@@ -199,6 +198,7 @@ private fun rememberActiveEntries(
     onConsumePendingNotificationAction: () -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
+    includeEditorEntries: Boolean,
 ): List<NavEntry<NavKey>> {
     val decorators =
         listOf<NavEntryDecorator<NavKey>>(
@@ -236,11 +236,17 @@ private fun rememberActiveEntries(
     val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
     val onboardingEntries = rememberDecoratedNavEntries(navigator.onboardingBackStack, decorators, entries)
     val settingsEntries = rememberDecoratedNavEntries(navigator.settingsBackStack, decorators, entries)
-    return when (navigator.section) {
-        TempoNavigator.Section.ROUTINES -> routinesEntries
-        TempoNavigator.Section.TASKS -> tasksEntries
-        TempoNavigator.Section.SETTINGS -> settingsEntries
-        TempoNavigator.Section.ONBOARDING -> onboardingEntries
+    val sectionEntries =
+        when (navigator.section) {
+            TempoNavigator.Section.ROUTINES -> routinesEntries
+            TempoNavigator.Section.TASKS -> tasksEntries
+            TempoNavigator.Section.SETTINGS -> settingsEntries
+            TempoNavigator.Section.ONBOARDING -> onboardingEntries
+        }
+    return if (includeEditorEntries) {
+        sectionEntries
+    } else {
+        sectionEntries.filterNot { it.contentKey is EditorRoute }
     }
 }
 

@@ -12,14 +12,14 @@ import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
 
 @Composable
-internal fun rememberEditorSupportingPaneSceneStrategy(enabled: Boolean): SceneStrategy<NavKey> =
-    remember(enabled) { EditorSupportingPaneSceneStrategy(enabled) }
+internal fun rememberEditorSupportingPaneSceneStrategy(): SceneStrategy<NavKey> {
+    val strategy = remember { EditorSupportingPaneSceneStrategy() }
+    return strategy
+}
 
-private class EditorSupportingPaneSceneStrategy(
-    private val enabled: Boolean,
-) : SceneStrategy<NavKey> {
+private class EditorSupportingPaneSceneStrategy : SceneStrategy<NavKey> {
     override fun SceneStrategyScope<NavKey>.calculateScene(entries: List<NavEntry<NavKey>>): Scene<NavKey>? {
-        if (!enabled || entries.size < 2) return null
+        if (entries.size < 2) return null
         val mainEntry = entries[entries.lastIndex - 1]
         val editorEntry = entries.last()
         val editorRoute = editorEntry.metadata[EDITOR_ROUTE_METADATA] as? EditorRoute

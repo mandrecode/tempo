@@ -14,6 +14,7 @@ On windows at least 1200dp wide, task and habit editors SHALL present as a persi
 #### Scenario: Crossing the breakpoint preserves the draft
 - **WHEN** an open editor's window resizes across the 1200dp boundary in either direction
 - **THEN** the editor re-presents in the appropriate container (pane or modal bottom sheet) with the draft intact
+- **AND** the main Routines or Tasks content remains rendered without requiring a tab switch
 
 ### Requirement: Docked panes participate in back navigation
 The docked pane SHALL close via the system back affordance using the same dismiss path as modal sheets, including the unsaved-changes confirmation.
