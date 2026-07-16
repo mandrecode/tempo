@@ -137,7 +137,7 @@ private fun PersistentLandscapeFloatingBar(
 
     val isExpandedRail = isExpandedFloatingRailLayout()
 
-    // Rail hierarchy: screen title first on expanded rails, then the primary add action,
+    // Rail hierarchy: app identity first on expanded rails, then the primary add action,
     // navigation tabs, contextual secondary actions (sort, clear completed), and finally
     // settings pinned to the bottom.
     Column(
