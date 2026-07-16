@@ -54,6 +54,7 @@ object TasksContract {
 
     data class TaskFormState(
         val isVisible: Boolean = false,
+        val editorSessionId: Long = 0L,
         val editingTask: Task? = null,
         val priority: Priority? = null,
         val reminderDate: LocalDateTime? = null,

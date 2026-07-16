@@ -1065,6 +1065,20 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `reopening task dialog starts a new editor session`() =
+        runTest {
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            val firstSessionId = viewModel.uiState.value.taskForm.editorSessionId
+
+            viewModel.onEvent(TasksContract.UiEvent.HideTaskDialog)
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.editorSessionId).isGreaterThan(firstSessionId)
+        }
+
+    @Test
     fun `onPermissionsGranted shows success message`() =
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)

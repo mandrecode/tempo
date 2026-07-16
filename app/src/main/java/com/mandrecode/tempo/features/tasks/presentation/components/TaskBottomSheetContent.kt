@@ -78,14 +78,18 @@ internal fun TaskBottomSheetContent(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val editingTargetId = task?.id
-    var taskTitle by rememberSaveable(editingTargetId) { mutableStateOf(task?.title ?: "") }
-    val initialDescription = remember(editingTargetId) { task?.description.orEmpty() }
+    val editorKey =
+        remember(formState.editorSessionId, editingTargetId) {
+            formState.editorSessionId to editingTargetId
+        }
+    var taskTitle by rememberSaveable(editorKey) { mutableStateOf(task?.title ?: "") }
+    val initialDescription = remember(editorKey) { task?.description.orEmpty() }
     var savedDescription by
-        rememberSaveable(editingTargetId, stateSaver = TextFieldValue.Saver) {
+        rememberSaveable(editorKey, stateSaver = TextFieldValue.Saver) {
             mutableStateOf(TextFieldValue(initialDescription))
         }
     val descriptionState =
-        remember(editingTargetId) {
+        remember(editorKey) {
             DescriptionEditorState(savedDescription)
         }
     val descriptionLinkVisualTransformation = rememberLinkStyling(descriptionState)
@@ -94,7 +98,7 @@ internal fun TaskBottomSheetContent(
         savedDescription = value
         descriptionState.update(value)
     }
-    var isDescriptionDirty by rememberSaveable(editingTargetId) { mutableStateOf(false) }
+    var isDescriptionDirty by rememberSaveable(editorKey) { mutableStateOf(false) }
 
     val defaultCategoryId = categories.firstOrNull { it.isDefault }?.id ?: categories.firstOrNull()?.id ?: 0L
     val initialCategoryId =
@@ -106,10 +110,10 @@ internal fun TaskBottomSheetContent(
             else -> defaultCategoryId
         }
     var selectedCategoryId by
-        rememberSaveable(editingTargetId, selectedCategoryIdFromFilter, defaultCategoryId) {
+        rememberSaveable(editorKey, selectedCategoryIdFromFilter, defaultCategoryId) {
             mutableLongStateOf(initialCategoryId)
         }
-    var isTitleError by remember(editingTargetId) { mutableStateOf(false) }
+    var isTitleError by remember(editorKey) { mutableStateOf(false) }
     var showPermissionCheck by remember { mutableStateOf(false) }
     val titleFocusRequester = remember { FocusRequester() }
     val descriptionFocusRequester = remember { FocusRequester() }

@@ -65,6 +65,11 @@ Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp throu
 - **THEN** it rises from the bottom and its modal bounds start after any visible navigation rail
 - **AND** the category editor continues to descend from the top
 
+#### Scenario: Fresh editor sessions do not reuse dismissed drafts
+- **WHEN** a new task, habit, or habit-chain editor is dismissed and then opened again
+- **THEN** the new editor starts from fresh defaults rather than restoring the prior dismissed draft
+- **AND** an editor that remains open still preserves its draft across resize and recreation
+
 #### Scenario: Selected card controls its docked editor
 - **GIVEN** a task, habit, or habit-chain editor is docked beside the list
 - **THEN** its source card has selected styling

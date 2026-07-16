@@ -92,7 +92,10 @@ internal fun HabitBottomSheetContent(
             HabitSheetTab.HABIT -> formState.editingHabit?.id
             HabitSheetTab.HABIT_CHAIN -> formState.editingHabitChain?.id
         }
-    val editorKey = remember(formState.selectedTab, editingTargetId) { formState.selectedTab to editingTargetId }
+    val editorKey =
+        remember(formState.editorSessionId, formState.selectedTab, editingTargetId) {
+            Triple(formState.editorSessionId, formState.selectedTab, editingTargetId)
+        }
 
     var title by rememberSaveable(editorKey) {
         mutableStateOf(

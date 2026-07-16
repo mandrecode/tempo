@@ -196,7 +196,7 @@ private fun SettingsRailButton(
     }
 
     Surface(
-        onClick = { if (!selected) onClick() },
+        onClick = onClick,
         shape = CircleShape,
         color =
             if (selected) {
@@ -239,7 +239,7 @@ private fun CompactSettingsRailButton(
 ) {
     if (selected) {
         FilledIconButton(
-            onClick = {},
+            onClick = onClick,
             modifier = Modifier.size(FloatingToolbarItemSize),
             shape = CircleShape,
             colors =

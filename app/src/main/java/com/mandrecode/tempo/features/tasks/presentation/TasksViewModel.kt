@@ -84,6 +84,7 @@ class TasksViewModel
         internal var pendingOriginalReminderDate: Pair<Long, LocalDateTime>? = null
         internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingTaskDeletion>()
         internal var nextDeletionToken = 0L
+        internal var nextEditorSessionId = 0L
 
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,

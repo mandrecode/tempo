@@ -433,11 +433,13 @@ internal fun TasksViewModel.showTaskDialog(
                 null
             }
 
+        val editorSessionId = ++nextEditorSessionId
         mutableUiState.update {
             it.copy(
                 taskForm =
                     TaskFormState(
                         isVisible = true,
+                        editorSessionId = editorSessionId,
                         editingTask = task,
                         priority = task?.priority,
                         reminderDate = task?.reminderDate,
@@ -539,6 +541,7 @@ internal fun TasksViewModel.openTaskFromNotificationInternal(
             pendingOriginalReminderDate =
                 originalReminderDate?.let { taskId to it }
             val sortOption = tasksScreenPreferencesRepository.getSortOption(task.categoryId)
+            val editorSessionId = ++nextEditorSessionId
             mutableUiState.update {
                 it.copy(
                     selectedCategoryId = task.categoryId,
@@ -546,6 +549,7 @@ internal fun TasksViewModel.openTaskFromNotificationInternal(
                     taskForm =
                         TaskFormState(
                             isVisible = true,
+                            editorSessionId = editorSessionId,
                             editingTask = task,
                             priority = task.priority,
                             reminderDate = task.reminderDate,

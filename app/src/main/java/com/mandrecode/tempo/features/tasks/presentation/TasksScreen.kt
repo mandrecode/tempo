@@ -35,6 +35,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
+import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
@@ -55,8 +57,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortBottomSheet
 
 private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
-private val DOCKED_EDITOR_WIDTH = 412.dp
-private val DOCKED_EDITOR_PADDING = 12.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -257,12 +257,12 @@ fun TasksScreen(
                 Box(
                     modifier =
                         Modifier
-                            .width(DOCKED_EDITOR_WIDTH)
+                            .width(DockedEditorWidth)
                             .fillMaxHeight()
                             .padding(
-                                end = DOCKED_EDITOR_PADDING,
-                                top = DOCKED_EDITOR_PADDING,
-                                bottom = DOCKED_EDITOR_PADDING,
+                                end = DockedEditorPadding,
+                                top = DockedEditorPadding,
+                                bottom = DockedEditorPadding,
                             ),
                 ) {
                     editorContent(uiState, editorPlacement)
