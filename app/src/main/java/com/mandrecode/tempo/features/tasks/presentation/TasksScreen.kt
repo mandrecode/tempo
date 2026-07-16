@@ -23,11 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
@@ -51,7 +51,7 @@ private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 fun TasksScreen(
     modifier: Modifier = Modifier,
     isSingleTabMode: Boolean = false,
-    viewModel: TasksViewModel = hiltViewModel(),
+    viewModel: TasksViewModel = viewModel(),
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
     topBar: @Composable () -> Unit = {},

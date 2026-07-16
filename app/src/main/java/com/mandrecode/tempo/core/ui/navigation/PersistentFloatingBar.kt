@@ -35,9 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
@@ -55,19 +53,20 @@ internal fun floatingControlsMotionSpec() =
 
 @Composable
 internal fun PersistentFloatingBar(
-    currentDestination: NavDestination?,
-    navController: NavHostController,
+    currentRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
+    onNavigateToTopLevel: (NavKey) -> Unit,
+    onOpenSettings: () -> Unit,
     onRouteChange: (String) -> Unit,
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    val isTasksRoute = currentDestination?.hasRoute(TasksRoute::class) == true
+    val isTasksRoute = currentRoute == TasksRoute
     val visible =
         when {
-            currentDestination?.hasRoute(RoutinesRoute::class) == true -> routinesState.visible
+            currentRoute == RoutinesRoute -> routinesState.visible
             isTasksRoute -> tasksState.visible
             else -> false
         }
@@ -76,8 +75,9 @@ internal fun PersistentFloatingBar(
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
-            navController = navController,
+            currentRoute = currentRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
         )
     }
@@ -98,11 +98,7 @@ internal fun PersistentFloatingBar(
                 routinesState = routinesState,
                 tasksState = tasksState,
                 isSingleTabMode = isSingleTabMode,
-                onOpenSettings = {
-                    navController.navigate(SettingsRoute) {
-                        launchSingleTop = true
-                    }
-                },
+                onOpenSettings = onOpenSettings,
             )
         } else {
             PersistentPortraitFloatingBar(
