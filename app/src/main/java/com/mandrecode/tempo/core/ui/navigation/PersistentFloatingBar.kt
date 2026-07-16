@@ -127,7 +127,7 @@ private fun PersistentLandscapeFloatingBar(
     settingsSelected: Boolean,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode) {
+    if (isSingleTabMode && !settingsSelected) {
         PersistentSingleTabPortraitFloatingBar(
             isTasksRoute = isTasksRoute,
             addAction = addAction,
@@ -162,12 +162,14 @@ private fun PersistentLandscapeFloatingBar(
                         bottom = FloatingToolbarItemSpacing,
                     ),
             )
-            TempoSoloActionButton(
-                iconRes = R.drawable.ic_add,
-                label = addAction.label,
-                expanded = true,
-                onClick = addAction.onClick,
-            )
+            if (!settingsSelected) {
+                TempoSoloActionButton(
+                    iconRes = R.drawable.ic_add,
+                    label = addAction.label,
+                    expanded = true,
+                    onClick = addAction.onClick,
+                )
+            }
         } else {
             AddActionButton(addAction)
         }
@@ -176,7 +178,7 @@ private fun PersistentLandscapeFloatingBar(
 
         VerticalTaskActionButtons(
             tasksState = tasksState,
-            showActions = isTasksRoute,
+            showActions = isTasksRoute && !settingsSelected,
             modifier = Modifier.padding(start = if (isExpandedRail) FloatingToolbarRailSurfacePadding else 0.dp),
             expanded = isExpandedRail,
         )

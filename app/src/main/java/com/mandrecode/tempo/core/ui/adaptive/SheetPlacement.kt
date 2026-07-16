@@ -21,9 +21,8 @@ enum class SheetPlacement {
 }
 
 /**
- * Pure placement rule: side sheets on expanded widths (the two-column feel) and on
- * height-compact windows such as landscape phones, where a bottom sheet and the keyboard
- * would compete for the same space.
+ * Pure placement rule: dock editors beside live content on large windows, use modal side
+ * sheets on expanded widths and height-compact windows, and keep bottom sheets elsewhere.
  */
 fun sheetPlacement(
     windowWidthDp: Int,
