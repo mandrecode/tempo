@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.mandrecode.tempo.R
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Represents available icons across the app (habits, categories, etc.)
@@ -221,17 +222,67 @@ enum class TempoIcon(
 
         fun getAllIcons(): List<TempoIcon> = entries
 
+        /**
+         * Picks the icon whose keywords best match [text], scoring by how many distinct
+         * keywords hit rather than which icon happens to be declared first in the enum
+         * (e.g. "Drink water" should win on WATER's two hits - "water" + "drink" - over
+         * COFFEE's single "drink" hit). Ties fall back to enum declaration order.
+         */
         fun suggestIcon(
             text: String,
             context: Context,
         ): TempoIcon? {
-            val lowercaseText = text.lowercase()
-            return entries.firstOrNull { icon ->
-                val keywords = context.getString(icon.keywordsRes).split(",").map { it.trim() }
-                keywords.any { keyword ->
-                    lowercaseText.contains(keyword)
+            val normalizedText = text.lowercase()
+            var bestIcon: TempoIcon? = null
+            var bestScore = 0
+            for (icon in entries) {
+                val score = matchScore(icon, normalizedText, context)
+                if (score > bestScore) {
+                    bestScore = score
+                    bestIcon = icon
                 }
             }
+            return bestIcon
         }
+
+        private fun matchScore(
+            icon: TempoIcon,
+            normalizedText: String,
+            context: Context,
+        ): Int {
+            val keywords =
+                context
+                    .getString(icon.keywordsRes)
+                    .split(",")
+                    .map { it.trim().lowercase() }
+                    .filter { it.isNotEmpty() }
+            val matched = keywords.filter { keyword -> normalizedText.matchesKeyword(keyword) }
+            // A keyword list often lists both a root and its own inflected form
+            // (e.g. "remind" + "reminder", "sport" + "sports"). Prefix leniency makes both
+            // match the same word, so collapse a matched keyword into the longer matched
+            // keyword it's a prefix of, rather than counting it as a second distinct hit.
+            return matched.count { keyword -> matched.none { other -> other != keyword && other.startsWith(keyword) } }
+        }
+
+        private fun String.matchesKeyword(keyword: String): Boolean {
+            val pattern = keywordPatternCache.getOrPut(keyword) { buildKeywordPattern(keyword) }
+            return pattern.containsMatchIn(this)
+        }
+
+        // Left side is always a hard word boundary so a keyword can never match mid-word
+        // (e.g. "run" must not match inside "brunch", Spanish "ver" must not match inside
+        // "verano"). Short keywords also require a hard boundary on the right, but longer
+        // ones (>4 chars) are allowed to match as a prefix so regular suffixes are still
+        // caught without needing every inflected form listed explicitly
+        // (e.g. "hydrate" -> "hydrated", "clean" -> "cleaning", Spanish "empleo" -> "empleos").
+        private fun buildKeywordPattern(keyword: String): Regex {
+            val escaped = Regex.escape(keyword)
+            val rightBoundary =
+                if (keyword.length > WHOLE_WORD_BOUNDARY_MAX_LENGTH) "" else "(?![\\p{L}\\p{N}])"
+            return Regex("(?<![\\p{L}\\p{N}])$escaped$rightBoundary")
+        }
+
+        private const val WHOLE_WORD_BOUNDARY_MAX_LENGTH = 4
+        private val keywordPatternCache = ConcurrentHashMap<String, Regex>()
     }
 }
