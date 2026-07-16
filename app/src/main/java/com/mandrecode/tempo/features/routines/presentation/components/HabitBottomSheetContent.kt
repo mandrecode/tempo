@@ -14,6 +14,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -123,7 +124,14 @@ internal fun HabitBottomSheetContent(
         rememberSaveable(editorKey) {
             mutableStateOf(false)
         }
-    var selectedHabitIds by remember(editorKey) {
+    var selectedHabitIds by rememberSaveable(
+        editorKey,
+        stateSaver =
+            listSaver(
+                save = { it },
+                restore = { it },
+            ),
+    ) {
         mutableStateOf(
             formState.editingHabitChain?.habitIds ?: emptyList(),
         )
