@@ -4,24 +4,31 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
@@ -29,26 +36,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavDestination
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.features.tasks.presentation.components.buttons.ClearCompletedButton
-import com.mandrecode.tempo.features.tasks.presentation.components.buttons.SortButton
+import com.mandrecode.tempo.core.ui.components.SettingsButton
+import com.mandrecode.tempo.core.ui.theme.topBarTitle
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
 private val TASK_ACTIONS_CENTERING_OFFSET = 29.dp
 private val TASK_ACTIONS_WITH_CLEAR_CENTERING_OFFSET = 58.dp
-private val TASK_ACTIONS_BUTTON_SIZE = 48.dp
-private val TASK_ACTIONS_BUTTON_SPACING = 6.dp
-private val TASK_ACTIONS_WIDTH = TASK_ACTIONS_BUTTON_SIZE * 2 + TASK_ACTIONS_BUTTON_SPACING
-private val TASK_ACTIONS_HEIGHT = TASK_ACTIONS_BUTTON_SIZE * 2 + TASK_ACTIONS_BUTTON_SPACING
-private val TASK_SORT_WITH_CLEAR_OFFSET = (TASK_ACTIONS_BUTTON_SIZE + TASK_ACTIONS_BUTTON_SPACING) / 2
 
 internal fun floatingControlsMotionSpec() =
     spring<Dp>(
@@ -58,20 +61,24 @@ internal fun floatingControlsMotionSpec() =
 
 @Composable
 internal fun PersistentFloatingBar(
-    currentDestination: NavDestination?,
-    navController: NavHostController,
+    currentRoute: NavKey,
+    topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
+    onNavigateToTopLevel: (NavKey) -> Unit,
+    onOpenSettings: () -> Unit,
     onRouteChange: (String) -> Unit,
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    val isTasksRoute = currentDestination?.hasRoute(TasksRoute::class) == true
+    val isTasksRoute = topLevelRoute == TasksRoute
+    val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
     val visible =
         when {
-            currentDestination?.hasRoute(RoutinesRoute::class) == true -> routinesState.visible
-            isTasksRoute -> tasksState.visible
+            currentRoute == RoutinesRoute -> routinesState.visible
+            currentRoute == TasksRoute -> tasksState.visible
+            isRailSettingsDestination -> true
             else -> false
         }
 
@@ -79,8 +86,9 @@ internal fun PersistentFloatingBar(
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
-            navController = navController,
+            currentRoute = currentRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
         )
     }
@@ -89,7 +97,7 @@ internal fun PersistentFloatingBar(
         modifier = Modifier.fillMaxSize(),
         contentAlignment =
             if (isRailLayout) {
-                Alignment.CenterStart
+                Alignment.TopStart
             } else {
                 Alignment.BottomCenter
             },
@@ -100,7 +108,8 @@ internal fun PersistentFloatingBar(
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
-                isSingleTabMode = isSingleTabMode,
+                onOpenSettings = onOpenSettings,
+                settingsSelected = currentRoute == SettingsRoute,
             )
         } else {
             PersistentPortraitFloatingBar(
@@ -120,47 +129,123 @@ private fun PersistentLandscapeFloatingBar(
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
+    onOpenSettings: () -> Unit,
+    settingsSelected: Boolean,
 ) {
     val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
+    val isExpandedRail = isExpandedFloatingRailLayout()
+
+    // Rail hierarchy: app identity first on expanded rails, then the primary add action,
+    // navigation tabs, contextual secondary actions (sort, clear completed), and finally
+    // settings pinned to the bottom.
+    Column(
+        modifier =
+            Modifier
+                .fillMaxHeight()
+                .statusBarsPadding()
+                .navigationBarsPadding()
+                .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+        horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,
+    ) {
+        if (isExpandedRail) {
+            Text(
+                text = stringResource(R.string.app_name),
+                style = MaterialTheme.typography.topBarTitle,
+                color = MaterialTheme.colorScheme.primary,
+                modifier =
+                    Modifier.padding(
+                        start = FloatingToolbarRailSurfacePadding,
+                        bottom = FloatingToolbarItemSpacing,
+                    ),
+            )
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
+                TempoSoloActionButton(
+                    iconRes = R.drawable.ic_add,
+                    label = addAction.label,
+                    expanded = true,
+                    onClick = addAction.onClick,
+                )
+            }
+        } else {
+            AnimatedVisibility(
+                visible = !settingsSelected,
+                enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
+                exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
+            ) {
+                AddActionButton(addAction)
+            }
+        }
+
+        navigationContent()
+
+        VerticalTaskActionButtons(
             tasksState = tasksState,
+            showActions = isTasksRoute && !settingsSelected,
+            modifier = Modifier.padding(start = if (isExpandedRail) FloatingToolbarRailSurfacePadding else 0.dp),
+            expanded = isExpandedRail,
+        )
+
+        Spacer(modifier = Modifier.weight(1f))
+        SettingsRailButton(
+            selected = settingsSelected,
+            expanded = isExpandedRail,
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+@Composable
+private fun SettingsRailButton(
+    selected: Boolean,
+    expanded: Boolean,
+    onClick: () -> Unit,
+) {
+    if (!expanded) {
+        SettingsButton(
+            onClick = onClick,
+            selected = selected,
         )
         return
     }
 
-    val (barOffset, actionOffset) =
-        taskFloatingOffsets(
-            showTaskActions = isTasksRoute,
-            hasCompletedTasks = tasksState.hasCompletedTasks,
-        )
-
-    Box(
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.surfaceContainer
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
         modifier =
             Modifier
-                .fillMaxHeight()
-                .navigationBarsPadding()
-                .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
-        contentAlignment = Alignment.Center,
+                .width(FloatingRailExpandedSurfaceWidth)
+                .height(FloatingToolbarItemSize)
+                .semantics { this.selected = selected },
     ) {
-        FloatingBarMainControls(
-            isSingleTabMode = isSingleTabMode,
-            addAction = addAction,
-            navigationContent = navigationContent,
-            orientation = FloatingBarOrientation.Vertical,
-            modifier = Modifier.offset(y = barOffset),
-        )
-
-        Box(
-            modifier = Modifier.offset(y = barOffset - actionOffset),
-            contentAlignment = Alignment.Center,
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            VerticalTaskActionButtons(
-                tasksState = tasksState,
-                showActions = isTasksRoute,
+            Icon(
+                painter = painterResource(id = R.drawable.ic_settings),
+                contentDescription = null,
+            )
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.labelLarge,
             )
         }
     }
@@ -257,7 +342,6 @@ private fun PersistentPortraitFloatingBar(
             isSingleTabMode = isSingleTabMode,
             addAction = addAction,
             navigationContent = navigationContent,
-            orientation = FloatingBarOrientation.Horizontal,
             modifier = Modifier.offset(x = barOffset),
         )
 
@@ -278,53 +362,27 @@ private fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
     addAction: AddAction,
     navigationContent: @Composable () -> Unit,
-    orientation: FloatingBarOrientation,
     modifier: Modifier = Modifier,
 ) {
     val stableNavigationContent = remember(navigationContent) { movableContentOf(navigationContent) }
 
-    if (orientation == FloatingBarOrientation.Vertical) {
-        Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (isSingleTabMode) {
-                TempoSoloActionButton(
-                    iconRes = R.drawable.ic_add,
-                    label = addAction.label,
-                    expanded = !addAction.compact,
-                    onClick = addAction.onClick,
-                )
-            } else {
-                stableNavigationContent()
-                AddActionButton(addAction)
-            }
-        }
-    } else {
-        Row(
-            modifier = modifier,
-            horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            if (isSingleTabMode) {
-                TempoSoloActionButton(
-                    iconRes = R.drawable.ic_add,
-                    label = addAction.label,
-                    expanded = !addAction.compact,
-                    onClick = addAction.onClick,
-                )
-            } else {
-                stableNavigationContent()
-                AddActionButton(addAction)
-            }
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (isSingleTabMode) {
+            TempoSoloActionButton(
+                iconRes = R.drawable.ic_add,
+                label = addAction.label,
+                expanded = !addAction.compact,
+                onClick = addAction.onClick,
+            )
+        } else {
+            stableNavigationContent()
+            AddActionButton(addAction)
         }
     }
-}
-
-private enum class FloatingBarOrientation {
-    Horizontal,
-    Vertical,
 }
 
 @Composable
@@ -389,92 +447,4 @@ private fun taskFloatingOffsets(
         label = "shell_floating_bar_centering_offset",
     )
     return barOffset to actionOffset
-}
-
-@Composable
-private fun TaskActionButtons(
-    tasksState: TasksFloatingBarState,
-    showActions: Boolean,
-) {
-    val sortOffset by animateDpAsState(
-        targetValue =
-            if (tasksState.hasCompletedTasks) {
-                TASK_SORT_WITH_CLEAR_OFFSET
-            } else {
-                0.dp
-            },
-        animationSpec = floatingControlsMotionSpec(),
-        label = "shell_tasks_sort_button_slot_offset",
-    )
-
-    Box(
-        modifier = Modifier.size(width = TASK_ACTIONS_WIDTH, height = TASK_ACTIONS_BUTTON_SIZE),
-        contentAlignment = Alignment.Center,
-    ) {
-        AnimatedVisibility(
-            visible = showActions && tasksState.hasCompletedTasks,
-            modifier = Modifier.align(Alignment.CenterStart),
-            enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
-        ) {
-            ClearCompletedButton(
-                onClick = tasksState.onClearCompleted,
-            )
-        }
-        AnimatedVisibility(
-            visible = showActions,
-            modifier = Modifier.offset(x = sortOffset),
-            enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
-        ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-            )
-        }
-    }
-}
-
-@Composable
-private fun VerticalTaskActionButtons(
-    tasksState: TasksFloatingBarState,
-    showActions: Boolean,
-) {
-    val sortOffset by animateDpAsState(
-        targetValue =
-            if (tasksState.hasCompletedTasks) {
-                TASK_SORT_WITH_CLEAR_OFFSET
-            } else {
-                0.dp
-            },
-        animationSpec = floatingControlsMotionSpec(),
-        label = "shell_landscape_tasks_sort_button_slot_offset",
-    )
-
-    Box(
-        modifier = Modifier.size(width = TASK_ACTIONS_BUTTON_SIZE, height = TASK_ACTIONS_HEIGHT),
-        contentAlignment = Alignment.Center,
-    ) {
-        AnimatedVisibility(
-            visible = showActions && tasksState.hasCompletedTasks,
-            modifier = Modifier.align(Alignment.TopCenter),
-            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
-        ) {
-            ClearCompletedButton(
-                onClick = tasksState.onClearCompleted,
-            )
-        }
-        AnimatedVisibility(
-            visible = showActions,
-            modifier = Modifier.offset(y = sortOffset),
-            enter = expandVertically(expandFrom = Alignment.Bottom) + fadeIn(),
-            exit = shrinkVertically(shrinkTowards = Alignment.Bottom) + fadeOut(),
-        ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-            )
-        }
-    }
 }

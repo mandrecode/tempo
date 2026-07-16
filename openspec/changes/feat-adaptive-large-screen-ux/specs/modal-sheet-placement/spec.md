@@ -30,9 +30,16 @@ Side sheets SHALL provide the same modal behaviors as bottom sheets: scrim, drag
 - **WHEN** the keyboard opens while a side sheet is visible
 - **THEN** the sheet keeps its position and size, and its content insets for the keyboard
 
-### Requirement: Sort options present as a menu in rail layouts
-In rail layouts the sort control SHALL present its options as a menu anchored to the sort button instead of a sheet.
+### Requirement: Sort options present as a sheet everywhere
+The sort control SHALL present its options as a sheet, following the same window placement rule as the editors (design review reverted an anchored-menu variant).
 
-#### Scenario: Sort menu on a wide window
+#### Scenario: Sort sheet on a wide window
 - **WHEN** the user taps the sort button in a rail layout
-- **THEN** the sort options appear in a menu anchored to the button, and selecting one applies the same sort behavior as the bottom-sheet path
+- **THEN** the sort options appear in a sheet (side sheet on side-placement windows) with the same selection behavior as on phones
+
+### Requirement: The rail stays visible under modal sheets
+Opening a modal editor or sort sheet SHALL NOT hide the navigation rail; the rail remains visible beneath the scrim.
+
+#### Scenario: Editor opens over the rail
+- **WHEN** an editor side sheet opens in a rail layout
+- **THEN** the rail stays in place under the scrim and reappears interactive when the sheet dismisses

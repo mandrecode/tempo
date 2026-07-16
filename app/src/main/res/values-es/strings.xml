@@ -163,6 +163,7 @@
         <item quantity="other">subtareas</item>
     </plurals>
     <string name="delete_all_completed_tasks">Eliminar todas las tareas completadas</string>
+    <string name="clear_completed">Limpiar completadas</string>
     <string name="delete_completed_tasks_confirm_message">¿Estás seguro de que quieres eliminar todas las tareas completadas? Podrás deshacerlo durante unos instantes.</string>
     <string name="delete_category_message_prefix">¿Estás seguro de que quieres eliminar la categoría </string>
     <string name="delete_category_message_suffix">\u003F Esto también eliminará todas las tareas dentro de ella. Podrás deshacerlo durante unos instantes.</string>

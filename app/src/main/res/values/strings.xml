@@ -148,6 +148,7 @@
         <item quantity="other">subtasks</item>
     </plurals>
     <string name="delete_all_completed_tasks">Delete all completed tasks</string>
+    <string name="clear_completed">Clear completed</string>
     <string name="delete_completed_tasks_confirm_message">Are you sure you want to delete all completed tasks? You can undo this briefly afterward.</string>
     <string name="delete_category_message_prefix">Are you sure you want to delete category </string>
     <string name="delete_category_message_suffix">\u003F This will also delete all tasks within it. You can undo this briefly afterward.</string>

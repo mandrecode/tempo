@@ -1,7 +1,10 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -19,17 +22,20 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 
 @Composable
 fun SettingsScreen(
     onBackClick: () -> Unit,
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: SettingsViewModel = hiltViewModel(),
+    showBackButton: Boolean = true,
+    showTitle: Boolean = true,
+    viewModel: SettingsViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
@@ -39,6 +45,8 @@ fun SettingsScreen(
         onBackClick = onBackClick,
         onOnboardingClick = onOnboardingClick,
         modifier = modifier,
+        showBackButton = showBackButton,
+        showTitle = showTitle,
     )
 }
 
@@ -50,6 +58,8 @@ internal fun SettingsScaffold(
     onBackClick: () -> Unit,
     onOnboardingClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showBackButton: Boolean = true,
+    showTitle: Boolean = true,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val settingsContainerColor = MaterialTheme.colorScheme.background
@@ -59,38 +69,44 @@ internal fun SettingsScaffold(
         contentWindowInsets = WindowInsets(0),
         modifier =
             modifier
-                .adaptiveScreenContentLayout(isRailLayout = false)
+                .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
                 .nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TwoRowsTopAppBar(
-                title = { expanded ->
-                    Text(
-                        text = stringResource(R.string.settings),
-                        style =
-                            if (expanded) {
-                                MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
-                            } else {
-                                MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
-                            },
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back),
+            if (showTitle) {
+                TwoRowsTopAppBar(
+                    title = { expanded ->
+                        Text(
+                            text = stringResource(R.string.settings),
+                            style =
+                                if (expanded) {
+                                    MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
+                                } else {
+                                    MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+                                },
                         )
-                    }
-                },
-                colors =
-                    TopAppBarDefaults.topAppBarColors(
-                        containerColor = settingsContainerColor,
-                        scrolledContainerColor = settingsContainerColor,
-                    ),
-                collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
-                expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
-                scrollBehavior = scrollBehavior,
-            )
+                    },
+                    navigationIcon = {
+                        if (showBackButton) {
+                            IconButton(onClick = onBackClick) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.ArrowBack,
+                                    contentDescription = stringResource(R.string.back),
+                                )
+                            }
+                        }
+                    },
+                    colors =
+                        TopAppBarDefaults.topAppBarColors(
+                            containerColor = settingsContainerColor,
+                            scrolledContainerColor = settingsContainerColor,
+                        ),
+                    collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
+                    expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
+                    scrollBehavior = scrollBehavior,
+                )
+            } else {
+                Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            }
         },
     ) { padding ->
         SettingsContent(

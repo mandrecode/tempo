@@ -6,6 +6,8 @@ import androidx.compose.ui.Modifier
 
 /**
  * A modal sheet that slides down from the top of the screen.
+ *
+ * Top sheets retain their direction below the docked-pane breakpoint.
  */
 @Composable
 fun TempoModalTopSheet(

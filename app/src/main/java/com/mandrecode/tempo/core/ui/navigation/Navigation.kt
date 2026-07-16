@@ -1,12 +1,6 @@
 package com.mandrecode.tempo.core.ui.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -14,18 +8,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -33,24 +21,23 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.NavDestination.Companion.hasRoute
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.currentBackStackEntryAsState
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.toRoute
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberDecoratedNavEntries
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.SceneStrategy
+import androidx.navigation3.ui.NavDisplay
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
-import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingContract
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
@@ -62,18 +49,28 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
 
 @Serializable
-object RoutinesRoute
+object RoutinesRoute : NavKey
 
 @Serializable
-object TasksRoute
+object TasksRoute : NavKey
 
 @Serializable
-object SettingsRoute
+object SettingsRoute : NavKey
+
+@Serializable
+object RoutinesEditorRoute : EditorRoute {
+    override fun supports(mainRoute: NavKey): Boolean = mainRoute == RoutinesRoute
+}
+
+@Serializable
+object TasksEditorRoute : EditorRoute {
+    override fun supports(mainRoute: NavKey): Boolean = mainRoute == TasksRoute
+}
 
 @Serializable
 data class OnboardingRoute(
     val isReplay: Boolean = false,
-)
+) : NavKey
 
 sealed interface PendingNotificationAction {
     data class OpenTask(
@@ -91,200 +88,46 @@ sealed interface PendingNotificationAction {
     ) : PendingNotificationAction
 }
 
-// Route name constants for persistence
 const val ROUTINES_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES
 const val TASKS_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_TASKS
-
-private data class NavigationItem<T : Any>(
-    val route: T,
-    val titleRes: Int,
-    val selectedIcon: Int,
-    val unselectedIcon: Int,
-)
-
-private val navigationItems =
-    listOf(
-        NavigationItem(
-            route = RoutinesRoute,
-            titleRes = R.string.routines,
-            selectedIcon = R.drawable.ic_routine,
-            unselectedIcon = R.drawable.ic_routine_outlined,
-        ),
-        NavigationItem(
-            route = TasksRoute,
-            titleRes = R.string.tasks,
-            selectedIcon = R.drawable.ic_tasks,
-            unselectedIcon = R.drawable.ic_tasks_outlined,
-        ),
-    )
-
-internal val FloatingToolbarItemSize = 48.dp
-internal val FloatingToolbarActionButtonSize = 52.dp
-internal val FloatingToolbarItemSpacing = 8.dp
-internal val FloatingToolbarRailSurfacePadding = 8.dp
-private val FloatingToolbarShape = RoundedCornerShape(36.dp)
-
-@Composable
-fun TempoBottomNavigation(
-    navController: NavHostController,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
-    onRouteChange: (String) -> Unit = {},
-    modifier: Modifier = Modifier,
-) {
-    val isRoutinesTabEnabled by navigationPreferencesRepository
-        .isRoutinesTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-    val isTasksTabEnabled by navigationPreferencesRepository
-        .isTasksTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-
-    val visibleNavigationItems =
-        navigationItems.filter { item ->
-            when (item.route) {
-                RoutinesRoute -> isRoutinesTabEnabled
-                TasksRoute -> isTasksTabEnabled
-                else -> true
-            }
-        }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
-
-    val isRailLayout = isFloatingNavigationRailLayout()
-
-    Surface(
-        modifier = modifier,
-        shape = FloatingToolbarShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 0.dp,
-        shadowElevation = 0.dp,
-    ) {
-        if (isRailLayout) {
-            Column(
-                modifier = Modifier.padding(horizontal = FloatingToolbarRailSurfacePadding, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                visibleNavigationItems.forEach { item ->
-                    val selected = currentDestination?.hasRoute(item.route::class) == true
-                    ToolbarNavigationButton(
-                        item = item,
-                        selected = selected,
-                        onClick = { if (!selected) navigateTo(navController, item, onRouteChange) },
-                    )
-                }
-            }
-        } else {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing, Alignment.CenterHorizontally),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                visibleNavigationItems.forEach { item ->
-                    val selected = currentDestination?.hasRoute(item.route::class) == true
-                    ToolbarNavigationButton(
-                        item = item,
-                        selected = selected,
-                        onClick = { if (!selected) navigateTo(navController, item, onRouteChange) },
-                    )
-                }
-            }
-        }
-    }
-}
-
-private fun navigateTo(
-    navController: NavHostController,
-    item: NavigationItem<*>,
-    onRouteChange: (String) -> Unit,
-) {
-    navController.navigate(item.route) {
-        popUpTo(navController.topLevelPopUpToId()) {
-            saveState = true
-        }
-        launchSingleTop = true
-        restoreState = true
-    }
-    val routeName =
-        when (item.route) {
-            RoutinesRoute -> ROUTINES_ROUTE_NAME
-            TasksRoute -> TASKS_ROUTE_NAME
-            else -> item.route::class.simpleName ?: ""
-        }
-    if (routeName.isNotEmpty()) {
-        onRouteChange(routeName)
-    }
-}
-
-@Composable
-private fun ToolbarNavigationButton(
-    item: NavigationItem<*>,
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    val iconRes =
-        if (selected) {
-            item.selectedIcon
-        } else {
-            item.unselectedIcon
-        }
-
-    if (selected) {
-        FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            shape = CircleShape,
-            colors =
-                IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = stringResource(item.titleRes),
-            )
-        }
-    } else {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            colors =
-                IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = stringResource(item.titleRes),
-            )
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TempoNavHost(
     navigationPreferencesRepository: NavigationPreferencesRepository,
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
     routinesNavigationTrigger: Long = 0L,
     tasksNavigationTrigger: Long = 0L,
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
-    startDestination: Any = RoutinesRoute,
+    startDestination: NavKey = RoutinesRoute,
     onRouteChange: (String) -> Unit = {},
 ) {
+    val navigator = rememberTempoNavigator(startDestination)
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
-    val navBackStackEntry by navController.currentBackStackEntryAsState()
-    val currentDestination = navBackStackEntry?.destination
 
     NotificationNavigationEffects(
-        navController = navController,
+        navigator = navigator,
         routinesNavigationTrigger = routinesNavigationTrigger,
         tasksNavigationTrigger = tasksNavigationTrigger,
         onRouteChange = onRouteChange,
     )
+
+    val editorPaneEnabled = rememberSheetPlacement() == SheetPlacement.DockedPane
+    val activeEntries =
+        rememberActiveEntries(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
+            onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
+            includeEditorEntries = editorPaneEnabled,
+        )
+    val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
+    val settingsUsesTabTransition = isFloatingNavigationRailLayout()
+    val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
     Box(
         modifier =
@@ -292,102 +135,118 @@ fun TempoNavHost(
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
-        TempoNavGraph(
-            navController = navController,
-            startDestination = startDestination,
-            navigationPreferencesRepository = navigationPreferencesRepository,
-            pendingNotificationAction = pendingNotificationAction,
-            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-            onRoutinesFloatingBarStateChange = { state ->
-                if (routinesFloatingBarState != state) {
-                    routinesFloatingBarState = state
-                }
-            },
-            onTasksFloatingBarStateChange = { state ->
-                if (tasksFloatingBarState != state) {
-                    tasksFloatingBarState = state
-                }
-            },
+        TempoNavDisplay(
+            entries = activeEntries,
+            navigator = navigator,
+            editorSceneStrategy = editorSceneStrategy,
+            settingsUsesTabTransition = settingsUsesTabTransition,
         )
 
         PersistentFloatingBar(
-            currentDestination = currentDestination,
-            navController = navController,
+            currentRoute = navigator.currentRoute,
+            topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
+            onNavigateToTopLevel = navigator::navigateToTopLevel,
+            onOpenSettings = openSettings,
             onRouteChange = onRouteChange,
         )
     }
 }
 
 @Composable
-private fun TempoNavGraph(
-    navController: NavHostController,
-    startDestination: Any,
+private fun TempoNavDisplay(
+    entries: List<NavEntry<NavKey>>,
+    navigator: TempoNavigator,
+    editorSceneStrategy: SceneStrategy<NavKey>,
+    settingsUsesTabTransition: Boolean,
+) {
+    NavDisplay(
+        entries = entries,
+        modifier = Modifier.fillMaxSize(),
+        onBack = { navigator.pop() },
+        sceneStrategies = listOf(editorSceneStrategy),
+        transitionSpec = {
+            navigationTransition(
+                initialScene = initialState,
+                targetScene = targetState,
+                settingsUsesTabTransition = settingsUsesTabTransition,
+            )
+        },
+        popTransitionSpec = {
+            navigationPopTransition(
+                initialScene = initialState,
+                targetScene = targetState,
+                settingsUsesTabTransition = settingsUsesTabTransition,
+            )
+        },
+    )
+}
+
+@Composable
+private fun rememberActiveEntries(
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
-) {
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-        modifier = Modifier.fillMaxSize(),
-        enterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        exitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        popEnterTransition = { fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-        popExitTransition = { fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS)) },
-    ) {
-        composable<RoutinesRoute>(
-            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
-        ) {
-            RoutinesDestination(
-                navController = navController,
-                navigationPreferencesRepository = navigationPreferencesRepository,
-                pendingNotificationAction = pendingNotificationAction,
-                onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
-            )
+    includeEditorEntries: Boolean,
+): List<NavEntry<NavKey>> {
+    val decorators =
+        listOf<NavEntryDecorator<NavKey>>(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator(),
+        )
+    val entries =
+        entryProvider<NavKey> {
+            entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
+                RoutinesDestination(
+                    navigator = navigator,
+                    navigationPreferencesRepository = navigationPreferencesRepository,
+                    pendingNotificationAction = pendingNotificationAction,
+                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+                    onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
+                )
+            }
+            entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
+                TasksDestination(
+                    navigator = navigator,
+                    navigationPreferencesRepository = navigationPreferencesRepository,
+                    pendingNotificationAction = pendingNotificationAction,
+                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+                    onFloatingBarStateChange = onTasksFloatingBarStateChange,
+                )
+            }
+            entry<OnboardingRoute> { route ->
+                OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
+            }
+            entry<SettingsRoute> { SettingsDestination(navigator = navigator) }
+            entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
+            entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
         }
-
-        composable<TasksRoute>(
-            enterTransition = { onboardingHandoffEnterTransition(initialState.destination) },
-        ) {
-            TasksDestination(
-                navController = navController,
-                navigationPreferencesRepository = navigationPreferencesRepository,
-                pendingNotificationAction = pendingNotificationAction,
-                onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                onFloatingBarStateChange = onTasksFloatingBarStateChange,
-            )
+    val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
+    val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
+    val onboardingEntries = rememberDecoratedNavEntries(navigator.onboardingBackStack, decorators, entries)
+    val settingsEntries = rememberDecoratedNavEntries(navigator.settingsBackStack, decorators, entries)
+    val sectionEntries =
+        when (navigator.section) {
+            TempoNavigator.Section.ROUTINES -> routinesEntries
+            TempoNavigator.Section.TASKS -> tasksEntries
+            TempoNavigator.Section.SETTINGS -> settingsEntries
+            TempoNavigator.Section.ONBOARDING -> onboardingEntries
         }
-
-        composable<OnboardingRoute>(
-            exitTransition = { onboardingHandoffExitTransition(targetState.destination) },
-        ) { backStackEntry ->
-            val route = backStackEntry.toRoute<OnboardingRoute>()
-            OnboardingDestination(
-                navController = navController,
-                isReplay = route.isReplay,
-            )
-        }
-
-        composable<SettingsRoute>(
-            enterTransition = { settingsEnterTransition() },
-            exitTransition = { settingsExitTransition() },
-            popEnterTransition = { settingsPopEnterTransition() },
-            popExitTransition = { settingsExitTransition() },
-        ) {
-            SettingsDestination(navController = navController)
-        }
+    return if (includeEditorEntries) {
+        sectionEntries
+    } else {
+        sectionEntries.filterNot { it.contentKey is EditorRoute }
     }
 }
 
 @Composable
 private fun NotificationNavigationEffects(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     routinesNavigationTrigger: Long,
     tasksNavigationTrigger: Long,
     onRouteChange: (String) -> Unit,
@@ -396,26 +255,14 @@ private fun NotificationNavigationEffects(
 
     LaunchedEffect(routinesNavigationTrigger) {
         if (routinesNavigationTrigger > 0) {
-            navController.navigate(RoutinesRoute) {
-                popUpTo(navController.topLevelPopUpToId()) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+            navigator.navigateToTopLevel(RoutinesRoute)
             currentOnRouteChange(ROUTINES_ROUTE_NAME)
         }
     }
 
     LaunchedEffect(tasksNavigationTrigger) {
         if (tasksNavigationTrigger > 0) {
-            navController.navigate(TasksRoute) {
-                popUpTo(navController.topLevelPopUpToId()) {
-                    saveState = true
-                }
-                launchSingleTop = true
-                restoreState = true
-            }
+            navigator.navigateToTopLevel(TasksRoute)
             currentOnRouteChange(TASKS_ROUTE_NAME)
         }
     }
@@ -423,7 +270,7 @@ private fun NotificationNavigationEffects(
 
 @Composable
 private fun RoutinesDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
@@ -433,21 +280,24 @@ private fun RoutinesDestination(
     RoutinesScreen(
         isSingleTabMode = isSingleTabMode,
         topBar = {
-            RouteTopBar(
+            RouteTopBarOrStatusInset(
                 title = stringResource(R.string.routines),
-                navController = navController,
+                onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
         showAddHabitRailButton = true,
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+        onDockedEditorVisibilityChange = { visible ->
+            navigator.setEditorVisible(RoutinesEditorRoute, visible)
+        },
     )
 }
 
 @Composable
 private fun TasksDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
@@ -457,22 +307,43 @@ private fun TasksDestination(
     TasksScreen(
         isSingleTabMode = isSingleTabMode,
         topBar = {
-            RouteTopBar(
+            RouteTopBarOrStatusInset(
                 title = stringResource(R.string.tasks),
-                navController = navController,
+                onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
         showAddTaskRailButton = true,
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+        onDockedEditorVisibilityChange = { visible ->
+            navigator.setEditorVisible(TasksEditorRoute, visible)
+        },
     )
+}
+
+@Composable
+private fun RouteTopBarOrStatusInset(
+    title: String,
+    onOpenSettings: () -> Unit,
+) {
+    val isRailLayout = isFloatingNavigationRailLayout()
+    if (isExpandedFloatingRailLayout()) {
+        Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+    } else {
+        RouteTopBar(
+            title = title,
+            onOpenSettings = onOpenSettings,
+            showSettingsAction = !isRailLayout,
+        )
+    }
 }
 
 @Composable
 private fun RouteTopBar(
     title: String,
-    navController: NavHostController,
+    onOpenSettings: () -> Unit,
+    showSettingsAction: Boolean,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
     val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
@@ -482,49 +353,41 @@ private fun RouteTopBar(
         title = title,
         titleModifier = Modifier.padding(start = titleStartPadding),
         actions = {
-            SettingsButton(
-                onClick = {
-                    navController.navigate(SettingsRoute) {
-                        launchSingleTop = true
-                    }
-                },
-            )
-            Spacer(modifier = Modifier.width(settingsEndPadding))
-        },
-    )
-}
-
-@Composable
-private fun SettingsDestination(navController: NavHostController) {
-    SettingsScreen(
-        onBackClick = { navController.popBackStack() },
-        onOnboardingClick = {
-            navController.navigate(OnboardingRoute(isReplay = true)) {
-                launchSingleTop = true
+            if (showSettingsAction) {
+                SettingsButton(onClick = onOpenSettings)
+                Spacer(modifier = Modifier.width(settingsEndPadding))
             }
         },
     )
 }
 
 @Composable
+private fun SettingsDestination(navigator: TempoNavigator) {
+    val isRailLayout = isFloatingNavigationRailLayout()
+    SettingsScreen(
+        onBackClick = { navigator.pop() },
+        onOnboardingClick = { navigator.navigate(OnboardingRoute(isReplay = true)) },
+        showBackButton = !isRailLayout,
+        showTitle = !isExpandedFloatingRailLayout(),
+    )
+}
+
+@Composable
 private fun OnboardingDestination(
-    navController: NavHostController,
+    navigator: TempoNavigator,
     isReplay: Boolean,
 ) {
     OnboardingScreen(
         onExit = { defaultTab ->
             if (isReplay) {
-                navController.popBackStack()
+                navigator.pop()
             } else {
-                val destination =
+                navigator.completeOnboarding(
                     when (defaultTab) {
                         OnboardingContract.DefaultTab.ROUTINES -> RoutinesRoute
                         OnboardingContract.DefaultTab.TASKS -> TasksRoute
-                    }
-                navController.navigate(destination) {
-                    popUpTo<OnboardingRoute> { inclusive = true }
-                    launchSingleTop = true
-                }
+                    },
+                )
             }
         },
     )

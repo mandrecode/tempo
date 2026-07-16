@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.mandrecode.tempo.R
+import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.random.Random
 
 /**
@@ -272,17 +274,87 @@ enum class TempoIcon(
             return result
         }
 
+        /**
+         * Picks the icon whose keywords best match [text], scoring by how many distinct
+         * keywords hit rather than which icon happens to be declared first in the enum
+         * (e.g. "Drink water" should win on WATER's two hits - "water" + "drink" - over
+         * COFFEE's single "drink" hit). Ties fall back to enum declaration order.
+         */
         fun suggestIcon(
             text: String,
             context: Context,
         ): TempoIcon? {
-            val lowercaseText = text.lowercase()
-            return entries.firstOrNull { icon ->
-                val keywords = context.getString(icon.keywordsRes).split(",").map { it.trim() }
-                keywords.any { keyword ->
-                    lowercaseText.contains(keyword)
+            val normalizedText = text.lowercase(Locale.ROOT)
+            var bestIcon: TempoIcon? = null
+            var bestScore = 0
+            for (icon in entries) {
+                val score = matchScore(icon, normalizedText, context)
+                if (score > bestScore) {
+                    bestScore = score
+                    bestIcon = icon
                 }
             }
+            return bestIcon
         }
+
+        private fun matchScore(
+            icon: TempoIcon,
+            normalizedText: String,
+            context: Context,
+        ): Int {
+            val keywords = normalizedKeywords(icon, context)
+            val matched = keywords.filter { keyword -> normalizedText.matchesKeyword(keyword) }
+            // A keyword list often lists both a root and its own inflected form
+            // (e.g. "remind" + "reminder", "sport" + "sports"). Prefix leniency makes both
+            // match the same word, so collapse a matched keyword into the longer matched
+            // keyword it's a prefix of, rather than counting it as a second distinct hit.
+            return matched.count { keyword -> matched.none { other -> other != keyword && other.startsWith(keyword) } }
+        }
+
+        // suggestIcon() runs on every keystroke (LaunchedEffect on the title/name field), so
+        // cache the split+normalized keyword list instead of re-splitting and re-lowercasing
+        // it on every call. Keyed by the raw resource string itself (not just keywordsRes) so
+        // a locale change - which yields a different raw string - naturally invalidates it
+        // without having to track the current locale separately.
+        private fun normalizedKeywords(
+            icon: TempoIcon,
+            context: Context,
+        ): List<String> {
+            val rawKeywords = context.getString(icon.keywordsRes)
+            return keywordListCache.computeIfAbsent(rawKeywords) {
+                rawKeywords
+                    .split(",")
+                    .map { it.trim().lowercase(Locale.ROOT) }
+                    .filter { it.isNotEmpty() }
+            }
+        }
+
+        private fun String.matchesKeyword(keyword: String): Boolean {
+            val pattern = keywordPatternCache.computeIfAbsent(keyword, ::buildKeywordPattern)
+            return pattern.containsMatchIn(this)
+        }
+
+        // Left side is always a hard word boundary so a keyword can never match mid-word
+        // (e.g. "run" must not match inside "brunch", Spanish "ver" must not match inside
+        // "verano"). Longer keywords (>4 chars) may also match as a prefix so regular
+        // suffixes are still caught without needing every inflected form listed explicitly
+        // (e.g. "hydrate" -> "hydrated", "clean" -> "cleaning", Spanish "empleo" -> "empleos").
+        // Short keywords require a hard boundary on the right too, but still allow a plain
+        // "s"/"es" plural first (e.g. "meal" -> "meals", "goal" -> "goals") so common plurals
+        // of short words keep matching without opening the door to arbitrary mid-word hits.
+        private fun buildKeywordPattern(keyword: String): Regex {
+            val escaped = Regex.escape(keyword)
+            val pattern =
+                if (keyword.length > WHOLE_WORD_BOUNDARY_MAX_LENGTH) {
+                    "(?<![\\p{L}\\p{N}])$escaped"
+                } else {
+                    "(?<![\\p{L}\\p{N}])$escaped(?:es|s)?(?![\\p{L}\\p{N}])"
+                }
+            return Regex(pattern)
+        }
+
+        private const val WHOLE_WORD_BOUNDARY_MAX_LENGTH = 4
+        private val keywordPatternCache = ConcurrentHashMap<String, Regex>()
+        private val keywordListCache = ConcurrentHashMap<String, List<String>>()
     }
 }

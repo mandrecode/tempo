@@ -32,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -40,23 +41,23 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 internal val FloatingRailStartPadding = 24.dp
 internal val FloatingRailSurfaceWidth = FloatingToolbarItemSize + FloatingToolbarRailSurfacePadding * 2
+internal val FloatingRailExpandedSurfaceWidth = 220.dp
 private val FloatingRailContentGap = 16.dp
 internal val FloatingRailContentStartPadding =
     FloatingRailStartPadding + FloatingRailSurfaceWidth + FloatingRailContentGap
+internal val FloatingRailExpandedContentStartPadding =
+    FloatingRailStartPadding + FloatingRailExpandedSurfaceWidth + FloatingRailContentGap
 internal val ReadableContentMaxWidth = 840.dp
 
 /**
- * Lays out top-level screen content adaptively: reserves the floating rail's footprint in rail
- * layouts and caps content at a readable width, centered in the remaining space, on wide windows.
+ * Lays out top-level screen content adaptively: reserves [railClearance] for the floating rail
+ * and caps content at a readable width,
+ * centered in the remaining space, on wide windows. Obtain the clearance for the current window
+ * from [floatingRailContentClearance].
  */
-fun Modifier.adaptiveScreenContentLayout(isRailLayout: Boolean): Modifier =
-    then(
-        if (isRailLayout) {
-            Modifier.padding(start = FloatingRailContentStartPadding)
-        } else {
-            Modifier
-        },
-    ).fillMaxWidth()
+fun Modifier.adaptiveScreenContentLayout(railClearance: Dp): Modifier =
+    padding(start = railClearance)
+        .fillMaxWidth()
         .wrapContentWidth(Alignment.CenterHorizontally)
         .widthIn(max = ReadableContentMaxWidth)
 

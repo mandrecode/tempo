@@ -5,11 +5,17 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.PointerInputScope
 import kotlin.math.abs
 
-internal suspend fun PointerInputScope.detectSheetVerticalDragGestures(
+/**
+ * Detects drags along the sheet's dismiss axis: vertical for top/bottom sheets, horizontal for
+ * side sheets. [layoutFactor] normalizes horizontal deltas so positive always means "toward the
+ * end edge" (1 for LTR, -1 for RTL); it is ignored on the vertical axis.
+ */
+internal suspend fun PointerInputScope.detectSheetDragGestures(
     direction: TempoModalSheetDirection,
+    layoutFactor: Int,
     onDragEnd: () -> Unit,
     onDragCancel: () -> Unit,
-    onVerticalDrag: (dragAmount: Float) -> Unit,
+    onDrag: (dragAmount: Float) -> Unit,
 ) {
     awaitPointerEventScope {
         while (true) {
@@ -38,17 +44,17 @@ internal suspend fun PointerInputScope.detectSheetVerticalDragGestures(
                     }
                     pastTouchSlop -> {
                         change.consume()
-                        onVerticalDrag(change.verticalDelta)
+                        onDrag(change.axisDelta(direction, layoutFactor))
                     }
                     else -> {
-                        accumulatedDrag += change.verticalDelta
+                        accumulatedDrag += change.axisDelta(direction, layoutFactor)
                         if (
                             abs(accumulatedDrag) > viewConfiguration.touchSlop &&
                             direction.isDismissDrag(accumulatedDrag)
                         ) {
                             pastTouchSlop = true
                             change.consume()
-                            onVerticalDrag(accumulatedDrag)
+                            onDrag(accumulatedDrag)
                         }
                     }
                 }
@@ -69,11 +75,19 @@ private suspend fun androidx.compose.ui.input.pointer.AwaitPointerEventScope.awa
     }
 }
 
-private val PointerInputChange.verticalDelta: Float
-    get() = position.y - previousPosition.y
+private fun PointerInputChange.axisDelta(
+    direction: TempoModalSheetDirection,
+    layoutFactor: Int,
+): Float =
+    if (direction.isHorizontal) {
+        (position.x - previousPosition.x) * layoutFactor
+    } else {
+        position.y - previousPosition.y
+    }
 
 private fun TempoModalSheetDirection.isDismissDrag(dragAmount: Float): Boolean =
     when (this) {
         TempoModalSheetDirection.Top -> dragAmount < 0f
         TempoModalSheetDirection.Bottom -> dragAmount > 0f
+        TempoModalSheetDirection.End -> dragAmount > 0f
     }

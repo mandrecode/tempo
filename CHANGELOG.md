@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.9.4](https://github.com/mandrecode/tempo/compare/v0.9.3...v0.9.4) (2026-07-16)
+
+
+### Features
+
+* **#142:** adaptive large screen ux ([3e4cdd9](https://github.com/mandrecode/tempo/commit/3e4cdd9e5da7f6e7bc0f702d595794a6fa9c9697)), closes [#142](https://github.com/mandrecode/tempo/issues/142)
+* **#151:** add adaptive supporting panes ([#154](https://github.com/mandrecode/tempo/issues/154)) ([84d2697](https://github.com/mandrecode/tempo/commit/84d269708c38d4bfc343cdf9de94fac57bd783eb))
+* **#151:** migrate navigation to Navigation 3 ([#153](https://github.com/mandrecode/tempo/issues/153)) ([3e02566](https://github.com/mandrecode/tempo/commit/3e025665aa7260e7161bcf9ab15efae70a0c3b44))
+
+## [0.9.3](https://github.com/mandrecode/tempo/compare/v0.9.2...v0.9.3) (2026-07-16)
+
+
+### Bug Fixes
+
+* **#17:** improve icon word detection for English and Spanish ([#148](https://github.com/mandrecode/tempo/issues/148)) ([95d0305](https://github.com/mandrecode/tempo/commit/95d030577b9f2ae9143fee48f52793a6d4274343))
+
 ## [0.9.2](https://github.com/mandrecode/tempo/compare/v0.9.1...v0.9.2) (2026-07-15)
 
 

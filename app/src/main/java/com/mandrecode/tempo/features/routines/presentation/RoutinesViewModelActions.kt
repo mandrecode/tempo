@@ -120,11 +120,13 @@ internal fun RoutinesViewModel.showHabitBottomSheet(
         chainId?.let { id ->
             mutableUiState.value.habitChains.find { it.id == id }
         }
+    val editorSessionId = ++nextEditorSessionId
     mutableUiState.update {
         it.copy(
             habitForm =
                 HabitFormState(
                     isVisible = true,
+                    editorSessionId = editorSessionId,
                     editingHabit = habit,
                     targetChainId = chainId,
                     reminderDate = habit?.reminderDate,
@@ -141,11 +143,13 @@ internal fun RoutinesViewModel.showHabitBottomSheet(
 }
 
 internal fun RoutinesViewModel.showHabitChainBottomSheet(habitChain: HabitChain? = null) {
+    val editorSessionId = ++nextEditorSessionId
     mutableUiState.update {
         it.copy(
             habitForm =
                 HabitFormState(
                     isVisible = true,
+                    editorSessionId = editorSessionId,
                     editingHabitChain = habitChain,
                     reminderDate = habitChain?.periodicReminder,
                     selectedColorKey = habitChain?.colorKey,

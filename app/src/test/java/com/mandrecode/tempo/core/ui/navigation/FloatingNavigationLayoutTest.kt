@@ -60,4 +60,12 @@ class FloatingNavigationLayoutTest {
         assertThat(FloatingRailContentStartPadding.value)
             .isAtLeast((railFootprint + 8.dp).value)
     }
+
+    @Test
+    fun givenExpandedRailMetrics_whenDerivingContentClearance_thenContentClearsTheExpandedFootprint() {
+        val expandedRailFootprint = FloatingRailStartPadding + FloatingRailExpandedSurfaceWidth
+
+        assertThat(FloatingRailExpandedContentStartPadding.value)
+            .isAtLeast((expandedRailFootprint + 8.dp).value)
+    }
 }

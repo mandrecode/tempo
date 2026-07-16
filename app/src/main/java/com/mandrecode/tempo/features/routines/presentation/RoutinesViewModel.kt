@@ -49,6 +49,7 @@ class RoutinesViewModel
         val uiEffect = _uiEffect.receiveAsFlow()
         internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingRoutineDeletion>()
         internal var nextDeletionToken = 0L
+        internal var nextEditorSessionId = 0L
 
         init {
             loadData()

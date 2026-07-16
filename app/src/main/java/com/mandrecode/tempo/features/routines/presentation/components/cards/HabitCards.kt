@@ -48,11 +48,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -86,6 +89,7 @@ internal fun HabitItem(
     canToggle: Boolean = true,
     isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
+    isSelected: Boolean = false,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -154,11 +158,24 @@ internal fun HabitItem(
         label = "icon_tint_color",
     )
 
+    val selectionColor by animateColorAsState(
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                Color.Transparent
+            },
+        animationSpec = tween(220),
+        label = "habit_item_selection_color",
+    )
+
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .clip(cardShape)
+                .background(selectionColor)
+                .semantics { selected = isSelected }
                 .clickable { onClick() }
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -339,6 +356,7 @@ fun HabitCard(
     onToggle: ((Long, Boolean) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    isSelected: Boolean = false,
 ) {
     val dateStr = selectedDate.toString()
     val isCompleted =
@@ -372,7 +390,9 @@ fun HabitCard(
 
     val containerColor by animateColorAsState(
         targetValue =
-            if (isCompleted) {
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else if (isCompleted) {
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedHabitColor?.copy(alpha = 0.15f)
@@ -394,6 +414,7 @@ fun HabitCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Row(
         modifier =
@@ -433,14 +454,17 @@ fun HabitCard(
         }
 
         Card(
-            modifier = Modifier.fillMaxWidth(),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .semantics { selected = isSelected },
             shape = cardShape,
             colors =
                 CardDefaults.cardColors(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
         ) {
             HabitItem(
                 habit = habit,

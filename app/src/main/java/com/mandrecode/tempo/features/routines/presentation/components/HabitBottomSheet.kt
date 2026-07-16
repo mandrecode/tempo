@@ -4,6 +4,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -40,6 +41,8 @@ fun HabitBottomSheet(
     onDeleteHabitChain: (() -> Unit)? = null,
     onSetRepeatDays: ((Set<DayOfWeek>?) -> Unit)? = null,
     onToggleHabitCompletion: ((habitId: Long, isCompleted: Boolean) -> Unit)? = null,
+    placement: SheetPlacement? = null,
+    dismissRequestKey: Int = 0,
 ) {
     HabitBottomSheetContent(
         formState = formState,
@@ -65,5 +68,7 @@ fun HabitBottomSheet(
         onDeleteHabitChain = onDeleteHabitChain,
         onSetRepeatDays = onSetRepeatDays,
         onToggleHabitCompletion = onToggleHabitCompletion,
+        placement = placement,
+        dismissRequestKey = dismissRequestKey,
     )
 }

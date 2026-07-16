@@ -242,6 +242,18 @@ class RoutinesViewModelTest {
             assertThat(viewModel.uiState.value.habitForm.isVisible).isFalse()
         }
 
+    @Test
+    fun `reopening habit sheet starts a new editor session`() =
+        runTest {
+            viewModel.onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet())
+            val firstSessionId = viewModel.uiState.value.habitForm.editorSessionId
+
+            viewModel.onEvent(RoutinesContract.UiEvent.HideHabitBottomSheet)
+            viewModel.onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet())
+
+            assertThat(viewModel.uiState.value.habitForm.editorSessionId).isGreaterThan(firstSessionId)
+        }
+
     // --- Tab Selection ---
 
     @Test

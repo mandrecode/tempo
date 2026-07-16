@@ -85,6 +85,7 @@ fun TasksContent(
     onEvent: (TasksContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
     onScrolledFromTopChange: (Boolean) -> Unit = {},
+    selectedTaskId: Long? = null,
 ) {
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
@@ -243,6 +244,7 @@ fun TasksContent(
 
                                     TaskItem(
                                         task = task,
+                                        isSelected = task.id == selectedTaskId,
                                         onToggleCompletion = {
                                             onEvent(
                                                 TasksContract.UiEvent.ToggleTaskCompletion(
@@ -364,6 +366,7 @@ fun TasksContent(
 
                                         TaskItem(
                                             task = task,
+                                            isSelected = task.id == selectedTaskId,
                                             onToggleCompletion = {
                                                 onEvent(
                                                     TasksContract.UiEvent.ToggleTaskCompletion(
@@ -457,6 +460,7 @@ fun TasksContent(
 
                                             TaskItem(
                                                 task = task,
+                                                isSelected = task.id == selectedTaskId,
                                                 onToggleCompletion = {
                                                     onEvent(
                                                         TasksContract.UiEvent.ToggleTaskCompletion(

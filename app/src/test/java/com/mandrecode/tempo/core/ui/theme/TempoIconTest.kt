@@ -169,9 +169,10 @@ class TempoIconTest {
     @Test
     fun `suggestIcon returns correct icon for water keywords`() {
         setupKeywords()
-        // Matches "drink" from coffee first in enum order
+        // "water" matches WATER's own "water" + "drink" keywords (2 hits) which now
+        // outscores COFFEE's single "drink" hit
         assertThat(TempoIcon.suggestIcon("Drink water", context))
-            .isEqualTo(TempoIcon.COFFEE)
+            .isEqualTo(TempoIcon.WATER)
         assertThat(TempoIcon.suggestIcon("Stay hydrated", context)).isEqualTo(TempoIcon.WATER)
         assertThat(TempoIcon.suggestIcon("hydration reminder", context)).isEqualTo(TempoIcon.WATER)
     }
@@ -181,7 +182,29 @@ class TempoIconTest {
         setupKeywords()
         assertThat(TempoIcon.suggestIcon("Read book", context)).isEqualTo(TempoIcon.BOOK)
         assertThat(TempoIcon.suggestIcon("reading time", context)).isEqualTo(TempoIcon.BOOK)
-        assertThat(TempoIcon.suggestIcon("Study literature", context)).isEqualTo(TempoIcon.SCHOOL)
+        // BOOK's "study" + "literature" (2 hits) outscores SCHOOL's single "study" hit
+        assertThat(TempoIcon.suggestIcon("Study literature", context)).isEqualTo(TempoIcon.BOOK)
+    }
+
+    @Test
+    fun `suggestIcon does not match keywords inside unrelated words`() {
+        setupKeywords()
+        // "run" must not match inside "brunch"
+        assertThat(TempoIcon.suggestIcon("Weekend brunch", context)).isNull()
+    }
+
+    @Test
+    fun `suggestIcon still matches regular suffixed forms of longer keywords`() {
+        setupKeywords()
+        // "clean" (prefix match) + "house" (exact) both point to HOME
+        assertThat(TempoIcon.suggestIcon("I'm cleaning the house", context)).isEqualTo(TempoIcon.HOME)
+    }
+
+    @Test
+    fun `suggestIcon still matches plurals of short keywords`() {
+        setupKeywords()
+        // "meal" (4 chars, hard right boundary) must still match plural "Meals"
+        assertThat(TempoIcon.suggestIcon("Meals prep", context)).isEqualTo(TempoIcon.RESTAURANT)
     }
 
     @Test
@@ -260,9 +283,24 @@ class TempoIconTest {
     @Test
     fun `suggestIcon returns correct icon for water keywords Spanish`() {
         setupKeywords(isSpanish = true)
-        assertThat(TempoIcon.suggestIcon("Beber agua", context)).isEqualTo(TempoIcon.COFFEE) // Matches "beber" from coffee first
+        // "agua" + "beber" (2 hits) outscores COFFEE's single "beber" hit
+        assertThat(TempoIcon.suggestIcon("Beber agua", context)).isEqualTo(TempoIcon.WATER)
         assertThat(TempoIcon.suggestIcon("Hidratar el cuerpo", context)).isEqualTo(TempoIcon.WATER)
         assertThat(TempoIcon.suggestIcon("Recordatorio hidratación", context)).isEqualTo(TempoIcon.WATER)
+    }
+
+    @Test
+    fun `suggestIcon does not match keywords inside unrelated Spanish words`() {
+        setupKeywords(isSpanish = true)
+        // "ver" (movie/watch) must not match inside "verano" (summer)
+        assertThat(TempoIcon.suggestIcon("Viaje de verano", context)).isNull()
+    }
+
+    @Test
+    fun `suggestIcon still matches regular suffixed forms of longer Spanish keywords`() {
+        setupKeywords(isSpanish = true)
+        // "empleos" (plural) matches WORK's "empleo" via prefix leniency
+        assertThat(TempoIcon.suggestIcon("Buscar empleos nuevos", context)).isEqualTo(TempoIcon.WORK)
     }
 
     @Test

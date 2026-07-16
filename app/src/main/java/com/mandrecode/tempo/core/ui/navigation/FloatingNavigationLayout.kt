@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.window.core.layout.WindowSizeClass
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement.DockedPane
+import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 
 @Composable
@@ -14,6 +17,24 @@ internal fun isFloatingNavigationRailLayout(): Boolean =
     currentWindowAdaptiveInfo()
         .windowSizeClass
         .isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+
+/**
+ * Expanded rail tier: tabs carry labels and the add action shows its label on large windows.
+ */
+@Composable
+internal fun isExpandedFloatingRailLayout(): Boolean = rememberSheetPlacement() == DockedPane
+
+/**
+ * Start clearance top-level screens must reserve for the floating rail in the current window;
+ * zero when the bottom bar is used instead.
+ */
+@Composable
+internal fun floatingRailContentClearance(): Dp =
+    when {
+        !isFloatingNavigationRailLayout() -> 0.dp
+        isExpandedFloatingRailLayout() -> FloatingRailExpandedContentStartPadding
+        else -> FloatingRailContentStartPadding
+    }
 
 @Composable
 internal fun floatingNavigationBottomClearancePadding(defaultPadding: Dp): Dp =
