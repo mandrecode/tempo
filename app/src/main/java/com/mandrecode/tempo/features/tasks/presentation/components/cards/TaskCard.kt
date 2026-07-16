@@ -63,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
@@ -174,6 +175,7 @@ fun TaskItem(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
         onClick = { onEdit(task) },
@@ -182,18 +184,11 @@ fun TaskItem(
                 .fillMaxWidth()
                 .graphicsLayer {
                     translationY = cardOffset.toPx()
-                }.clip(cardShape)
-                .then(
-                    if (isSelected) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
-                    } else {
-                        Modifier
-                    },
-                ).semantics { selected = isSelected }
+                }.semantics { selected = isSelected }
                 .scale(cardScale),
         shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

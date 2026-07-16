@@ -53,8 +53,8 @@ Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp throu
 
 #### Scenario: Settings remains in a collapsed rail
 - **WHEN** a compact-landscape or medium window uses the collapsed navigation rail
-- **THEN** Settings is pinned as a circular icon in the same rail column instead of appearing in the screen top bar
-- **AND** selecting it shows a selected state without a top back button
+- **THEN** Settings is pinned using the same circular control as compact mode in the same rail column instead of appearing in the screen top bar
+- **AND** selecting it shows a persistent selected state without a top back button
 
 #### Scenario: Compact Settings preserves pushed navigation
 - **WHEN** a compact window without a navigation rail opens Settings
@@ -72,7 +72,7 @@ Navigation SHALL use a bottom bar below 600dp, a collapsed rail from 600dp throu
 
 #### Scenario: Selected card controls its docked editor
 - **GIVEN** a task, habit, or habit-chain editor is docked beside the list
-- **THEN** its source card has selected styling
+- **THEN** its source card transitions to tonal, elevated selected styling without an abrupt outline
 - **WHEN** the user activates that selected card again
 - **THEN** the editor pane closes
 

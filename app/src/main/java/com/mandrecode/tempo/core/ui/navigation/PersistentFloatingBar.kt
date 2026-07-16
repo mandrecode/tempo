@@ -20,10 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
@@ -191,7 +189,10 @@ private fun SettingsRailButton(
     onClick: () -> Unit,
 ) {
     if (!expanded) {
-        CompactSettingsRailButton(selected = selected, onClick = onClick)
+        SettingsButton(
+            onClick = onClick,
+            selected = selected,
+        )
         return
     }
 
@@ -227,44 +228,6 @@ private fun SettingsRailButton(
             Text(
                 text = stringResource(R.string.settings),
                 style = MaterialTheme.typography.labelLarge,
-            )
-        }
-    }
-}
-
-@Composable
-private fun CompactSettingsRailButton(
-    selected: Boolean,
-    onClick: () -> Unit,
-) {
-    if (selected) {
-        FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            shape = CircleShape,
-            colors =
-                IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = stringResource(R.string.settings),
-            )
-        }
-    } else {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            colors =
-                IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_settings),
-                contentDescription = stringResource(R.string.settings),
             )
         }
     }

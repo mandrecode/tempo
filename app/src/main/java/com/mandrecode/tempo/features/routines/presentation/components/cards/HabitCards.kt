@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -157,18 +158,24 @@ internal fun HabitItem(
         label = "icon_tint_color",
     )
 
+    val selectionColor by animateColorAsState(
+        targetValue =
+            if (isSelected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                Color.Transparent
+            },
+        animationSpec = tween(220),
+        label = "habit_item_selection_color",
+    )
+
     Row(
         modifier =
             modifier
                 .fillMaxWidth()
                 .clip(cardShape)
-                .background(
-                    if (isSelected) {
-                        MaterialTheme.colorScheme.secondaryContainer
-                    } else {
-                        Color.Transparent
-                    },
-                ).semantics { selected = isSelected }
+                .background(selectionColor)
+                .semantics { selected = isSelected }
                 .clickable { onClick() }
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -409,6 +416,7 @@ fun HabitCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Row(
         modifier =
@@ -451,20 +459,14 @@ fun HabitCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .then(
-                        if (isSelected) {
-                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
-                        } else {
-                            Modifier
-                        },
-                    ).semantics { selected = isSelected },
+                    .semantics { selected = isSelected },
             shape = cardShape,
             colors =
                 CardDefaults.cardColors(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
         ) {
             HabitItem(
                 habit = habit,

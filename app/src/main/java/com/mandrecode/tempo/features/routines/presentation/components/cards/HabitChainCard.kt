@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -56,6 +55,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
@@ -173,6 +173,7 @@ fun HabitChainCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
+    val selectionElevation = selectableCardElevation(isSelected)
 
     val arrowRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -227,14 +228,7 @@ fun HabitChainCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .clip(cardShape)
-                    .then(
-                        if (isSelected) {
-                            Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
-                        } else {
-                            Modifier
-                        },
-                    ).semantics { selected = isSelected }
+                    .semantics { selected = isSelected }
                     .clickable { onEdit() },
             shape = cardShape,
             colors =
@@ -242,7 +236,7 @@ fun HabitChainCard(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Large faded background icon in the top right

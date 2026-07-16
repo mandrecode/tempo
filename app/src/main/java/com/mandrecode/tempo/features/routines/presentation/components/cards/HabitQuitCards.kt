@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,6 +25,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -47,29 +47,28 @@ fun QuitHabitCard(
     isSelected: Boolean = false,
 ) {
     val state = rememberQuitHabitCardState(habit = habit, selectedDate = selectedDate)
-    val containerColor =
-        if (isSelected) MaterialTheme.colorScheme.secondaryContainer else state.containerColor
-    val contentColor =
-        if (isSelected) MaterialTheme.colorScheme.onSecondaryContainer else state.contentColor
+    val selectionColors =
+        rememberQuitHabitSelectionColors(
+            selected = isSelected,
+            containerColor = state.containerColor,
+            contentColor = state.contentColor,
+        )
+    val containerColor = selectionColors.container
+    val contentColor = selectionColors.content
+    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
         modifier =
             modifier
                 .fillMaxWidth()
-                .then(
-                    if (isSelected) {
-                        Modifier.border(2.dp, MaterialTheme.colorScheme.primary, state.cardShape)
-                    } else {
-                        Modifier
-                    },
-                ).semantics { selected = isSelected },
+                .semantics { selected = isSelected },
         shape = state.cardShape,
         colors =
             CardDefaults.cardColors(
                 containerColor = containerColor,
                 contentColor = contentColor,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
     ) {
         HabitItem(
             habit = habit,
@@ -96,6 +95,30 @@ fun QuitHabitCard(
                 },
         )
     }
+}
+
+private data class QuitHabitSelectionColors(
+    val container: Color,
+    val content: Color,
+)
+
+@Composable
+private fun rememberQuitHabitSelectionColors(
+    selected: Boolean,
+    containerColor: Color,
+    contentColor: Color,
+): QuitHabitSelectionColors {
+    val animatedContainer by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else containerColor,
+        animationSpec = tween(220),
+        label = "quit_habit_selection_container_color",
+    )
+    val animatedContent by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else contentColor,
+        animationSpec = tween(220),
+        label = "quit_habit_selection_content_color",
+    )
+    return QuitHabitSelectionColors(container = animatedContainer, content = animatedContent)
 }
 
 private data class QuitHabitCardState(
