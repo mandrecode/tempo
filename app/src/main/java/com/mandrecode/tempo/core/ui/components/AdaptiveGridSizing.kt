@@ -4,9 +4,9 @@ import androidx.compose.ui.unit.Dp
 
 /**
  * How many [itemSize] items (with at least [minGap] between neighbors) fit across
- * [availableWidth] after subtracting [horizontalPadding], clamped to between [minCount] and
- * [maxCount]. Shared by [IconPicker] and [ColorPicker] so both rows grow on wider containers
- * instead of always showing a fixed count.
+ * [availableWidth] after subtracting [horizontalPadding], clamped to [minCount]..[maxCount].
+ * Shared by [IconPicker] and [ColorPicker] so both rows grow on wider containers instead of
+ * always showing a fixed count.
  */
 internal fun calculateAdaptiveItemCount(
     availableWidth: Dp,
