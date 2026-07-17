@@ -116,60 +116,78 @@ drag to reorder, open/dismiss every editor and dialog — not just static screen
 Found in the 2026-07 audit. Check off when fixed (with PR link).
 
 ### High
-- [ ] **G1 — Habit delete dialog says "task".**
+- [x] **G1 — Habit delete dialog says "task".**
       `DeleteHabitConfirmDialog` reuses `delete_task_message_prefix`/`_suffix`, so deleting a
       habit reads "Are you sure you want to delete task *<habit>*?". Add habit-specific strings
       (all locales).
       (`features/routines/presentation/components/dialogs/DeleteHabitConfirmDialog.kt`)
-- [ ] **G2 — Priority colors are hardcoded pastels, not theme-aware.**
+      Fixed in [#170](https://github.com/mandrecode/tempo/pull/170).
+- [x] **G2 — Priority colors are hardcoded pastels, not theme-aware.**
       `Priority.color` returns fixed hex (`#FF6961`, `#FDFD96`, `#77DD77`) with no light/dark
       variants, unlike the habit `ColorPalette` (tone 40/80 pairs). Pastel yellow as
       `selectedContentColor` in the priority selector is a contrast failure risk on light theme.
       Move priorities to theme-aware palette entries.
       (`core/ui/util/PriorityExtensions.kt`, `features/tasks/presentation/components/TaskBottomSheetFormSections.kt:399`)
+      Fixed in [#173](https://github.com/mandrecode/tempo/pull/173).
 
 ### Medium
-- [ ] **G3 — List frame differs between tabs.** Tasks list: 20dp gutters, 8dp top, 8dp item
+- [x] **G3 — List frame differs between tabs.** Tasks list: 20dp gutters, 8dp top, 8dp item
       spacing. Routines list: 16dp gutters, 16dp top, 12dp spacing. Card edges visibly shift when
       switching tabs. Pick one frame (or document why they differ) and encode it as a shared
       constant. (`TasksContent.kt:181`, `RoutinesContent.kt:153`)
-- [ ] **G4 — Filter rows diverge.** CategoryChipRow is 84dp tall with `categoryChipSelected`
+      Fixed in [#175](https://github.com/mandrecode/tempo/pull/175).
+- [x] **G4 — Filter rows diverge.** CategoryChipRow is 84dp tall with `categoryChipSelected`
       (titleMedium bold); DayFilterRow is 64dp with `filterChipSelected` (labelLarge bold), plus a
       hairline divider tasks lacks. Align heights/typography or record the intended difference.
-- [ ] **G5 — Top bar title treatment inconsistent.** Tasks/routines: `topBarTitle`
+      Fixed in [#176](https://github.com/mandrecode/tempo/pull/176).
+- [x] **G5 — Top bar title treatment inconsistent.** Tasks/routines: `topBarTitle`
       (headlineMedium bold, primary color). Settings: headlineSmall/displayMedium **normal**,
       onSurface, collapsing. Decide the title hierarchy for 1.0 and document the settings
       exception if kept. (`TempoTopBar.kt`, `SettingsScreen.kt:139-155`)
-- [ ] **G6 — Spacing tokens unused.** `LocalSpacing`/`TempoSpacing` exist but ~6 files use them;
+      Documented in [#177](https://github.com/mandrecode/tempo/pull/177).
+- [x] **G6 — Spacing tokens unused.** `LocalSpacing`/`TempoSpacing` exist but ~6 files use them;
       the rest hardcode dp (including off-scale 10/12/20/28dp). Either adopt tokens in shared
       components + new code, or delete the system so it stops implying a standard that isn't
       enforced. (`core/ui/theme/Spacing.kt`)
-- [ ] **G7 — Confirm dialogs are copy-paste septuplets.** Seven near-identical AlertDialog
+      Fixed in [#179](https://github.com/mandrecode/tempo/pull/179): removed the dead values and
+      documented the scope of each spacing system instead of forcing adoption everywhere.
+- [x] **G7 — Confirm dialogs are copy-paste septuplets.** Seven near-identical AlertDialog
       implementations (delete task/habit/category/completed, discard, clear reminders, empty
       chain). Consistent today, but every future edit risks drift. Extract a shared
       `TempoConfirmDialog`. (relates to #24)
-- [ ] **G8 — Preview coverage gaps.** No `src/debug` previews for task dialogs
+      Fixed in [#185](https://github.com/mandrecode/tempo/pull/185).
+- [x] **G8 — Preview coverage gaps.** No `src/debug` previews for task dialogs
       (`DeleteTaskConfirmDialog`, `CategoryDialog`, `DeleteCategoryConfirmDialog`,
       `DeleteCompletedConfirmDialog`), `ColorPicker`, `IconPicker`, `DayOfWeekSelector`,
       `TempoTopBar`, or the date/time picker dialogs — these can regress invisibly.
-- [ ] **G9 — Completion checkbox geometry differs tasks vs habits.** Task: 48dp box, radius
+      Fixed in [#187](https://github.com/mandrecode/tempo/pull/187).
+- [x] **G9 — Completion checkbox geometry differs tasks vs habits.** Task: 48dp box, radius
       24→16, bordered, onSurface 5% fill, scale 1.1. Habit: radius 28→16, color-tinted 12% fill,
       no border, scale 1.05, 56dp min row height. Habit color identity is intentional; the
       geometry/scale split probably isn't. Unify the non-color parameters.
       (`TaskCard.kt:157-175`, `HabitCards.kt:117-151`)
+      Fixed in [#188](https://github.com/mandrecode/tempo/pull/188): unified checkbox scale to 1.1
+      across `TaskItem`, `HabitItem`, `HabitCompletionCheckbox`, and `ChainHabitCheckbox`.
 
 ### Low
-- [ ] **G10 — Ad-hoc font weights in settings and onboarding.** Replace
+- [x] **G10 — Ad-hoc font weights in settings and onboarding.** Replace
       `.copy(fontWeight = …)` with semantic tokens (`SettingsScreen.kt:139,152-154`,
       `OnboardingContent.kt:179,299,390`, `OnboardingSetupPage.kt:38`).
-- [ ] **G11 — Loading state duplicated.** Identical 30-line spinner block in `TasksContent` and
+      Fixed in [#178](https://github.com/mandrecode/tempo/pull/178).
+- [x] **G11 — Loading state duplicated.** Identical 30-line spinner block in `TasksContent` and
       `RoutinesContent`; extract one component (and upgrade it once for #79).
-- [ ] **G12 — Chain card title uses `dialogTitle`.** A card title styled with the dialog token
+      Fixed in [#189](https://github.com/mandrecode/tempo/pull/189): extracted
+      `TempoLoadingIndicator`.
+- [x] **G12 — Chain card title uses `dialogTitle`.** A card title styled with the dialog token
       couples two roles; introduce `chainTitle` or reuse `cardTitle`. (`HabitChainCard.kt:292`)
-- [ ] **G13 — Add-action parity.** Routines renders its own in-content 76dp FAB
+      Fixed in [#190](https://github.com/mandrecode/tempo/pull/190).
+- [x] **G13 — Add-action parity.** Routines renders its own in-content 76dp FAB
       (end 20 / bottom 12dp, `surfaceContainerHighest`); tasks' add action lives in the floating
       bar. Verify both tabs expose a visually consistent add affordance at every tier, including
       single-tab mode. (`RoutinesContent.kt:212-239`, `core/ui/navigation/FloatingBarTaskActions.kt`)
+      Investigated in [#191](https://github.com/mandrecode/tempo/pull/191): both tabs already
+      share one add-action system via `PersistentFloatingBar`; documented the parity rather than
+      changing behavior.
 - [x] **G14 — `contentDescription = null` audit.** ~30 null descriptions across UI; confirm each
       is genuinely decorative (expand chevrons inside clickable pills are borderline). Fixed in
       [#192](https://github.com/mandrecode/tempo/pull/192): added missing container-level checkbox
