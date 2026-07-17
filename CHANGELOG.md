@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.6](https://github.com/mandrecode/tempo/compare/v0.9.5...v0.9.6) (2026-07-17)
+
+
+### Bug Fixes
+
+* **#151:** standardize selected-card style and fix docked pane dismiss flash ([#156](https://github.com/mandrecode/tempo/issues/156)) ([c52250a](https://github.com/mandrecode/tempo/commit/c52250a786bcb4879c13801ebfc39c9bdb2d3702))
+
 ## [0.9.5](https://github.com/mandrecode/tempo/compare/v0.9.4...v0.9.5) (2026-07-17)
 
 
