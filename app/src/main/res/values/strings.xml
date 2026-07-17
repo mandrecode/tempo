@@ -141,6 +141,9 @@
     <string name="delete_task_message_suffix">\u003F You can undo this briefly afterward.</string>
     <string name="delete_task_with_subtasks_message"> and its %1$d %2$s</string>
     <string name="this_task">this task</string>
+    <string name="delete_habit_message_prefix">Are you sure you want to delete habit </string>
+    <string name="delete_habit_message_suffix">\u003F You can undo this briefly afterward.</string>
+    <string name="this_habit">this habit</string>
     <string name="subtask">subtask</string>
     <string name="subtasks">subtasks</string>
     <plurals name="subtasks_count">
