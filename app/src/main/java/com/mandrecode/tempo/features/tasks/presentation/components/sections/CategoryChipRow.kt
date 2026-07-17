@@ -1,7 +1,13 @@
 package com.mandrecode.tempo.features.tasks.presentation.components.sections
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -391,24 +397,37 @@ private fun CategoryItem(
                     color = contentColor,
                 )
 
-                if (count > 0) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    val badgeColor = categoryColor ?: MaterialTheme.colorScheme.primary
-                    Box(
-                        modifier =
-                            Modifier
-                                .size(22.dp)
-                                .background(
-                                    badgeColor,
-                                    CircleShape,
-                                ),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = count.toString(),
-                            style = MaterialTheme.typography.metadataLabel,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                        )
+                val badgeColor = categoryColor ?: MaterialTheme.colorScheme.primary
+                AnimatedContent(
+                    targetState = count,
+                    transitionSpec = {
+                        (
+                            fadeIn(animationSpec = tween(durationMillis = 180)) togetherWith
+                                fadeOut(animationSpec = tween(durationMillis = 120))
+                        ).using(SizeTransform(clip = false))
+                    },
+                    label = "categoryCountBadge",
+                ) { animatedCount ->
+                    if (animatedCount > 0) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Box(
+                                modifier =
+                                    Modifier
+                                        .size(22.dp)
+                                        .background(
+                                            badgeColor,
+                                            CircleShape,
+                                        ),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text(
+                                    text = animatedCount.toString(),
+                                    style = MaterialTheme.typography.metadataLabel,
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                )
+                            }
+                        }
                     }
                 }
             }

@@ -294,10 +294,8 @@ internal fun TaskBottomSheetContent(
             )
         },
         onSnapshot = { snapshot ->
-            if (snapshot != taskSnapshot &&
-                snapshot.title.isNotBlank() &&
-                lastDispatchedSnapshot != snapshot
-            ) {
+            val savedSnapshot = lastDispatchedSnapshot ?: taskSnapshot
+            if (snapshot != savedSnapshot && snapshot.title.isNotBlank()) {
                 onAutoSave?.invoke(
                     snapshot.title,
                     snapshot.description,
@@ -322,7 +320,8 @@ internal fun TaskBottomSheetContent(
                 monthDayOption = formState.monthDayOption,
             )
         if (autoSaveEnabled && currentSnapshot.title.isNotBlank()) {
-            if (currentSnapshot != taskSnapshot && currentSnapshot != lastDispatchedSnapshot) {
+            val savedSnapshot = lastDispatchedSnapshot ?: taskSnapshot
+            if (currentSnapshot != savedSnapshot) {
                 onAutoSave?.invoke(
                     currentSnapshot.title,
                     currentSnapshot.description,
