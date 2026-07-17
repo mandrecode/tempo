@@ -24,16 +24,24 @@ def adb(serial, *args, check=True):
 def dump_layout(serial, retries=8, delay=1.5):
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         path = f.name
-    last_err = None
-    for _ in range(retries):
-        subprocess.run(["android", "layout", "--device", serial, "-o", path], capture_output=True, text=True)
-        try:
-            with open(path) as f:
-                return json.load(f)
-        except json.JSONDecodeError as e:
-            last_err = e
-            time.sleep(delay)
-    raise RuntimeError(f"Could not get a UI dump after {retries} retries: {last_err}")
+    try:
+        last_err = None
+        for _ in range(retries):
+            result = subprocess.run(
+                ["android", "layout", "--device", serial, "-o", path],
+                capture_output=True,
+                text=True,
+            )
+            try:
+                with open(path) as f:
+                    return json.load(f)
+            except json.JSONDecodeError as e:
+                stderr = result.stderr.strip()
+                last_err = f"{e} (stderr: {stderr})" if stderr else str(e)
+                time.sleep(delay)
+        raise RuntimeError(f"Could not get a UI dump after {retries} retries: {last_err}")
+    finally:
+        Path(path).unlink(missing_ok=True)
 
 
 def find_center(nodes, desc=None, text=None):
@@ -71,6 +79,9 @@ def screencap(serial, out_path: Path):
 
 
 def main():
+    if len(sys.argv) != 4:
+        print(__doc__, file=sys.stderr)
+        sys.exit(1)
     serial, out_dir, prefix = sys.argv[1], sys.argv[2], sys.argv[3]
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)

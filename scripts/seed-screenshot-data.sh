@@ -11,8 +11,11 @@ THEME="${2:-light}"
 PKG="com.mandrecode.tempo.debug"
 ACTIVITY="com.mandrecode.tempo.MainActivity"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SQL_FILE="${SCRIPT_DIR}/seed-screenshot-data.sql"
 REMOTE_SQL="/data/local/tmp/tempo_seed.sql"
+
+LOCAL_SQL="$(mktemp)"
+trap 'rm -f "$LOCAL_SQL"' EXIT
+python3 "${SCRIPT_DIR}/generate-seed-sql.py" > "$LOCAL_SQL"
 
 case "$THEME" in
   light) THEME_MODE="LIGHT" ;;
@@ -35,12 +38,19 @@ adb -s "$SERIAL" shell appops set "$PKG" SCHEDULE_EXACT_ALARM allow >/dev/null 2
 # First launch creates the Room DB (and seeds the default Inbox category via
 # TempoDatabase.inboxCallback) and the shared_prefs directory.
 adb -s "$SERIAL" shell am start -n "${PKG}/${ACTIVITY}" >/dev/null
+db_ready=0
 for _ in $(seq 1 90); do
   if adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database 2>/dev/null; then
+    db_ready=1
     break
   fi
   sleep 1
 done
+if [ "$db_ready" -ne 1 ]; then
+  echo "Timed out waiting for ${PKG}'s database to be created on ${SERIAL}." \
+    "Check that the serial is correct, the app is installed, and it isn't crashing on launch." >&2
+  exit 1
+fi
 sleep 2
 adb -s "$SERIAL" shell am force-stop "$PKG" >/dev/null
 
@@ -61,7 +71,7 @@ adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/theme_prefs.xml\"
 </map>
 EOF
 
-adb -s "$SERIAL" push "$SQL_FILE" "$REMOTE_SQL" >/dev/null
+adb -s "$SERIAL" push "$LOCAL_SQL" "$REMOTE_SQL" >/dev/null
 adb -s "$SERIAL" shell "run-as $PKG sqlite3 databases/tempo_database \".read ${REMOTE_SQL}\""
 adb -s "$SERIAL" shell rm -f "$REMOTE_SQL"
 
