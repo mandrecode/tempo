@@ -56,6 +56,10 @@ private const val DEFAULT_ITEMS_PER_ROW = 6
 // only add a second icon from a category already represented, which doesn't add more variety.
 private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
 
+// Same ceiling rationale as MAX_ITEMS_PER_ROW, but without the +1: the modal's per-category
+// rows have no trailing trigger, so there's nothing to reserve a slot for.
+private val MAX_MODAL_ITEMS_PER_ROW = IconCategory.entries.size
+
 /**
  * How many 48dp icon slots (including the trailing trigger) to show, based on how many fit
  * across [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing - clamped to
@@ -403,7 +407,7 @@ private fun IconCategoryModal(
                     minGap = ROW_ITEM_MIN_GAP,
                     horizontalPadding = MODAL_HORIZONTAL_PADDING * 2,
                     minCount = DEFAULT_ITEMS_PER_ROW,
-                    maxCount = MAX_ITEMS_PER_ROW,
+                    maxCount = MAX_MODAL_ITEMS_PER_ROW,
                 )
 
             Column(
