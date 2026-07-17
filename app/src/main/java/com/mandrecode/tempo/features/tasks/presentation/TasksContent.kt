@@ -164,6 +164,12 @@ fun TasksContent(
                     },
                 )
 
+                HorizontalDivider(
+                    modifier = Modifier.fillMaxWidth(),
+                    thickness = 1.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
+                )
+
                 Box(
                     modifier = Modifier.weight(1f),
                 ) {
