@@ -16,10 +16,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,9 +67,52 @@ internal fun SettingsScaffold(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val settingsContainerColor = MaterialTheme.colorScheme.background
-    // Medium/expanded windows keep a fixed-size rail alongside this screen, so the large
-    // display-style title has no scroll gesture to expand from and would just waste space.
-    val isWideLayout = isFloatingNavigationRailLayout()
+    val isRailLayout = isFloatingNavigationRailLayout()
+
+    Scaffold(
+        containerColor = settingsContainerColor,
+        contentWindowInsets = WindowInsets(0),
+        modifier =
+            modifier
+                .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
+                .let {
+                    if (isRailLayout) it else it.nestedScroll(scrollBehavior.nestedScrollConnection)
+                },
+        topBar = {
+            SettingsTopBar(
+                showTitle = showTitle,
+                showBackButton = showBackButton,
+                isRailLayout = isRailLayout,
+                onBackClick = onBackClick,
+                settingsContainerColor = settingsContainerColor,
+                scrollBehavior = scrollBehavior,
+            )
+        },
+    ) { padding ->
+        SettingsContent(
+            uiState = uiState,
+            onEvent = onEvent,
+            onOnboardingClick = onOnboardingClick,
+            modifier = Modifier.padding(padding),
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SettingsTopBar(
+    showTitle: Boolean,
+    showBackButton: Boolean,
+    isRailLayout: Boolean,
+    onBackClick: () -> Unit,
+    settingsContainerColor: Color,
+    scrollBehavior: TopAppBarScrollBehavior,
+) {
+    if (!showTitle) {
+        Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+        return
+    }
+
     val navigationIcon: @Composable () -> Unit = {
         if (showBackButton) {
             IconButton(onClick = onBackClick) {
@@ -84,56 +129,37 @@ internal fun SettingsScaffold(
             scrolledContainerColor = settingsContainerColor,
         )
 
-    Scaffold(
-        containerColor = settingsContainerColor,
-        contentWindowInsets = WindowInsets(0),
-        modifier =
-            modifier
-                .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
-                .let {
-                    if (isWideLayout) it else it.nestedScroll(scrollBehavior.nestedScrollConnection)
-                },
-        topBar = {
-            when {
-                !showTitle -> Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-                isWideLayout ->
-                    TopAppBar(
-                        title = {
-                            Text(
-                                text = stringResource(R.string.settings),
-                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
-                            )
+    // Medium/expanded windows keep a fixed-size rail alongside this screen, so the large
+    // display-style title has no scroll gesture to expand from and would just waste space.
+    if (isRailLayout) {
+        TopAppBar(
+            title = {
+                Text(
+                    text = stringResource(R.string.settings),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+                )
+            },
+            navigationIcon = navigationIcon,
+            colors = topAppBarColors,
+        )
+    } else {
+        TwoRowsTopAppBar(
+            title = { expanded ->
+                Text(
+                    text = stringResource(R.string.settings),
+                    style =
+                        if (expanded) {
+                            MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
+                        } else {
+                            MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
                         },
-                        navigationIcon = navigationIcon,
-                        colors = topAppBarColors,
-                    )
-                else ->
-                    TwoRowsTopAppBar(
-                        title = { expanded ->
-                            Text(
-                                text = stringResource(R.string.settings),
-                                style =
-                                    if (expanded) {
-                                        MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
-                                    } else {
-                                        MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
-                                    },
-                            )
-                        },
-                        navigationIcon = navigationIcon,
-                        colors = topAppBarColors,
-                        collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
-                        expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
-                        scrollBehavior = scrollBehavior,
-                    )
-            }
-        },
-    ) { padding ->
-        SettingsContent(
-            uiState = uiState,
-            onEvent = onEvent,
-            onOnboardingClick = onOnboardingClick,
-            modifier = Modifier.padding(padding),
+                )
+            },
+            navigationIcon = navigationIcon,
+            colors = topAppBarColors,
+            collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
+            expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
+            scrollBehavior = scrollBehavior,
         )
     }
 }
