@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.9.9](https://github.com/mandrecode/tempo/compare/v0.9.8...v0.9.9) (2026-07-17)
+
+
+### Features
+
+* **#17:** expand icon library with 36 new habit icons ([#171](https://github.com/mandrecode/tempo/issues/171)) ([e0f3dd6](https://github.com/mandrecode/tempo/commit/e0f3dd608ecbfbed933542511d9755bf9e1f18b9))
+
+
+### Bug Fixes
+
+* **#168:** add checkbox accessibility semantics to task and habit cards (G14) ([#192](https://github.com/mandrecode/tempo/issues/192)) ([e4d3b1a](https://github.com/mandrecode/tempo/commit/e4d3b1a9f3f6f0dc88c14643388e5471576d80f2))
+* **#168:** add missing debug previews for pickers, top bar, and task dialogs (G8) ([#187](https://github.com/mandrecode/tempo/issues/187)) ([b2347bd](https://github.com/mandrecode/tempo/commit/b2347bdf415a6ce06ab733f6cf656ff5b8453f25))
+* **#168:** document add-action parity between tasks and routines (G13) ([#191](https://github.com/mandrecode/tempo/issues/191)) ([7a190ce](https://github.com/mandrecode/tempo/commit/7a190ce319420c451790f16aff6b0140839cb8bb))
+* **#168:** extract shared TempoConfirmDialog component (G7) ([#185](https://github.com/mandrecode/tempo/issues/185)) ([f3ecfd9](https://github.com/mandrecode/tempo/commit/f3ecfd9cd40a5a50d83c57e38d3dbdbd5c00b93d))
+* **#168:** extract shared TempoLoadingIndicator component (G11) ([#189](https://github.com/mandrecode/tempo/issues/189)) ([e234d14](https://github.com/mandrecode/tempo/commit/e234d1445169aa62a98425d2d7b307a50cc9acc4))
+* **#168:** introduce chainTitle token instead of reusing dialogTitle (G12) ([#190](https://github.com/mandrecode/tempo/issues/190)) ([82e1f3d](https://github.com/mandrecode/tempo/commit/82e1f3dcad086f62fc8366567893c9489aa85485))
+* **#168:** remove dead TempoSpacing values and document spacing scope (G6) ([#179](https://github.com/mandrecode/tempo/issues/179)) ([cae5a79](https://github.com/mandrecode/tempo/commit/cae5a79ee855e6dac293d78bee766a69582fa7e0))
+* **#168:** standardize completed-state muted text alphas (G15) ([#193](https://github.com/mandrecode/tempo/issues/193)) ([09ccbb0](https://github.com/mandrecode/tempo/commit/09ccbb01e32002eed51573d70a9dd2de8e21f700))
+* **#168:** unify checkbox pop scale, document size coupling (G9) ([#188](https://github.com/mandrecode/tempo/issues/188)) ([bd8a132](https://github.com/mandrecode/tempo/commit/bd8a132b0b44d8eaa667a53c4b91974942765322))
+
 ## [0.9.8](https://github.com/mandrecode/tempo/compare/v0.9.7...v0.9.8) (2026-07-17)
 
 
