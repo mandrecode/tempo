@@ -1,10 +1,5 @@
 package com.mandrecode.tempo.core.ui.navigation
 
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,7 +31,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 internal val FloatingRailStartPadding = 24.dp
@@ -262,21 +256,3 @@ fun TempoSoloActionButton(
         interactionSource = buttonInteractionSource,
     )
 }
-
-internal fun settingsEnterTransition() =
-    slideInHorizontally(
-        initialOffsetX = { it },
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
-    ) + fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
-
-internal fun settingsExitTransition() =
-    slideOutHorizontally(
-        targetOffsetX = { it },
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
-    ) + fadeOut(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
-
-internal fun settingsPopEnterTransition() =
-    slideInHorizontally(
-        initialOffsetX = { -it },
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
-    ) + fadeIn(animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
