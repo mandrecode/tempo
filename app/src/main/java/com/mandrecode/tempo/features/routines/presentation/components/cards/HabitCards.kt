@@ -50,6 +50,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -201,6 +202,7 @@ internal fun HabitItem(
                         role = Role.Checkbox
                         toggleableState = if (isCompleted) ToggleableState.On else ToggleableState.Off
                         contentDescription = completionA11yLabel
+                        if (!canToggle) disabled()
                     }.graphicsLayer {
                         scaleX = checkboxScale
                         scaleY = checkboxScale
