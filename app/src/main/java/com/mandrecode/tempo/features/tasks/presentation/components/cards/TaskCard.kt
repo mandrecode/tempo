@@ -200,9 +200,9 @@ fun TaskItem(
                         .padding(cardContentPadding),
                 verticalAlignment = Alignment.Top,
             ) {
-                // Sized to match this row's own heightIn(min = 48.dp) title Box below —
-                // intentionally smaller than HabitItem's 56dp checkbox; see the comment there
-                // for why. Keep this in sync with that Box's heightIn(min) if either changes.
+                // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
+                // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep
+                // this in sync with that Box's heightIn(min) if either changes.
                 Box(
                     modifier =
                         Modifier
