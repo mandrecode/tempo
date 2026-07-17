@@ -2,7 +2,6 @@ package com.mandrecode.tempo.features.tasks.presentation.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -56,6 +55,7 @@ import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.core.ui.components.ColorPicker
 import com.mandrecode.tempo.core.ui.components.IconPicker
 import com.mandrecode.tempo.core.ui.components.TempoModalTopSheet
+import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.getMaterialYouColors
@@ -85,7 +85,7 @@ fun CategoryEditSheet(
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
     val colorScheme = MaterialTheme.colorScheme
-    val isDarkTheme = isSystemInDarkTheme()
+    val isDarkTheme = LocalIsDarkTheme.current
     val currentOnSave by rememberUpdatedState(onSave)
     val currentOnDelete by rememberUpdatedState(onDelete)
     val currentOnClearError by rememberUpdatedState(onClearError)
