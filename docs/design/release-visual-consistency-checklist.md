@@ -37,7 +37,8 @@ drag to reorder, open/dismiss every editor and dialog — not just static screen
 
 ### Spacing & alignment
 - [ ] Screen gutters, list item spacing, and card content padding match across tabs (see gap G3)
-- [ ] Values come from the 4/8dp scale; off-scale values (10, 14, 18dp…) need a reason
+- [ ] Values come from the `Spacing` scale (2/4/8/16/24/32/64dp); off-scale values
+      (10, 14, 18dp…) need a reason
 - [ ] Titles, checkboxes, and trailing icons align on a shared axis inside cards; group headers
       align with card content edges
 
