@@ -23,10 +23,10 @@ import androidx.compose.ui.unit.dp
 @Composable
 fun TempoLoadingIndicator(
     message: String,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxSize(),
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         Column(
