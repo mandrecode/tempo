@@ -2,6 +2,7 @@ package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class AdaptiveGridSizingTest {
@@ -63,5 +64,19 @@ class AdaptiveGridSizingTest {
             )
 
         assertThat(count).isEqualTo(10)
+    }
+
+    @Test
+    fun givenMaxCountBelowMinCount_whenCalculatingItemCount_thenThrows() {
+        assertThrows(IllegalArgumentException::class.java) {
+            calculateAdaptiveItemCount(
+                availableWidth = 400.dp,
+                itemSize = 48.dp,
+                minGap = 4.dp,
+                horizontalPadding = 8.dp,
+                minCount = 10,
+                maxCount = 6,
+            )
+        }
     }
 }

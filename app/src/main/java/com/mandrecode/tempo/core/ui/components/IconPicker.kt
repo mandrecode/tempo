@@ -57,10 +57,11 @@ private const val DEFAULT_ITEMS_PER_ROW = 6
 private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
 
 /**
- * How many 48dp icon slots (including the trailing trigger) comfortably fit across
- * [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing, clamped to
- * [DEFAULT_ITEMS_PER_ROW]..[MAX_ITEMS_PER_ROW] so compact phones never shrink below today's
- * row size and wide windows don't grow it past one slot per category.
+ * How many 48dp icon slots (including the trailing trigger) to show, based on how many fit
+ * across [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing - clamped to
+ * [DEFAULT_ITEMS_PER_ROW]..[MAX_ITEMS_PER_ROW], so compact phones always get at least
+ * [DEFAULT_ITEMS_PER_ROW] slots even if that's tighter than [ROW_ITEM_MIN_GAP] allows, and wide
+ * windows never grow past one slot per category.
  */
 internal fun calculateItemsPerRow(availableWidth: Dp): Int =
     calculateAdaptiveItemCount(
