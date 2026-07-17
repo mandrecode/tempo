@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.9.8](https://github.com/mandrecode/tempo/compare/v0.9.7...v0.9.8) (2026-07-17)
+
+
+### Bug Fixes
+
+* **#167:** persist task category revert after moving to another category ([#172](https://github.com/mandrecode/tempo/issues/172)) ([6bdfc63](https://github.com/mandrecode/tempo/commit/6bdfc63c1d9b48fcc7c56d1d8d4f2640f44b4f9a))
+* **#168:** add divider under task category chip row (G4) ([#176](https://github.com/mandrecode/tempo/issues/176)) ([a726487](https://github.com/mandrecode/tempo/commit/a726487301bc0c04bd530e87b3b6bd420e676f8b))
+* **#168:** align tasks and routines list frame (G3) ([#175](https://github.com/mandrecode/tempo/issues/175)) ([f34eafa](https://github.com/mandrecode/tempo/commit/f34eafad9e3e7ad9eb01fecfd3fe470cf24dae2b))
+* **#168:** habit delete dialog no longer says "task" (G1) ([#170](https://github.com/mandrecode/tempo/issues/170)) ([d41bac4](https://github.com/mandrecode/tempo/commit/d41bac4e4f44679fe67e94ed5dcaac319f73d1dd))
+* **#168:** make priority colors theme-aware (G2) ([#173](https://github.com/mandrecode/tempo/issues/173)) ([104ef28](https://github.com/mandrecode/tempo/commit/104ef28f582c8988b332b661cafc4dfb7dd34580))
+* **#168:** replace ad-hoc font weights with semantic typography tokens (G10) ([#178](https://github.com/mandrecode/tempo/issues/178)) ([0a3496f](https://github.com/mandrecode/tempo/commit/0a3496f8834c2bcf44a6733b2b28af2bb6e47df4))
+
 ## [0.9.7](https://github.com/mandrecode/tempo/compare/v0.9.6...v0.9.7) (2026-07-17)
 
 
