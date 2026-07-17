@@ -375,8 +375,12 @@ private fun BrowseCategoriesButton(
     }
 }
 
+private val MODAL_HORIZONTAL_PADDING = 24.dp
+
 /**
- * Modal listing every [TempoIcon], grouped and headed by its [IconCategory].
+ * Modal listing every [TempoIcon], grouped and headed by its [IconCategory]. Reuses the same
+ * adaptive row-sizing the collapsed row and [ColorPicker] use, so every category's icons line
+ * up on the same column grid instead of each row wrapping independently.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -390,40 +394,53 @@ private fun IconCategoryModal(
     val iconsByCategory = remember(allIcons) { allIcons.groupBy { it.category } }
 
     TempoModalBottomSheet(onDismissRequest = onDismissRequest) {
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 24.dp)
-                    .padding(top = 8.dp, bottom = 32.dp),
-        ) {
-            Text(
-                text = stringResource(R.string.icon_picker_all_icons_title),
-                style = MaterialTheme.typography.titleMedium,
-            )
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val itemsPerRow =
+                calculateAdaptiveItemCount(
+                    availableWidth = maxWidth,
+                    itemSize = ICON_OPTION_SIZE,
+                    minGap = ROW_ITEM_MIN_GAP,
+                    horizontalPadding = MODAL_HORIZONTAL_PADDING * 2,
+                    minCount = DEFAULT_ITEMS_PER_ROW,
+                    maxCount = MAX_ITEMS_PER_ROW,
+                )
 
-            IconCategory.entries.forEach { category ->
-                val categoryIcons = iconsByCategory[category].orEmpty()
-                if (categoryIcons.isNotEmpty()) {
-                    Text(
-                        text = stringResource(category.labelRes),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
-                    )
-                    FlowRow(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        categoryIcons.forEach { tempoIcon ->
-                            IconOption(
-                                tempoIcon = tempoIcon,
-                                isSelected = selectedIconName == tempoIcon.iconName,
-                                enabled = enabled,
-                                onClick = { onSelectIcon(tempoIcon.iconName) },
-                            )
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = MODAL_HORIZONTAL_PADDING)
+                        .padding(top = 8.dp, bottom = 32.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.icon_picker_all_icons_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                IconCategory.entries.forEach { category ->
+                    val categoryIcons = iconsByCategory[category].orEmpty()
+                    if (categoryIcons.isNotEmpty()) {
+                        Text(
+                            text = stringResource(category.labelRes),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
+                        )
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            maxItemsInEachRow = itemsPerRow,
+                        ) {
+                            categoryIcons.forEach { tempoIcon ->
+                                IconOption(
+                                    tempoIcon = tempoIcon,
+                                    isSelected = selectedIconName == tempoIcon.iconName,
+                                    enabled = enabled,
+                                    onClick = { onSelectIcon(tempoIcon.iconName) },
+                                )
+                            }
                         }
                     }
                 }
