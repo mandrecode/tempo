@@ -14,6 +14,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.runtime.Composable
@@ -27,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
+import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 
 @Composable
 fun SettingsScreen(
@@ -63,6 +65,24 @@ internal fun SettingsScaffold(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     val settingsContainerColor = MaterialTheme.colorScheme.background
+    // Medium/expanded windows keep a fixed-size rail alongside this screen, so the large
+    // display-style title has no scroll gesture to expand from and would just waste space.
+    val isWideLayout = isFloatingNavigationRailLayout()
+    val navigationIcon: @Composable () -> Unit = {
+        if (showBackButton) {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                )
+            }
+        }
+    }
+    val topAppBarColors =
+        TopAppBarDefaults.topAppBarColors(
+            containerColor = settingsContainerColor,
+            scrolledContainerColor = settingsContainerColor,
+        )
 
     Scaffold(
         containerColor = settingsContainerColor,
@@ -70,42 +90,42 @@ internal fun SettingsScaffold(
         modifier =
             modifier
                 .adaptiveScreenContentLayout(railClearance = floatingRailContentClearance())
-                .nestedScroll(scrollBehavior.nestedScrollConnection),
+                .let {
+                    if (isWideLayout) it else it.nestedScroll(scrollBehavior.nestedScrollConnection)
+                },
         topBar = {
-            if (showTitle) {
-                TwoRowsTopAppBar(
-                    title = { expanded ->
-                        Text(
-                            text = stringResource(R.string.settings),
-                            style =
-                                if (expanded) {
-                                    MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
-                                } else {
-                                    MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
-                                },
-                        )
-                    },
-                    navigationIcon = {
-                        if (showBackButton) {
-                            IconButton(onClick = onBackClick) {
-                                Icon(
-                                    Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = stringResource(R.string.back),
-                                )
-                            }
-                        }
-                    },
-                    colors =
-                        TopAppBarDefaults.topAppBarColors(
-                            containerColor = settingsContainerColor,
-                            scrolledContainerColor = settingsContainerColor,
-                        ),
-                    collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
-                    expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
-                    scrollBehavior = scrollBehavior,
-                )
-            } else {
-                Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+            when {
+                !showTitle -> Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                isWideLayout ->
+                    TopAppBar(
+                        title = {
+                            Text(
+                                text = stringResource(R.string.settings),
+                                style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+                            )
+                        },
+                        navigationIcon = navigationIcon,
+                        colors = topAppBarColors,
+                    )
+                else ->
+                    TwoRowsTopAppBar(
+                        title = { expanded ->
+                            Text(
+                                text = stringResource(R.string.settings),
+                                style =
+                                    if (expanded) {
+                                        MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
+                                    } else {
+                                        MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+                                    },
+                            )
+                        },
+                        navigationIcon = navigationIcon,
+                        colors = topAppBarColors,
+                        collapsedHeight = TopAppBarDefaults.LargeAppBarCollapsedHeight,
+                        expandedHeight = TopAppBarDefaults.LargeAppBarExpandedHeight,
+                        scrollBehavior = scrollBehavior,
+                    )
             }
         },
     ) { padding ->
