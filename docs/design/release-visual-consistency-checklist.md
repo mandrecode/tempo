@@ -99,13 +99,13 @@ drag to reorder, open/dismiss every editor and dialog — not just static screen
 - [ ] External-link items (notifications, language) show the same trailing affordance
 
 ### Onboarding
-- [ ] Typography scales between compact/expanded variants without ad-hoc weights (gap G6)
+- [ ] Typography scales between compact/expanded variants without ad-hoc weights (gap G10)
 - [ ] Page indicators, buttons, and setup controls match the app's chip/button language
 - [ ] Replay from Settings renders identically to first run
 
 ### Navigation chrome
 - [ ] Bottom bar ↔ rail transition: selected tab treatment, badge/label behavior, add-action
-      parity between tasks and routines (gap G11)
+      parity between tasks and routines (gap G13)
 - [ ] Snackbars use `ExpressiveSnackbarHost` on every surface that shows one; position clears
       floating bar/rail at each tier
 
@@ -140,40 +140,40 @@ Found in the 2026-07 audit. Check off when fixed (with PR link).
       (headlineMedium bold, primary color). Settings: headlineSmall/displayMedium **normal**,
       onSurface, collapsing. Decide the title hierarchy for 1.0 and document the settings
       exception if kept. (`TempoTopBar.kt`, `SettingsScreen.kt:139-155`)
-- [ ] **G7 — Spacing tokens unused.** `LocalSpacing`/`TempoSpacing` exist but ~6 files use them;
+- [ ] **G6 — Spacing tokens unused.** `LocalSpacing`/`TempoSpacing` exist but ~6 files use them;
       the rest hardcode dp (including off-scale 10/12/20/28dp). Either adopt tokens in shared
       components + new code, or delete the system so it stops implying a standard that isn't
       enforced. (`core/ui/theme/Spacing.kt`)
-- [ ] **G9 — Confirm dialogs are copy-paste septuplets.** Seven near-identical AlertDialog
+- [ ] **G7 — Confirm dialogs are copy-paste septuplets.** Seven near-identical AlertDialog
       implementations (delete task/habit/category/completed, discard, clear reminders, empty
       chain). Consistent today, but every future edit risks drift. Extract a shared
       `TempoConfirmDialog`. (relates to #24)
-- [ ] **G13 — Preview coverage gaps.** No `src/debug` previews for task dialogs
+- [ ] **G8 — Preview coverage gaps.** No `src/debug` previews for task dialogs
       (`DeleteTaskConfirmDialog`, `CategoryDialog`, `DeleteCategoryConfirmDialog`,
       `DeleteCompletedConfirmDialog`), `ColorPicker`, `IconPicker`, `DayOfWeekSelector`,
       `TempoTopBar`, or the date/time picker dialogs — these can regress invisibly.
-- [ ] **G14 — Completion checkbox geometry differs tasks vs habits.** Task: 48dp box, radius
+- [ ] **G9 — Completion checkbox geometry differs tasks vs habits.** Task: 48dp box, radius
       24→16, bordered, onSurface 5% fill, scale 1.1. Habit: radius 28→16, color-tinted 12% fill,
       no border, scale 1.05, 56dp min row height. Habit color identity is intentional; the
       geometry/scale split probably isn't. Unify the non-color parameters.
       (`TaskCard.kt:157-175`, `HabitCards.kt:117-151`)
 
 ### Low
-- [ ] **G6 — Ad-hoc font weights in settings and onboarding.** Replace
+- [ ] **G10 — Ad-hoc font weights in settings and onboarding.** Replace
       `.copy(fontWeight = …)` with semantic tokens (`SettingsScreen.kt:139,152-154`,
       `OnboardingContent.kt:179,299,390`, `OnboardingSetupPage.kt:38`).
-- [ ] **G8 — Loading state duplicated.** Identical 30-line spinner block in `TasksContent` and
+- [ ] **G11 — Loading state duplicated.** Identical 30-line spinner block in `TasksContent` and
       `RoutinesContent`; extract one component (and upgrade it once for #79).
-- [ ] **G10 — Chain card title uses `dialogTitle`.** A card title styled with the dialog token
+- [ ] **G12 — Chain card title uses `dialogTitle`.** A card title styled with the dialog token
       couples two roles; introduce `chainTitle` or reuse `cardTitle`. (`HabitChainCard.kt:292`)
-- [ ] **G11 — Add-action parity.** Routines renders its own in-content 76dp FAB
+- [ ] **G13 — Add-action parity.** Routines renders its own in-content 76dp FAB
       (end 20 / bottom 12dp, `surfaceContainerHighest`); tasks' add action lives in the floating
       bar. Verify both tabs expose a visually consistent add affordance at every tier, including
       single-tab mode. (`RoutinesContent.kt:212-239`, `core/ui/navigation/FloatingBarTaskActions.kt`)
-- [ ] **G17 — Muted-text alphas drift.** Completed title/description alphas: tasks 0.6/0.4 vs
-      habits 0.5/0.35. Standardize the muted-content alpha ladder (e.g. 0.7/0.5/0.35) in one place.
-- [ ] **G16 — `contentDescription = null` audit.** ~30 null descriptions across UI; confirm each
+- [ ] **G14 — `contentDescription = null` audit.** ~30 null descriptions across UI; confirm each
       is genuinely decorative (expand chevrons inside clickable pills are borderline).
+- [ ] **G15 — Muted-text alphas drift.** Completed title/description alphas: tasks 0.6/0.4 vs
+      habits 0.5/0.35. Standardize the muted-content alpha ladder (e.g. 0.7/0.5/0.35) in one place.
 
 ---
 
@@ -181,5 +181,5 @@ Found in the 2026-07 audit. Check off when fixed (with PR link).
 
 - When a release pass finds a new class of regression, add one criterion (and delete a stale one).
 - New semantic tokens go in `Type.kt` with a KDoc role description; new shared paddings in
-  `Spacing.kt` once G7 is resolved.
+  `Spacing.kt` once G6 is resolved.
 - Keep gap IDs stable; close them with PR links rather than deleting entries until 1.0 ships.
