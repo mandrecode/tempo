@@ -28,6 +28,23 @@ distribution/screenshots/
   `pip install`)
 - A debug build: `./gradlew assembleDebug`
 
+**Before building, temporarily drop the "(Debug)" suffix.** Desktop and
+Expanded/big-tablet form factors render OS window chrome (a caption bar
+with the app's label) around the app, which would otherwise leak
+"Tempo (Debug)" into those screenshots. Phone and Medium tablet run
+without window chrome and are unaffected; XR's chrome pill has no text
+label either way.
+
+```bash
+# In app/build.gradle.kts, buildTypes { debug { ... } }:
+#   resValue("string", "app_name", "Tempo (Debug)")
+# temporarily becomes:
+#   resValue("string", "app_name", "Tempo")
+./gradlew assembleDebug
+# ...capture desktop, expanded, and xr sets...
+# then revert the resValue change before committing.
+```
+
 ## The pipeline
 
 Three scripts, composed by a fourth:
