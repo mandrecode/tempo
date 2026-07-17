@@ -47,7 +47,7 @@ class TempoIconTest {
             R.string.keywords_remind to "remind, reminder, bell, alert, notification",
             R.string.keywords_routine to "routine, daily, habit, repeat, recurring, schedule, regular",
             R.string.keywords_bedtime to "wind down, moon, night routine, lights out",
-            R.string.keywords_medical_services to "clinic, hospital, appointment, physician, specialist",
+            R.string.keywords_medical_services to "clinic, hospital, doctor appointment, physician, specialist",
             R.string.keywords_no_food to "fast, fasting, no food, intermittent fasting, skip eating",
             R.string.keywords_code to "code, coding, programming, developer, software",
             R.string.keywords_translate to "language, learn language, vocabulary, translate, practice",
