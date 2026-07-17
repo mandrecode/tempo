@@ -30,8 +30,11 @@ private val priorityLabel: String
 private val periodicityLabel: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.periodicity_label)
 
-private val completedLabel: String
-    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.completed)
+private val markAsNotCompletedLabel: String
+    get() =
+        InstrumentationRegistry.getInstrumentation().targetContext.getString(
+            R.string.mark_as_not_completed,
+        )
 
 private val addSubtaskLabel: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.add_subtask)
@@ -182,7 +185,7 @@ class TaskCardTest {
         }
 
         composeTestRule
-            .onNodeWithContentDescription(completedLabel, substring = true)
+            .onNodeWithContentDescription(markAsNotCompletedLabel, substring = true)
             .assertIsDisplayed()
     }
 
