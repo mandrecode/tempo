@@ -56,8 +56,13 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -203,12 +208,20 @@ fun TaskItem(
                 // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
                 // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep
                 // this in sync with that Box's heightIn(min) if either changes.
+                val completionA11yLabel =
+                    stringResource(
+                        if (task.isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
+                    )
                 Box(
                     modifier =
                         Modifier
                             .testTag(TASK_COMPLETION_CONTROL_TAG)
                             .size(48.dp)
-                            .graphicsLayer {
+                            .semantics {
+                                role = Role.Checkbox
+                                toggleableState = if (task.isCompleted) ToggleableState.On else ToggleableState.Off
+                                contentDescription = completionA11yLabel
+                            }.graphicsLayer {
                                 scaleX = checkboxScale
                                 scaleY = checkboxScale
                             }.clip(RoundedCornerShape(checkboxRadius))
@@ -246,7 +259,7 @@ fun TaskItem(
                     if (task.isCompleted) {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = stringResource(R.string.completed),
+                            contentDescription = null,
                             modifier = Modifier.size(24.dp),
                             tint = MaterialTheme.colorScheme.primary,
                         )
