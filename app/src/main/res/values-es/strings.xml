@@ -526,7 +526,7 @@
     <string name="keywords_checklist">lista de tareas, tarea, pendiente, marcar, completar</string>
     <string name="keywords_code">código, programar, programación, desarrollador, software</string>
     <string name="keywords_event">reunión, evento, conferencia, agenda</string>
-    <string name="keywords_timer">temporizador, enfoque, pomodoro, cuenta regresiva, sesión</string>
+    <string name="keywords_timer">temporizador, pomodoro, cuenta regresiva, sesión</string>
     <string name="keywords_directions_car">conducir, manejar, viaje, coche, tráfico</string>
     <string name="keywords_potted_plant">jardín, jardinería, planta, regar plantas, patio</string>
     <string name="keywords_celebration">celebrar, celebración, fiesta, regalo, ocasión</string>

@@ -522,7 +522,7 @@
     <string name="keywords_checklist">checklist, task, to-do, tick, complete</string>
     <string name="keywords_code">code, coding, programming, developer, software</string>
     <string name="keywords_event">meeting, event, conference, catch up</string>
-    <string name="keywords_timer">timer, focus, pomodoro, countdown, session</string>
+    <string name="keywords_timer">timer, pomodoro, countdown, session</string>
     <string name="keywords_directions_car">drive, driving, commute, car, traffic</string>
     <string name="keywords_potted_plant">garden, gardening, plant, water plants, yard</string>
     <string name="keywords_celebration">celebrate, celebration, party, gift, occasion</string>
