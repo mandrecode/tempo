@@ -70,6 +70,7 @@ import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
+import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
@@ -290,7 +291,7 @@ fun TaskItem(
                                     ),
                                 color =
                                     if (task.isCompleted) {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = MutedContentAlpha.TITLE)
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     },
@@ -305,7 +306,9 @@ fun TaskItem(
                                     style = MaterialTheme.typography.bodyMedium,
                                     color =
                                         if (task.isCompleted) {
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                                            MaterialTheme.colorScheme.onSurface.copy(
+                                                alpha = MutedContentAlpha.DESCRIPTION,
+                                            )
                                         } else {
                                             MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                         },

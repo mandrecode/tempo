@@ -65,6 +65,7 @@ import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
+import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
@@ -294,7 +295,7 @@ internal fun HabitItem(
                             textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
                         )
                     },
-                color = if (isCompleted) contentColor.copy(alpha = 0.5f) else contentColor,
+                color = if (isCompleted) contentColor.copy(alpha = MutedContentAlpha.TITLE) else contentColor,
                 maxLines = if (isInsideChain) 1 else 2,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -306,7 +307,7 @@ internal fun HabitItem(
                     style = MaterialTheme.typography.bodyMedium,
                     color =
                         if (isCompleted) {
-                            contentColor.copy(alpha = 0.35f)
+                            contentColor.copy(alpha = MutedContentAlpha.DESCRIPTION)
                         } else {
                             contentColor.copy(alpha = 0.7f)
                         },

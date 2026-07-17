@@ -174,8 +174,10 @@ Found in the 2026-07 audit. Check off when fixed (with PR link).
       is genuinely decorative (expand chevrons inside clickable pills are borderline). Fixed in
       [#192](https://github.com/mandrecode/tempo/pull/192): added missing container-level checkbox
       semantics to `TaskItem`/`HabitItem`; the rest were already correctly decorative.
-- [ ] **G15 — Muted-text alphas drift.** Completed title/description alphas: tasks 0.6/0.4 vs
+- [x] **G15 — Muted-text alphas drift.** Completed title/description alphas: tasks 0.6/0.4 vs
       habits 0.5/0.35. Standardize the muted-content alpha ladder (e.g. 0.7/0.5/0.35) in one place.
+      Fixed in [#193](https://github.com/mandrecode/tempo/pull/193): introduced
+      `MutedContentAlpha.TITLE`/`DESCRIPTION` (0.6/0.4) shared by both card types.
 
 ---
 
