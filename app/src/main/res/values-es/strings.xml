@@ -477,7 +477,7 @@
     <!-- HABIT ICON KEYWORDS -->
     <string name="keywords_fitness">fitness, gimnasio, entrenamiento, ejercicio, entrenar, fuerza</string>
     <string name="keywords_run">correr, corriendo, trotar, trote, cardio, sprint</string>
-    <string name="keywords_walk">caminar, caminando, paso, pasos, paseo, caminata</string>
+    <string name="keywords_walk">caminar, caminando, paso, pasos, paseo</string>
     <string name="keywords_sports">deporte, deportes, juego, jugar, pelota, equipo</string>
     <string name="keywords_health">salud, médico, doctor, chequeo, medicina</string>
     <string name="keywords_heart">corazón, amor, cuidado, gratitud, cariño</string>
@@ -514,7 +514,7 @@
     <string name="keywords_self_improvement">yoga, equilibrio, postura</string>
     <string name="keywords_pool">nadar, natación, piscina, largos, alberca</string>
     <string name="keywords_directions_bike">bici, bicicleta, ciclismo, pedalear, montar</string>
-    <string name="keywords_hiking">senderismo, sendero, montaña, aire libre</string>
+    <string name="keywords_hiking">senderismo, sendero, caminata, montaña, aire libre</string>
     <string name="keywords_sports_gymnastics">estirar, estiramiento, flexibilidad, gimnasia, calentamiento</string>
     <string name="keywords_bedtime">rutina nocturna, luna, apagar luces</string>
     <string name="keywords_medication">medicación, pastillas, receta, dosis, vitaminas</string>

@@ -18,7 +18,8 @@ class TempoIconTest {
         mapOf(
             R.string.keywords_fitness to "fitness, gym, workout, exercise, training, strength",
             R.string.keywords_run to "run, running, jog, jogging, cardio, sprint",
-            R.string.keywords_walk to "walk, walking, step, steps, stroll, hike",
+            R.string.keywords_walk to "walk, walking, step, steps, stroll",
+            R.string.keywords_hiking to "hiking, hike, trail, trek, mountain, outdoors",
             R.string.keywords_sports to "sport, sports, game, play, ball, team",
             R.string.keywords_health to "health, medical, doctor, checkup, medicine",
             R.string.keywords_heart to "heart, love, care, gratitude, affection",
@@ -58,7 +59,8 @@ class TempoIconTest {
         mapOf(
             R.string.keywords_fitness to "fitness, gimnasio, entrenamiento, ejercicio, entrenar, fuerza",
             R.string.keywords_run to "correr, corriendo, trotar, trote, cardio, sprint",
-            R.string.keywords_walk to "caminar, caminando, paso, pasos, paseo, caminata",
+            R.string.keywords_walk to "caminar, caminando, paso, pasos, paseo",
+            R.string.keywords_hiking to "senderismo, sendero, caminata, montaña, aire libre",
             R.string.keywords_sports to "deporte, deportes, juego, jugar, pelota, equipo",
             R.string.keywords_health to "salud, médico, doctor, chequeo, medicina",
             R.string.keywords_heart to "corazón, amor, cuidado, gratitud, cariño",
@@ -168,6 +170,14 @@ class TempoIconTest {
         assertThat(TempoIcon.suggestIcon("Morning walk", context)).isEqualTo(TempoIcon.WALK)
         assertThat(TempoIcon.suggestIcon("Take steps", context)).isEqualTo(TempoIcon.WALK)
         assertThat(TempoIcon.suggestIcon("walking daily", context)).isEqualTo(TempoIcon.WALK)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for hiking keywords`() {
+        setupKeywords()
+        // "hike" belongs to HIKING, not WALK, despite the similar meaning
+        assertThat(TempoIcon.suggestIcon("Go for a hike", context)).isEqualTo(TempoIcon.HIKING)
+        assertThat(TempoIcon.suggestIcon("Mountain trail", context)).isEqualTo(TempoIcon.HIKING)
     }
 
     @Test
@@ -334,7 +344,15 @@ class TempoIconTest {
         setupKeywords(isSpanish = true)
         assertThat(TempoIcon.suggestIcon("Dar un paseo", context)).isEqualTo(TempoIcon.WALK)
         assertThat(TempoIcon.suggestIcon("Caminar por el parque", context)).isEqualTo(TempoIcon.WALK)
-        assertThat(TempoIcon.suggestIcon("Caminata diaria", context)).isEqualTo(TempoIcon.WALK)
+        assertThat(TempoIcon.suggestIcon("Paseo diario", context)).isEqualTo(TempoIcon.WALK)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for hiking keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        // "caminata" belongs to HIKING, not WALK, despite the similar meaning
+        assertThat(TempoIcon.suggestIcon("Ir de caminata", context)).isEqualTo(TempoIcon.HIKING)
+        assertThat(TempoIcon.suggestIcon("Sendero de montaña", context)).isEqualTo(TempoIcon.HIKING)
     }
 
     @Test

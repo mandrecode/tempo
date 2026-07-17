@@ -473,7 +473,7 @@
     <!-- HABIT ICON KEYWORDS -->
     <string name="keywords_fitness">fitness, gym, workout, exercise, training, strength</string>
     <string name="keywords_run">run, running, jog, jogging, cardio, sprint</string>
-    <string name="keywords_walk">walk, walking, step, steps, stroll, hike</string>
+    <string name="keywords_walk">walk, walking, step, steps, stroll</string>
     <string name="keywords_sports">sport, sports, game, play, ball, team</string>
     <string name="keywords_health">health, medical, doctor, checkup, medicine</string>
     <string name="keywords_heart">heart, love, care, gratitude, affection</string>
@@ -510,7 +510,7 @@
     <string name="keywords_self_improvement">yoga, balance, pose</string>
     <string name="keywords_pool">swim, swimming, pool, laps, water sport</string>
     <string name="keywords_directions_bike">bike, biking, cycle, cycling, ride, bicycle</string>
-    <string name="keywords_hiking">hiking, trail, trek, mountain, outdoors</string>
+    <string name="keywords_hiking">hiking, hike, trail, trek, mountain, outdoors</string>
     <string name="keywords_sports_gymnastics">stretch, stretching, flexibility, gymnastics, warmup</string>
     <string name="keywords_bedtime">wind down, moon, night routine, lights out</string>
     <string name="keywords_medication">medication, pills, prescription, dose, vitamins</string>
