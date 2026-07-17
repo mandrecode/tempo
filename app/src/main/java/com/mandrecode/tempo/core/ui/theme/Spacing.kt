@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.core.ui.theme
 
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
@@ -8,7 +7,12 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
-// Spacing class to hold all standard spacing values
+/**
+ * Generic gap scale for shared, cross-cutting UI chrome (navigation, snackbars, dialogs) — not a
+ * mandate to route every screen-specific padding literal through it. Feature screens routinely
+ * need content-driven dimensions (a particular card's corner radius, a chip's own height) that
+ * don't map onto an abstract spacing step; those stay as local literals by design.
+ */
 data class Spacing(
     val extraSmall: Dp = 2.dp,
     val small: Dp = 4.dp,
@@ -29,34 +33,16 @@ val MaterialTheme.spacing: Spacing
     @ReadOnlyComposable
     get() = LocalSpacing.current
 
-// Common padding values
+/**
+ * Named measurements for specific UI elements (a particular card's content padding, the bottom
+ * navigation bar's height) that don't map onto [Spacing]'s generic gap scale — as opposed to a
+ * step in that abstract scale. Not restricted to shared components; a value belongs here when
+ * it names one specific measurement, wherever it's used.
+ */
 object TempoSpacing {
-    // Standard content padding
-    val contentPadding =
-        PaddingValues(
-            horizontal = 16.dp,
-            vertical = 8.dp,
-        )
-
-    // Standard list item padding
-    val listItemPadding =
-        PaddingValues(
-            horizontal = 16.dp,
-            vertical = 4.dp,
-        )
-
     // Card content padding
     val cardContentPadding = 16.dp
 
-    // Dialog content padding
-    val dialogContentPadding = 16.dp
-
-    // Bottom FAB padding
-    val fabPadding = 16.dp
-
     // Bottom navigation height
     val bottomNavHeight = 80.dp
-
-    // Standard floating action button spacing from bottom
-    val fabBottomSpacing = 88.dp
 }

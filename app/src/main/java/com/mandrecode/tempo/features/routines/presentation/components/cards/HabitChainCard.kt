@@ -59,7 +59,7 @@ import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.badgeCount
-import com.mandrecode.tempo.core.ui.theme.dialogTitle
+import com.mandrecode.tempo.core.ui.theme.chainTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
@@ -289,7 +289,7 @@ fun HabitChainCard(
                             Text(
                                 text = habitChain.title,
                                 style =
-                                    MaterialTheme.typography.dialogTitle,
+                                    MaterialTheme.typography.chainTitle,
                                 color =
                                     if (allCompleted) {
                                         contentColor
