@@ -1,11 +1,7 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -13,6 +9,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -21,7 +18,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -38,15 +37,78 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.theme.IconCategory
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
+import com.mandrecode.tempo.core.ui.util.rememberPressableChipAnimation
 import com.mandrecode.tempo.core.ui.util.rememberPressableIconButtonAnimation
+
+private val ICON_OPTION_SIZE = 48.dp
+private val ROW_ITEM_MIN_GAP = 4.dp
+private val ROW_HORIZONTAL_PADDING = 8.dp // 4dp start + 4dp end, matches the FlowRow's own padding
+
+// Default/floor for narrow (compact phone) containers - matches the picker's original fixed size.
+private const val DEFAULT_ITEMS_PER_ROW = 6
+
+// Ceiling: one row slot per icon category (+1 for the trigger) - beyond this, extra slots would
+// only add a second icon from a category already represented, which doesn't add more variety.
+private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
+
+// Same ceiling rationale as MAX_ITEMS_PER_ROW, but without the +1: the modal's per-category
+// rows have no trailing trigger, so there's nothing to reserve a slot for.
+private val MAX_MODAL_ITEMS_PER_ROW = IconCategory.entries.size
+
+/**
+ * How many 48dp icon slots (including the trailing trigger) to show, based on how many fit
+ * across [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing - clamped to
+ * [DEFAULT_ITEMS_PER_ROW]..[MAX_ITEMS_PER_ROW], so compact phones always get at least
+ * [DEFAULT_ITEMS_PER_ROW] slots even if that's tighter than [ROW_ITEM_MIN_GAP] allows, and wide
+ * windows never grow past one slot per category.
+ */
+internal fun calculateItemsPerRow(availableWidth: Dp): Int =
+    calculateAdaptiveItemCount(
+        availableWidth = availableWidth,
+        itemSize = ICON_OPTION_SIZE,
+        minGap = ROW_ITEM_MIN_GAP,
+        horizontalPadding = ROW_HORIZONTAL_PADDING,
+        minCount = DEFAULT_ITEMS_PER_ROW,
+        maxCount = MAX_ITEMS_PER_ROW,
+    )
+
+/**
+ * Picks which icons the collapsed row should show: [sampledIcons] as-is when there's no
+ * selection or the selection is already represented, otherwise the selected icon pinned to the
+ * first slot with the remaining [slotCount] - 1 slots backfilled from [sampledIcons] *excluding*
+ * its category - so a manually-picked icon never displaces the row's one-per-category coverage
+ * by leaving a same-category duplicate behind while dropping a different category entirely.
+ */
+internal fun resolveRowIcons(
+    sampledIcons: List<TempoIcon>,
+    allIcons: List<TempoIcon>,
+    selectedIconName: String?,
+    slotCount: Int,
+): List<TempoIcon> =
+    when {
+        selectedIconName == null -> sampledIcons
+        sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
+        else -> {
+            val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
+            if (selectedIcon != null) {
+                val remaining = sampledIcons.filter { it.category != selectedIcon.category }
+                listOf(selectedIcon) + remaining.take(slotCount - 1)
+            } else {
+                sampledIcons
+            }
+        }
+    }
 
 /**
  * Icon picker component for selecting habit icons.
- * Displays a grid of icons that fits the width of the container.
- * When collapsed and an icon is selected, it is shown first in the row.
+ * Shows a row sampled across icon categories that fits the width of the container,
+ * plus a trigger that opens a modal with every icon grouped by category.
+ * When an icon is selected, it is always shown somewhere in the row.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -58,82 +120,88 @@ fun IconPicker(
     enabled: Boolean = true,
     disabledMessage: String? = null,
 ) {
-    val allIcons = remember { TempoIcon.getAllIcons() }
-    var isExpanded by remember { mutableStateOf(false) }
-    // Using 6 items per row for a balanced grid
-    val itemsPerRow = 6
-    val firstRowIconsCount = itemsPerRow - 1
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        val itemsPerRow = calculateItemsPerRow(maxWidth)
+        val firstRowIconsCount = itemsPerRow - 1
 
-    val iconsToDisplay =
-        if (isExpanded) {
-            allIcons
-        } else {
-            val selectedIndex = allIcons.indexOfFirst { it.iconName == selectedIconName }
-            if (selectedIndex >= firstRowIconsCount) {
-                // Show selected icon first, then fill remaining slots with other icons
-                listOf(allIcons[selectedIndex]) + allIcons.filter { it.iconName != selectedIconName }.take(firstRowIconsCount - 1)
-            } else {
-                allIcons.take(firstRowIconsCount)
+        val allIcons = remember { TempoIcon.getAllIcons() }
+        var showCategoryModal by remember { mutableStateOf(false) }
+
+        // Re-sampled only when the row's slot count actually changes (e.g. the window is
+        // resized), not on unrelated recompositions (e.g. typing in another field).
+        val sampledIcons =
+            remember(firstRowIconsCount) {
+                TempoIcon.sampleAcrossCategories(allIcons, firstRowIconsCount)
             }
+
+        val iconsToDisplay = resolveRowIcons(sampledIcons, allIcons, selectedIconName, firstRowIconsCount)
+
+        if (showCategoryModal) {
+            IconCategoryModal(
+                allIcons = allIcons,
+                selectedIconName = selectedIconName,
+                enabled = enabled,
+                onSelectIcon = {
+                    onSelectIcon(it)
+                    showCategoryModal = false
+                },
+                onDismissRequest = { showCategoryModal = false },
+            )
         }
 
-    Column(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .animateContentSize(animationSpec = spring(stiffness = Spring.StiffnessLow)),
-    ) {
-        FlowRow(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(start = 4.dp, end = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            maxItemsInEachRow = itemsPerRow,
+        Column(
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            iconsToDisplay.forEach { tempoIcon ->
-                IconOption(
-                    tempoIcon = tempoIcon,
-                    isSelected = selectedIconName == tempoIcon.iconName,
+            FlowRow(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(start = 4.dp, end = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                maxItemsInEachRow = itemsPerRow,
+            ) {
+                iconsToDisplay.forEach { tempoIcon ->
+                    IconOption(
+                        tempoIcon = tempoIcon,
+                        isSelected = selectedIconName == tempoIcon.iconName,
+                        enabled = enabled,
+                        onClick = {
+                            if (selectedIconName == tempoIcon.iconName) {
+                                onClearIcon()
+                            } else {
+                                onSelectIcon(tempoIcon.iconName)
+                            }
+                        },
+                    )
+                }
+
+                // Add spacers to push the trigger to the bottom right and respect the grid
+                // This ensures that partial rows have the same spacing as full rows
+                val totalVisible = iconsToDisplay.size + 1
+                val remainder = totalVisible % itemsPerRow
+                if (remainder != 0) {
+                    val spacersNeeded = itemsPerRow - remainder
+                    repeat(spacersNeeded) {
+                        Box(modifier = Modifier.size(ICON_OPTION_SIZE))
+                    }
+                }
+
+                BrowseCategoriesButton(
+                    onClick = { showCategoryModal = true },
                     enabled = enabled,
-                    onClick = {
-                        if (selectedIconName == tempoIcon.iconName) {
-                            onClearIcon()
-                        } else {
-                            onSelectIcon(tempoIcon.iconName)
-                            isExpanded = false
-                        }
-                    },
                 )
             }
 
-            // Add spacers to push the toggle to the bottom right and respect the grid
-            // This ensures that partial rows have the same spacing as full rows
-            val totalVisible = iconsToDisplay.size + 1
-            val remainder = totalVisible % itemsPerRow
-            if (remainder != 0) {
-                val spacersNeeded = itemsPerRow - remainder
-                repeat(spacersNeeded) {
-                    Box(modifier = Modifier.size(48.dp))
-                }
+            if (!enabled && disabledMessage != null) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = disabledMessage,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                    modifier = Modifier.padding(start = 8.dp),
+                )
             }
-
-            ExpandButton(
-                isExpanded = isExpanded,
-                onClick = { isExpanded = !isExpanded },
-                enabled = enabled,
-            )
-        }
-
-        if (!enabled && disabledMessage != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = disabledMessage,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                modifier = Modifier.padding(start = 8.dp),
-            )
         }
     }
 }
@@ -152,18 +220,18 @@ private fun IconOption(
     val containerSize = 48.dp
     val iconBoxSize = 40.dp
     val iconSize = 24.dp
+    val interactionSource = remember { MutableInteractionSource() }
 
     // To make the inner box follow the "exact same shape" as the 16dp outer ring,
     // we use a 12dp radius for the 40dp box (16dp outer - 4dp padding = 12dp inner).
-    // This creates perfectly parallel/concentric curves.
-    val animatedCornerRadius by animateDpAsState(
-        targetValue = if (isSelected) 12.dp else 16.dp,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMedium,
-            ),
-        label = "icon_corner_radius",
+    // This creates perfectly parallel/concentric curves. Shares the same reactive
+    // press-morph convention as CategoryChipRow/ExpressiveChip.
+    val animatedCornerRadius by rememberPressableChipAnimation(
+        isSelected = isSelected,
+        interactionSource = interactionSource,
+        selectedRadius = 12.dp,
+        unselectedRadius = 16.dp,
+        pressedRadius = 8.dp,
     )
 
     val containerColor by animateColorAsState(
@@ -199,7 +267,7 @@ private fun IconOption(
             Modifier
                 .size(containerSize)
                 .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
+                    interactionSource = interactionSource,
                     indication = null,
                     enabled = enabled,
                     onClick = {
@@ -247,9 +315,11 @@ private fun IconOption(
     }
 }
 
+/**
+ * Trailing trigger that opens [IconCategoryModal] to browse every icon by category.
+ */
 @Composable
-private fun ExpandButton(
-    isExpanded: Boolean,
+private fun BrowseCategoriesButton(
     onClick: () -> Unit,
     enabled: Boolean,
 ) {
@@ -271,7 +341,7 @@ private fun ExpandButton(
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
             },
-        label = "expand_container_color",
+        label = "browse_categories_container_color",
     )
 
     val contentColor by animateColorAsState(
@@ -281,7 +351,7 @@ private fun ExpandButton(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
             },
-        label = "expand_content_color",
+        label = "browse_categories_content_color",
     )
 
     Box(
@@ -302,20 +372,84 @@ private fun ExpandButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter =
-                painterResource(
-                    if (isExpanded) R.drawable.ic_expand_less else R.drawable.ic_expand_more,
-                ),
-            contentDescription =
-                if (isExpanded) {
-                    stringResource(R.string.collapse)
-                } else {
-                    stringResource(
-                        R.string.expand,
-                    )
-                },
+            painter = painterResource(R.drawable.ic_chevron_right),
+            contentDescription = stringResource(R.string.icon_picker_browse_categories),
             modifier = Modifier.size(iconSize),
             tint = contentColor,
         )
+    }
+}
+
+private val MODAL_HORIZONTAL_PADDING = 24.dp
+
+/**
+ * Modal listing every [TempoIcon], grouped and headed by its [IconCategory]. Reuses the same
+ * adaptive row-sizing the collapsed row and [ColorPicker] use, so every category's icons line
+ * up on the same column grid instead of each row wrapping independently.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun IconCategoryModal(
+    allIcons: List<TempoIcon>,
+    selectedIconName: String?,
+    enabled: Boolean,
+    onSelectIcon: (String) -> Unit,
+    onDismissRequest: () -> Unit,
+) {
+    val iconsByCategory = remember(allIcons) { allIcons.groupBy { it.category } }
+
+    TempoModalBottomSheet(onDismissRequest = onDismissRequest) {
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val itemsPerRow =
+                calculateAdaptiveItemCount(
+                    availableWidth = maxWidth,
+                    itemSize = ICON_OPTION_SIZE,
+                    minGap = ROW_ITEM_MIN_GAP,
+                    horizontalPadding = MODAL_HORIZONTAL_PADDING * 2,
+                    minCount = DEFAULT_ITEMS_PER_ROW,
+                    maxCount = MAX_MODAL_ITEMS_PER_ROW,
+                )
+
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = MODAL_HORIZONTAL_PADDING)
+                        .padding(top = 8.dp, bottom = 32.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.icon_picker_all_icons_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+
+                IconCategory.entries.forEach { category ->
+                    val categoryIcons = iconsByCategory[category].orEmpty()
+                    if (categoryIcons.isNotEmpty()) {
+                        Text(
+                            text = stringResource(category.labelRes),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(top = 20.dp, bottom = 8.dp),
+                        )
+                        FlowRow(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(ROW_ITEM_MIN_GAP),
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
+                            maxItemsInEachRow = itemsPerRow,
+                        ) {
+                            categoryIcons.forEach { tempoIcon ->
+                                IconOption(
+                                    tempoIcon = tempoIcon,
+                                    isSelected = selectedIconName == tempoIcon.iconName,
+                                    enabled = enabled,
+                                    onClick = { onSelectIcon(tempoIcon.iconName) },
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.5](https://github.com/mandrecode/tempo/compare/v0.9.4...v0.9.5) (2026-07-17)
+
+
+### Features
+
+* **#17:** rework icon picker with categories and a randomized row ([#155](https://github.com/mandrecode/tempo/issues/155)) ([34400d7](https://github.com/mandrecode/tempo/commit/34400d785f688792302023c0a08fdd33ba85eee3))
+
 ## [0.9.4](https://github.com/mandrecode/tempo/compare/v0.9.3...v0.9.4) (2026-07-16)
 
 

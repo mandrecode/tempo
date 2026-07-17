@@ -56,12 +56,22 @@ fun ColorPicker(
     Column(
         modifier = modifier.fillMaxWidth(),
     ) {
-        // Match the SpaceBetween spacing of IconPicker (6 items × 48dp, 4dp padding each side)
+        // Match IconPicker's row sizing (48dp items, 4dp padding each side), but the ceiling is
+        // simply "however many colors exist" - there's no grouping concept to cap variety at.
         val itemSize = 48.dp
-        val itemsPerRow = 6
         val horizontalPadding = 4.dp
+        val minItemsPerRow = 6
 
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val itemsPerRow =
+                calculateAdaptiveItemCount(
+                    availableWidth = maxWidth,
+                    itemSize = itemSize,
+                    minGap = horizontalPadding,
+                    horizontalPadding = horizontalPadding * 2,
+                    minCount = minItemsPerRow,
+                    maxCount = allColors.size,
+                )
             val spacing =
                 ((maxWidth - horizontalPadding * 2 - itemSize * itemsPerRow) / (itemsPerRow - 1))
                     .coerceAtLeast(0.dp)
