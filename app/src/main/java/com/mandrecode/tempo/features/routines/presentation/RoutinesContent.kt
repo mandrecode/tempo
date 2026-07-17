@@ -154,10 +154,10 @@ fun RoutinesContent(
                             PaddingValues(
                                 start = 16.dp,
                                 end = 16.dp,
-                                top = 16.dp,
+                                top = 8.dp,
                                 bottom = listBottomPadding,
                             ),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
                         items(
                             items = scheduledItems,
