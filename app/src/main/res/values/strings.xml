@@ -511,14 +511,14 @@
     <string name="keywords_sports_gymnastics">stretch, stretching, flexibility, gymnastics, warmup</string>
     <string name="keywords_bedtime">wind down, moon, night routine, lights out</string>
     <string name="keywords_medication">medication, pills, medicine, prescription, dose, vitamins</string>
-    <string name="keywords_medical_services">clinic, hospital, appointment, physician, specialist</string>
+    <string name="keywords_medical_services">clinic, hospital, doctor appointment, physician, specialist</string>
     <string name="keywords_monitor_weight">weight, scale, weigh in, body weight, track weight</string>
     <string name="keywords_lunch_dining">cook, cooking, meal prep, recipe, kitchen</string>
     <string name="keywords_no_food">fast, fasting, no food, intermittent fasting, skip eating</string>
     <string name="keywords_nutrition">nutrition, healthy eating, diet, fruit, vegetables, balanced</string>
     <string name="keywords_checklist">checklist, task, to-do, tick, complete</string>
     <string name="keywords_code">code, coding, programming, developer, software</string>
-    <string name="keywords_event">meeting, event, appointment, conference, schedule</string>
+    <string name="keywords_event">meeting, event, conference, catch up</string>
     <string name="keywords_timer">timer, focus, pomodoro, countdown, session</string>
     <string name="keywords_directions_car">drive, driving, commute, car, traffic</string>
     <string name="keywords_potted_plant">garden, gardening, plant, water plants, yard</string>
