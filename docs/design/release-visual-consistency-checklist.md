@@ -170,8 +170,10 @@ Found in the 2026-07 audit. Check off when fixed (with PR link).
       (end 20 / bottom 12dp, `surfaceContainerHighest`); tasks' add action lives in the floating
       bar. Verify both tabs expose a visually consistent add affordance at every tier, including
       single-tab mode. (`RoutinesContent.kt:212-239`, `core/ui/navigation/FloatingBarTaskActions.kt`)
-- [ ] **G14 — `contentDescription = null` audit.** ~30 null descriptions across UI; confirm each
-      is genuinely decorative (expand chevrons inside clickable pills are borderline).
+- [x] **G14 — `contentDescription = null` audit.** ~30 null descriptions across UI; confirm each
+      is genuinely decorative (expand chevrons inside clickable pills are borderline). Fixed in
+      [#192](https://github.com/mandrecode/tempo/pull/192): added missing container-level checkbox
+      semantics to `TaskItem`/`HabitItem`; the rest were already correctly decorative.
 - [ ] **G15 — Muted-text alphas drift.** Completed title/description alphas: tasks 0.6/0.4 vs
       habits 0.5/0.35. Standardize the muted-content alpha ladder (e.g. 0.7/0.5/0.35) in one place.
 

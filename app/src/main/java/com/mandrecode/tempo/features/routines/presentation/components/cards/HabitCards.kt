@@ -48,8 +48,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.toggleableState
+import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -184,11 +190,20 @@ internal fun HabitItem(
         // carries more visual weight as the primary action; task rows are denser (metadata,
         // subtasks) so a smaller touch target preserves compactness. Keep this in sync with the
         // content Column's heightIn(min) below if either changes.
+        val completionA11yLabel =
+            stringResource(
+                if (isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
+            )
         Box(
             modifier =
                 Modifier
                     .size(56.dp)
-                    .graphicsLayer {
+                    .semantics {
+                        role = Role.Checkbox
+                        toggleableState = if (isCompleted) ToggleableState.On else ToggleableState.Off
+                        contentDescription = completionA11yLabel
+                        if (!canToggle) disabled()
+                    }.graphicsLayer {
                         scaleX = checkboxScale
                         scaleY = checkboxScale
                         alpha = if (canToggle) 1f else 0.5f
@@ -226,7 +241,7 @@ internal fun HabitItem(
             if (isCompleted) {
                 Icon(
                     imageVector = Icons.Filled.Check,
-                    contentDescription = stringResource(R.string.completed),
+                    contentDescription = null,
                     modifier = Modifier.size(28.dp),
                     tint = iconTintColor,
                 )
