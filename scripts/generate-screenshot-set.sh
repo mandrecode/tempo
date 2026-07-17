@@ -15,3 +15,10 @@ for THEME in light dark; do
   bash "${SCRIPT_DIR}/seed-screenshot-data.sh" "$SERIAL" "$THEME"
   python3 "${SCRIPT_DIR}/capture-screenshot-set.py" "$SERIAL" "$OUT_DIR" "${PREFIX}_${THEME}"
 done
+
+# The XR emulator always captures a square passthrough scene regardless of
+# wm size, which Play Store's 16:9/9:16 requirement rejects — crop it down.
+# Requires Pillow (pip install Pillow).
+if [ "$PREFIX" = "xr" ]; then
+  python3 "${SCRIPT_DIR}/crop-xr-screenshots.py" "$OUT_DIR"
+fi
