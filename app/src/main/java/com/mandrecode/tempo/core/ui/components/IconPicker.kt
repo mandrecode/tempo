@@ -58,8 +58,8 @@ private val MAX_ITEMS_PER_ROW = IconCategory.entries.size + 1
 
 /**
  * How many 48dp icon slots (including the trailing trigger) comfortably fit across
- * [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing, clamped to
- * [[DEFAULT_ITEMS_PER_ROW], [MAX_ITEMS_PER_ROW]] so compact phones never shrink below today's
+ * [availableWidth] at [ROW_ITEM_MIN_GAP] minimum spacing, clamped to between
+ * [DEFAULT_ITEMS_PER_ROW] and [MAX_ITEMS_PER_ROW] so compact phones never shrink below today's
  * row size and wide windows don't grow it past one slot per category.
  */
 internal fun calculateItemsPerRow(availableWidth: Dp): Int =
@@ -71,6 +71,33 @@ internal fun calculateItemsPerRow(availableWidth: Dp): Int =
         minCount = DEFAULT_ITEMS_PER_ROW,
         maxCount = MAX_ITEMS_PER_ROW,
     )
+
+/**
+ * Picks which icons the collapsed row should show: [sampledIcons] as-is when there's no
+ * selection or the selection is already represented, otherwise the selected icon pinned to the
+ * first slot with the remaining [slotCount] - 1 slots backfilled from [sampledIcons] *excluding*
+ * its category - so a manually-picked icon never displaces the row's one-per-category coverage
+ * by leaving a same-category duplicate behind while dropping a different category entirely.
+ */
+internal fun resolveRowIcons(
+    sampledIcons: List<TempoIcon>,
+    allIcons: List<TempoIcon>,
+    selectedIconName: String?,
+    slotCount: Int,
+): List<TempoIcon> =
+    when {
+        selectedIconName == null -> sampledIcons
+        sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
+        else -> {
+            val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
+            if (selectedIcon != null) {
+                val remaining = sampledIcons.filter { it.category != selectedIcon.category }
+                listOf(selectedIcon) + remaining.take(slotCount - 1)
+            } else {
+                sampledIcons
+            }
+        }
+    }
 
 /**
  * Icon picker component for selecting habit icons.
@@ -102,19 +129,7 @@ fun IconPicker(
                 TempoIcon.sampleAcrossCategories(allIcons, firstRowIconsCount)
             }
 
-        val iconsToDisplay =
-            when {
-                selectedIconName == null -> sampledIcons
-                sampledIcons.any { it.iconName == selectedIconName } -> sampledIcons
-                else -> {
-                    val selectedIcon = allIcons.firstOrNull { it.iconName == selectedIconName }
-                    if (selectedIcon != null) {
-                        listOf(selectedIcon) + sampledIcons.take(firstRowIconsCount - 1)
-                    } else {
-                        sampledIcons
-                    }
-                }
-            }
+        val iconsToDisplay = resolveRowIcons(sampledIcons, allIcons, selectedIconName, firstRowIconsCount)
 
         if (showCategoryModal) {
             IconCategoryModal(
