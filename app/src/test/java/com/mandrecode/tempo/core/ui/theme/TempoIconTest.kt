@@ -206,6 +206,14 @@ class TempoIconTest {
     }
 
     @Test
+    fun `suggestIcon still maps generic appointment keyword to calendar`() {
+        setupKeywords()
+        // Guards against MEDICAL_SERVICES/EVENT re-claiming this generic term and
+        // shadowing CALENDAR again via enum-order tie-break.
+        assertThat(TempoIcon.suggestIcon("Set an appointment", context)).isEqualTo(TempoIcon.CALENDAR)
+    }
+
+    @Test
     fun `suggestIcon still matches regular suffixed forms of longer keywords`() {
         setupKeywords()
         // "clean" (prefix match) + "house" (exact) both point to HOME
