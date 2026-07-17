@@ -504,4 +504,17 @@
     <string name="keywords_shield">shield, protect, quit, stop, block, avoid, guard</string>
     <string name="keywords_psychiatry">psychiatry, mind, mental, therapy, brain, build, growth</string>
     <string name="keywords_smoke_free">smoke free, smoking, cigarette, tobacco, quit, stop</string>
+
+    <!-- HABIT ICON CATEGORIES -->
+    <string name="icon_category_fitness_sports">Fitness &amp; Sports</string>
+    <string name="icon_category_health_wellness">Health &amp; Wellness</string>
+    <string name="icon_category_food_nutrition">Food &amp; Nutrition</string>
+    <string name="icon_category_productivity_work">Productivity &amp; Work</string>
+    <string name="icon_category_home_daily_life">Home &amp; Daily Life</string>
+    <string name="icon_category_communication_social">Communication &amp; Social</string>
+    <string name="icon_category_entertainment_hobbies">Entertainment &amp; Hobbies</string>
+    <string name="icon_category_personal_development">Personal Development</string>
+    <string name="icon_category_miscellaneous">Miscellaneous</string>
+    <string name="icon_picker_browse_categories">Browse all icons by category</string>
+    <string name="icon_picker_all_icons_title">All icons</string>
 </resources>
