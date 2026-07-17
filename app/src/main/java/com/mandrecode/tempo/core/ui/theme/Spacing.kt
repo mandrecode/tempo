@@ -33,7 +33,12 @@ val MaterialTheme.spacing: Spacing
     @ReadOnlyComposable
     get() = LocalSpacing.current
 
-/** Named measurements for specific shared UI elements, as opposed to [Spacing]'s generic scale. */
+/**
+ * Named measurements for specific UI elements (a particular card's content padding, the bottom
+ * navigation bar's height) that don't map onto [Spacing]'s generic gap scale — as opposed to a
+ * step in that abstract scale. Not restricted to shared components; a value belongs here when
+ * it names one specific measurement, wherever it's used.
+ */
 object TempoSpacing {
     // Card content padding
     val cardContentPadding = 16.dp
