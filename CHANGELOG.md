@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.10](https://github.com/mandrecode/tempo/compare/v0.9.9...v0.9.10) (2026-07-17)
+
+
+### Bug Fixes
+
+* **#196:** resolve category colors via app theme, not system theme ([#197](https://github.com/mandrecode/tempo/issues/197)) ([ea4f3b5](https://github.com/mandrecode/tempo/commit/ea4f3b5768feb75accf9427fb335ccec0f75d9d5))
+
 ## [0.9.9](https://github.com/mandrecode/tempo/compare/v0.9.8...v0.9.9) (2026-07-17)
 
 
