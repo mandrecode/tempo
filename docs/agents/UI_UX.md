@@ -203,7 +203,9 @@ get() = when (this) {
 
 ## Checklist for AI
 
-Before completing a UI task, verify:
+Before completing a UI task, verify (see also the release-gate
+[visual consistency checklist](../design/release-visual-consistency-checklist.md) when preparing
+a release or reviewing UI-heavy changes):
 
 - [ ] Is `UiState` immutable with `val` properties?
 - [ ] Are we using `kotlinx.collections.immutable` collections?
