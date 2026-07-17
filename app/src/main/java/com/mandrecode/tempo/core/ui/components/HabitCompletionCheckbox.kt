@@ -43,7 +43,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoIcon
 private const val COMPLETED_RADIUS_FRACTION = 16f / 56f
 private const val UNCOMPLETED_RADIUS_FRACTION = 0.5f
 private const val ICON_FRACTION = 0.5f
-private const val COMPLETED_SCALE = 1.05f
+private const val COMPLETED_SCALE = 1.1f
 private const val UNCOMPLETED_SCALE = 1f
 private const val DISABLED_ALPHA = 0.5f
 private const val ENABLED_ALPHA = 1f

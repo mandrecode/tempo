@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 
-private const val COMPLETED_SCALE = 1.05f
+private const val COMPLETED_SCALE = 1.1f
 private const val UNCOMPLETED_SCALE = 1f
 private const val COMPLETED_BG_ALPHA = 0.08f
 private const val UNCOMPLETED_BG_ALPHA = 0.12f

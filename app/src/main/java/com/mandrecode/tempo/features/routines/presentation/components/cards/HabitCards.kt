@@ -124,9 +124,9 @@ internal fun HabitItem(
         label = "checkbox_radius",
     )
 
-    // Visual "pop" scale animation for toggling
+    // Visual "pop" scale animation for toggling — matches TaskItem's checkbox scale (1.1f).
     val checkboxScale by animateFloatAsState(
-        targetValue = if (isCompleted) 1.05f else 1f,
+        targetValue = if (isCompleted) 1.1f else 1f,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioMediumBouncy,
@@ -178,7 +178,12 @@ internal fun HabitItem(
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Large animated checkbox
+        // Large animated checkbox. Sized to match the content Column's heightIn(min = 56.dp)
+        // below — intentionally larger than TaskItem's 48dp checkbox, which matches its own
+        // 48dp min title Box height. Habit rows are simpler (title + streak) so the checkbox
+        // carries more visual weight as the primary action; task rows are denser (metadata,
+        // subtasks) so a smaller touch target preserves compactness. Keep this in sync with the
+        // content Column's heightIn(min) below if either changes.
         Box(
             modifier =
                 Modifier
