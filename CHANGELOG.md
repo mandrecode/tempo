@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.7](https://github.com/mandrecode/tempo/compare/v0.9.6...v0.9.7) (2026-07-17)
+
+
+### Bug Fixes
+
+* **#157:** show settings topBar without expanded title at medium/expanded sizes ([#164](https://github.com/mandrecode/tempo/issues/164)) ([5a640d4](https://github.com/mandrecode/tempo/commit/5a640d4da9a7c191e8245fc209f3b05586d6cf03))
+
 ## [0.9.6](https://github.com/mandrecode/tempo/compare/v0.9.5...v0.9.6) (2026-07-17)
 
 
