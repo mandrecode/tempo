@@ -18,7 +18,8 @@ class TempoIconTest {
         mapOf(
             R.string.keywords_fitness to "fitness, gym, workout, exercise, training, strength",
             R.string.keywords_run to "run, running, jog, jogging, cardio, sprint",
-            R.string.keywords_walk to "walk, walking, step, steps, stroll, hike",
+            R.string.keywords_walk to "walk, walking, step, steps, stroll",
+            R.string.keywords_hiking to "hiking, hike, trail, trek, mountain, outdoors",
             R.string.keywords_sports to "sport, sports, game, play, ball, team",
             R.string.keywords_health to "health, medical, doctor, checkup, medicine",
             R.string.keywords_heart to "heart, love, care, gratitude, affection",
@@ -31,11 +32,11 @@ class TempoIconTest {
             R.string.keywords_school to "school, study, learn, education, class, university",
             R.string.keywords_book to "book, read, reading, literature, novel, study",
             R.string.keywords_create to "create, write, writing, draw, art, design, creative",
-            R.string.keywords_home to "home, house, clean, tidy, chore",
+            R.string.keywords_home to "home, house, tidy",
             R.string.keywords_calendar to "calendar, schedule, plan, organize, appointment",
             R.string.keywords_bed to "sleep, bed, rest, nap, bedtime, night",
             R.string.keywords_call to "call, phone, contact, talk, conversation",
-            R.string.keywords_email to "email, mail, message, inbox, correspondence",
+            R.string.keywords_email to "email, mail, inbox, correspondence",
             R.string.keywords_music to "music, song, listen, audio, play, instrument, practice",
             R.string.keywords_music_note to "note, melody, tune, compose, musician, piano, guitar",
             R.string.keywords_game to "game, gaming, play, video game, console",
@@ -46,13 +47,20 @@ class TempoIconTest {
             R.string.keywords_list to "menu, list, organize, sort",
             R.string.keywords_remind to "remind, reminder, bell, alert, notification",
             R.string.keywords_routine to "routine, daily, habit, repeat, recurring, schedule, regular",
+            R.string.keywords_bedtime to "wind down, moon, night routine, lights out",
+            R.string.keywords_medical_services to "clinic, hospital, doctor appointment, physician, specialist",
+            R.string.keywords_no_food to "fast, fasting, no food, intermittent fasting, skip eating",
+            R.string.keywords_code to "code, coding, programming, developer, software",
+            R.string.keywords_translate to "language, learn language, vocabulary, translate",
+            R.string.keywords_savings to "save, saving, savings, piggy bank, invest",
         )
 
     private val spanishKeywordMap =
         mapOf(
             R.string.keywords_fitness to "fitness, gimnasio, entrenamiento, ejercicio, entrenar, fuerza",
             R.string.keywords_run to "correr, corriendo, trotar, trote, cardio, sprint",
-            R.string.keywords_walk to "caminar, caminando, paso, pasos, paseo, caminata",
+            R.string.keywords_walk to "caminar, caminando, paso, pasos, paseo",
+            R.string.keywords_hiking to "senderismo, sendero, caminata, montaña, aire libre",
             R.string.keywords_sports to "deporte, deportes, juego, jugar, pelota, equipo",
             R.string.keywords_health to "salud, médico, doctor, chequeo, medicina",
             R.string.keywords_heart to "corazón, amor, cuidado, gratitud, cariño",
@@ -65,11 +73,11 @@ class TempoIconTest {
             R.string.keywords_school to "escuela, estudiar, aprender, educación, clase, universidad",
             R.string.keywords_book to "libro, leer, leyendo, lectura, literatura, novela, estudio",
             R.string.keywords_create to "crear, escribir, escribiendo, dibujar, arte, diseño, creativo",
-            R.string.keywords_home to "casa, hogar, limpiar, ordenar, tarea",
+            R.string.keywords_home to "casa, hogar, ordenar",
             R.string.keywords_calendar to "calendario, horario, plan, organizar, cita",
             R.string.keywords_bed to "dormir, cama, descanso, siesta, hora de dormir, noche",
             R.string.keywords_call to "llamar, teléfono, contacto, hablar, conversación",
-            R.string.keywords_email to "email, correo, mensaje, bandeja de entrada, correspondencia",
+            R.string.keywords_email to "email, correo, bandeja de entrada, correspondencia",
             R.string.keywords_music to "música, canción, escuchar, audio, reproducir, instrumento, práctica",
             R.string.keywords_music_note to "nota, melodía, melodia, afinar, componer, músico, piano, guitarra",
             R.string.keywords_game to "juego, gaming, jugar, videojuego, consola",
@@ -80,6 +88,12 @@ class TempoIconTest {
             R.string.keywords_list to "menú, lista, organizar, ordenar",
             R.string.keywords_remind to "recordar, recordatorio, campana, alerta, notificación",
             R.string.keywords_routine to "rutina, diario, hábito, repetir, recurrente, horario, regular",
+            R.string.keywords_bedtime to "rutina nocturna, luna, apagar luces",
+            R.string.keywords_medical_services to "clínica, hospital, cita médica, especialista",
+            R.string.keywords_no_food to "ayuno, ayunar, ayuno intermitente, día de ayuno",
+            R.string.keywords_code to "código, programar, programación, desarrollador, software",
+            R.string.keywords_translate to "idioma, aprender idioma, vocabulario, traducir, practicar",
+            R.string.keywords_savings to "ahorrar, ahorro, alcancía, invertir",
         )
 
     @Before
@@ -159,6 +173,14 @@ class TempoIconTest {
     }
 
     @Test
+    fun `suggestIcon returns correct icon for hiking keywords`() {
+        setupKeywords()
+        // "hike" belongs to HIKING, not WALK, despite the similar meaning
+        assertThat(TempoIcon.suggestIcon("Go for a hike", context)).isEqualTo(TempoIcon.HIKING)
+        assertThat(TempoIcon.suggestIcon("Mountain trail", context)).isEqualTo(TempoIcon.HIKING)
+    }
+
+    @Test
     fun `suggestIcon returns correct icon for health keywords`() {
         setupKeywords()
         assertThat(TempoIcon.suggestIcon("Doctor checkup", context)).isEqualTo(TempoIcon.HEALTH)
@@ -194,10 +216,18 @@ class TempoIconTest {
     }
 
     @Test
+    fun `suggestIcon still maps generic appointment keyword to calendar`() {
+        setupKeywords()
+        // Guards against MEDICAL_SERVICES/EVENT re-claiming this generic term and
+        // shadowing CALENDAR again via enum-order tie-break.
+        assertThat(TempoIcon.suggestIcon("Set an appointment", context)).isEqualTo(TempoIcon.CALENDAR)
+    }
+
+    @Test
     fun `suggestIcon still matches regular suffixed forms of longer keywords`() {
         setupKeywords()
-        // "clean" (prefix match) + "house" (exact) both point to HOME
-        assertThat(TempoIcon.suggestIcon("I'm cleaning the house", context)).isEqualTo(TempoIcon.HOME)
+        // "hydrate" (prefix match) matches suffixed "hydrated" and points to WATER
+        assertThat(TempoIcon.suggestIcon("I hydrated well today", context)).isEqualTo(TempoIcon.WATER)
     }
 
     @Test
@@ -221,6 +251,51 @@ class TempoIconTest {
         assertThat(TempoIcon.suggestIcon("Sleep early", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Bedtime routine", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Rest time", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for bedtime keywords, distinct from bed`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Wind down time", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Lights out", context)).isEqualTo(TempoIcon.BEDTIME)
+        // BED still wins when the text uses "bedtime" itself - BEDTIME doesn't claim that word
+        assertThat(TempoIcon.suggestIcon("Bedtime story", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for medical services keywords, distinct from health`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Hospital appointment", context)).isEqualTo(TempoIcon.MEDICAL_SERVICES)
+        assertThat(TempoIcon.suggestIcon("See a specialist", context)).isEqualTo(TempoIcon.MEDICAL_SERVICES)
+        // HEALTH still wins on its own distinct "medical"/"medicine" keywords
+        assertThat(TempoIcon.suggestIcon("Doctor checkup", context)).isEqualTo(TempoIcon.HEALTH)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for fasting keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Intermittent fasting", context)).isEqualTo(TempoIcon.NO_FOOD)
+        assertThat(TempoIcon.suggestIcon("Skip eating today", context)).isEqualTo(TempoIcon.NO_FOOD)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for coding keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Practice coding", context)).isEqualTo(TempoIcon.CODE)
+        assertThat(TempoIcon.suggestIcon("Programming session", context)).isEqualTo(TempoIcon.CODE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for language learning keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Learn language vocabulary", context)).isEqualTo(TempoIcon.TRANSLATE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for savings keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Piggy bank savings", context)).isEqualTo(TempoIcon.SAVINGS)
+        assertThat(TempoIcon.suggestIcon("Invest monthly", context)).isEqualTo(TempoIcon.SAVINGS)
     }
 
     @Test
@@ -269,7 +344,15 @@ class TempoIconTest {
         setupKeywords(isSpanish = true)
         assertThat(TempoIcon.suggestIcon("Dar un paseo", context)).isEqualTo(TempoIcon.WALK)
         assertThat(TempoIcon.suggestIcon("Caminar por el parque", context)).isEqualTo(TempoIcon.WALK)
-        assertThat(TempoIcon.suggestIcon("Caminata diaria", context)).isEqualTo(TempoIcon.WALK)
+        assertThat(TempoIcon.suggestIcon("Paseo diario", context)).isEqualTo(TempoIcon.WALK)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for hiking keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        // "caminata" belongs to HIKING, not WALK, despite the similar meaning
+        assertThat(TempoIcon.suggestIcon("Ir de caminata", context)).isEqualTo(TempoIcon.HIKING)
+        assertThat(TempoIcon.suggestIcon("Sendero de montaña", context)).isEqualTo(TempoIcon.HIKING)
     }
 
     @Test
@@ -325,6 +408,32 @@ class TempoIconTest {
         assertThat(TempoIcon.suggestIcon("Dormir temprano", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Descanso nocturno", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Hora de dormir", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for bedtime keywords Spanish, distinct from bed`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Rutina nocturna", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Apagar luces", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Dormir temprano", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for fasting keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Ayuno intermitente", context)).isEqualTo(TempoIcon.NO_FOOD)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for coding keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Practicar programación", context)).isEqualTo(TempoIcon.CODE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for savings keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Ahorrar en la alcancía", context)).isEqualTo(TempoIcon.SAVINGS)
     }
 
     @Test

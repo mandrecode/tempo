@@ -473,7 +473,7 @@
     <!-- HABIT ICON KEYWORDS -->
     <string name="keywords_fitness">fitness, gym, workout, exercise, training, strength</string>
     <string name="keywords_run">run, running, jog, jogging, cardio, sprint</string>
-    <string name="keywords_walk">walk, walking, step, steps, stroll, hike</string>
+    <string name="keywords_walk">walk, walking, step, steps, stroll</string>
     <string name="keywords_sports">sport, sports, game, play, ball, team</string>
     <string name="keywords_health">health, medical, doctor, checkup, medicine</string>
     <string name="keywords_heart">heart, love, care, gratitude, affection</string>
@@ -486,11 +486,11 @@
     <string name="keywords_school">school, study, learn, education, class, university</string>
     <string name="keywords_book">book, read, reading, literature, novel, study</string>
     <string name="keywords_create">create, write, writing, draw, art, design, creative</string>
-    <string name="keywords_home">home, house, clean, tidy, chore</string>
+    <string name="keywords_home">home, house, tidy</string>
     <string name="keywords_calendar">calendar, schedule, plan, organize, appointment</string>
     <string name="keywords_bed">sleep, bed, rest, nap, bedtime, night</string>
     <string name="keywords_call">call, phone, contact, talk, conversation</string>
-    <string name="keywords_email">email, mail, message, inbox, correspondence</string>
+    <string name="keywords_email">email, mail, inbox, correspondence</string>
     <string name="keywords_music">music, song, listen, audio, play, instrument, practice</string>
     <string name="keywords_music_note">note, melody, tune, compose, musician, piano, guitar</string>
     <string name="keywords_game">game, gaming, play, video game, console</string>
@@ -505,8 +505,44 @@
     <string name="keywords_pets">pet, pets, dog, cat, animal, mascot, paw</string>
     <string name="keywords_routine">routine, daily, habit, repeat, recurring, schedule, regular</string>
     <string name="keywords_shield">shield, protect, quit, stop, block, avoid, guard</string>
-    <string name="keywords_psychiatry">psychiatry, mind, mental, therapy, brain, build, growth</string>
+    <string name="keywords_psychiatry">psychiatry, mind, mental, brain, build</string>
     <string name="keywords_smoke_free">smoke free, smoking, cigarette, tobacco, quit, stop</string>
+    <string name="keywords_self_improvement">yoga, balance, pose</string>
+    <string name="keywords_pool">swim, swimming, pool, laps, water sport</string>
+    <string name="keywords_directions_bike">bike, biking, cycle, cycling, ride, bicycle</string>
+    <string name="keywords_hiking">hiking, hike, trail, trek, mountain, outdoors</string>
+    <string name="keywords_sports_gymnastics">stretch, stretching, flexibility, gymnastics, warmup</string>
+    <string name="keywords_bedtime">wind down, moon, night routine, lights out</string>
+    <string name="keywords_medication">medication, pills, prescription, dose, vitamins</string>
+    <string name="keywords_medical_services">clinic, hospital, doctor appointment, physician, specialist</string>
+    <string name="keywords_monitor_weight">weight, scale, weigh in, body weight, track weight</string>
+    <string name="keywords_lunch_dining">cook, cooking, meal prep, recipe, kitchen</string>
+    <string name="keywords_no_food">fast, fasting, no food, intermittent fasting, skip eating</string>
+    <string name="keywords_nutrition">nutrition, healthy eating, diet, fruit, vegetables, balanced</string>
+    <string name="keywords_checklist">checklist, task, to-do, tick, complete</string>
+    <string name="keywords_code">code, coding, programming, developer, software</string>
+    <string name="keywords_event">meeting, event, conference, catch up</string>
+    <string name="keywords_timer">timer, pomodoro, countdown, session</string>
+    <string name="keywords_directions_car">drive, driving, commute, car, traffic</string>
+    <string name="keywords_potted_plant">garden, gardening, plant, water plants, yard</string>
+    <string name="keywords_celebration">celebrate, celebration, party, gift, occasion</string>
+    <string name="keywords_chat">chat, message, text, dm</string>
+    <string name="keywords_diversity_3">family, friends, social, gathering, community</string>
+    <string name="keywords_videocam">video call, videocall, call, zoom, facetime, webcam</string>
+    <string name="keywords_edit_note">journal, journaling, diary</string>
+    <string name="keywords_flight">travel, flight, trip, vacation, airport</string>
+    <string name="keywords_palette_outlined">paint, painting, palette, hobby</string>
+    <string name="keywords_photo_camera">photo, photography, camera, picture, shoot</string>
+    <string name="keywords_military_tech">badge, honor, medal</string>
+    <string name="keywords_psychology">therapy, mental health, reflection, self care</string>
+    <string name="keywords_translate">language, learn language, vocabulary, translate</string>
+    <string name="keywords_trending_up">progress, growth, improve, trend, level up</string>
+    <string name="keywords_account_balance_wallet">budget, wallet, finance, spending, money</string>
+    <string name="keywords_cleaning_services">clean, mop, vacuum, dust, scrub, chore</string>
+    <string name="keywords_local_laundry_service">laundry, wash clothes, washing machine, fold clothes</string>
+    <string name="keywords_shopping_cart">shopping, groceries, grocery, cart, buy, market</string>
+    <string name="keywords_savings">save, saving, savings, piggy bank, invest</string>
+    <string name="keywords_recycling">recycle, recycling, trash, sort waste, sustainability</string>
 
     <!-- HABIT ICON CATEGORIES -->
     <string name="icon_category_fitness_sports">Fitness &amp; Sports</string>
@@ -517,6 +553,7 @@
     <string name="icon_category_communication_social">Communication &amp; Social</string>
     <string name="icon_category_entertainment_hobbies">Entertainment &amp; Hobbies</string>
     <string name="icon_category_personal_development">Personal Development</string>
+    <string name="icon_category_finance_chores">Finance &amp; Chores</string>
     <string name="icon_category_miscellaneous">Miscellaneous</string>
     <string name="icon_picker_browse_categories">Browse all icons by category</string>
     <string name="icon_picker_all_icons_title">All icons</string>

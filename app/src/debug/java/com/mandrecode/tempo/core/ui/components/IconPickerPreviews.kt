@@ -61,7 +61,20 @@ private fun IconPickerDisabledPreview() {
             onSelectIcon = {},
             onClearIcon = {},
             enabled = false,
-            disabledMessage = "Icons unavailable for this habit type",
+            disabledMessage = null,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "Compact width", showBackground = true, widthDp = 320)
+@Composable
+private fun IconPickerCompactWidthPreview() {
+    TempoTheme {
+        IconPicker(
+            selectedIconName = null,
+            onSelectIcon = {},
+            onClearIcon = {},
             modifier = Modifier.padding(16.dp),
         )
     }
