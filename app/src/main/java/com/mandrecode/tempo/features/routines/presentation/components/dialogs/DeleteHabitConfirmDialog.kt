@@ -40,10 +40,10 @@ fun DeleteHabitConfirmDialog(
             )
         },
         text = {
-            val habitTitle = habitToDelete?.title ?: stringResource(R.string.habit)
+            val habitTitle = habitToDelete?.title ?: stringResource(R.string.this_habit)
             Text(
                 buildAnnotatedString {
-                    val messagePrefix = stringResource(R.string.delete_task_message_prefix).trimEnd()
+                    val messagePrefix = stringResource(R.string.delete_habit_message_prefix).trimEnd()
                     append(messagePrefix)
                     append(" ")
                     withStyle(
@@ -54,7 +54,7 @@ fun DeleteHabitConfirmDialog(
                     ) {
                         append(habitTitle)
                     }
-                    append(stringResource(R.string.delete_task_message_suffix).trimStart())
+                    append(stringResource(R.string.delete_habit_message_suffix).trimStart())
                 },
             )
         },
