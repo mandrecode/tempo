@@ -220,3 +220,27 @@ val Typography.subtaskTitle: TextStyle
 /** Selected state for filter / expressive chips. */
 val Typography.filterChipSelected: TextStyle
     get() = labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
+
+/** Onboarding welcome screen app-name title, compact layout. */
+val Typography.onboardingWelcomeTitleCompact: TextStyle
+    get() = headlineLarge.copy(fontWeight = FontWeight.SemiBold)
+
+/** Onboarding welcome screen app-name title, expanded layout. */
+val Typography.onboardingWelcomeTitleExpanded: TextStyle
+    get() = displayMedium.copy(fontWeight = FontWeight.SemiBold)
+
+/** Onboarding page headline (education/appearance/setup pages), compact layout. */
+val Typography.onboardingPageHeadlineCompact: TextStyle
+    get() = headlineMedium.copy(fontWeight = FontWeight.SemiBold)
+
+/** Onboarding page headline (education/appearance/setup pages), expanded layout. */
+val Typography.onboardingPageHeadlineExpanded: TextStyle
+    get() = headlineLarge.copy(fontWeight = FontWeight.SemiBold)
+
+/** Settings top bar title, collapsed state (normal weight, distinct from the bold [topBarTitle] used by root tabs). */
+val Typography.settingsTopBarTitleCollapsed: TextStyle
+    get() = headlineSmall.copy(fontWeight = FontWeight.Normal)
+
+/** Settings top bar title, expanded state. */
+val Typography.settingsTopBarTitleExpanded: TextStyle
+    get() = displayMedium.copy(fontWeight = FontWeight.Normal)

@@ -24,13 +24,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
+import com.mandrecode.tempo.core.ui.theme.settingsTopBarTitleCollapsed
+import com.mandrecode.tempo.core.ui.theme.settingsTopBarTitleExpanded
 
 @Composable
 fun SettingsScreen(
@@ -144,7 +145,7 @@ private fun SettingsTopBar(
             title = {
                 Text(
                     text = stringResource(R.string.settings),
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal),
+                    style = MaterialTheme.typography.settingsTopBarTitleCollapsed,
                 )
             },
             navigationIcon = navigationIcon,
@@ -157,9 +158,9 @@ private fun SettingsTopBar(
                     text = stringResource(R.string.settings),
                     style =
                         if (expanded) {
-                            MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Normal)
+                            MaterialTheme.typography.settingsTopBarTitleExpanded
                         } else {
-                            MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Normal)
+                            MaterialTheme.typography.settingsTopBarTitleCollapsed
                         },
                 )
             },
