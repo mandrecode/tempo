@@ -2,7 +2,9 @@ package com.mandrecode.tempo.core.ui.components
 
 import android.content.res.Configuration
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 
 @Preview(name = "Light", showBackground = true)
@@ -10,7 +12,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 @Composable
 private fun TempoLoadingIndicatorTasksPreview() {
     TempoTheme {
-        TempoLoadingIndicator(message = "Loading tasks…")
+        TempoLoadingIndicator(message = stringResource(R.string.loading_tasks))
     }
 }
 
@@ -19,6 +21,6 @@ private fun TempoLoadingIndicatorTasksPreview() {
 @Composable
 private fun TempoLoadingIndicatorHabitsPreview() {
     TempoTheme {
-        TempoLoadingIndicator(message = "Loading habits…")
+        TempoLoadingIndicator(message = stringResource(R.string.loading_habits))
     }
 }
