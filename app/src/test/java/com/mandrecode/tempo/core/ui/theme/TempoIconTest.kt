@@ -31,7 +31,7 @@ class TempoIconTest {
             R.string.keywords_school to "school, study, learn, education, class, university",
             R.string.keywords_book to "book, read, reading, literature, novel, study",
             R.string.keywords_create to "create, write, writing, draw, art, design, creative",
-            R.string.keywords_home to "home, house, clean, tidy, chore",
+            R.string.keywords_home to "home, house, tidy",
             R.string.keywords_calendar to "calendar, schedule, plan, organize, appointment",
             R.string.keywords_bed to "sleep, bed, rest, nap, bedtime, night",
             R.string.keywords_call to "call, phone, contact, talk, conversation",
@@ -71,7 +71,7 @@ class TempoIconTest {
             R.string.keywords_school to "escuela, estudiar, aprender, educación, clase, universidad",
             R.string.keywords_book to "libro, leer, leyendo, lectura, literatura, novela, estudio",
             R.string.keywords_create to "crear, escribir, escribiendo, dibujar, arte, diseño, creativo",
-            R.string.keywords_home to "casa, hogar, limpiar, ordenar, tarea",
+            R.string.keywords_home to "casa, hogar, ordenar",
             R.string.keywords_calendar to "calendario, horario, plan, organizar, cita",
             R.string.keywords_bed to "dormir, cama, descanso, siesta, hora de dormir, noche",
             R.string.keywords_call to "llamar, teléfono, contacto, hablar, conversación",
@@ -87,7 +87,7 @@ class TempoIconTest {
             R.string.keywords_remind to "recordar, recordatorio, campana, alerta, notificación",
             R.string.keywords_routine to "rutina, diario, hábito, repetir, recurrente, horario, regular",
             R.string.keywords_bedtime to "rutina nocturna, luna, apagar luces",
-            R.string.keywords_medical_services to "clínica, hospital, cita médica, médico, especialista",
+            R.string.keywords_medical_services to "clínica, hospital, cita médica, especialista",
             R.string.keywords_no_food to "ayuno, ayunar, ayuno intermitente, día de ayuno",
             R.string.keywords_code to "código, programar, programación, desarrollador, software",
             R.string.keywords_translate to "idioma, aprender idioma, vocabulario, traducir, practicar",
@@ -216,8 +216,8 @@ class TempoIconTest {
     @Test
     fun `suggestIcon still matches regular suffixed forms of longer keywords`() {
         setupKeywords()
-        // "clean" (prefix match) + "house" (exact) both point to HOME
-        assertThat(TempoIcon.suggestIcon("I'm cleaning the house", context)).isEqualTo(TempoIcon.HOME)
+        // "hydrate" (prefix match) matches suffixed "hydrated" and points to WATER
+        assertThat(TempoIcon.suggestIcon("I hydrated well today", context)).isEqualTo(TempoIcon.WATER)
     }
 
     @Test

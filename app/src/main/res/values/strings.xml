@@ -486,7 +486,7 @@
     <string name="keywords_school">school, study, learn, education, class, university</string>
     <string name="keywords_book">book, read, reading, literature, novel, study</string>
     <string name="keywords_create">create, write, writing, draw, art, design, creative</string>
-    <string name="keywords_home">home, house, clean, tidy, chore</string>
+    <string name="keywords_home">home, house, tidy</string>
     <string name="keywords_calendar">calendar, schedule, plan, organize, appointment</string>
     <string name="keywords_bed">sleep, bed, rest, nap, bedtime, night</string>
     <string name="keywords_call">call, phone, contact, talk, conversation</string>
