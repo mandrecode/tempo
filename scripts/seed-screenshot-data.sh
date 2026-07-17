@@ -15,8 +15,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 LOCAL_SQL="$(mktemp)"
 LOCAL_DB="$(mktemp)"
-trap 'rm -f "$LOCAL_SQL" "$LOCAL_DB"' EXIT
-python3 "${SCRIPT_DIR}/generate-seed-sql.py" --locale "$LOCALE" > "$LOCAL_SQL"
+trap 'rm -f "$LOCAL_SQL" "$LOCAL_DB" "${LOCAL_DB}-wal" "${LOCAL_DB}-shm"' EXIT
 
 case "$THEME" in
   light) THEME_MODE="LIGHT" ;;
@@ -32,6 +31,13 @@ esac
 adb -s "$SERIAL" shell svc power stayon true >/dev/null
 adb -s "$SERIAL" shell locksettings set-disabled true >/dev/null 2>&1 || true
 adb -s "$SERIAL" shell input keyevent KEYCODE_WAKEUP >/dev/null
+
+# Generate the seed SQL relative to the *device's* current date, not the
+# host's — they can differ (timezone, clock drift, CI runner vs emulator),
+# which would otherwise shift what counts as "Today" and desync habit
+# streaks from what the app itself considers current.
+DEVICE_TODAY="$(adb -s "$SERIAL" shell date +%Y-%m-%d | tr -d '\r\n')"
+python3 "${SCRIPT_DIR}/generate-seed-sql.py" --locale "$LOCALE" --today "$DEVICE_TODAY" > "$LOCAL_SQL"
 
 adb -s "$SERIAL" shell am force-stop "$PKG" >/dev/null
 adb -s "$SERIAL" shell pm clear "$PKG" >/dev/null
@@ -94,7 +100,15 @@ adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-wal 2>/dev
 adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-shm 2>/dev/null \
   && adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database-shm > "${LOCAL_DB}-shm" || true
 
-sqlite3 "$LOCAL_DB" "PRAGMA wal_checkpoint(TRUNCATE);" ".read ${LOCAL_SQL}"
+# Checkpoint before *and* after loading the SQL: the leading checkpoint
+# starts from a clean slate, but the inserts from `.read` land in a fresh
+# WAL file of their own — checkpointing again afterwards, in the same
+# connection, is what actually merges them into the main db file before
+# it's safe to delete the WAL/SHM siblings below.
+sqlite3 "$LOCAL_DB" \
+  "PRAGMA wal_checkpoint(TRUNCATE);" \
+  ".read ${LOCAL_SQL}" \
+  "PRAGMA wal_checkpoint(TRUNCATE);"
 rm -f "${LOCAL_DB}-wal" "${LOCAL_DB}-shm"
 
 cat "$LOCAL_DB" | adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > databases/tempo_database\""

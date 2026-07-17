@@ -37,11 +37,18 @@ def dump_layout(serial, retries=8, delay=1.5):
     try:
         last_err = None
         for _ in range(retries):
-            result = subprocess.run(
-                ["android", "layout", "--device", serial, "-o", path],
-                capture_output=True,
-                text=True,
-            )
+            try:
+                result = subprocess.run(
+                    ["android", "layout", "--device", serial, "-o", path],
+                    capture_output=True,
+                    text=True,
+                )
+            except FileNotFoundError as e:
+                raise RuntimeError(
+                    "The `android` CLI was not found on PATH. It's required to inspect the "
+                    "app's UI tree for navigation — install the Android SDK's `android` CLI "
+                    "(see AGENTS.md's android-cli conventions) and try again.",
+                ) from e
             try:
                 with open(path) as f:
                     return json.load(f)

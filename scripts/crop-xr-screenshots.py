@@ -17,8 +17,12 @@ from pathlib import Path
 
 from PIL import Image
 
+SOURCE_HEIGHT = 2558  # The XR emulator's native square capture size.
 CROP_TOP = 620
-CROP_HEIGHT = 1439  # 2558 * 9 / 16, giving an exact 16:9 crop at full width.
+# 2558 isn't evenly divisible by 16, so this is the closest integer-height
+# 16:9 crop at full width (2558 / 1439 = 1.7776..., vs 16/9 = 1.7778...),
+# not a mathematically exact ratio.
+CROP_HEIGHT = 1439
 
 
 def main():
@@ -27,13 +31,21 @@ def main():
         sys.exit(1)
     directory = Path(sys.argv[1])
     for path in sorted(directory.glob("*.png")):
-        im = Image.open(path)
-        w, h = im.size
-        if h == CROP_HEIGHT:
-            # Already cropped (e.g. from an earlier locale's run into the
-            # same directory) — skip so re-running this script is safe.
-            continue
-        im.crop((0, CROP_TOP, w, CROP_TOP + CROP_HEIGHT)).save(path)
+        with Image.open(path) as im:
+            im.load()
+            w, h = im.size
+            if h == CROP_HEIGHT:
+                # Already cropped (e.g. from an earlier locale's run into
+                # the same directory) — skip so re-running is safe.
+                continue
+            if h != SOURCE_HEIGHT:
+                raise RuntimeError(
+                    f"{path} is {w}x{h}, expected a {SOURCE_HEIGHT}-tall square XR "
+                    f"capture or an already-cropped {CROP_HEIGHT}-tall image. Refusing "
+                    "to guess a crop window for an unexpected size.",
+                )
+            cropped = im.crop((0, CROP_TOP, w, CROP_TOP + CROP_HEIGHT))
+        cropped.save(path)
         print(f"Cropped {path} to {w}x{CROP_HEIGHT}")
 
 

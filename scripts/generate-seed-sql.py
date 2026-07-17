@@ -128,26 +128,29 @@ def main():
         f"  (4, {sql_str(personal)}, 'color_m3_green', 'home', 0, 3);\n",
     )
 
+    # parentTaskId is always NULL — none of the seeded tasks are subtasks —
+    # so it's hardcoded in the INSERT below rather than carried as a field
+    # here.
     tasks = [
-        (1, *task_text[0], 0, 1, "HIGH", dt(today, 0, "09:00"), None, None, None, None, 0, None),
-        (2, *task_text[1], 0, 1, "MEDIUM", None, None, None, None, None, 1, None),
-        (3, *task_text[2], 1, 1, None, None, None, None, None, None, 2, dt(today, -1, "17:30")),
-        (4, *task_text[3], 0, 2, "LOW", None, None, None, None, None, 3, None),
-        (5, *task_text[4], 0, 2, "MEDIUM", dt(today, 2, "12:00"), None, None, None, None, 4, None),
-        (6, *task_text[5], 1, 2, None, None, None, None, None, None, 5, dt(today, -2, "18:00")),
-        (7, *task_text[6], 0, 3, "MEDIUM", None, None, None, None, None, 6, None),
-        (8, *task_text[7], 1, 3, None, None, None, None, None, None, 7, dt(today, -3, "10:00")),
-        (9, *task_text[8], 0, 4, None, None, None, None, None, None, 8, None),
-        (10, *task_text[9], 0, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, None, 9, None),
-        (11, *task_text[10], 0, 4, None, None, "DAILY", None, None, None, 10, None),
-        (12, *task_text[11], 0, -1, None, None, "WEEKLY", "1,4", None, None, 11, None),
+        (1, *task_text[0], 0, 1, "HIGH", dt(today, 0, "09:00"), None, None, None, 0, None),
+        (2, *task_text[1], 0, 1, "MEDIUM", None, None, None, None, 1, None),
+        (3, *task_text[2], 1, 1, None, None, None, None, None, 2, dt(today, -1, "17:30")),
+        (4, *task_text[3], 0, 2, "LOW", None, None, None, None, 3, None),
+        (5, *task_text[4], 0, 2, "MEDIUM", dt(today, 2, "12:00"), None, None, None, 4, None),
+        (6, *task_text[5], 1, 2, None, None, None, None, None, 5, dt(today, -2, "18:00")),
+        (7, *task_text[6], 0, 3, "MEDIUM", None, None, None, None, 6, None),
+        (8, *task_text[7], 1, 3, None, None, None, None, None, 7, dt(today, -3, "10:00")),
+        (9, *task_text[8], 0, 4, None, None, None, None, None, 8, None),
+        (10, *task_text[9], 0, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, 9, None),
+        (11, *task_text[10], 0, 4, None, None, "DAILY", None, None, 10, None),
+        (12, *task_text[11], 0, -1, None, None, "WEEKLY", "1,4", None, 11, None),
     ]
     print("INSERT INTO tasks (id, title, description, isCompleted, categoryId, priority, reminderDate, "
           "periodicity, periodicityInterval, repeatDays, monthDayOption, parentTaskId, sortOrder, "
           "completedAt, nextInstanceId) VALUES")
     rows = []
     for (task_id, title, desc, completed, cat_id, priority, reminder, periodicity,
-         repeat_days, month_day, _unused, sort_order, completed_at) in tasks:
+         repeat_days, month_day, sort_order, completed_at) in tasks:
         rows.append(
             f"  ({task_id}, {sql_str(title)}, {sql_str(desc)}, {completed}, {cat_id}, "
             f"{sql_str(priority)}, {sql_str(reminder)}, {sql_str(periodicity)}, 1, "

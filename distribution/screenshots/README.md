@@ -246,8 +246,9 @@ requirement outright, so `generate-screenshot-set.sh` calls
 `scripts/crop-xr-screenshots.py` automatically whenever the form-factor
 prefix is `xr`.
 
-The crop window (`y=620` to `y=620+1439=2059` at full width, giving an
-exact 2558×1439 16:9 frame) was derived by pixel-sampling a vertical
+The crop window (`y=620` to `y=620+1439=2059` at full width, giving a
+2558×1439 frame — the closest integer-height 16:9 crop at that width,
+since 2558 isn't evenly divisible by 16) was derived by pixel-sampling a vertical
 line through the floating app window across all four canonical views to
 find its true on-screen bounds — the window-chrome pill top sits at
 `y≈658` and the tallest panel (Settings, which has the most content)
