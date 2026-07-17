@@ -6,8 +6,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineCompact
-import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineExpanded
+import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
+import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 import com.mandrecode.tempo.features.settings.presentation.DefaultTabSection
 import com.mandrecode.tempo.features.settings.presentation.SettingsContract
 import com.mandrecode.tempo.features.settings.presentation.TabsAndNavigationSection
@@ -32,9 +32,9 @@ internal fun OnboardingSetupPage(
                 text = stringResource(R.string.onboarding_setup_title),
                 style =
                     if (layout.isShort) {
-                        MaterialTheme.typography.onboardingPageHeadlineCompact
+                        MaterialTheme.typography.onboardingPageHeadlineShort
                     } else {
-                        MaterialTheme.typography.onboardingPageHeadlineExpanded
+                        MaterialTheme.typography.onboardingPageHeadlineRegular
                     },
             )
             Text(

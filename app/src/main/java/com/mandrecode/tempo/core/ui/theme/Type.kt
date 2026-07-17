@@ -221,20 +221,28 @@ val Typography.subtaskTitle: TextStyle
 val Typography.filterChipSelected: TextStyle
     get() = labelLarge.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.5.sp)
 
-/** Onboarding welcome screen app-name title, compact layout. */
-val Typography.onboardingWelcomeTitleCompact: TextStyle
+/**
+ * Onboarding welcome screen app-name title, short-height layout (`isShort`).
+ * Named for the height-driven `isShort` axis, not the width-driven `isExpanded` one — do not
+ * confuse with a width breakpoint.
+ */
+val Typography.onboardingWelcomeTitleShort: TextStyle
     get() = headlineLarge.copy(fontWeight = FontWeight.SemiBold)
 
-/** Onboarding welcome screen app-name title, expanded layout. */
-val Typography.onboardingWelcomeTitleExpanded: TextStyle
+/** Onboarding welcome screen app-name title, regular-height layout. */
+val Typography.onboardingWelcomeTitleRegular: TextStyle
     get() = displayMedium.copy(fontWeight = FontWeight.SemiBold)
 
-/** Onboarding page headline (education/appearance/setup pages), compact layout. */
-val Typography.onboardingPageHeadlineCompact: TextStyle
+/**
+ * Onboarding page headline (education/appearance/setup pages), short-height layout
+ * (`isShort`). Named for the height-driven `isShort` axis, not the
+ * width-driven `isExpanded` one — do not confuse with a width breakpoint.
+ */
+val Typography.onboardingPageHeadlineShort: TextStyle
     get() = headlineMedium.copy(fontWeight = FontWeight.SemiBold)
 
-/** Onboarding page headline (education/appearance/setup pages), expanded layout. */
-val Typography.onboardingPageHeadlineExpanded: TextStyle
+/** Onboarding page headline (education/appearance/setup pages), regular-height layout. */
+val Typography.onboardingPageHeadlineRegular: TextStyle
     get() = headlineLarge.copy(fontWeight = FontWeight.SemiBold)
 
 /** Settings top bar title, collapsed state (normal weight, distinct from the bold [topBarTitle] used by root tabs). */
