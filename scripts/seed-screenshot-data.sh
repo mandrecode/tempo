@@ -11,10 +11,10 @@ THEME="${2:-light}"
 PKG="com.mandrecode.tempo.debug"
 ACTIVITY="com.mandrecode.tempo.MainActivity"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REMOTE_SQL="/data/local/tmp/tempo_seed.sql"
 
 LOCAL_SQL="$(mktemp)"
-trap 'rm -f "$LOCAL_SQL"' EXIT
+LOCAL_DB="$(mktemp)"
+trap 'rm -f "$LOCAL_SQL" "$LOCAL_DB"' EXIT
 python3 "${SCRIPT_DIR}/generate-seed-sql.py" > "$LOCAL_SQL"
 
 case "$THEME" in
@@ -71,9 +71,21 @@ adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/theme_prefs.xml\"
 </map>
 EOF
 
-adb -s "$SERIAL" push "$LOCAL_SQL" "$REMOTE_SQL" >/dev/null
-adb -s "$SERIAL" shell "run-as $PKG sqlite3 databases/tempo_database \".read ${REMOTE_SQL}\""
-adb -s "$SERIAL" shell rm -f "$REMOTE_SQL"
+# Apply the seed SQL with the host's own sqlite3 rather than depending on a
+# device-side sqlite3 binary, which not every system image ships (e.g. the
+# medium_tablet Google Play tablet image). Pull the DB, checkpoint any WAL
+# into it, apply the SQL locally, then push the single resulting file back.
+adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database > "$LOCAL_DB"
+adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-wal 2>/dev/null \
+  && adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database-wal > "${LOCAL_DB}-wal" || true
+adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-shm 2>/dev/null \
+  && adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database-shm > "${LOCAL_DB}-shm" || true
+
+sqlite3 "$LOCAL_DB" "PRAGMA wal_checkpoint(TRUNCATE);" ".read ${LOCAL_SQL}"
+rm -f "${LOCAL_DB}-wal" "${LOCAL_DB}-shm"
+
+cat "$LOCAL_DB" | adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > databases/tempo_database\""
+adb -s "$SERIAL" shell run-as "$PKG" rm -f databases/tempo_database-wal databases/tempo_database-shm
 
 adb -s "$SERIAL" shell am start -n "${PKG}/${ACTIVITY}" >/dev/null
 sleep 3
