@@ -17,5 +17,6 @@ enum class IconCategory(
     COMMUNICATION_SOCIAL(R.string.icon_category_communication_social),
     ENTERTAINMENT_HOBBIES(R.string.icon_category_entertainment_hobbies),
     PERSONAL_DEVELOPMENT(R.string.icon_category_personal_development),
+    FINANCE_CHORES(R.string.icon_category_finance_chores),
     MISCELLANEOUS(R.string.icon_category_miscellaneous),
 }

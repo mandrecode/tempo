@@ -46,6 +46,12 @@ class TempoIconTest {
             R.string.keywords_list to "menu, list, organize, sort",
             R.string.keywords_remind to "remind, reminder, bell, alert, notification",
             R.string.keywords_routine to "routine, daily, habit, repeat, recurring, schedule, regular",
+            R.string.keywords_bedtime to "wind down, moon, night routine, lights out",
+            R.string.keywords_medical_services to "clinic, hospital, appointment, physician, specialist",
+            R.string.keywords_no_food to "fast, fasting, no food, intermittent fasting, skip eating",
+            R.string.keywords_code to "code, coding, programming, developer, software",
+            R.string.keywords_translate to "language, learn language, vocabulary, translate, practice",
+            R.string.keywords_savings to "save, saving, savings, piggy bank, invest",
         )
 
     private val spanishKeywordMap =
@@ -80,6 +86,12 @@ class TempoIconTest {
             R.string.keywords_list to "menú, lista, organizar, ordenar",
             R.string.keywords_remind to "recordar, recordatorio, campana, alerta, notificación",
             R.string.keywords_routine to "rutina, diario, hábito, repetir, recurrente, horario, regular",
+            R.string.keywords_bedtime to "rutina nocturna, luna, apagar luces",
+            R.string.keywords_medical_services to "clínica, hospital, cita médica, médico, especialista",
+            R.string.keywords_no_food to "ayuno, ayunar, ayuno intermitente, día de ayuno",
+            R.string.keywords_code to "código, programar, programación, desarrollador, software",
+            R.string.keywords_translate to "idioma, aprender idioma, vocabulario, traducir, practicar",
+            R.string.keywords_savings to "ahorrar, ahorro, alcancía, invertir",
         )
 
     @Before
@@ -224,6 +236,51 @@ class TempoIconTest {
     }
 
     @Test
+    fun `suggestIcon returns correct icon for bedtime keywords, distinct from bed`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Wind down time", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Lights out", context)).isEqualTo(TempoIcon.BEDTIME)
+        // BED still wins when the text uses "bedtime" itself - BEDTIME doesn't claim that word
+        assertThat(TempoIcon.suggestIcon("Bedtime story", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for medical services keywords, distinct from health`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Hospital appointment", context)).isEqualTo(TempoIcon.MEDICAL_SERVICES)
+        assertThat(TempoIcon.suggestIcon("See a specialist", context)).isEqualTo(TempoIcon.MEDICAL_SERVICES)
+        // HEALTH still wins on its own distinct "medical"/"medicine" keywords
+        assertThat(TempoIcon.suggestIcon("Doctor checkup", context)).isEqualTo(TempoIcon.HEALTH)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for fasting keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Intermittent fasting", context)).isEqualTo(TempoIcon.NO_FOOD)
+        assertThat(TempoIcon.suggestIcon("Skip eating today", context)).isEqualTo(TempoIcon.NO_FOOD)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for coding keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Practice coding", context)).isEqualTo(TempoIcon.CODE)
+        assertThat(TempoIcon.suggestIcon("Programming session", context)).isEqualTo(TempoIcon.CODE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for language learning keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Learn language vocabulary", context)).isEqualTo(TempoIcon.TRANSLATE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for savings keywords`() {
+        setupKeywords()
+        assertThat(TempoIcon.suggestIcon("Piggy bank savings", context)).isEqualTo(TempoIcon.SAVINGS)
+        assertThat(TempoIcon.suggestIcon("Invest monthly", context)).isEqualTo(TempoIcon.SAVINGS)
+    }
+
+    @Test
     fun `suggestIcon returns correct icon for music note keywords`() {
         setupKeywords()
         assertThat(TempoIcon.suggestIcon("guitar tune", context)).isEqualTo(TempoIcon.MUSIC_NOTE)
@@ -325,6 +382,32 @@ class TempoIconTest {
         assertThat(TempoIcon.suggestIcon("Dormir temprano", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Descanso nocturno", context)).isEqualTo(TempoIcon.BED)
         assertThat(TempoIcon.suggestIcon("Hora de dormir", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for bedtime keywords Spanish, distinct from bed`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Rutina nocturna", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Apagar luces", context)).isEqualTo(TempoIcon.BEDTIME)
+        assertThat(TempoIcon.suggestIcon("Dormir temprano", context)).isEqualTo(TempoIcon.BED)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for fasting keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Ayuno intermitente", context)).isEqualTo(TempoIcon.NO_FOOD)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for coding keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Practicar programación", context)).isEqualTo(TempoIcon.CODE)
+    }
+
+    @Test
+    fun `suggestIcon returns correct icon for savings keywords Spanish`() {
+        setupKeywords(isSpanish = true)
+        assertThat(TempoIcon.suggestIcon("Ahorrar en la alcancía", context)).isEqualTo(TempoIcon.SAVINGS)
     }
 
     @Test
