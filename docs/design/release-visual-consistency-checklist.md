@@ -19,7 +19,7 @@ Every surface pass below must be exercised in at least:
 - [ ] **Light and dark theme**, both **Dynamic** and **Tempo** color schemes
 - [ ] **Largest font scale** (Settings → Display → Font size max): no clipped or overlapping text
 - [ ] **Resize across breakpoints** (foldable/split-screen): open editor survives the transition,
-      nothing flashes or double-scrims (see fix #151/#156, #157/#164 for past regressions)
+      nothing flashes or double-scrims (see PR #156 and PR #164 for past regressions in this area)
 
 Interaction checks are part of the pass: mark items complete and incomplete, expand/collapse,
 drag to reorder, open/dismiss every editor and dialog — not just static screenshots.
