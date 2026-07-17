@@ -21,8 +21,8 @@ Every surface pass below must be exercised in at least:
 - [ ] **Resize across breakpoints** (foldable/split-screen): open editor survives the transition,
       nothing flashes or double-scrims (see fix #151/#156, #157/#164 for past regressions)
 
-Interaction checks are part of the pass: complete/uncomplete items, expand/collapse, drag to
-reorder, open/dismiss every editor and dialog — not just static screenshots.
+Interaction checks are part of the pass: mark items complete and incomplete, expand/collapse,
+drag to reorder, open/dismiss every editor and dialog — not just static screenshots.
 
 ## 2. Shared criteria (all surfaces)
 
