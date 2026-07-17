@@ -50,7 +50,6 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
-import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
@@ -349,7 +348,6 @@ fun TasksScreen(
                     } else {
                         null
                     },
-                modifier = Modifier.padding(start = railContentClearance),
             )
         }
 
@@ -445,12 +443,6 @@ private fun TaskEditor(
                 { onEvent(TasksContract.UiEvent.RequestDeleteTask(editingTask)) }
             },
         onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
-        modifier =
-            if (placement == SheetPlacement.DockedPane) {
-                Modifier
-            } else {
-                Modifier.padding(start = floatingRailContentClearance())
-            },
         placement = placement,
         dismissRequestKey = dismissRequestKey,
     )

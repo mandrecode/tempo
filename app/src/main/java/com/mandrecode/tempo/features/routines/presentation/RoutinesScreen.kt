@@ -51,7 +51,6 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
-import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
@@ -321,12 +320,6 @@ private fun HabitEditor(
         onToggleHabitCompletion = { habitId, isCompleted ->
             onEvent(RoutinesContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
         },
-        modifier =
-            if (placement == SheetPlacement.DockedPane) {
-                Modifier
-            } else {
-                Modifier.padding(start = floatingRailContentClearance())
-            },
         placement = placement,
         dismissRequestKey = dismissRequestKey,
     )
