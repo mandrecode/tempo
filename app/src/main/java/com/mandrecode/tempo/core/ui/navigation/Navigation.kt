@@ -214,8 +214,11 @@ private fun rememberActiveEntries(
             entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
                 OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
             }
-            // Settings is never rendered as a NavDisplay scene (see rememberActiveEntries below);
-            // this registration only keeps the entryProvider lookup for settingsBackStack valid.
+            // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
+            // currently active, so this registration is needed for every section's entries, not
+            // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
+            // the resulting entry is filtered out before reaching NavDisplay (see below) since
+            // Settings is never rendered as a NavDisplay scene.
             entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
                 SettingsDestination(navigator = navigator)
             }
