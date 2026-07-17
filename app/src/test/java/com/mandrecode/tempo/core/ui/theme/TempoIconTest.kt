@@ -35,7 +35,7 @@ class TempoIconTest {
             R.string.keywords_calendar to "calendar, schedule, plan, organize, appointment",
             R.string.keywords_bed to "sleep, bed, rest, nap, bedtime, night",
             R.string.keywords_call to "call, phone, contact, talk, conversation",
-            R.string.keywords_email to "email, mail, message, inbox, correspondence",
+            R.string.keywords_email to "email, mail, inbox, correspondence",
             R.string.keywords_music to "music, song, listen, audio, play, instrument, practice",
             R.string.keywords_music_note to "note, melody, tune, compose, musician, piano, guitar",
             R.string.keywords_game to "game, gaming, play, video game, console",
@@ -50,7 +50,7 @@ class TempoIconTest {
             R.string.keywords_medical_services to "clinic, hospital, doctor appointment, physician, specialist",
             R.string.keywords_no_food to "fast, fasting, no food, intermittent fasting, skip eating",
             R.string.keywords_code to "code, coding, programming, developer, software",
-            R.string.keywords_translate to "language, learn language, vocabulary, translate, practice",
+            R.string.keywords_translate to "language, learn language, vocabulary, translate",
             R.string.keywords_savings to "save, saving, savings, piggy bank, invest",
         )
 
@@ -75,7 +75,7 @@ class TempoIconTest {
             R.string.keywords_calendar to "calendario, horario, plan, organizar, cita",
             R.string.keywords_bed to "dormir, cama, descanso, siesta, hora de dormir, noche",
             R.string.keywords_call to "llamar, teléfono, contacto, hablar, conversación",
-            R.string.keywords_email to "email, correo, mensaje, bandeja de entrada, correspondencia",
+            R.string.keywords_email to "email, correo, bandeja de entrada, correspondencia",
             R.string.keywords_music to "música, canción, escuchar, audio, reproducir, instrumento, práctica",
             R.string.keywords_music_note to "nota, melodía, melodia, afinar, componer, músico, piano, guitarra",
             R.string.keywords_game to "juego, gaming, jugar, videojuego, consola",
