@@ -178,7 +178,7 @@ fun IconPicker(
                 if (remainder != 0) {
                     val spacersNeeded = itemsPerRow - remainder
                     repeat(spacersNeeded) {
-                        Box(modifier = Modifier.size(48.dp))
+                        Box(modifier = Modifier.size(ICON_OPTION_SIZE))
                     }
                 }
 
@@ -429,7 +429,7 @@ private fun IconCategoryModal(
                         )
                         FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            horizontalArrangement = Arrangement.spacedBy(ROW_ITEM_MIN_GAP),
                             verticalArrangement = Arrangement.spacedBy(12.dp),
                             maxItemsInEachRow = itemsPerRow,
                         ) {
