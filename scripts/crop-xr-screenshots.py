@@ -28,7 +28,11 @@ def main():
     directory = Path(sys.argv[1])
     for path in sorted(directory.glob("*.png")):
         im = Image.open(path)
-        w, _h = im.size
+        w, h = im.size
+        if h == CROP_HEIGHT:
+            # Already cropped (e.g. from an earlier locale's run into the
+            # same directory) — skip so re-running this script is safe.
+            continue
         im.crop((0, CROP_TOP, w, CROP_TOP + CROP_HEIGHT)).save(path)
         print(f"Cropped {path} to {w}x{CROP_HEIGHT}")
 

@@ -4,10 +4,65 @@ issue #169), with every date computed relative to "today" so the seeded
 "Today" tasks, due dates, and habit streaks stay correct no matter when the
 pipeline is run. Not part of the CI/app build.
 
-Usage: generate-seed-sql.py [--today YYYY-MM-DD] > seed.sql
+Content (task/habit titles, descriptions, category names) is localized via
+--locale; the app's own UI strings (nav labels, "Today", Settings, etc.)
+are localized separately by setting the app's per-app locale (see
+seed-screenshot-data.sh) — this script only controls the seeded data.
+
+Usage: generate-seed-sql.py [--today YYYY-MM-DD] [--locale en|es] > seed.sql
 """
 import argparse
 import datetime
+
+LOCALES = {
+    "en": {
+        "categories": ["Work", "Shopping", "Health", "Personal"],
+        "tasks": [
+            ("Finish Q3 budget report", "Compile numbers from finance and send to leadership by Friday."),
+            ("Reply to client emails", ""),
+            ("Review pull requests", "Check the two open PRs from the mobile team."),
+            ("Buy groceries", "Milk, eggs, spinach, coffee beans."),
+            ("Order birthday gift for Mom", ""),
+            ("Pick up dry cleaning", ""),
+            ("Book dentist appointment", "Six-month checkup, call before 5pm."),
+            ("Refill prescription", ""),
+            ("Plan weekend hike", "Check trail conditions and pack the day before."),
+            ("Call Mom", ""),
+            ("Read 20 pages", ""),
+            ("Water the plants", ""),
+        ],
+        "habits": [
+            "Drink Water", "No Smoking", "Read Before Bed", "Limit Social Media",
+            "Meditate", "Morning Stretch", "Journal",
+        ],
+        "chain_title": "Morning Routine",
+        "chain_description": "Meditate, stretch, and journal before starting the day.",
+    },
+    "es": {
+        "categories": ["Trabajo", "Compras", "Salud", "Personal"],
+        "tasks": [
+            ("Terminar el informe de presupuesto del Q3",
+             "Recopilar los números de finanzas y enviarlos a dirección antes del viernes."),
+            ("Responder correos de clientes", ""),
+            ("Revisar solicitudes de cambios", "Revisar las dos solicitudes abiertas del equipo móvil."),
+            ("Comprar comida", "Leche, huevos, espinacas, café en grano."),
+            ("Pedir el regalo de cumpleaños de mamá", ""),
+            ("Recoger la tintorería", ""),
+            ("Pedir cita con el dentista", "Revisión semestral, llamar antes de las 17:00."),
+            ("Renovar la receta", ""),
+            ("Planear la excursión del fin de semana", "Comprobar el estado del sendero y preparar la mochila el día antes."),
+            ("Llamar a mamá", ""),
+            ("Leer 20 páginas", ""),
+            ("Regar las plantas", ""),
+        ],
+        "habits": [
+            "Beber agua", "Dejar de fumar", "Leer antes de dormir", "Limitar redes sociales",
+            "Meditar", "Estiramiento matutino", "Escribir el diario",
+        ],
+        "chain_title": "Rutina matutina",
+        "chain_description": "Medita, estírate y escribe en el diario antes de empezar el día.",
+    },
+}
 
 
 def parse_args():
@@ -17,6 +72,12 @@ def parse_args():
         type=datetime.date.fromisoformat,
         default=datetime.date.today(),
         help="Reference date to treat as 'today' (default: actual today).",
+    )
+    parser.add_argument(
+        "--locale",
+        choices=sorted(LOCALES),
+        default="en",
+        help="Language for seeded content (default: en).",
     )
     return parser.parse_args()
 
@@ -47,6 +108,10 @@ def sql_str(value):
 def main():
     args = parse_args()
     today = args.today
+    content = LOCALES[args.locale]
+    work, shopping, health, personal = content["categories"]
+    task_text = content["tasks"]
+    habit_titles = content["habits"]
 
     print(
         "-- Demo data for Google Play Store screenshots (GitHub issue #169).\n"
@@ -57,29 +122,25 @@ def main():
 
     print(
         "INSERT INTO categories (id, name, color, icon, isDefault, sortOrder) VALUES\n"
-        "  (1, 'Work', 'color_m3_blue', 'work', 0, 0),\n"
-        "  (2, 'Shopping', 'color_m3_orange', 'shopping_cart', 0, 1),\n"
-        "  (3, 'Health', 'color_m3_red', 'health', 0, 2),\n"
-        "  (4, 'Personal', 'color_m3_green', 'home', 0, 3);\n",
+        f"  (1, {sql_str(work)}, 'color_m3_blue', 'work', 0, 0),\n"
+        f"  (2, {sql_str(shopping)}, 'color_m3_orange', 'shopping_cart', 0, 1),\n"
+        f"  (3, {sql_str(health)}, 'color_m3_red', 'health', 0, 2),\n"
+        f"  (4, {sql_str(personal)}, 'color_m3_green', 'home', 0, 3);\n",
     )
 
     tasks = [
-        (1, "Finish Q3 budget report", "Compile numbers from finance and send to leadership by Friday.",
-         0, 1, "HIGH", dt(today, 0, "09:00"), None, None, None, None, 0, None),
-        (2, "Reply to client emails", "", 0, 1, "MEDIUM", None, None, None, None, None, 1, None),
-        (3, "Review pull requests", "Check the two open PRs from the mobile team.",
-         1, 1, None, None, None, None, None, None, 2, dt(today, -1, "17:30")),
-        (4, "Buy groceries", "Milk, eggs, spinach, coffee beans.", 0, 2, "LOW", None, None, None, None, None, 3, None),
-        (5, "Order birthday gift for Mom", "", 0, 2, "MEDIUM", dt(today, 2, "12:00"), None, None, None, None, 4, None),
-        (6, "Pick up dry cleaning", "", 1, 2, None, None, None, None, None, None, 5, dt(today, -2, "18:00")),
-        (7, "Book dentist appointment", "Six-month checkup, call before 5pm.",
-         0, 3, "MEDIUM", None, None, None, None, None, 6, None),
-        (8, "Refill prescription", "", 1, 3, None, None, None, None, None, None, 7, dt(today, -3, "10:00")),
-        (9, "Plan weekend hike", "Check trail conditions and pack the day before.",
-         0, 4, None, None, None, None, None, None, 8, None),
-        (10, "Call Mom", "", 0, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, None, 9, None),
-        (11, "Read 20 pages", "", 0, 4, None, None, "DAILY", None, None, None, 10, None),
-        (12, "Water the plants", "", 0, -1, None, None, "WEEKLY", "1,4", None, None, 11, None),
+        (1, *task_text[0], 0, 1, "HIGH", dt(today, 0, "09:00"), None, None, None, None, 0, None),
+        (2, *task_text[1], 0, 1, "MEDIUM", None, None, None, None, None, 1, None),
+        (3, *task_text[2], 1, 1, None, None, None, None, None, None, 2, dt(today, -1, "17:30")),
+        (4, *task_text[3], 0, 2, "LOW", None, None, None, None, None, 3, None),
+        (5, *task_text[4], 0, 2, "MEDIUM", dt(today, 2, "12:00"), None, None, None, None, 4, None),
+        (6, *task_text[5], 1, 2, None, None, None, None, None, None, 5, dt(today, -2, "18:00")),
+        (7, *task_text[6], 0, 3, "MEDIUM", None, None, None, None, None, 6, None),
+        (8, *task_text[7], 1, 3, None, None, None, None, None, None, 7, dt(today, -3, "10:00")),
+        (9, *task_text[8], 0, 4, None, None, None, None, None, None, 8, None),
+        (10, *task_text[9], 0, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, None, 9, None),
+        (11, *task_text[10], 0, 4, None, None, "DAILY", None, None, None, 10, None),
+        (12, *task_text[11], 0, -1, None, None, "WEEKLY", "1,4", None, None, 11, None),
     ]
     print("INSERT INTO tasks (id, title, description, isCompleted, categoryId, priority, reminderDate, "
           "periodicity, periodicityInterval, repeatDays, monthDayOption, parentTaskId, sortOrder, "
@@ -96,14 +157,14 @@ def main():
     print(",\n".join(rows) + ";\n")
 
     habits = [
-        (1, "Drink Water", "water", "color_m3_cyan", 1, "BUILD", -60, history(today, -5, 0)),
-        (2, "No Smoking", "smoke_free", "color_m3_red", 1, "QUIT", -60, history(today, -20, 0)),
-        (3, "Read Before Bed", "book", "color_m3_orange", 1, "BUILD", -60,
+        (1, habit_titles[0], "water", "color_m3_cyan", 1, "BUILD", -60, history(today, -5, 0)),
+        (2, habit_titles[1], "smoke_free", "color_m3_red", 1, "QUIT", -60, history(today, -20, 0)),
+        (3, habit_titles[2], "book", "color_m3_orange", 1, "BUILD", -60,
          history_with_gaps(today, [-7, -6, -4, -3, -2, 0])),
-        (4, "Limit Social Media", "psychology", "color_m3_purple", 0, "QUIT", -30, history(today, -8, -1)),
-        (5, "Meditate", "spa", "color_m3_purple", 1, "BUILD", -60, history(today, -4, 0)),
-        (6, "Morning Stretch", "fitness", "color_m3_blue", 1, "BUILD", -60, history(today, -4, 0)),
-        (7, "Journal", "edit_note", "color_tempo_green", 1, "BUILD", -60, history(today, -4, 0)),
+        (4, habit_titles[3], "psychology", "color_m3_purple", 0, "QUIT", -30, history(today, -8, -1)),
+        (5, habit_titles[4], "spa", "color_m3_purple", 1, "BUILD", -60, history(today, -4, 0)),
+        (6, habit_titles[5], "fitness", "color_m3_blue", 1, "BUILD", -60, history(today, -4, 0)),
+        (7, habit_titles[6], "edit_note", "color_tempo_green", 1, "BUILD", -60, history(today, -4, 0)),
     ]
     print("INSERT INTO habits (id, title, description, icon, colorKey, reminderDate, isCompleted, "
           "habitType, createdDate, completionHistory, repeatDays) VALUES")
@@ -119,7 +180,7 @@ def main():
     print(
         "INSERT INTO habit_chains (id, title, description, colorKey, icon, periodicReminder, "
         "createdDate, completionHistory, repeatDays) VALUES\n"
-        f"  (1, 'Morning Routine', 'Meditate, stretch, and journal before starting the day.', "
+        f"  (1, {sql_str(content['chain_title'])}, {sql_str(content['chain_description'])}, "
         f"'color_m3_purple', 'spa', {sql_str(dt(today, 1, '07:00'))}, "
         f"{sql_str(dt(today, -60, '00:00'))}, {sql_str(history(today, -4, 0))}, NULL);\n",
     )

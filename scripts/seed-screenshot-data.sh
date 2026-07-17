@@ -3,11 +3,12 @@
 # screenshots (GitHub issue #169). Wipes existing app data on the target
 # device/emulator, so only run against a disposable AVD.
 #
-# Usage: scripts/seed-screenshot-data.sh <device-serial> [light|dark]
+# Usage: scripts/seed-screenshot-data.sh <device-serial> [light|dark] [en|es]
 set -euo pipefail
 
-SERIAL="${1:?Usage: seed-screenshot-data.sh <device-serial> [light|dark]}"
+SERIAL="${1:?Usage: seed-screenshot-data.sh <device-serial> [light|dark] [en|es]}"
 THEME="${2:-light}"
+LOCALE="${3:-en}"
 PKG="com.mandrecode.tempo.debug"
 ACTIVITY="com.mandrecode.tempo.MainActivity"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -15,12 +16,17 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOCAL_SQL="$(mktemp)"
 LOCAL_DB="$(mktemp)"
 trap 'rm -f "$LOCAL_SQL" "$LOCAL_DB"' EXIT
-python3 "${SCRIPT_DIR}/generate-seed-sql.py" > "$LOCAL_SQL"
+python3 "${SCRIPT_DIR}/generate-seed-sql.py" --locale "$LOCALE" > "$LOCAL_SQL"
 
 case "$THEME" in
   light) THEME_MODE="LIGHT" ;;
   dark) THEME_MODE="DARK" ;;
   *) echo "Unknown theme '$THEME' (expected light|dark)" >&2; exit 1 ;;
+esac
+
+case "$LOCALE" in
+  en|es) ;;
+  *) echo "Unknown locale '$LOCALE' (expected en|es)" >&2; exit 1 ;;
 esac
 
 adb -s "$SERIAL" shell svc power stayon true >/dev/null
@@ -34,6 +40,13 @@ adb -s "$SERIAL" shell pm clear "$PKG" >/dev/null
 # for on first run, since screenshot capture skips onboarding.
 adb -s "$SERIAL" shell pm grant "$PKG" android.permission.POST_NOTIFICATIONS >/dev/null 2>&1 || true
 adb -s "$SERIAL" shell appops set "$PKG" SCHEDULE_EXACT_ALARM allow >/dev/null 2>&1 || true
+
+# Set the app's per-app language (Android 13+ LocaleManager) so its own UI
+# strings (nav labels, Settings, "Today", etc.) render in $LOCALE. This is
+# separate from the seeded content's language, controlled above via
+# generate-seed-sql.py --locale. The app declares support for en-US/es-ES
+# in res/xml/locales_config.xml.
+adb -s "$SERIAL" shell cmd locale set-app-locales "$PKG" --user 0 --locales "$LOCALE" >/dev/null
 
 # First launch creates the Room DB (and seeds the default Inbox category via
 # TempoDatabase.inboxCallback) and the shared_prefs directory.
@@ -90,4 +103,4 @@ adb -s "$SERIAL" shell run-as "$PKG" rm -f databases/tempo_database-wal database
 adb -s "$SERIAL" shell am start -n "${PKG}/${ACTIVITY}" >/dev/null
 sleep 3
 
-echo "Seeded ${PKG} on ${SERIAL} with ${THEME_MODE} theme."
+echo "Seeded ${PKG} on ${SERIAL} with ${THEME_MODE} theme (${LOCALE})."

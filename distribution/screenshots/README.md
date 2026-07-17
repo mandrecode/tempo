@@ -2,21 +2,21 @@
 
 Source of truth for how the screenshots under this directory were produced.
 Not wired into any CI workflow — screenshots are uploaded to the Play
-Console listing manually. Re-run the pipeline below whenever the app's UI
-changes enough to make these stale.
+Console listing manually, per locale. Re-run the pipeline below whenever
+the app's UI changes enough to make these stale.
 
 ## Layout
 
 ```
 distribution/screenshots/
-  phone/     phone_{light,dark}_{1_routines_today,2_tasks_work,3_tasks_shopping,4_settings}.png
+  phone/     phone_{en,es}_{light,dark}_{1_routines_today,2_tasks_work,3_tasks_shopping,4_settings}.png
   medium/    medium_...
   expanded/  expanded_...
   desktop/   desktop_...
   xr/        xr_...
 ```
 
-4 views × light/dark × 5 form factors = 40 images.
+4 views × light/dark × 2 locales × 5 form factors = 80 images.
 
 ## Prerequisites
 
@@ -41,36 +41,67 @@ label either way.
 # temporarily becomes:
 #   resValue("string", "app_name", "Tempo")
 ./gradlew assembleDebug
-# ...capture desktop, expanded, and xr sets...
-# then revert the resValue change before committing.
+# ...capture desktop and expanded sets (both locales)...
+# then revert the resValue change and rebuild before committing, so
+# normal debug builds still show "(Debug)" as usual.
 ```
 
 ## The pipeline
 
 Three scripts, composed by a fourth:
 
-- **`scripts/generate-seed-sql.py`** — prints INSERT statements for a
-  curated demo dataset (12 tasks across 4 categories with a mix of
-  priorities/due dates/completion states, 4 habits split Build/Quit, one
-  3-member habit chain). Every date is computed relative to `--today`
-  (defaults to the real current date), so re-running later doesn't produce
-  stale "Today" tasks or broken streaks.
-- **`scripts/seed-screenshot-data.sh <serial> [light|dark]`** — wipes the
-  target device's app data, grants the notification/exact-alarm
+- **`scripts/generate-seed-sql.py --locale en|es`** — prints INSERT
+  statements for a curated demo dataset (12 tasks across 4 categories with
+  a mix of priorities/due dates/completion states, 4 habits split
+  Build/Quit, one 3-member habit chain), with category names, task
+  titles/descriptions, and habit titles translated per locale. Every date
+  is computed relative to `--today` (defaults to the real current date),
+  so re-running later doesn't produce stale "Today" tasks or broken
+  streaks.
+- **`scripts/seed-screenshot-data.sh <serial> [light|dark] [en|es]`** —
+  wipes the target device's app data, grants the notification/exact-alarm
   permissions the app would otherwise prompt for (screenshot capture
-  skips onboarding), sets the theme, and applies the generated SQL.
-  Applies SQL via the **host's own `sqlite3`** (pull DB → checkpoint WAL →
-  apply SQL → push back) rather than a device-side `sqlite3` binary,
-  since not every system image ships one (the `medium_tablet` Google Play
-  tablet image doesn't).
-- **`scripts/capture-screenshot-set.py <serial> <out-dir> <prefix>`** —
-  navigates the seeded app (Routines/Today → Tasks/Work → Tasks/Shopping
-  → Settings) and screenshots each via `adb screencap`. Navigation finds
-  UI elements by `android layout`'s content-desc, falling back to plain
-  text (desktop's nav rail only sets text, not content-desc).
-- **`scripts/generate-screenshot-set.sh <serial> <out-dir> <prefix>`** —
-  runs the above twice (light, then dark) for one form factor, and crops
-  XR output to 16:9 when `prefix` is `xr` (see below).
+  skips onboarding), sets the theme, sets the **app's per-app language**
+  (see below) to match, and applies the generated SQL. Applies SQL via
+  the **host's own `sqlite3`** (pull DB → checkpoint WAL → apply SQL →
+  push back) rather than a device-side `sqlite3` binary, since not every
+  system image ships one (the `medium_tablet` Google Play tablet image
+  doesn't).
+- **`scripts/capture-screenshot-set.py <serial> <out-dir> <prefix> <en|es>`**
+  — navigates the seeded app (Routines/Today → Tasks/Work-category →
+  Tasks/Shopping-category → Settings) and screenshots each via
+  `adb screencap`. Navigation finds UI elements by `android layout`'s
+  content-desc, falling back to plain text (desktop's nav rail only sets
+  text, not content-desc); the target text/desc strings are looked up
+  per locale in the script's `NAV` dict.
+- **`scripts/generate-screenshot-set.sh <serial> <out-dir> <prefix> <en|es>`**
+  — runs the above twice (light, then dark) for one form factor and
+  locale, and crops XR output to 16:9 when `prefix` is `xr` (see below).
+
+### Localization
+
+Two independent things need to be in the target language, and the
+pipeline handles both:
+
+1. **The app's own UI strings** (nav labels, "Today"/"Yesterday", Settings
+   screen, etc.) — controlled by the app's **per-app language** (Android
+   13+ `LocaleManager`; the app declares `en-US`/`es-ES` support in
+   `res/xml/locales_config.xml`). `seed-screenshot-data.sh` sets this via:
+   ```bash
+   adb shell cmd locale set-app-locales <pkg> --user 0 --locales es
+   ```
+   This only changes the *app's* language, not the whole emulator/system
+   locale — simpler and doesn't require a reboot. Verify with
+   `adb shell cmd locale get-app-locales <pkg> --user 0`.
+2. **The seeded demo content** (category names, task/habit titles) —
+   plain data inserted by `generate-seed-sql.py --locale`, translated by
+   hand in that script's `LOCALES` dict. Add a new locale by adding an
+   entry there (matching the app's actual `res/xml/locales_config.xml`
+   support) and to `NAV` in `capture-screenshot-set.py` with the
+   corresponding translated nav-rail strings (look them up in
+   `app/src/main/res/values-<locale>/strings.xml` — e.g. `routines`,
+   `tasks`, `settings` — don't guess; a mismatched string means
+   `capture-screenshot-set.py` can't find the element to tap).
 
 ## Devices
 
@@ -114,6 +145,10 @@ them look different, not the hardware.
 
 ## Recreating the full set
 
+Repeat each form factor's block once per locale (`en`, `es`) — swap the
+`LOCALE=en` line and the `_en`/`_es` output naming is handled
+automatically by `generate-screenshot-set.sh`.
+
 ```bash
 ./gradlew assembleDebug
 APK=app/build/outputs/apk/debug/app-debug.apk
@@ -122,7 +157,9 @@ APK=app/build/outputs/apk/debug/app-debug.apk
 android emulator start Pixel_10
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
-bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/phone phone
+for LOCALE in en es; do
+  bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/phone phone "$LOCALE"
+done
 adb -s emulator-5554 emu kill
 
 # --- Medium tablet (portrait) ---
@@ -135,14 +172,18 @@ sleep 2
 # Verify with dumpsys, NOT `wm size` — `wm size` always reports the
 # unrotated physical panel size, not the current logical/rotated size:
 adb -s emulator-5554 shell dumpsys window displays | grep -o "cur=[0-9x]*"
-bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/medium medium
+for LOCALE in en es; do
+  bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/medium medium "$LOCALE"
+done
 adb -s emulator-5554 emu kill
 
 # --- Expanded/big tablet (landscape, native — no rotation needed) ---
 android emulator start PixelTablet
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
-bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/expanded expanded
+for LOCALE in en es; do
+  bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/expanded expanded "$LOCALE"
+done
 adb -s emulator-5554 emu kill
 
 # --- Desktop ---
@@ -152,25 +193,36 @@ adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navb
 # First launch after boot may land in a small floating window rather
 # than maximized — force-stop and relaunch once if so; a fresh launch
 # on a rebooted AVD reliably starts full-screen.
-bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/desktop desktop
+for LOCALE in en es; do
+  bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/desktop desktop "$LOCALE"
+done
 adb -s emulator-5554 emu kill
 
 # --- Android XR ---
 android emulator start XR_Headset
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
-bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/xr xr   # auto-crops to 16:9
+for LOCALE in en es; do
+  bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/xr xr "$LOCALE"   # auto-crops to 16:9
+done
 adb -s emulator-5554 emu kill
 ```
+
+If the auto-crop step fails with `ModuleNotFoundError: No module named
+'PIL'` (system `python3` instead of a Pillow-equipped venv ran it), the
+capture itself already succeeded — just re-run the crop manually:
+`/path/to/venv/bin/python3 scripts/crop-xr-screenshots.py distribution/screenshots/xr`.
+It's safe to call repeatedly; already-cropped files (height already
+1439px) are skipped.
 
 Check `adb devices -l` for the actual serial if more than one emulator
 ends up running at once — `emulator-5554` is simply the first slot, not
 guaranteed.
 
-Then curate: review the resulting 8 images per form factor, replace
-sample data as needed by editing `generate-seed-sql.py`, and pick the
-best up to 8 per Play Console's per-listing limit (currently splitting
-evenly between light and dark).
+Then curate: review the resulting 8 images per form factor per locale,
+replace sample data as needed by editing `generate-seed-sql.py`, and pick
+the best up to 8 per Play Console's per-listing limit (currently
+splitting evenly between light and dark).
 
 ## Play Store technical requirements (as of writing)
 
@@ -210,7 +262,7 @@ the same way:
 ```bash
 python3 -c "
 from PIL import Image
-im = Image.open('distribution/screenshots/xr/xr_light_4_settings.png').convert('RGB')
+im = Image.open('distribution/screenshots/xr/xr_en_light_4_settings.png').convert('RGB')
 x = 1000  # a column safely inside the panel, left of the chrome pill
 prev = None
 for y in range(0, im.size[1], 4):

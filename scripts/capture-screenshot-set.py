@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """Navigates the seeded debug build and captures the four canonical Play
-Store screenshot views (Routines/Today, Tasks/Work, Tasks/Shopping,
-Settings) for GitHub issue #169. Not part of the CI/app build.
+Store screenshot views (Routines/Today, Tasks/Work-category, Tasks/
+Shopping-category, Settings) for GitHub issue #169. Not part of the
+CI/app build.
 
-Usage: capture-screenshot-set.py <device-serial> <output-dir> <prefix>
-  e.g. capture-screenshot-set.py emulator-5554 distribution/screenshots/phone phone_light
+Usage: capture-screenshot-set.py <device-serial> <output-dir> <prefix> <locale>
+  e.g. capture-screenshot-set.py emulator-5554 distribution/screenshots/phone phone_en_light en
 """
 import json
 import subprocess
@@ -15,6 +16,15 @@ from pathlib import Path
 
 PKG = "com.mandrecode.tempo.debug"
 ACTIVITY = "com.mandrecode.tempo.MainActivity"
+
+# Nav-rail labels (Routines/Tasks/Settings) come from the app's own string
+# resources, localized by the per-app locale set in seed-screenshot-data.sh.
+# The "work"/"shopping" category chip labels are seeded data (see
+# generate-seed-sql.py) and must match exactly what was inserted there.
+NAV = {
+    "en": {"routines": "Routines", "tasks": "Tasks", "settings": "Settings", "work": "Work", "shopping": "Shopping"},
+    "es": {"routines": "Rutinas", "tasks": "Tareas", "settings": "Ajustes", "work": "Trabajo", "shopping": "Compras"},
+}
 
 
 def adb(serial, *args, check=True):
@@ -79,10 +89,14 @@ def screencap(serial, out_path: Path):
 
 
 def main():
-    if len(sys.argv) != 4:
+    if len(sys.argv) != 5:
         print(__doc__, file=sys.stderr)
         sys.exit(1)
-    serial, out_dir, prefix = sys.argv[1], sys.argv[2], sys.argv[3]
+    serial, out_dir, prefix, locale = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4]
+    if locale not in NAV:
+        print(f"Unknown locale {locale!r} (expected one of {sorted(NAV)})", file=sys.stderr)
+        sys.exit(1)
+    nav = NAV[locale]
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
 
@@ -91,20 +105,20 @@ def main():
     time.sleep(4)
 
     # 1. Routines / Today
-    tap(serial, desc="Routines", settle=1.5)
+    tap(serial, desc=nav["routines"], settle=1.5)
     screencap(serial, out / f"{prefix}_1_routines_today.png")
 
     # 2. Tasks / Work
-    tap(serial, desc="Tasks", settle=1.0)
-    tap(serial, text="Work", settle=1.0)
+    tap(serial, desc=nav["tasks"], settle=1.0)
+    tap(serial, text=nav["work"], settle=1.0)
     screencap(serial, out / f"{prefix}_2_tasks_work.png")
 
     # 3. Tasks / Shopping
-    tap(serial, text="Shopping", settle=1.0)
+    tap(serial, text=nav["shopping"], settle=1.0)
     screencap(serial, out / f"{prefix}_3_tasks_shopping.png")
 
     # 4. Settings
-    tap(serial, desc="Settings", settle=1.0)
+    tap(serial, desc=nav["settings"], settle=1.0)
     screencap(serial, out / f"{prefix}_4_settings.png")
     adb(serial, "shell", "input", "keyevent", "KEYCODE_BACK")
 
