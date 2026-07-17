@@ -52,6 +52,7 @@ import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
+import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
@@ -216,12 +217,7 @@ fun TasksScreen(
     // TempoDockedSheet resets taskForm the instant dismissal is requested, before the docked
     // pane's own shrink-out animation finishes. Freezing the last visible state here stops the
     // exiting pane from recomposing into a blank "new task" form mid-animation.
-    var frozenUiState by remember { mutableStateOf(uiState) }
-    SideEffect {
-        if (uiState.taskForm.isVisible) {
-            frozenUiState = uiState
-        }
-    }
+    val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.taskForm.isVisible)
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -278,10 +274,7 @@ fun TasksScreen(
                                 bottom = DockedEditorPadding,
                             ),
                 ) {
-                    editorContent(
-                        if (uiState.taskForm.isVisible) uiState else frozenUiState,
-                        editorPlacement,
-                    )
+                    editorContent(frozenUiState, editorPlacement)
                 }
             }
         }
