@@ -3,6 +3,12 @@ package com.mandrecode.tempo.core.ui.util
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.theme.PastelGreenDark
+import com.mandrecode.tempo.core.ui.theme.PastelGreenLight
+import com.mandrecode.tempo.core.ui.theme.PastelRedDark
+import com.mandrecode.tempo.core.ui.theme.PastelRedLight
+import com.mandrecode.tempo.core.ui.theme.PastelYellowDark
+import com.mandrecode.tempo.core.ui.theme.PastelYellowLight
 import org.junit.Test
 
 class PriorityExtensionsTest {
@@ -22,20 +28,44 @@ class PriorityExtensionsTest {
     }
 
     @Test
-    fun `each priority has a distinct color`() {
-        val colors = Priority.entries.map { it.color }
+    fun `each priority has a distinct color in light theme`() {
+        val colors = Priority.entries.map { priorityColor(it, isDarkTheme = false) }
         assertThat(colors.distinct()).hasSize(Priority.entries.size)
     }
 
     @Test
-    fun `high priority color is red-ish`() {
-        val color = Priority.HIGH.color
-        assertThat(color.red).isGreaterThan(0.9f)
+    fun `each priority has a distinct color in dark theme`() {
+        val colors = Priority.entries.map { priorityColor(it, isDarkTheme = true) }
+        assertThat(colors.distinct()).hasSize(Priority.entries.size)
     }
 
     @Test
-    fun `low priority color is green-ish`() {
-        val color = Priority.LOW.color
-        assertThat(color.green).isGreaterThan(0.8f)
+    fun `high priority uses the red tonal palette in light theme`() {
+        assertThat(priorityColor(Priority.HIGH, isDarkTheme = false)).isEqualTo(PastelRedLight)
+    }
+
+    @Test
+    fun `high priority uses the red tonal palette in dark theme`() {
+        assertThat(priorityColor(Priority.HIGH, isDarkTheme = true)).isEqualTo(PastelRedDark)
+    }
+
+    @Test
+    fun `medium priority uses the yellow tonal palette in light theme`() {
+        assertThat(priorityColor(Priority.MEDIUM, isDarkTheme = false)).isEqualTo(PastelYellowLight)
+    }
+
+    @Test
+    fun `medium priority uses the yellow tonal palette in dark theme`() {
+        assertThat(priorityColor(Priority.MEDIUM, isDarkTheme = true)).isEqualTo(PastelYellowDark)
+    }
+
+    @Test
+    fun `low priority uses the green tonal palette in light theme`() {
+        assertThat(priorityColor(Priority.LOW, isDarkTheme = false)).isEqualTo(PastelGreenLight)
+    }
+
+    @Test
+    fun `low priority uses the green tonal palette in dark theme`() {
+        assertThat(priorityColor(Priority.LOW, isDarkTheme = true)).isEqualTo(PastelGreenDark)
     }
 }
