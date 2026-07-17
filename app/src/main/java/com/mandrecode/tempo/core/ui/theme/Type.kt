@@ -173,6 +173,10 @@ val Typography.dialogAction: TextStyle
 val Typography.cardTitle: TextStyle
     get() = titleMedium.copy(fontWeight = FontWeight.Bold)
 
+/** Habit chain card title — larger than [cardTitle] since a chain groups multiple habits. */
+val Typography.chainTitle: TextStyle
+    get() = headlineSmall.copy(fontWeight = FontWeight.Bold)
+
 /** Uppercase-like section header (e.g., "Completed", "Unscheduled habits"). */
 val Typography.sectionHeader: TextStyle
     get() = titleSmall.copy(fontWeight = FontWeight.ExtraBold, letterSpacing = 0.5.sp)
