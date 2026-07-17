@@ -511,7 +511,7 @@
     <string name="keywords_shield">escudo, proteger, dejar, parar, bloquear, evitar, guardia</string>
     <string name="keywords_psychiatry">psiquiatría, mente, mental, terapia, cerebro, construir, crecimiento</string>
     <string name="keywords_smoke_free">sin humo, fumar, cigarro, tabaco, dejar, parar</string>
-    <string name="keywords_self_improvement">yoga, estiramiento, equilibrio, flexibilidad, postura</string>
+    <string name="keywords_self_improvement">yoga, equilibrio, postura</string>
     <string name="keywords_pool">nadar, natación, piscina, largos, alberca</string>
     <string name="keywords_directions_bike">bici, bicicleta, ciclismo, pedalear, montar</string>
     <string name="keywords_hiking">senderismo, sendero, caminata, montaña, aire libre</string>
@@ -533,7 +533,7 @@
     <string name="keywords_chat">chat, mensaje, texto, conversación</string>
     <string name="keywords_diversity_3">familia, amigos, social, comunidad, convivencia</string>
     <string name="keywords_videocam">videollamada, zoom, facetime, cámara web</string>
-    <string name="keywords_edit_note">diario, escribir, notas, gratitud, reflexión</string>
+    <string name="keywords_edit_note">diario, escribir, gratitud, reflexión</string>
     <string name="keywords_flight">viajar, vuelo, viaje, vacaciones, aeropuerto</string>
     <string name="keywords_palette_outlined">arte, pintar, pintura, dibujar, creativo, pasatiempo</string>
     <string name="keywords_photo_camera">foto, fotografía, cámara, imagen</string>

@@ -507,7 +507,7 @@
     <string name="keywords_shield">shield, protect, quit, stop, block, avoid, guard</string>
     <string name="keywords_psychiatry">psychiatry, mind, mental, therapy, brain, build, growth</string>
     <string name="keywords_smoke_free">smoke free, smoking, cigarette, tobacco, quit, stop</string>
-    <string name="keywords_self_improvement">yoga, stretch, balance, flexibility, pose</string>
+    <string name="keywords_self_improvement">yoga, balance, pose</string>
     <string name="keywords_pool">swim, swimming, pool, laps, water sport</string>
     <string name="keywords_directions_bike">bike, biking, cycle, cycling, ride, bicycle</string>
     <string name="keywords_hiking">hike, hiking, trail, trek, mountain, outdoors</string>
@@ -529,7 +529,7 @@
     <string name="keywords_chat">chat, message, text, conversation, dm</string>
     <string name="keywords_diversity_3">family, friends, social, gathering, community</string>
     <string name="keywords_videocam">video call, videocall, zoom, facetime, webcam</string>
-    <string name="keywords_edit_note">journal, journaling, write, diary, notes, gratitude</string>
+    <string name="keywords_edit_note">journal, journaling, write, diary, gratitude</string>
     <string name="keywords_flight">travel, flight, trip, vacation, airport</string>
     <string name="keywords_palette_outlined">art, paint, painting, draw, creative, hobby</string>
     <string name="keywords_photo_camera">photo, photography, camera, picture, shoot</string>

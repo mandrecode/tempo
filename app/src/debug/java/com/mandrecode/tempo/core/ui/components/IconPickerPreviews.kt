@@ -62,7 +62,7 @@ private fun IconPickerDisabledPreview() {
                 onSelectIcon = {},
                 onClearIcon = {},
                 enabled = false,
-                disabledMessage = "Icon can't be changed for this default category",
+                disabledMessage = null,
                 modifier = Modifier.padding(16.dp),
             )
         }
