@@ -61,7 +61,7 @@ adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/theme_prefs.xml\"
 </map>
 EOF
 
-adb push "$SQL_FILE" "$REMOTE_SQL" >/dev/null
+adb -s "$SERIAL" push "$SQL_FILE" "$REMOTE_SQL" >/dev/null
 adb -s "$SERIAL" shell "run-as $PKG sqlite3 databases/tempo_database \".read ${REMOTE_SQL}\""
 adb -s "$SERIAL" shell rm -f "$REMOTE_SQL"
 
