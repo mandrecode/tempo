@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
+import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -90,6 +92,7 @@ internal fun HabitItem(
     isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
     isSelected: Boolean = false,
+    enableClick: Boolean = true,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -159,12 +162,7 @@ internal fun HabitItem(
     )
 
     val selectionColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                Color.Transparent
-            },
+        targetValue = selectedTintOverlayColor(isSelected),
         animationSpec = tween(220),
         label = "habit_item_selection_color",
     )
@@ -176,7 +174,7 @@ internal fun HabitItem(
                 .clip(cardShape)
                 .background(selectionColor)
                 .semantics { selected = isSelected }
-                .clickable { onClick() }
+                .then(if (enableClick) Modifier.clickable { onClick() } else Modifier)
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -388,16 +386,15 @@ fun HabitCard(
             isDarkTheme = isDarkTheme,
         )
 
+    val baseContainerColor =
+        if (isCompleted) {
+            resolvedHabitColor ?: MaterialTheme.colorScheme.primary
+        } else {
+            resolvedHabitColor?.copy(alpha = 0.15f)
+                ?: MaterialTheme.colorScheme.surfaceContainer
+        }
     val containerColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else if (isCompleted) {
-                resolvedHabitColor ?: MaterialTheme.colorScheme.primary
-            } else {
-                resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainer
-            },
+        targetValue = selectedContainerColor(baseContainerColor, isSelected),
         animationSpec = tween(300),
         label = "habit_card_color",
     )
@@ -454,6 +451,7 @@ fun HabitCard(
         }
 
         Card(
+            onClick = onEdit,
             modifier =
                 Modifier
                     .fillMaxWidth()
@@ -477,6 +475,7 @@ fun HabitCard(
                 horizontalPadding = 16.dp,
                 verticalPadding = 16.dp,
                 canToggle = canToggle,
+                enableClick = false,
             )
         }
     }

@@ -57,3 +57,10 @@ internal sealed interface EditorRoute : NavKey {
 
 internal const val EDITOR_ROUTE_METADATA = "tempo.editor.route"
 internal const val EDITOR_MAIN_ROUTE_METADATA = "tempo.editor.main.route"
+
+/**
+ * Marks a top-level route's [NavEntry] for identity checks that can't rely on [NavEntry.contentKey]
+ * (it defaults to `key.toString()`, and the raw [NavKey] instance isn't otherwise exposed).
+ */
+internal const val ONBOARDING_ROUTE_METADATA = "tempo.onboarding.route"
+internal const val SETTINGS_ROUTE_METADATA = "tempo.settings.route"

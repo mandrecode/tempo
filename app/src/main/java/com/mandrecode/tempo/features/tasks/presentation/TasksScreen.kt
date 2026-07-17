@@ -50,8 +50,8 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
-import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
+import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
@@ -213,6 +213,10 @@ fun TasksScreen(
                 )
             }
         }
+    // TempoDockedSheet resets taskForm the instant dismissal is requested, before the docked
+    // pane's own shrink-out animation finishes. Freezing the last visible state here stops the
+    // exiting pane from recomposing into a blank "new task" form mid-animation.
+    val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.taskForm.isVisible)
 
     Box(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
@@ -269,7 +273,7 @@ fun TasksScreen(
                                 bottom = DockedEditorPadding,
                             ),
                 ) {
-                    editorContent(uiState, editorPlacement)
+                    editorContent(frozenUiState, editorPlacement)
                 }
             }
         }
@@ -344,7 +348,6 @@ fun TasksScreen(
                     } else {
                         null
                     },
-                modifier = Modifier.padding(start = railContentClearance),
             )
         }
 
@@ -440,12 +443,6 @@ private fun TaskEditor(
                 { onEvent(TasksContract.UiEvent.RequestDeleteTask(editingTask)) }
             },
         onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
-        modifier =
-            if (placement == SheetPlacement.DockedPane) {
-                Modifier
-            } else {
-                Modifier.padding(start = floatingRailContentClearance())
-            },
         placement = placement,
         dismissRequestKey = dismissRequestKey,
     )

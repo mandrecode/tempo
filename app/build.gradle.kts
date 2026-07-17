@@ -65,11 +65,13 @@ kover {
                     "com.mandrecode.tempo.infrastructure.permissions.*",
                     "com.mandrecode.tempo.infrastructure.reminders.scheduler.android.*",
                     "com.mandrecode.tempo.core.ui.util.AnimationUtils*",
+                    "com.mandrecode.tempo.core.ui.util.FrozenState*",
                     "com.mandrecode.tempo.util.AppVersionProviderImpl",
                     "com.mandrecode.tempo.util.DataMode",
                     "com.mandrecode.tempo.util.DateTimeFormatter*",
                     // Preview parameter providers (Compose tooling, not runtime)
                     "*PreviewParameterProvider*",
+                    "*PreviewFixtures*",
                 )
             }
         }

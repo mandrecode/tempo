@@ -16,7 +16,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -26,6 +25,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -58,6 +58,7 @@ fun QuitHabitCard(
     val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
+        onClick = onEdit,
         modifier =
             modifier
                 .fillMaxWidth()
@@ -79,6 +80,7 @@ fun QuitHabitCard(
             cardShape = state.cardShape,
             contentColor = contentColor,
             canToggle = state.canToggle,
+            enableClick = false,
             trailingContent =
                 if (state.streak > 0) {
                     {
@@ -108,7 +110,7 @@ private fun rememberQuitHabitSelectionColors(
     contentColor: Color,
 ): QuitHabitSelectionColors {
     val animatedContainer by animateColorAsState(
-        targetValue = if (selected) MaterialTheme.colorScheme.secondaryContainer else containerColor,
+        targetValue = selectedContainerColor(containerColor, selected),
         animationSpec = tween(220),
         label = "quit_habit_selection_container_color",
     )

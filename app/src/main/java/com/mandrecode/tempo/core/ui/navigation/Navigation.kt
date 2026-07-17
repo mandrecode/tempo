@@ -126,7 +126,6 @@ fun TempoNavHost(
             includeEditorEntries = editorPaneEnabled,
         )
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
-    val settingsUsesTabTransition = isFloatingNavigationRailLayout()
     val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
     Box(
@@ -139,8 +138,14 @@ fun TempoNavHost(
             entries = activeEntries,
             navigator = navigator,
             editorSceneStrategy = editorSceneStrategy,
-            settingsUsesTabTransition = settingsUsesTabTransition,
         )
+
+        SettingsSlideOverlay(
+            visible = navigator.currentRoute == SettingsRoute,
+            onDismiss = { navigator.pop() },
+        ) {
+            SettingsDestination(navigator = navigator)
+        }
 
         PersistentFloatingBar(
             currentRoute = navigator.currentRoute,
@@ -160,27 +165,14 @@ private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
     editorSceneStrategy: SceneStrategy<NavKey>,
-    settingsUsesTabTransition: Boolean,
 ) {
     NavDisplay(
         entries = entries,
         modifier = Modifier.fillMaxSize(),
         onBack = { navigator.pop() },
         sceneStrategies = listOf(editorSceneStrategy),
-        transitionSpec = {
-            navigationTransition(
-                initialScene = initialState,
-                targetScene = targetState,
-                settingsUsesTabTransition = settingsUsesTabTransition,
-            )
-        },
-        popTransitionSpec = {
-            navigationPopTransition(
-                initialScene = initialState,
-                targetScene = targetState,
-                settingsUsesTabTransition = settingsUsesTabTransition,
-            )
-        },
+        transitionSpec = { navigationTransition(initialScene = initialState, targetScene = targetState) },
+        popTransitionSpec = { navigationPopTransition(initialScene = initialState, targetScene = targetState) },
     )
 }
 
@@ -219,10 +211,17 @@ private fun rememberActiveEntries(
                     onFloatingBarStateChange = onTasksFloatingBarStateChange,
                 )
             }
-            entry<OnboardingRoute> { route ->
+            entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
                 OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
             }
-            entry<SettingsRoute> { SettingsDestination(navigator = navigator) }
+            // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
+            // currently active, so this registration is needed for every section's entries, not
+            // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
+            // the resulting entry is filtered out before reaching NavDisplay (see below) since
+            // Settings is never rendered as a NavDisplay scene.
+            entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+                SettingsDestination(navigator = navigator)
+            }
             entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
             entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
         }
@@ -237,10 +236,13 @@ private fun rememberActiveEntries(
             TempoNavigator.Section.SETTINGS -> settingsEntries
             TempoNavigator.Section.ONBOARDING -> onboardingEntries
         }
+    // Settings slides in as its own overlay (SettingsSlideOverlay) rather than as a NavDisplay
+    // scene, so its entry never reaches NavDisplay here regardless of which section is active.
+    val entriesWithoutSettings = sectionEntries.filterNot { it.metadata.containsKey(SETTINGS_ROUTE_METADATA) }
     return if (includeEditorEntries) {
-        sectionEntries
+        entriesWithoutSettings
     } else {
-        sectionEntries.filterNot { it.contentKey is EditorRoute }
+        entriesWithoutSettings.filterNot { it.metadata.containsKey(EDITOR_ROUTE_METADATA) }
     }
 }
 
