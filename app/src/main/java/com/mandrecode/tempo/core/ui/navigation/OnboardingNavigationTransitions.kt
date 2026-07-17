@@ -31,10 +31,11 @@ internal fun navigationTransition(
     initialScene: Scene<NavKey>,
     targetScene: Scene<NavKey>,
 ): ContentTransform {
-    val initialRoute = initialScene.entries.last().contentKey
-    val targetRoute = targetScene.entries.last().contentKey
+    val initialEntry = initialScene.entries.last()
+    val targetMainRoute = targetScene.entries.last().metadata[EDITOR_MAIN_ROUTE_METADATA]
     return when {
-        initialRoute is OnboardingRoute && (targetRoute == RoutinesRoute || targetRoute == TasksRoute) ->
+        initialEntry.metadata.containsKey(ONBOARDING_ROUTE_METADATA) &&
+            (targetMainRoute == RoutinesRoute || targetMainRoute == TasksRoute) ->
             onboardingHandoffEnterTransition() togetherWith onboardingHandoffExitTransition()
 
         else -> defaultNavigationTransition()

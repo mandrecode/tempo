@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.core.ui.util
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 
 /**
@@ -11,7 +12,9 @@ import androidx.compose.runtime.remember
  * The frozen snapshot is held in a plain (non-Compose-State) box, so updating it while [isLive] is
  * true neither writes Compose state during composition nor schedules an extra recomposition on
  * every [current] change — only reading it after [isLive] flips false matters, and that read
- * already happens on the recomposition [isLive] itself triggers.
+ * already happens on the recomposition [isLive] itself triggers. The write itself happens in a
+ * [SideEffect] rather than directly in the composable body, so an abandoned/discarded composition
+ * attempt can't leave the box holding a value that was never actually committed.
  */
 @Composable
 fun <T> rememberFrozenWhileHidden(
@@ -20,7 +23,7 @@ fun <T> rememberFrozenWhileHidden(
 ): T {
     val lastLive = remember { MutableBox(current) }
     if (isLive) {
-        lastLive.value = current
+        SideEffect { lastLive.value = current }
     }
     return if (isLive) current else lastLive.value
 }

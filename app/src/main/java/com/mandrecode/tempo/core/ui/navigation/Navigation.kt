@@ -211,12 +211,14 @@ private fun rememberActiveEntries(
                     onFloatingBarStateChange = onTasksFloatingBarStateChange,
                 )
             }
-            entry<OnboardingRoute> { route ->
+            entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
                 OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
             }
             // Settings is never rendered as a NavDisplay scene (see rememberActiveEntries below);
             // this registration only keeps the entryProvider lookup for settingsBackStack valid.
-            entry<SettingsRoute> { SettingsDestination(navigator = navigator) }
+            entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+                SettingsDestination(navigator = navigator)
+            }
             entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
             entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
         }
@@ -233,13 +235,11 @@ private fun rememberActiveEntries(
         }
     // Settings slides in as its own overlay (SettingsSlideOverlay) rather than as a NavDisplay
     // scene, so its entry never reaches NavDisplay here regardless of which section is active.
-    // NavEntry.contentKey defaults to key.toString() (the key itself isn't publicly exposed), so
-    // that's what identifies the entry to filter out here.
-    val entriesWithoutSettings = sectionEntries.filterNot { it.contentKey == SettingsRoute.toString() }
+    val entriesWithoutSettings = sectionEntries.filterNot { it.metadata.containsKey(SETTINGS_ROUTE_METADATA) }
     return if (includeEditorEntries) {
         entriesWithoutSettings
     } else {
-        entriesWithoutSettings.filterNot { it.contentKey is EditorRoute }
+        entriesWithoutSettings.filterNot { it.metadata.containsKey(EDITOR_ROUTE_METADATA) }
     }
 }
 

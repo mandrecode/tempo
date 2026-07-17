@@ -12,6 +12,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -20,6 +21,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.unit.IntOffset
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
 /**
@@ -40,6 +42,7 @@ internal fun SettingsSlideOverlay(
     content: @Composable () -> Unit,
 ) {
     val currentOnDismiss by rememberUpdatedState(onDismiss)
+    val scope = rememberCoroutineScope()
     val widthPx =
         with(LocalDensity.current) {
             LocalWindowInfo.current.containerSize.width
@@ -70,7 +73,11 @@ internal fun SettingsSlideOverlay(
                 progress.collect { backEvent -> offsetX.snapTo(backEvent.progress * widthPx) }
                 currentOnDismiss()
             } catch (cancellation: CancellationException) {
-                offsetX.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
+                // Restore on a separate scope: this coroutine is already cancelled at this point,
+                // so animateTo here would itself be cancelled before completing.
+                scope.launch {
+                    offsetX.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
+                }
                 throw cancellation
             }
         }
