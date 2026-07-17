@@ -36,11 +36,14 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
+import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
+import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleRegular
+import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleShort
 import com.mandrecode.tempo.features.settings.presentation.ColorSchemeSection
 import com.mandrecode.tempo.features.settings.presentation.ThemeSection
 
@@ -172,11 +175,10 @@ internal fun OnboardingWelcomePage(
             text = stringResource(R.string.app_name),
             style =
                 if (layout.isShort) {
-                    MaterialTheme.typography.headlineLarge
+                    MaterialTheme.typography.onboardingWelcomeTitleShort
                 } else {
-                    MaterialTheme.typography.displayMedium
+                    MaterialTheme.typography.onboardingWelcomeTitleRegular
                 },
-            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = layout.sectionSpacing),
         )
@@ -292,11 +294,10 @@ private fun EducationPage(
             text = title,
             style =
                 if (layout.isShort) {
-                    MaterialTheme.typography.headlineMedium
+                    MaterialTheme.typography.onboardingPageHeadlineShort
                 } else {
-                    MaterialTheme.typography.headlineLarge
+                    MaterialTheme.typography.onboardingPageHeadlineRegular
                 },
-            fontWeight = FontWeight.SemiBold,
             textAlign = TextAlign.Center,
         )
         Text(
@@ -383,11 +384,10 @@ private fun AppearancePage(
                 text = stringResource(R.string.onboarding_appearance_title),
                 style =
                     if (layout.isShort) {
-                        MaterialTheme.typography.headlineMedium
+                        MaterialTheme.typography.onboardingPageHeadlineShort
                     } else {
-                        MaterialTheme.typography.headlineLarge
+                        MaterialTheme.typography.onboardingPageHeadlineRegular
                     },
-                fontWeight = FontWeight.SemiBold,
                 textAlign = TextAlign.Center,
             )
             Text(
