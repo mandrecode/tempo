@@ -55,18 +55,24 @@ internal fun SettingsSlideOverlay(
         } else if (isComposed) {
             offsetX.animateTo(widthPx, animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
             isComposed = false
+        } else {
+            // Already hidden: keep the off-screen position in sync with the current width so a
+            // later open still slides in from fully off-screen after a resize/rotation.
+            offsetX.snapTo(widthPx)
         }
     }
 
     if (!isComposed) return
 
-    PredictiveBackHandler { progress ->
-        try {
-            progress.collect { backEvent -> offsetX.snapTo(backEvent.progress * widthPx) }
-            currentOnDismiss()
-        } catch (cancellation: CancellationException) {
-            offsetX.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
-            throw cancellation
+    if (visible) {
+        PredictiveBackHandler { progress ->
+            try {
+                progress.collect { backEvent -> offsetX.snapTo(backEvent.progress * widthPx) }
+                currentOnDismiss()
+            } catch (cancellation: CancellationException) {
+                offsetX.animateTo(0f, animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS))
+                throw cancellation
+            }
         }
     }
 
