@@ -31,8 +31,10 @@ internal fun navigationTransition(
     initialScene: Scene<NavKey>,
     targetScene: Scene<NavKey>,
 ): ContentTransform {
-    val initialEntry = initialScene.entries.last()
-    val targetMainRoute = targetScene.entries.last().metadata[EDITOR_MAIN_ROUTE_METADATA]
+    // The main entry is always first, whether the scene is a plain single-pane scene or an
+    // EditorSupportingPaneScene (entries = [mainEntry, editorEntry]) with an editor pane open.
+    val initialEntry = initialScene.entries.first()
+    val targetMainRoute = targetScene.entries.first().metadata[EDITOR_MAIN_ROUTE_METADATA]
     return when {
         initialEntry.metadata.containsKey(ONBOARDING_ROUTE_METADATA) &&
             (targetMainRoute == RoutinesRoute || targetMainRoute == TasksRoute) ->
