@@ -287,7 +287,7 @@ private fun RoutinesDestination(
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
-        // Always true: routines and tasks share one add action via PersistentFloatingBar below
+        // Always true: routines and tasks share one add action via the app's PersistentFloatingBar
         // (see TasksDestination's matching showAddTaskRailButton), at every window tier
         // including single-tab mode. RoutinesContent's own in-content FAB is suppressed as a
         // result — it only renders when RoutinesContent is used standalone (tests, previews).
