@@ -99,11 +99,11 @@ internal fun SettingsScaffold(
 }
 
 /**
- * Deliberately does not use [com.mandrecode.tempo.core.ui.theme.topBarTitle] (bold, primary
- * color) like the Tasks/Routines root tabs. Those are persistent tab destinations with a
- * branded title; Settings is a pushed detail screen using the M3 large-collapsing-title
- * pattern, so its title stays normal-weight and onSurface-colored per that pattern instead of
- * competing with the tab title's brand emphasis.
+ * Deliberately does not use the bold [com.mandrecode.tempo.core.ui.theme.topBarTitle] style with
+ * an explicit primary title color, unlike the Tasks/Routines root tabs (see `TempoTopBar`). Those
+ * are persistent tab destinations with a branded title; Settings is a pushed detail screen using
+ * the M3 large-collapsing-title pattern, so its title stays normal-weight and onSurface-colored
+ * per that pattern instead of competing with the tab title's brand emphasis.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
