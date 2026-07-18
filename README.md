@@ -7,6 +7,18 @@ notifications.
 
 > Built with Kotlin and Jetpack Compose, following Clean Architecture + MVI.
 
+## Screenshots
+
+<p align="center">
+  <img src="distribution/screenshots/phone/phone_en_light_1_routines_today.png" width="200" alt="Routines screen with a habit chain, light theme" />
+  <img src="distribution/screenshots/phone/phone_en_light_2_tasks_work.png" width="200" alt="Tasks screen with priorities and due dates, light theme" />
+  <img src="distribution/screenshots/phone/phone_en_dark_1_routines_today.png" width="200" alt="Routines screen with a habit chain, dark theme" />
+  <img src="distribution/screenshots/phone/phone_en_dark_2_tasks_work.png" width="200" alt="Tasks screen with priorities and due dates, dark theme" />
+</p>
+
+More screenshots — Medium/Expanded tablet, Desktop, Android XR, both themes, English
+and Spanish — are in [`distribution/screenshots/`](distribution/screenshots/README.md).
+
 ## Features
 
 - **Tasks** — categories, subtasks, priorities, and recurring/periodic reminders with
