@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.0](https://github.com/mandrecode/tempo/compare/v0.9.10...v1.0.0) (2026-07-18)
+
+
+### Features
+
+* first public release 🎉
+
 ## [0.9.10](https://github.com/mandrecode/tempo/compare/v0.9.9...v0.9.10) (2026-07-17)
 
 
