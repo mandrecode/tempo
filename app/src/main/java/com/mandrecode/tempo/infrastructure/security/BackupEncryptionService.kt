@@ -1,12 +1,13 @@
 package com.mandrecode.tempo.infrastructure.security
 
+import java.nio.CharBuffer
 import java.security.GeneralSecurityException
 import java.security.SecureRandom
+import java.util.Arrays
 import javax.crypto.AEADBadTagException
 import javax.crypto.Cipher
-import javax.crypto.SecretKeyFactory
+import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
-import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 import javax.inject.Inject
 
@@ -36,6 +37,13 @@ sealed interface DecryptResult {
  * stretch the user-supplied passphrase into an AES-256 key, then AES-256-GCM (authenticated,
  * so a wrong passphrase or corrupted payload is detected via auth-tag failure rather than
  * producing silently garbled output).
+ *
+ * The PBKDF2 step is hand-rolled on top of [Mac] "HmacSHA256" rather than
+ * `SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256")`: that algorithm name isn't registered
+ * until API 26, but this app's minSdk is 24, so relying on it would crash export/import on
+ * Android 7.0/7.1. `Mac`/"HmacSHA256" has been available since API 1, and is used unconditionally
+ * (not just as a low-API fallback) so every device derives keys the same way — no risk of two
+ * implementations disagreeing on the same passphrase/salt/iterations.
  */
 class BackupEncryptionService
     @Inject
@@ -65,7 +73,7 @@ class BackupEncryptionService
             // Reject an unsupported KDF or an out-of-range iteration count up front: an
             // untrusted/corrupted envelope could otherwise drive key derivation with a
             // wildly excessive iteration count (CPU-exhaustion on import) or trip
-            // IllegalArgumentException out of PBEKeySpec/SecretKeyFactory, which isn't a
+            // IllegalArgumentException out of the cipher setup, which isn't a
             // GeneralSecurityException and would otherwise escape uncaught below.
             if (envelope.kdf != KDF_NAME || envelope.iterations !in MIN_ITERATIONS..MAX_ITERATIONS) {
                 return DecryptResult.Corrupt
@@ -85,27 +93,36 @@ class BackupEncryptionService
             }
         }
 
+        /**
+         * PBKDF2WithHmacSHA256 (RFC 8018), single output block: HMAC-SHA256's 32-byte block
+         * size already equals [KEY_LENGTH_BITS], so no multi-block concatenation is needed.
+         */
         private fun deriveKey(
             passphrase: CharArray,
             salt: ByteArray,
             iterations: Int,
         ): SecretKeySpec {
-            val factory = SecretKeyFactory.getInstance(KDF_NAME)
-            val spec = PBEKeySpec(passphrase, salt, iterations, KEY_LENGTH_BITS)
+            val passwordBytes = passphrase.toUtf8Bytes()
             return try {
-                val keyBytes = factory.generateSecret(spec).encoded
-                SecretKeySpec(keyBytes, "AES")
+                val mac = Mac.getInstance(HMAC_ALGORITHM)
+                mac.init(SecretKeySpec(passwordBytes, HMAC_ALGORITHM))
+                check(mac.macLength * BITS_PER_BYTE == KEY_LENGTH_BITS) {
+                    "HmacSHA256 output length no longer matches the expected AES key length"
+                }
+                SecretKeySpec(pbkdf2Block(mac, salt, iterations), "AES")
             } finally {
-                // PBEKeySpec clones the passphrase internally; clear that copy promptly rather
-                // than leaving it to the GC, minimizing how long it lingers in memory.
-                spec.clearPassword()
+                // The passphrase's UTF-8 bytes are our own copy (SecretKeySpec clones them
+                // again internally) — clear promptly rather than leaving it to the GC.
+                Arrays.fill(passwordBytes, 0)
             }
         }
 
         private companion object {
             const val KDF_NAME = "PBKDF2WithHmacSHA256"
+            const val HMAC_ALGORITHM = "HmacSHA256"
             const val PBKDF2_ITERATIONS = 200_000
             const val KEY_LENGTH_BITS = 256
+            const val BITS_PER_BYTE = 8
             const val SALT_LENGTH_BYTES = 16
             const val TRANSFORMATION = "AES/GCM/NoPadding"
             const val GCM_TAG_LENGTH_BITS = 128
@@ -113,3 +130,44 @@ class BackupEncryptionService
             const val MAX_ITERATIONS = 2_000_000
         }
     }
+
+/**
+ * UTF-8-encodes a passphrase without ever materializing it as a [String] — unlike a char/byte
+ * array, a String can't be zeroed afterward, so it would linger in memory indefinitely.
+ */
+private fun CharArray.toUtf8Bytes(): ByteArray {
+    val encoded = Charsets.UTF_8.encode(CharBuffer.wrap(this))
+    val bytes = ByteArray(encoded.remaining())
+    encoded.get(bytes)
+    return bytes
+}
+
+/**
+ * Computes PBKDF2's F(P, S, c, i) = U1 xor U2 xor ... xor Uc for block index i, using [mac]
+ * (already initialized with the password as its HMAC key). Internal, not private, so
+ * [Pbkdf2HmacSha256Test] can verify it directly against published RFC 7914 test vectors.
+ */
+internal fun pbkdf2Block(
+    mac: Mac,
+    salt: ByteArray,
+    iterations: Int,
+    blockIndex: Int = 1,
+): ByteArray {
+    val blockIndexBytes =
+        byteArrayOf(
+            (blockIndex ushr 24).toByte(),
+            (blockIndex ushr 16).toByte(),
+            (blockIndex ushr 8).toByte(),
+            blockIndex.toByte(),
+        )
+    mac.update(salt)
+    var u = mac.doFinal(blockIndexBytes)
+    val result = u.copyOf()
+    repeat(iterations - 1) {
+        u = mac.doFinal(u)
+        for (i in result.indices) {
+            result[i] = (result[i].toInt() xor u[i].toInt()).toByte()
+        }
+    }
+    return result
+}
