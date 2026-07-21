@@ -89,7 +89,7 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it i
 2. **Data**: entity in `core/data/entity/`, DAO in `core/data/local/dao/`, mapper in `features/[feat]/data/mapper/`, repo impl in `data/repository/`, add `@Binds` in `core/di/RepositoryModule.kt` (domain/data repos) or `core/di/PreferencesRepositoryModule.kt` (`SharedPreferences`-backed repos)
 3. **UI**: Contract (`UiState`/`UiEvent`/`UiEffect`), ViewModel, Screen, Content + Previews in `src/debug/`
 4. **Tests**: unit test use cases and ViewModel; UI test Content composable
-5. **What's New**: replace `WhatsNewRegistry.latest` (`features/whatsnew/presentation/WhatsNewRegistry.kt`) with a `WhatsNewEntry` for the feature's version, title, and a short description, so it's announced once via the "what's new" bottom sheet. Only the latest entry is ever kept — remove the previous entry's now-unused strings too
+5. **What's New**: replace `WhatsNewRegistry.latest` (`features/whatsnew/presentation/WhatsNewRegistry.kt`) with a `WhatsNewEntry` for the feature's version, title, and a short description, so it's announced once via the "what's new" bottom sheet. Only the latest entry is ever kept — remove the previous entry's now-unused strings too. `versionCode`/`versionName` are guessed at authoring time (the release that ships them doesn't exist yet) — recheck both against `version.txt` and whatever else has merged to `main` right before merging, not just when the entry was first written; another PR landing first bumps the actual next version
 
 ## Room Schema
 
