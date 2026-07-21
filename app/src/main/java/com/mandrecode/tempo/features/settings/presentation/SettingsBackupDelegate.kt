@@ -134,6 +134,14 @@ class SettingsBackupDelegate
                         SettingsContract.BackupDialog.ImportFailed(
                             SettingsContract.ImportError.ReadFailed,
                         )
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (_: Exception) {
+                        // Unexpected failure below the repository; the import
+                        // transaction has rolled back, so local data is intact.
+                        SettingsContract.BackupDialog.ImportFailed(
+                            SettingsContract.ImportError.Unexpected,
+                        )
                     }
                 host.updateState { it.copy(backupDialog = dialog, backupInProgress = false) }
             }

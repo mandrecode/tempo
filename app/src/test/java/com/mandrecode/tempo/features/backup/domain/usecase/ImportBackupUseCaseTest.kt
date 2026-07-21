@@ -12,7 +12,6 @@ import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class ImportBackupUseCaseTest {
@@ -52,10 +51,9 @@ class ImportBackupUseCaseTest {
         runTest {
             coEvery { backupRepository.importFromJson(any(), any()) } throws IllegalStateException("boom")
 
-            assertThrows(IllegalStateException::class.java) {
-                kotlinx.coroutines.runBlocking { useCase("{}", ImportMode.REPLACE) }
-            }
+            val thrown = runCatching { useCase("{}", ImportMode.REPLACE) }.exceptionOrNull()
 
+            assertThat(thrown).isInstanceOf(IllegalStateException::class.java)
             verify { reminderScheduler.rescheduleAllReminders() }
         }
 

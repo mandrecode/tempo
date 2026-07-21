@@ -60,6 +60,20 @@ class BackupSettingsDataSourceTest {
         }
 
     @Test
+    fun `snapshot maps a routines default tab`() =
+        runTest {
+            every { themePreferences.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
+            every { themePreferences.getUseTempoColors() } returns flowOf(false)
+            every { navigationPreferences.isRoutinesTabEnabled() } returns flowOf(true)
+            every { navigationPreferences.isTasksTabEnabled() } returns flowOf(true)
+            every { navigationPreferences.getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
+            every { retentionPreferences.isEnabled } returns MutableStateFlow(false)
+            every { retentionPreferences.retentionDays } returns MutableStateFlow(30)
+
+            assertThat(dataSource.snapshot().defaultTab).isEqualTo(BackupDefaultTab.ROUTINES)
+        }
+
+    @Test
     fun `apply writes every preference back`() {
         dataSource.apply(
             BackupSettings(

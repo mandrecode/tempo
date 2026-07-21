@@ -223,6 +223,9 @@ private fun SettingsContract.ImportError.message(): String =
 
         is SettingsContract.ImportError.ReadFailed ->
             stringResource(R.string.backup_import_error_read)
+
+        is SettingsContract.ImportError.Unexpected ->
+            stringResource(R.string.backup_import_error_unexpected)
     }
 
 @Composable

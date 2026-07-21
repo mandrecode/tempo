@@ -253,6 +253,25 @@ class MergePlannerTest {
         assertThat(plan.tasksToInsert.single().sortOrder).isEqualTo(3)
     }
 
+    @Test
+    fun `subtask of a newly inserted parent is inserted with its incoming sort order`() {
+        val incoming =
+            backupData(
+                categories = listOf(category(id = 1, name = "Work")),
+                tasks =
+                    listOf(
+                        task(id = 10, categoryId = 1, title = "Parent"),
+                        task(id = 11, categoryId = 1, title = "Sub", parentTaskId = 10, sortOrder = 2),
+                    ),
+            )
+        val local = backupData(categories = listOf(category(id = 1, name = "Work")))
+
+        val plan = planner.plan(incoming, local)
+
+        assertThat(plan.tasksToInsert.map { it.title }).containsExactly("Parent", "Sub").inOrder()
+        assertThat(plan.tasksToInsert.last().sortOrder).isEqualTo(2)
+    }
+
     private fun emptyData() = backupData()
 
     private fun backupData(

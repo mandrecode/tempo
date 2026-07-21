@@ -409,6 +409,40 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `failed export generation shows the export error message`() =
+        runTest {
+            coEvery { exportBackup() } throws IllegalStateException("db gone")
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
+                advanceUntilIdle()
+
+                assertThat(awaitItem()).isEqualTo(
+                    SettingsContract.UiEffect.ShowMessage(com.mandrecode.tempo.R.string.backup_export_error),
+                )
+            }
+            assertThat(viewModel.uiState.value.backupInProgress).isFalse()
+        }
+
+    @Test
+    fun `unexpected import failure shows the unexpected error dialog`() =
+        runTest {
+            val uri = mockk<Uri>()
+            coEvery { backupFileDataSource.read(uri) } returns "{}"
+            coEvery { importBackup(any(), any()) } throws IllegalStateException("boom")
+
+            viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.backupDialog)
+                .isEqualTo(
+                    SettingsContract.BackupDialog.ImportFailed(SettingsContract.ImportError.Unexpected),
+                )
+            assertThat(viewModel.uiState.value.backupInProgress).isFalse()
+        }
+
+    @Test
     fun `choosing a mode without a picked file does nothing`() =
         runTest {
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))

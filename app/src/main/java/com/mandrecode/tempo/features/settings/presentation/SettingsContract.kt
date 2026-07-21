@@ -66,6 +66,9 @@ object SettingsContract {
         ) : ImportError
 
         data object ReadFailed : ImportError
+
+        /** Unexpected failure while applying the import; the database was rolled back. */
+        data object Unexpected : ImportError
     }
 
     /**

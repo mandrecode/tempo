@@ -461,6 +461,7 @@
     <string name="backup_import_error_corrupt">The file is not a valid Tempo backup.</string>
     <string name="backup_import_error_validation">The file contains inconsistent data and was not imported.</string>
     <string name="backup_import_error_read">The file could not be read.</string>
+    <string name="backup_import_error_unexpected">The import failed unexpectedly. Your data was not changed.</string>
     <string name="backup_issue_duplicate_id">Duplicate record id: %1$s</string>
     <string name="backup_issue_unknown_category">Task "%1$s" references a missing category</string>
     <string name="backup_issue_unknown_parent_task">Task "%1$s" references a missing parent task</string>
