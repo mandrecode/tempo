@@ -52,4 +52,10 @@ interface CategoryDao {
 
     @Query("SELECT MAX(sortOrder) FROM categories")
     suspend fun getMaxSortOrder(): Int?
+
+    @Query("SELECT * FROM categories ORDER BY id ASC")
+    suspend fun getAllCategoriesSync(): List<CategoryEntity>
+
+    @Query("DELETE FROM categories")
+    suspend fun deleteAllCategories()
 }

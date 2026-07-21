@@ -76,4 +76,10 @@ interface HabitDao {
         habitId: Long,
         reminderDate: LocalDateTime?,
     )
+
+    @Query("SELECT * FROM habits ORDER BY id ASC")
+    suspend fun getAllHabitsSync(): List<HabitEntity>
+
+    @Query("DELETE FROM habits")
+    suspend fun deleteAllHabits()
 }

@@ -431,6 +431,37 @@
     <string name="settings_language_subtitle">App Language</string>
     <string name="settings_language_description">Change the app\'s language in system settings</string>
 
+    <!-- BACKUP SECTION -->
+    <string name="settings_backup">Backup</string>
+    <string name="backup_export_title">Export data</string>
+    <string name="backup_export_description">Save your tasks and routines to a file</string>
+    <string name="backup_import_title">Import data</string>
+    <string name="backup_import_description">Restore data from an exported file</string>
+    <string name="backup_export_success">Data exported</string>
+    <string name="backup_export_error">Couldn\'t export data</string>
+    <string name="backup_in_progress">Working…</string>
+    <string name="backup_import_mode_title">Import data</string>
+    <string name="backup_import_mode_message">Merge adds the file\'s data to your current data, skipping duplicates and reporting conflicts.</string>
+    <string name="backup_import_mode_replace_warning">Replace deletes all current data and restores the file. This cannot be undone.</string>
+    <string name="backup_import_mode_merge">Merge</string>
+    <string name="backup_import_mode_replace">Replace</string>
+    <string name="backup_import_success_title">Import complete</string>
+    <string name="backup_import_summary_imported">Imported: %1$d</string>
+    <string name="backup_import_summary_skipped">Skipped duplicates: %1$d</string>
+    <string name="backup_import_summary_conflicts">Conflicts: %1$d</string>
+    <string name="backup_conflict_entry">%1$s "%2$s" — %3$s</string>
+    <string name="backup_conflict_reason_content">kept your version</string>
+    <string name="backup_conflict_reason_parent">skipped with its parent</string>
+    <string name="backup_entity_category">Category</string>
+    <string name="backup_entity_task">Task</string>
+    <string name="backup_entity_habit">Habit</string>
+    <string name="backup_entity_habit_chain">Habit chain</string>
+    <string name="backup_import_error_title">Import failed</string>
+    <string name="backup_import_error_unsupported_version">This file was created by a newer version of Tempo (file version %1$d, this app supports up to %2$d). Update the app and try again.</string>
+    <string name="backup_import_error_corrupt">The file is not a valid Tempo backup.</string>
+    <string name="backup_import_error_validation">The file contains inconsistent data and was not imported.</string>
+    <string name="backup_import_error_read">The file could not be read.</string>
+
     <!-- ABOUT SECTION -->
     <string name="about">About</string>
     <string name="view_onboarding">View onboarding</string>

@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "appVersion": "1.0.0",
+  "exportedAt": "2026-07-21T10:00",
+  "categories": [
+    { "id": -1, "name": "Inbox", "icon": "inbox", "isDefault": true, "sortOrder": -1 },
+    { "id": 1, "name": "Work", "color": "red", "sortOrder": 0 }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "title": "Report",
+      "description": "Quarterly numbers",
+      "categoryId": 1,
+      "priority": "HIGH",
+      "reminderDate": "2026-08-01T09:00",
+      "periodicity": "WEEKLY",
+      "periodicityInterval": 1,
+      "repeatDays": [1, 3],
+      "sortOrder": 0
+    },
+    { "id": 2, "title": "Sub", "categoryId": 1, "parentTaskId": 1, "sortOrder": 0 }
+  ],
+  "habits": [
+    {
+      "id": 1,
+      "title": "Run",
+      "habitType": "BUILD",
+      "createdDate": "2026-01-01T08:00",
+      "completionHistory": "2026-01-02"
+    }
+  ],
+  "habitChains": [
+    { "id": 1, "title": "Morning", "createdDate": "2026-01-01T08:00" }
+  ],
+  "habitChainMembers": [
+    { "chainId": 1, "habitId": 1, "sortOrder": 0 }
+  ]
+}

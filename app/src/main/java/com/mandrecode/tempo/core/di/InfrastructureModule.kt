@@ -3,9 +3,11 @@ package com.mandrecode.tempo.core.di
 import android.app.NotificationManager
 import android.content.Context
 import androidx.work.WorkManager
+import com.mandrecode.tempo.features.backup.domain.scheduler.BackupReminderScheduler
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.CompletedTaskCleanupScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
+import com.mandrecode.tempo.infrastructure.backup.BackupReminderSchedulerImpl
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManagerImpl
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
@@ -89,4 +91,8 @@ object InfrastructureModule {
     @Provides
     @Singleton
     fun provideCleanupScheduler(impl: CompletedTaskCleanupSchedulerImpl): CompletedTaskCleanupScheduler = impl
+
+    @Provides
+    @Singleton
+    fun provideBackupReminderScheduler(impl: BackupReminderSchedulerImpl): BackupReminderScheduler = impl
 }

@@ -166,4 +166,10 @@ interface TaskDao {
             deleteTaskTrees(completedParentIds)
         }
     }
+
+    @Query("SELECT * FROM tasks ORDER BY id ASC")
+    suspend fun getAllTasksSync(): List<TaskEntity>
+
+    @Query("DELETE FROM tasks")
+    suspend fun deleteAllTasks()
 }

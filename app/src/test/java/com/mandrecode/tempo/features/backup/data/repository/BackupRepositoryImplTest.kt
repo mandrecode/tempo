@@ -1,0 +1,325 @@
+package com.mandrecode.tempo.features.backup.data.repository
+
+import android.content.Context
+import androidx.room.withTransaction
+import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.data.entity.CategoryEntity
+import com.mandrecode.tempo.core.data.entity.HabitChainEntity
+import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
+import com.mandrecode.tempo.core.data.entity.HabitEntity
+import com.mandrecode.tempo.core.data.entity.TaskEntity
+import com.mandrecode.tempo.core.data.local.TempoDatabase
+import com.mandrecode.tempo.core.data.local.dao.CategoryDao
+import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
+import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
+import com.mandrecode.tempo.core.data.local.dao.HabitDao
+import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.Periodicity
+import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.features.backup.domain.model.ImportMode
+import com.mandrecode.tempo.features.backup.domain.model.ImportOutcome
+import com.mandrecode.tempo.features.backup.domain.util.BackupPayloadValidator
+import com.mandrecode.tempo.features.backup.domain.util.MergePlanner
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
+import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDateTime
+import org.junit.After
+import org.junit.Before
+import org.junit.Test
+
+class BackupRepositoryImplTest {
+    private lateinit var taskDao: TaskDao
+    private lateinit var categoryDao: CategoryDao
+    private lateinit var habitDao: HabitDao
+    private lateinit var habitChainDao: HabitChainDao
+    private lateinit var memberDao: HabitChainMemberDao
+    private lateinit var database: TempoDatabase
+    private lateinit var context: Context
+    private lateinit var repository: BackupRepositoryImpl
+
+    @Before
+    fun setUp() {
+        taskDao = mockk(relaxed = true)
+        categoryDao = mockk(relaxed = true)
+        habitDao = mockk(relaxed = true)
+        habitChainDao = mockk(relaxed = true)
+        memberDao = mockk(relaxed = true)
+        context = mockk(relaxed = true)
+        every { context.getString(any()) } returns "Inbox"
+        database = mockk(relaxed = true)
+        every { database.taskDao() } returns taskDao
+        every { database.categoryDao() } returns categoryDao
+        every { database.habitDao() } returns habitDao
+        every { database.habitChainDao() } returns habitChainDao
+        every { database.habitChainMemberDao() } returns memberDao
+        mockkStatic("androidx.room.RoomDatabaseKt")
+        @Suppress("UNCHECKED_CAST")
+        coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
+            (args[1] as (suspend () -> Any?)).invoke()
+        }
+        repository =
+            BackupRepositoryImpl(database, BackupPayloadValidator(), MergePlanner(), context)
+    }
+
+    @After
+    fun tearDown() {
+        unmockkStatic("androidx.room.RoomDatabaseKt")
+    }
+
+    @Test
+    fun `newer schema version is rejected without touching the database`() =
+        runTest {
+            val outcome = repository.importFromJson("""{"schemaVersion":99}""", ImportMode.MERGE)
+
+            assertThat(outcome)
+                .isEqualTo(ImportOutcome.UnsupportedVersion(fileVersion = 99, maxSupported = 1))
+            coVerify(exactly = 0) { taskDao.insertTask(any()) }
+            coVerify(exactly = 0) { taskDao.deleteAllTasks() }
+        }
+
+    @Test
+    fun `non-json content is reported as corrupt`() =
+        runTest {
+            assertThat(repository.importFromJson("definitely not json", ImportMode.MERGE))
+                .isEqualTo(ImportOutcome.CorruptFile)
+        }
+
+    @Test
+    fun `payload with missing schema version is reported as corrupt`() =
+        runTest {
+            assertThat(repository.importFromJson("""{"foo":1}""", ImportMode.MERGE))
+                .isEqualTo(ImportOutcome.CorruptFile)
+        }
+
+    @Test
+    fun `payload with unknown enum value is reported as corrupt`() =
+        runTest {
+            val json =
+                """
+                {"schemaVersion":1,"categories":[{"id":1,"name":"Work"}],
+                 "tasks":[{"id":1,"title":"T","categoryId":1,"priority":"BANANAS"}]}
+                """.trimIndent()
+
+            assertThat(repository.importFromJson(json, ImportMode.MERGE))
+                .isEqualTo(ImportOutcome.CorruptFile)
+        }
+
+    @Test
+    fun `payload failing referential validation leaves the database untouched`() =
+        runTest {
+            val json =
+                """
+                {"schemaVersion":1,"categories":[],
+                 "tasks":[{"id":1,"title":"Orphan","categoryId":42}]}
+                """.trimIndent()
+
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+
+            assertThat(outcome).isInstanceOf(ImportOutcome.ValidationFailed::class.java)
+            coVerify(exactly = 0) { taskDao.deleteAllTasks() }
+            coVerify(exactly = 0) { taskDao.insertTask(any()) }
+        }
+
+    @Test
+    fun `merging an export of the same data inserts nothing`() =
+        runTest {
+            stubLocalData()
+            val json = repository.exportToJson()
+
+            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+
+            assertThat(outcome.summary.totalImported).isEqualTo(0)
+            assertThat(outcome.summary.totalConflicts).isEqualTo(0)
+            assertThat(outcome.summary.totalSkipped).isEqualTo(5)
+            coVerify(exactly = 0) { taskDao.insertTask(any()) }
+            coVerify(exactly = 0) { categoryDao.insertCategory(any()) }
+            coVerify(exactly = 0) { habitDao.insertHabit(any()) }
+            coVerify(exactly = 0) { habitChainDao.insertHabitChain(any()) }
+        }
+
+    @Test
+    fun `export then replace-import restores identical rows`() =
+        runTest {
+            stubLocalData()
+            val json = repository.exportToJson()
+
+            val insertedCategories = mutableListOf<CategoryEntity>()
+            val insertedTasks = mutableListOf<TaskEntity>()
+            val insertedHabits = mutableListOf<HabitEntity>()
+            val insertedChains = mutableListOf<HabitChainEntity>()
+            val insertedMembers = mutableListOf<List<HabitChainMemberEntity>>()
+            coEvery { categoryDao.insertCategory(capture(insertedCategories)) } returns 0
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } returns 0
+            coEvery { habitDao.insertHabit(capture(insertedHabits)) } returns 0
+            coEvery { habitChainDao.insertHabitChain(capture(insertedChains)) } returns 0
+            coEvery { memberDao.insertMembers(capture(insertedMembers)) } returns Unit
+
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+
+            assertThat(outcome).isInstanceOf(ImportOutcome.Success::class.java)
+            coVerify { memberDao.deleteAllMembers() }
+            coVerify { taskDao.deleteAllTasks() }
+            coVerify { categoryDao.deleteAllCategories() }
+            assertThat(insertedCategories).containsExactlyElementsIn(localCategories())
+            assertThat(insertedTasks).containsExactlyElementsIn(localTasks())
+            assertThat(insertedHabits).containsExactlyElementsIn(localHabits())
+            assertThat(insertedChains).containsExactlyElementsIn(localChains())
+            assertThat(insertedMembers.single()).containsExactlyElementsIn(localMembers())
+        }
+
+    @Test
+    fun `frozen v1 fixture decodes and imports with expected values`() =
+        runTest {
+            val json = readFixture("/backup/v1-backup.json")
+            val insertedTasks = mutableListOf<TaskEntity>()
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } returns 0
+
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE) as ImportOutcome.Success
+
+            assertThat(outcome.summary.categories.imported).isEqualTo(2)
+            assertThat(outcome.summary.tasks.imported).isEqualTo(2)
+            assertThat(outcome.summary.habits.imported).isEqualTo(1)
+            assertThat(outcome.summary.habitChains.imported).isEqualTo(1)
+            val report = insertedTasks.first { it.title == "Report" }
+            assertThat(report.priority).isEqualTo(Priority.HIGH)
+            assertThat(report.periodicity).isEqualTo(Periodicity.WEEKLY)
+            assertThat(report.reminderDate).isEqualTo(LocalDateTime(2026, 8, 1, 9, 0))
+            assertThat(report.repeatDays).containsExactly(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)
+            val sub = insertedTasks.first { it.title == "Sub" }
+            assertThat(sub.parentTaskId).isEqualTo(1L)
+        }
+
+    @Test
+    fun `replace payload without a default but containing inbox id marks it default`() =
+        runTest {
+            val json =
+                """
+                {"schemaVersion":1,"categories":[{"id":-1,"name":"Inbox"}]}
+                """.trimIndent()
+
+            repository.importFromJson(json, ImportMode.REPLACE)
+
+            coVerify { categoryDao.setDefault(-1L) }
+        }
+
+    @Test
+    fun `replace payload without any default category re-seeds inbox`() =
+        runTest {
+            val inserted = mutableListOf<CategoryEntity>()
+            coEvery { categoryDao.insertCategory(capture(inserted)) } returns 0
+            val json =
+                """
+                {"schemaVersion":1,"categories":[{"id":1,"name":"Work"}]}
+                """.trimIndent()
+
+            repository.importFromJson(json, ImportMode.REPLACE)
+
+            val inbox = inserted.first { it.id == -1L }
+            assertThat(inbox.isDefault).isTrue()
+            assertThat(inbox.icon).isEqualTo("inbox")
+        }
+
+    @Test
+    fun `merge remaps subtask parents and next-instance links to fresh ids`() =
+        runTest {
+            val insertedTasks = mutableListOf<TaskEntity>()
+            var nextId = 100L
+            coEvery { categoryDao.insertCategory(any()) } returns 10L
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } answers { nextId++ }
+            val json =
+                """
+                {"schemaVersion":1,
+                 "categories":[{"id":1,"name":"Work"}],
+                 "tasks":[
+                   {"id":1,"title":"Parent","categoryId":1,"nextInstanceId":2},
+                   {"id":2,"title":"Next","categoryId":1},
+                   {"id":3,"title":"Sub","categoryId":1,"parentTaskId":1}
+                 ]}
+                """.trimIndent()
+
+            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+
+            assertThat(outcome.summary.tasks.imported).isEqualTo(3)
+            val parent = insertedTasks.first { it.title == "Parent" }
+            assertThat(parent.categoryId).isEqualTo(10L)
+            assertThat(parent.nextInstanceId).isNull()
+            val sub = insertedTasks.first { it.title == "Sub" }
+            assertThat(sub.parentTaskId).isEqualTo(100L)
+            coVerify { taskDao.updateTaskNextInstanceId(100L, any()) }
+        }
+
+    @Test
+    fun `unknown extra json fields are tolerated on import`() =
+        runTest {
+            val json =
+                """
+                {"schemaVersion":1,"someFutureField":"ignored",
+                 "categories":[{"id":1,"name":"Work","futureFlag":true}]}
+                """.trimIndent()
+
+            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+
+            assertThat(outcome.summary.categories.imported).isEqualTo(1)
+        }
+
+    private fun stubLocalData() {
+        coEvery { categoryDao.getAllCategoriesSync() } returns localCategories()
+        coEvery { taskDao.getAllTasksSync() } returns localTasks()
+        coEvery { habitDao.getAllHabitsSync() } returns localHabits()
+        coEvery { habitChainDao.getAllHabitChainsSync() } returns localChains()
+        coEvery { memberDao.getAllMembersSync() } returns localMembers()
+    }
+
+    private fun localCategories() =
+        listOf(
+            CategoryEntity(id = -1, name = "Inbox", icon = "inbox", isDefault = true, sortOrder = -1),
+            CategoryEntity(id = 1, name = "Work", color = "red"),
+        )
+
+    private fun localTasks() =
+        listOf(
+            TaskEntity(
+                id = 1,
+                title = "Report",
+                description = "Quarterly numbers",
+                categoryId = 1,
+                priority = Priority.HIGH,
+                reminderDate = LocalDateTime(2026, 8, 1, 9, 0),
+                periodicity = Periodicity.WEEKLY,
+                repeatDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+            ),
+        )
+
+    private fun localHabits() =
+        listOf(
+            HabitEntity(
+                id = 1,
+                title = "Run",
+                description = "",
+                createdDate = LocalDateTime(2026, 1, 1, 8, 0),
+                completionHistory = "2026-01-02",
+            ),
+        )
+
+    private fun localChains() =
+        listOf(
+            HabitChainEntity(
+                id = 1,
+                title = "Morning",
+                createdDate = LocalDateTime(2026, 1, 1, 8, 0),
+            ),
+        )
+
+    private fun localMembers() = listOf(HabitChainMemberEntity(chainId = 1, habitId = 1, sortOrder = 0))
+
+    private fun readFixture(path: String): String =
+        checkNotNull(javaClass.getResourceAsStream(path)) { "Missing fixture $path" }
+            .bufferedReader()
+            .use { it.readText() }
+}

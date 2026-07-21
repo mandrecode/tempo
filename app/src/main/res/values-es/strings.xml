@@ -435,6 +435,37 @@
     <string name="settings_language_subtitle">Idioma de la aplicación</string>
     <string name="settings_language_description">Cambiar el idioma de la app en los ajustes del sistema</string>
 
+    <!-- BACKUP SECTION -->
+    <string name="settings_backup">Copia de seguridad</string>
+    <string name="backup_export_title">Exportar datos</string>
+    <string name="backup_export_description">Guarda tus tareas y rutinas en un archivo</string>
+    <string name="backup_import_title">Importar datos</string>
+    <string name="backup_import_description">Restaura datos desde un archivo exportado</string>
+    <string name="backup_export_success">Datos exportados</string>
+    <string name="backup_export_error">No se pudieron exportar los datos</string>
+    <string name="backup_in_progress">Procesando…</string>
+    <string name="backup_import_mode_title">Importar datos</string>
+    <string name="backup_import_mode_message">Combinar añade los datos del archivo a tus datos actuales, omitiendo duplicados e informando de conflictos.</string>
+    <string name="backup_import_mode_replace_warning">Reemplazar elimina todos los datos actuales y restaura el archivo. Esta acción no se puede deshacer.</string>
+    <string name="backup_import_mode_merge">Combinar</string>
+    <string name="backup_import_mode_replace">Reemplazar</string>
+    <string name="backup_import_success_title">Importación completada</string>
+    <string name="backup_import_summary_imported">Importados: %1$d</string>
+    <string name="backup_import_summary_skipped">Duplicados omitidos: %1$d</string>
+    <string name="backup_import_summary_conflicts">Conflictos: %1$d</string>
+    <string name="backup_conflict_entry">%1$s "%2$s" — %3$s</string>
+    <string name="backup_conflict_reason_content">se mantuvo tu versión</string>
+    <string name="backup_conflict_reason_parent">omitido junto con su elemento superior</string>
+    <string name="backup_entity_category">Categoría</string>
+    <string name="backup_entity_task">Tarea</string>
+    <string name="backup_entity_habit">Hábito</string>
+    <string name="backup_entity_habit_chain">Cadena de hábitos</string>
+    <string name="backup_import_error_title">Error al importar</string>
+    <string name="backup_import_error_unsupported_version">Este archivo fue creado por una versión más reciente de Tempo (versión del archivo %1$d, esta app admite hasta %2$d). Actualiza la app e inténtalo de nuevo.</string>
+    <string name="backup_import_error_corrupt">El archivo no es una copia de seguridad válida de Tempo.</string>
+    <string name="backup_import_error_validation">El archivo contiene datos incoherentes y no se importó.</string>
+    <string name="backup_import_error_read">No se pudo leer el archivo.</string>
+
     <!-- ABOUT SECTION -->
     <string name="about">Acerca de</string>
     <string name="view_onboarding">Ver introducción</string>
