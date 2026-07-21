@@ -114,8 +114,8 @@ object SettingsContract {
         data object ExportClicked : UiEvent
 
         data class ExportPassphraseConfirmed(
-            val passphrase: String,
-            val confirmation: String,
+            val passphrase: CharArray,
+            val confirmation: CharArray,
         ) : UiEvent
 
         data class ExportDestinationPicked(
@@ -131,7 +131,7 @@ object SettingsContract {
         ) : UiEvent
 
         data class ImportPassphraseEntered(
-            val passphrase: String,
+            val passphrase: CharArray,
         ) : UiEvent
 
         data class ImportModeChosen(

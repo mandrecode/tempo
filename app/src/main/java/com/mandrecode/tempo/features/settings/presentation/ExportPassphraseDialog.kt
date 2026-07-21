@@ -34,7 +34,12 @@ internal fun ExportPassphraseDialog(onEvent: (SettingsContract.UiEvent) -> Unit)
         title = stringResource(R.string.backup_export_passphrase_title),
         confirmLabel = stringResource(R.string.backup_export_passphrase_confirm),
         onConfirm = {
-            onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed(passphrase, confirmation))
+            onEvent(
+                SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                    passphrase.toCharArray(),
+                    confirmation.toCharArray(),
+                ),
+            )
         },
         onCancel = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
         isDestructive = false,

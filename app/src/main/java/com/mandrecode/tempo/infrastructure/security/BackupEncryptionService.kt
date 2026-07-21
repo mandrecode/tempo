@@ -52,9 +52,10 @@ class BackupEncryptionService
             plaintext: String,
             passphrase: CharArray,
         ): EncryptedEnvelope {
-            val salt = ByteArray(SALT_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
+            val random = SecureRandom()
+            val salt = ByteArray(SALT_LENGTH_BYTES).also { random.nextBytes(it) }
             val key = deriveKey(passphrase, salt, PBKDF2_ITERATIONS)
-            val iv = ByteArray(GCM_IV_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
+            val iv = ByteArray(GCM_IV_LENGTH_BYTES).also { random.nextBytes(it) }
             val cipher = Cipher.getInstance(TRANSFORMATION)
             // Explicit IV/tag length rather than relying on provider defaults for a bare
             // ENCRYPT_MODE init — decrypt() already hard-codes GCM_TAG_LENGTH_BITS, so encrypt

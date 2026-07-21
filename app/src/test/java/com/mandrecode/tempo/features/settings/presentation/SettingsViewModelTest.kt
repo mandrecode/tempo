@@ -290,7 +290,7 @@ class SettingsViewModelTest {
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
                 viewModel.onEvent(
-                    SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"),
+                    SettingsContract.UiEvent.ExportPassphraseConfirmed("secret".toCharArray(), "secret".toCharArray()),
                 )
                 advanceUntilIdle()
 
@@ -304,7 +304,12 @@ class SettingsViewModelTest {
     fun `mismatched passphrase confirmation does not export`() =
         runTest {
             viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-            viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "different"))
+            viewModel.onEvent(
+                SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                    "secret".toCharArray(),
+                    "different".toCharArray(),
+                ),
+            )
             advanceUntilIdle()
 
             coVerify(exactly = 0) { exportBackup(any()) }
@@ -322,7 +327,12 @@ class SettingsViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-                viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+                viewModel.onEvent(
+                    SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                        "secret".toCharArray(),
+                        "secret".toCharArray(),
+                    ),
+                )
                 advanceUntilIdle()
                 awaitItem()
                 viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
@@ -345,7 +355,12 @@ class SettingsViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-                viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+                viewModel.onEvent(
+                    SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                        "secret".toCharArray(),
+                        "secret".toCharArray(),
+                    ),
+                )
                 advanceUntilIdle()
                 awaitItem()
                 viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
@@ -386,7 +401,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -424,7 +439,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -461,7 +476,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("wrong"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("wrong".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -507,7 +522,12 @@ class SettingsViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-                viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+                viewModel.onEvent(
+                    SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                        "secret".toCharArray(),
+                        "secret".toCharArray(),
+                    ),
+                )
                 advanceUntilIdle()
                 awaitItem()
                 viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
@@ -528,7 +548,12 @@ class SettingsViewModelTest {
             val uri = mockk<Uri>()
 
             viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-            viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+            viewModel.onEvent(
+                SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                    "secret".toCharArray(),
+                    "secret".toCharArray(),
+                ),
+            )
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
             advanceUntilIdle()
@@ -548,7 +573,12 @@ class SettingsViewModelTest {
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-                viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+                viewModel.onEvent(
+                    SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                        "secret".toCharArray(),
+                        "secret".toCharArray(),
+                    ),
+                )
                 advanceUntilIdle()
 
                 assertThat(awaitItem()).isEqualTo(
@@ -568,7 +598,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -598,7 +628,12 @@ class SettingsViewModelTest {
             val uri = mockk<Uri>()
 
             viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
-            viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+            viewModel.onEvent(
+                SettingsContract.UiEvent.ExportPassphraseConfirmed(
+                    "secret".toCharArray(),
+                    "secret".toCharArray(),
+                ),
+            )
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ExportCancelled)
             viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
@@ -618,7 +653,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -639,7 +674,7 @@ class SettingsViewModelTest {
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
             advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret".toCharArray()))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.REPLACE))
             advanceUntilIdle()

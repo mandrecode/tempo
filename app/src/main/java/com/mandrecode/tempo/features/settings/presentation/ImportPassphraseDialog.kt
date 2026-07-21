@@ -30,7 +30,7 @@ internal fun ImportPassphraseDialog(
     TempoConfirmDialog(
         title = stringResource(R.string.backup_import_passphrase_title),
         confirmLabel = stringResource(R.string.backup_import_passphrase_confirm),
-        onConfirm = { onEvent(SettingsContract.UiEvent.ImportPassphraseEntered(passphrase)) },
+        onConfirm = { onEvent(SettingsContract.UiEvent.ImportPassphraseEntered(passphrase.toCharArray())) },
         onCancel = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
         isDestructive = false,
         confirmEnabled = passphrase.isNotEmpty(),
