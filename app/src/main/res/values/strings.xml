@@ -508,8 +508,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">See what’s new</string>
-    <string name="whats_new_description">After an update, a quick summary of the latest feature appears here — just like this one.</string>
+    <string name="whats_new_title">Your data is now encrypted</string>
+    <string name="whats_new_description">Your tasks and habits are encrypted on your device, and backup exports are protected with a passphrase only you know.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

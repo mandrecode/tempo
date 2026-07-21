@@ -12,10 +12,11 @@ import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
 object WhatsNewRegistry {
     val latest: WhatsNewEntry =
         WhatsNewEntry(
-            // v1.1.0 already shipped (release-please cut it from #26 alone, before this
-            // registry existed), so this feature (#210) ships in the next release, v1.2.0.
-            versionCode = 1_002_000,
-            versionName = "1.2.0",
+            // v1.2.0 already shipped this registry itself (#210); this feature (#28) is a
+            // `feat` commit with no BREAKING CHANGE footer, so it ships in the next minor
+            // release, v1.3.0 — recheck against version.txt/the release cadence before merge.
+            versionCode = 1_003_000,
+            versionName = "1.3.0",
             titleRes = R.string.whats_new_title,
             descriptionRes = R.string.whats_new_description,
         )
