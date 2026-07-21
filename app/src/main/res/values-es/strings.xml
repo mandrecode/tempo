@@ -436,7 +436,7 @@
     <string name="settings_language_description">Cambiar el idioma de la app en los ajustes del sistema</string>
 
     <!-- BACKUP SECTION -->
-    <string name="settings_backup">Copia de seguridad</string>
+    <string name="settings_backup">Copia de seguridad y restauración</string>
     <string name="backup_export_title">Exportar datos</string>
     <string name="backup_export_description">Guarda tus tareas y rutinas en un archivo</string>
     <string name="backup_import_title">Importar datos</string>

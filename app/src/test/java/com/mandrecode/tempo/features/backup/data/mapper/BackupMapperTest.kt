@@ -5,8 +5,11 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.backup.data.model.TaskBackupDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
+import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
+import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ChainMembership
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -84,6 +87,18 @@ class BackupMapperTest {
                     ),
                 ),
             chainMemberships = listOf(ChainMembership(chainId = 30, habitId = 20, sortOrder = 0)),
+            settings = sampleSettings(),
+        )
+
+    private fun sampleSettings(): BackupSettings =
+        BackupSettings(
+            themeMode = ThemeMode.DARK,
+            useTempoColors = true,
+            routinesTabEnabled = true,
+            tasksTabEnabled = false,
+            defaultTab = BackupDefaultTab.ROUTINES,
+            autoRemoveCompletedTasks = true,
+            completedTaskRetentionDays = 90,
         )
 
     @Test

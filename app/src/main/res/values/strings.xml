@@ -432,7 +432,7 @@
     <string name="settings_language_description">Change the app\'s language in system settings</string>
 
     <!-- BACKUP SECTION -->
-    <string name="settings_backup">Backup</string>
+    <string name="settings_backup">Backup &amp; Restore</string>
     <string name="backup_export_title">Export data</string>
     <string name="backup_export_description">Save your tasks and routines to a file</string>
     <string name="backup_import_title">Import data</string>

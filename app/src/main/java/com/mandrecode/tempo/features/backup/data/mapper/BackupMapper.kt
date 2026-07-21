@@ -39,6 +39,7 @@ fun BackupData.toDto(
         habits = habits.map { it.toDto() },
         habitChains = habitChains.map { it.toDto() },
         habitChainMembers = chainMemberships.map { ChainMemberBackupDto(it.chainId, it.habitId, it.sortOrder) },
+        settings = settings?.toDto(),
     )
 
 fun BackupFileDto.toDomain(): BackupData =
@@ -48,6 +49,7 @@ fun BackupFileDto.toDomain(): BackupData =
         habits = habits.map { it.toDomain() },
         habitChains = habitChains.map { it.toDomain() },
         chainMemberships = habitChainMembers.map { ChainMembership(it.chainId, it.habitId, it.sortOrder) },
+        settings = settings?.toDomain(),
     )
 
 private fun Category.toDto(): CategoryBackupDto =

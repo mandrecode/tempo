@@ -22,6 +22,19 @@ data class BackupFileDto(
     val habits: List<HabitBackupDto> = emptyList(),
     val habitChains: List<HabitChainBackupDto> = emptyList(),
     val habitChainMembers: List<ChainMemberBackupDto> = emptyList(),
+    val settings: SettingsBackupDto? = null,
+)
+
+/** App configuration section; absent in files written before it existed. */
+@Serializable
+data class SettingsBackupDto(
+    val themeMode: String = "SYSTEM",
+    val useTempoColors: Boolean = false,
+    val routinesTabEnabled: Boolean = true,
+    val tasksTabEnabled: Boolean = true,
+    val defaultTab: String = "ROUTINES",
+    val autoRemoveCompletedTasks: Boolean = false,
+    val completedTaskRetentionDays: Int = 30,
 )
 
 /** Minimal projection used to read [BackupFileDto.schemaVersion] before full decoding. */

@@ -8,7 +8,7 @@ Users currently have no way to move their data in or out of Tempo: uninstalling 
 
 ## What Changes
 
-- **Export**: users can export all app data (categories, tasks, habits, habit chains, chain memberships — including reminder configuration carried on those records) to a single versioned JSON file, saved wherever they choose via the system file picker (Storage Access Framework).
+- **Export**: users can export all app data (categories, tasks, habits, habit chains, chain memberships — including reminder configuration carried on those records — plus the app settings configuration) to a single versioned JSON file, saved wherever they choose via the system file picker (Storage Access Framework).
 - **Import**: users can pick a previously exported file and restore it in one of two modes:
   - **Replace** — wipe current data and restore the file's contents exactly (backup/recovery path).
   - **Merge** — add the file's contents to existing data, skipping exact duplicates and reporting conflicts.
@@ -21,7 +21,6 @@ Users currently have no way to move their data in or out of Tempo: uninstalling 
 Non-goals (explicitly out of scope for this change):
 
 - Cloud sync, scheduled/automatic backups, or collaboration features (this change is their foundation only).
-- Exporting app preferences/settings (theme, tab config, retention settings) — the versioned envelope leaves room to add them later.
 - Interactive per-conflict resolution UI (keep-mine/take-theirs). Conflicts are reported, not interactively resolved.
 - Importing formats other than Tempo's own export (no CSV/Todoist/etc.).
 

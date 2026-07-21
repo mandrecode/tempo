@@ -13,6 +13,10 @@ The system SHALL let the user pick a previously exported file via the system fil
 - **WHEN** a Replace import completes from a payload containing no default category
 - **THEN** the seeded Inbox category (id -1) is recreated so the app invariant holds
 
+#### Scenario: Replace applies the file's settings, merge never does
+- **WHEN** a file carrying a settings section is imported
+- **THEN** Replace applies the settings after the database restore commits (re-establishing app invariants such as at least one enabled tab), while Merge leaves local settings untouched; files without a settings section change no settings in either mode
+
 #### Scenario: Merge adds new records with fresh ids
 - **WHEN** the user imports a file in Merge mode containing records with no natural-key match locally
 - **THEN** those records are inserted with newly generated ids and all internal references (category, parent task, next instance, chain memberships) are remapped consistently

@@ -17,6 +17,10 @@ import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
+import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
+import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportOutcome
 import com.mandrecode.tempo.features.backup.domain.util.BackupPayloadValidator
@@ -41,6 +45,7 @@ class BackupRepositoryImplTest {
     private lateinit var memberDao: HabitChainMemberDao
     private lateinit var database: TempoDatabase
     private lateinit var context: Context
+    private lateinit var settingsDataSource: BackupSettingsDataSource
     private lateinit var repository: BackupRepositoryImpl
 
     @Before
@@ -52,6 +57,8 @@ class BackupRepositoryImplTest {
         memberDao = mockk(relaxed = true)
         context = mockk(relaxed = true)
         every { context.getString(any()) } returns "Inbox"
+        settingsDataSource = mockk(relaxed = true)
+        coEvery { settingsDataSource.snapshot() } returns backupSettings()
         database = mockk(relaxed = true)
         every { database.taskDao() } returns taskDao
         every { database.categoryDao() } returns categoryDao
@@ -64,7 +71,13 @@ class BackupRepositoryImplTest {
             (args[1] as (suspend () -> Any?)).invoke()
         }
         repository =
-            BackupRepositoryImpl(database, BackupPayloadValidator(), MergePlanner(), context)
+            BackupRepositoryImpl(
+                database,
+                BackupPayloadValidator(),
+                MergePlanner(),
+                settingsDataSource,
+                context,
+            )
     }
 
     @After
@@ -255,6 +268,39 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `export carries the current settings and replace-import applies them`() =
+        runTest {
+            stubLocalData()
+            val json = repository.exportToJson()
+
+            assertThat(json).contains("\"settings\"")
+            repository.importFromJson(json, ImportMode.REPLACE)
+
+            io.mockk.verify { settingsDataSource.apply(backupSettings()) }
+        }
+
+    @Test
+    fun `merge never applies the file settings`() =
+        runTest {
+            stubLocalData()
+            val json = repository.exportToJson()
+
+            repository.importFromJson(json, ImportMode.MERGE)
+
+            io.mockk.verify(exactly = 0) { settingsDataSource.apply(any()) }
+        }
+
+    @Test
+    fun `replace of a file without a settings section leaves settings untouched`() =
+        runTest {
+            val json = """{"schemaVersion":1,"categories":[{"id":-1,"name":"Inbox","isDefault":true}]}"""
+
+            repository.importFromJson(json, ImportMode.REPLACE)
+
+            io.mockk.verify(exactly = 0) { settingsDataSource.apply(any()) }
+        }
+
+    @Test
     fun `unknown extra json fields are tolerated on import`() =
         runTest {
             val json =
@@ -317,6 +363,17 @@ class BackupRepositoryImplTest {
         )
 
     private fun localMembers() = listOf(HabitChainMemberEntity(chainId = 1, habitId = 1, sortOrder = 0))
+
+    private fun backupSettings() =
+        BackupSettings(
+            themeMode = ThemeMode.DARK,
+            useTempoColors = true,
+            routinesTabEnabled = true,
+            tasksTabEnabled = true,
+            defaultTab = BackupDefaultTab.TASKS,
+            autoRemoveCompletedTasks = true,
+            completedTaskRetentionDays = 30,
+        )
 
     private fun readFixture(path: String): String =
         checkNotNull(javaClass.getResourceAsStream(path)) { "Missing fixture $path" }

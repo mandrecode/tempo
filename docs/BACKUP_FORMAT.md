@@ -19,6 +19,7 @@ and future) must read and write this format.
 | `habits` | array | See [Habit](#habit). |
 | `habitChains` | array | See [Habit chain](#habit-chain). |
 | `habitChainMembers` | array | See [Chain member](#chain-member). |
+| `settings` | object? | See [Settings](#settings). Optional; absent in files written before it existed. |
 
 All collections default to empty. Original database ids are included on every record; they are
 required for referential integrity inside the file and are preserved verbatim by Replace
@@ -62,6 +63,15 @@ The seeded Inbox category exports with `id = -1` and `isDefault = true`.
 ### Chain member
 
 `chainId`, `habitId`, `sortOrder`. Both ids must reference records in the file.
+
+### Settings
+
+App configuration snapshot: `themeMode` (`LIGHT | DARK | SYSTEM`), `useTempoColors`,
+`routinesTabEnabled`, `tasksTabEnabled`, `defaultTab` (`ROUTINES | TASKS`),
+`autoRemoveCompletedTasks`, `completedTaskRetentionDays`. Applied **only by Replace
+imports** (a full restore); Merge never changes local configuration. On apply, app
+invariants are re-established: at least one tab stays enabled, the default tab must be
+an enabled tab, and retention days snap to the nearest supported value.
 
 ## Import behavior
 

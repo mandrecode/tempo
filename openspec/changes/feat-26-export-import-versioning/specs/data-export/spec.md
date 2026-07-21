@@ -3,7 +3,7 @@
 ## ADDED Requirements
 
 ### Requirement: User can export all app data to a versioned JSON file
-The system SHALL let the user export all categories, tasks, habits, habit chains, and habit-chain memberships (including their reminder configuration fields) into a single JSON document written to a location the user chooses via the system file picker (Storage Access Framework).
+The system SHALL let the user export all categories, tasks, habits, habit chains, and habit-chain memberships (including their reminder configuration fields), plus the app settings configuration (theme, color scheme, tab configuration, completed-task retention), into a single JSON document written to a location the user chooses via the system file picker (Storage Access Framework).
 
 #### Scenario: Successful export
 - **WHEN** the user taps "Export data" in the Settings Backup section and picks a destination in the system file picker

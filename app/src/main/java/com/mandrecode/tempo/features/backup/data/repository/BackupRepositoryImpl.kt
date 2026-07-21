@@ -8,6 +8,7 @@ import com.mandrecode.tempo.core.data.entity.CategoryEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
+import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
 import com.mandrecode.tempo.features.backup.data.mapper.toDomain
 import com.mandrecode.tempo.features.backup.data.mapper.toDto
 import com.mandrecode.tempo.features.backup.data.model.BackupEnvelopeDto
@@ -46,6 +47,7 @@ class BackupRepositoryImpl
         private val database: TempoDatabase,
         private val validator: BackupPayloadValidator,
         private val mergePlanner: MergePlanner,
+        private val settingsDataSource: BackupSettingsDataSource,
         @param:ApplicationContext private val context: Context,
     ) : BackupRepository {
         private val jsonFormat =
@@ -55,7 +57,10 @@ class BackupRepositoryImpl
             }
 
         override suspend fun exportToJson(): String {
-            val data = database.withTransaction { readAll() }
+            val data =
+                database
+                    .withTransaction { readAll() }
+                    .copy(settings = settingsDataSource.snapshot())
             val exportedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             return jsonFormat.encodeToString(
                 data.toDto(
@@ -128,8 +133,18 @@ class BackupRepositoryImpl
                     },
             )
 
-        /** Wipes all tables and restores the payload exactly, preserving original ids. */
-        private suspend fun replace(data: BackupData): ImportSummary =
+        /**
+         * Wipes all tables and restores the payload exactly, preserving original ids.
+         * Settings (SharedPreferences-backed, not part of the Room transaction) are
+         * applied only after the database restore commits.
+         */
+        private suspend fun replace(data: BackupData): ImportSummary {
+            val summary = replaceDatabase(data)
+            data.settings?.let(settingsDataSource::apply)
+            return summary
+        }
+
+        private suspend fun replaceDatabase(data: BackupData): ImportSummary =
             database.withTransaction {
                 val memberDao = database.habitChainMemberDao()
                 memberDao.deleteAllMembers()
@@ -237,17 +252,17 @@ class BackupRepositoryImpl
                 }
             return taskIds
         }
-
-        private fun HabitChainEntity.toDomainChain(): HabitChain =
-            HabitChain(
-                id = id,
-                title = title,
-                description = description,
-                colorKey = colorKey,
-                icon = icon,
-                periodicReminder = periodicReminder,
-                createdDate = createdDate,
-                completionHistory = completionHistory,
-                repeatDays = repeatDays,
-            )
     }
+
+private fun HabitChainEntity.toDomainChain(): HabitChain =
+    HabitChain(
+        id = id,
+        title = title,
+        description = description,
+        colorKey = colorKey,
+        icon = icon,
+        periodicReminder = periodicReminder,
+        createdDate = createdDate,
+        completionHistory = completionHistory,
+        repeatDays = repeatDays,
+    )
