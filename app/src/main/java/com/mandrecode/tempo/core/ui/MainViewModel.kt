@@ -58,11 +58,11 @@ class MainViewModel
                 onboardingPreferencesRepository.isCompleted,
                 whatsNewPreferencesRepository.lastSeenVersionCode,
             ) { state, isOnboardingCompleted, lastSeenVersionCode ->
-                val latestWhatsNewEntry = WhatsNewRegistry.entries.firstOrNull()
+                val latestWhatsNewEntry = WhatsNewRegistry.latest
                 state.copy(
                     isOnboardingCompleted = isOnboardingCompleted,
                     whatsNewEntry =
-                        latestWhatsNewEntry?.takeIf {
+                        latestWhatsNewEntry.takeIf {
                             isOnboardingCompleted && it.versionCode > lastSeenVersionCode
                         },
                 )
@@ -73,9 +73,7 @@ class MainViewModel
             )
 
         fun onWhatsNewDismissed() {
-            WhatsNewRegistry.entries.firstOrNull()?.let {
-                whatsNewPreferencesRepository.setLastSeenVersionCode(it.versionCode)
-            }
+            whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.latest.versionCode)
         }
 
         fun setPendingNotificationAction(action: PendingNotificationAction) {

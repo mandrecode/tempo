@@ -1,7 +1,7 @@
 ## 1. Domain / Presentation Model
 
 - [x] 1.1 Create `WhatsNewEntry` data class (`versionCode: Int`, `versionName: String`, `@StringRes titleRes: Int`, `@StringRes descriptionRes: Int`) under `features/whatsnew/presentation/model/WhatsNewEntry.kt`
-- [x] 1.2 Create `WhatsNewRegistry` object under `features/whatsnew/presentation/WhatsNewRegistry.kt` holding the newest-first `List<WhatsNewEntry>`, seeded with two entries (newest first): this "what's new" onboarding feature itself (#210, `v1.2.0`), then the Import/Export feature (#26, `v1.1.0` — already released while this PR was in review). The self-referential entry is listed first and is the one actually shown, letting us verify the mechanism end-to-end on release
+- [x] 1.2 Create `WhatsNewRegistry` object under `features/whatsnew/presentation/WhatsNewRegistry.kt` holding a single `val latest: WhatsNewEntry`, set to this "what's new" onboarding feature itself (#210, `v1.2.0`) — the self-demoing entry, so the mechanism is verified end-to-end on release. Initially built as an append-only `List<WhatsNewEntry>` seeded with a second historical entry (Import/Export, #26), but simplified to a single value after review since only the latest entry is ever shown and the list only guaranteed permanent, unused growth
 
 ## 2. Data Layer (SharedPreferences repository)
 
@@ -12,8 +12,8 @@
 
 ## 3. Trigger Wiring
 
-- [x] 3.1 Add `whatsNewEntry: WhatsNewEntry?` derivation to `MainUiState`/`MainViewModel`, combining `OnboardingPreferencesRepository.isCompleted`, `WhatsNewPreferencesRepository.lastSeenVersionCode`, and `WhatsNewRegistry.entries.first().versionCode`. Onboarding-replay guard implemented separately as `isOnboardingSectionActive` in `MainActivity`, fed by a new `onOnboardingActiveChange` callback threaded through `TempoNavHost`/`Navigation.kt`. Initially keyed off `TempoNavigator.section`, but a Settings-triggered replay (`navigator.navigate(OnboardingRoute(isReplay = true))`) pushes onto whichever back stack is already active without changing `section` — Copilot review caught this, so the signal now keys off `navigator.currentRoute is OnboardingRoute` instead, verified correct on-device (replay screen renders with no sheet on top)
-- [x] 3.2 Add `onWhatsNewDismissed()` handler on `MainViewModel` that calls `whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.entries.first().versionCode)`
+- [x] 3.1 Add `whatsNewEntry: WhatsNewEntry?` derivation to `MainUiState`/`MainViewModel`, combining `OnboardingPreferencesRepository.isCompleted`, `WhatsNewPreferencesRepository.lastSeenVersionCode`, and `WhatsNewRegistry.latest.versionCode`. Onboarding-replay guard implemented separately as `isOnboardingSectionActive` in `MainActivity`, fed by a new `onOnboardingActiveChange` callback threaded through `TempoNavHost`/`Navigation.kt`. Initially keyed off `TempoNavigator.section`, but a Settings-triggered replay (`navigator.navigate(OnboardingRoute(isReplay = true))`) pushes onto whichever back stack is already active without changing `section` — Copilot review caught this, so the signal now keys off `navigator.currentRoute is OnboardingRoute` instead, verified correct on-device (replay screen renders with no sheet on top)
+- [x] 3.2 Add `onWhatsNewDismissed()` handler on `MainViewModel` that calls `whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.latest.versionCode)`
 - [x] 3.3 Unit test `MainViewModel`'s entry-derivation logic for: not-yet-seen entry, already-seen entry, onboarding incomplete, and `onWhatsNewDismissed()` persistence
 
 ## 4. UI
@@ -26,12 +26,12 @@
 
 ## 5. Strings
 
-- [x] 5.1 Add `whats_new_*` string resources to `app/src/main/res/values/strings.xml` (sheet legend template, dismiss button, and the Import/Export entry's title/description)
+- [x] 5.1 Add `whats_new_*` string resources to `app/src/main/res/values/strings.xml` (sheet legend template, dismiss button, and this feature's title/description); removed the Import/Export entry's strings once the registry moved to a single-entry model, since they became permanently unused
 - [x] 5.2 Add matching translations to `app/src/main/res/values-es/strings.xml`
 
 ## 6. Documentation
 
-- [x] 6.1 Add a line to `AGENTS.md`'s "New Feature Checklist" instructing authors to append a `WhatsNewEntry` to `WhatsNewRegistry` when shipping a new feature
+- [x] 6.1 Add a line to `AGENTS.md`'s "New Feature Checklist" instructing authors to replace `WhatsNewRegistry.latest` (and delete the previous entry's now-unused strings) when shipping a new feature
 
 ## 7. Verification
 

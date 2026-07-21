@@ -19,8 +19,8 @@ class WhatsNewBottomSheetTest {
     private fun targetContext() = InstrumentationRegistry.getInstrumentation().targetContext
 
     // References the registry's actual latest entry rather than a hardcoded copy, so this test
-    // keeps validating real rendered content as WhatsNewRegistry.entries evolves.
-    private fun entry() = WhatsNewRegistry.entries.first()
+    // keeps validating real rendered content as WhatsNewRegistry.latest evolves.
+    private fun entry() = WhatsNewRegistry.latest
 
     @Test
     fun givenEntry_whenRendered_thenLegendAndDescriptionAreDisplayed() {

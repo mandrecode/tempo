@@ -31,15 +31,15 @@ The system SHALL update the persisted `lastSeenVersionCode` to match the shown e
 The system SHALL display the latest feature using the legend format "New features in vX.Y.Z: <feature title>" followed by a short description, inside the app's standard modal bottom sheet component.
 
 #### Scenario: Sheet content rendering
-- **WHEN** the "what's new" bottom sheet is shown for a registry entry with `versionName = "1.1.0"` and title "Import and Export your data"
-- **THEN** the sheet displays the legend text "New features in v1.1.0: Import and Export your data"
+- **WHEN** the "what's new" bottom sheet is shown for a registry entry with `versionName = "1.2.0"` and title "See what's new"
+- **THEN** the sheet displays the legend text "New features in v1.2.0: See what's new"
 - **AND** displays the entry's description text below the legend
 - **AND** is rendered via the shared `TempoModalBottomSheet` component
 
-### Requirement: Feature registry is code-defined and append-only
-The system SHALL maintain an in-code, ordered registry of feature entries (version code, version name, title, description) that developers append to when shipping a new feature; only the entry with the highest `versionCode` SHALL ever be shown automatically.
+### Requirement: Feature registry holds only the current feature
+The system SHALL maintain a single, in-code "latest feature" entry (version code, version name, title, description) that developers replace when shipping a new feature; no historical entries are retained in code, since only the current entry is ever shown.
 
-#### Scenario: Registry contains multiple entries
-- **WHEN** the registry contains entries for versions 1.0.0, 1.1.0, and 1.2.0
-- **THEN** only the 1.2.0 entry is eligible to be shown to the user
-- **AND** the 1.0.0 and 1.1.0 entries are retained in code but never surfaced automatically
+#### Scenario: Shipping a new feature replaces the registry entry
+- **WHEN** a new feature ships and its entry replaces the previous `WhatsNewRegistry.latest` value
+- **THEN** only the new entry is eligible to be shown to the user
+- **AND** the previous entry's code and now-unused strings are removed rather than retained

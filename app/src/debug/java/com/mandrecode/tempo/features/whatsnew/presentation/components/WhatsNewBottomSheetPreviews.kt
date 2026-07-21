@@ -17,7 +17,7 @@ import com.mandrecode.tempo.features.whatsnew.presentation.WhatsNewRegistry
 private fun WhatsNewBottomSheetPreview() {
     TempoTheme {
         WhatsNewBottomSheet(
-            entry = WhatsNewRegistry.entries.first(),
+            entry = WhatsNewRegistry.latest,
             onDismissRequest = {},
         )
     }

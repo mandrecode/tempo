@@ -53,7 +53,7 @@ class MainViewModelTest {
         // Defaults to "already seen" so existing assertions are unaffected by the new field;
         // whats-new-specific tests below override this per scenario.
         every { whatsNewPreferencesRepository.lastSeenVersionCode } returns
-            MutableStateFlow(WhatsNewRegistry.entries.first().versionCode)
+            MutableStateFlow(WhatsNewRegistry.latest.versionCode)
     }
 
     @After
@@ -280,7 +280,7 @@ class MainViewModelTest {
             viewModel.uiState.test {
                 assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
                 val success = awaitItem() as MainUiState.Success
-                assertThat(success.whatsNewEntry).isEqualTo(WhatsNewRegistry.entries.first())
+                assertThat(success.whatsNewEntry).isEqualTo(WhatsNewRegistry.latest)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -290,7 +290,7 @@ class MainViewModelTest {
         runTest {
             every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(true)
             every { whatsNewPreferencesRepository.lastSeenVersionCode } returns
-                MutableStateFlow(WhatsNewRegistry.entries.first().versionCode)
+                MutableStateFlow(WhatsNewRegistry.latest.versionCode)
 
             val viewModel = createViewModel()
 
@@ -326,7 +326,7 @@ class MainViewModelTest {
             viewModel.onWhatsNewDismissed()
 
             verify(exactly = 1) {
-                whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.entries.first().versionCode)
+                whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.latest.versionCode)
             }
         }
 
