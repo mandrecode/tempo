@@ -244,8 +244,15 @@ class BackupRepositoryImplTest {
 
             assertThat(outcome.summary.categories.imported).isEqualTo(2)
             assertThat(outcome.summary.tasks.imported).isEqualTo(2)
+            assertThat(outcome.summary.habits.imported).isEqualTo(1)
+            assertThat(outcome.summary.habitChains.imported).isEqualTo(1)
             val report = insertedTasks.first { it.title == "Report" }
             assertThat(report.priority).isEqualTo(Priority.HIGH)
+            assertThat(report.periodicity).isEqualTo(Periodicity.WEEKLY)
+            assertThat(report.reminderDate).isEqualTo(LocalDateTime(2026, 8, 1, 9, 0))
+            assertThat(report.repeatDays).containsExactly(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)
+            val sub = insertedTasks.first { it.title == "Sub" }
+            assertThat(sub.parentTaskId).isEqualTo(1L)
         }
 
     @Test

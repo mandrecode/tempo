@@ -9,14 +9,14 @@ Tempo currently stores all task, habit, and chain data in a plaintext Room/SQLit
 - **BREAKING (internal/data-format only, not user-visible)**: existing installs' plaintext `tempo_database` file is migrated in place to an encrypted SQLCipher database, once, automatically, before the database is first opened.
 - Backup exports are now mandatorily encrypted: the user supplies a passphrase (with confirmation) at export time; the payload is wrapped in a new encrypted envelope (AES-256-GCM, key derived via PBKDF2WithHmacSHA256) instead of being written as plain JSON.
 - Exported file extension changes from `.json` to `.tempo` to reflect the new format.
-- Backup imports detect and decrypt the new encrypted envelope (prompting for the export passphrase) while continuing to support importing older plaintext `.json` backups unchanged, for backward compatibility.
+- Backup imports detect and decrypt the new encrypted envelope, prompting for the export passphrase. Export/import (#26) shipped the same day as this change, so there's no real unencrypted `.json` backup in the wild to stay compatible with: import requires the encrypted envelope, and content that isn't one is reported as corrupt rather than imported as-is.
 - New Settings UI: passphrase entry dialogs for export (with confirmation) and import, plus a distinct "wrong passphrase" error state separate from existing "corrupt file" / "unsupported version" import errors.
 
 ## Capabilities
 
 ### New Capabilities
 - `database-encryption`: Local Room/SQLite database is encrypted at rest via SQLCipher, keyed by a Keystore-protected passphrase, including one-time crash-safe migration of existing plaintext databases.
-- `backup-encryption`: Exported backup payloads are encrypted with a user-supplied passphrase; imports transparently support both the new encrypted format and legacy plaintext backups.
+- `backup-encryption`: Exported backup payloads are encrypted with a user-supplied passphrase; there is no unencrypted import format — content that isn't a decodable encrypted envelope is reported as corrupt.
 
 ### Modified Capabilities
 (none — the existing backup export/import behavior from #26 is extended with an encryption layer, not changed in its data semantics; no existing `openspec/specs/` capability covers backup today, so this is captured as new capabilities above.)

@@ -8,6 +8,7 @@ import androidx.work.Configuration
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -46,8 +47,18 @@ class TempoApp :
         // to this thread's default handler and takes the app down before any UI can show an
         // error. Swallowing it here is safe — Dagger's DoubleCheck doesn't cache a failed
         // resolution, so the real caller (e.g. the first ViewModel) retries and surfaces the
-        // same failure properly through the normal call path.
-        applicationScope.launch { runCatching { tempoDatabaseLazy.get() } }
+        // same failure properly through the normal call path. CancellationException must still
+        // propagate, though — swallowing it would break structured concurrency (e.g. a
+        // cancelled applicationScope wouldn't actually stop this coroutine).
+        applicationScope.launch {
+            try {
+                tempoDatabaseLazy.get()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Intentionally ignored — see comment above.
+            }
+        }
     }
 
     override val workManagerConfiguration: Configuration

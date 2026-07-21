@@ -33,12 +33,12 @@ The system SHALL detect when a picked import file is an encrypted backup and SHA
 - **WHEN** the user enters a passphrase that does not match the one used to encrypt the file
 - **THEN** the system reports a distinct "incorrect passphrase" error, separate from "corrupt file" or "unsupported version" errors, and allows the user to retry entering a passphrase
 
-### Requirement: Legacy plaintext backups remain importable
-The system SHALL continue to support importing backup files created before this change (plain, unencrypted JSON), without requiring a passphrase for those files.
+### Requirement: There is no unencrypted backup import format
+Export/import (#26) and this encryption change shipped the same day, so there is no real unencrypted `.json` backup in the wild to stay compatible with. The system SHALL treat any picked import file that is not a decodable encrypted envelope as corrupt, rather than importing it as plaintext.
 
-#### Scenario: Old plaintext export still imports
-- **WHEN** the user picks a `.json` backup file created by a version of the app prior to this change
-- **THEN** the system detects it as a legacy plaintext backup, does not prompt for a passphrase, and imports it using the existing import behavior
+#### Scenario: Non-envelope content is reported as corrupt
+- **WHEN** the user picks a file that is not this app's encrypted backup envelope (garbage, an unrelated JSON file, or a plaintext backup from before this change)
+- **THEN** the system reports it as a corrupt file rather than prompting for an import mode or attempting to parse it as backup data
 
 ### Requirement: Backup record schema is unaffected by encryption
 The system SHALL treat encryption as a wrapper around the existing backup payload, independent of the backup record schema version (`schemaVersion` / `BACKUP_SCHEMA_VERSION`).
