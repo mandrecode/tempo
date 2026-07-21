@@ -32,6 +32,7 @@ fun TempoConfirmDialog(
     modifier: Modifier = Modifier,
     cancelLabel: String = stringResource(R.string.cancel),
     isDestructive: Boolean = true,
+    confirmEnabled: Boolean = true,
     text: @Composable () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -54,6 +55,7 @@ fun TempoConfirmDialog(
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onConfirm()
                 },
+                enabled = confirmEnabled,
                 interactionSource = confirmInteractionSource,
                 shape = RoundedCornerShape(confirmCornerRadius.value),
                 colors =

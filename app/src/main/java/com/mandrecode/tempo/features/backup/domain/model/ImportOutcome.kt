@@ -18,6 +18,9 @@ sealed interface ImportOutcome {
     /** The file is not valid JSON or does not match the expected structure. */
     data object CorruptFile : ImportOutcome
 
+    /** The file is an encrypted backup and the supplied passphrase could not decrypt it. */
+    data object WrongPassphrase : ImportOutcome
+
     /** The payload parsed but is internally inconsistent. */
     data class ValidationFailed(
         val issues: List<ValidationIssue>,

@@ -19,12 +19,14 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
+import com.mandrecode.tempo.features.backup.data.mapper.toDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportOutcome
 import com.mandrecode.tempo.features.backup.domain.util.BackupPayloadValidator
 import com.mandrecode.tempo.features.backup.domain.util.MergePlanner
+import com.mandrecode.tempo.infrastructure.security.BackupEncryptionService
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -33,6 +35,8 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -76,9 +80,13 @@ class BackupRepositoryImplTest {
                 BackupPayloadValidator(),
                 MergePlanner(),
                 settingsDataSource,
+                BackupEncryptionService(),
                 context,
             )
     }
+
+    private val testPassphrase = "correct horse battery staple".toCharArray()
+    private val testJsonFormat = Json { ignoreUnknownKeys = true }
 
     @After
     fun tearDown() {
@@ -151,9 +159,9 @@ class BackupRepositoryImplTest {
     fun `merging an export of the same data inserts nothing`() =
         runTest {
             stubLocalData()
-            val json = repository.exportToJson()
+            val json = repository.exportEncrypted(testPassphrase)
 
-            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+            val outcome = repository.importFromJson(json, ImportMode.MERGE, testPassphrase) as ImportOutcome.Success
 
             assertThat(outcome.summary.totalImported).isEqualTo(0)
             assertThat(outcome.summary.totalConflicts).isEqualTo(0)
@@ -168,7 +176,7 @@ class BackupRepositoryImplTest {
     fun `export then replace-import restores identical rows`() =
         runTest {
             stubLocalData()
-            val json = repository.exportToJson()
+            val json = repository.exportEncrypted(testPassphrase)
 
             val insertedCategories = mutableListOf<CategoryEntity>()
             val insertedTasks = mutableListOf<TaskEntity>()
@@ -181,7 +189,7 @@ class BackupRepositoryImplTest {
             coEvery { habitChainDao.insertHabitChain(capture(insertedChains)) } returns 0
             coEvery { memberDao.insertMembers(capture(insertedMembers)) } returns Unit
 
-            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE, testPassphrase)
 
             assertThat(outcome).isInstanceOf(ImportOutcome.Success::class.java)
             coVerify { memberDao.deleteAllMembers() }
@@ -214,6 +222,37 @@ class BackupRepositoryImplTest {
             assertThat(report.repeatDays).containsExactly(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)
             val sub = insertedTasks.first { it.title == "Sub" }
             assertThat(sub.parentTaskId).isEqualTo(1L)
+        }
+
+    @Test
+    fun `frozen v1 fixture still imports correctly once wrapped in an encrypted envelope`() =
+        runTest {
+            val plaintextJson = readFixture("/backup/v1-backup.json")
+            val envelope = BackupEncryptionService().encrypt(plaintextJson, testPassphrase)
+            val envelopeJson = testJsonFormat.encodeToString(envelope.toDto())
+            val insertedTasks = mutableListOf<TaskEntity>()
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } returns 0
+
+            assertThat(repository.isEncryptedBackup(envelopeJson)).isTrue()
+            assertThat(repository.isEncryptedBackup(plaintextJson)).isFalse()
+
+            val outcome =
+                repository.importFromJson(envelopeJson, ImportMode.REPLACE, testPassphrase) as ImportOutcome.Success
+
+            assertThat(outcome.summary.categories.imported).isEqualTo(2)
+            assertThat(outcome.summary.tasks.imported).isEqualTo(2)
+            val report = insertedTasks.first { it.title == "Report" }
+            assertThat(report.priority).isEqualTo(Priority.HIGH)
+        }
+
+    @Test
+    fun `wrong passphrase on an encrypted import is reported distinctly`() =
+        runTest {
+            val json = repository.exportEncrypted(testPassphrase)
+
+            val outcome = repository.importFromJson(json, ImportMode.MERGE, "wrong passphrase".toCharArray())
+
+            assertThat(outcome).isEqualTo(ImportOutcome.WrongPassphrase)
         }
 
     @Test
@@ -298,10 +337,9 @@ class BackupRepositoryImplTest {
     fun `export carries the current settings and replace-import applies them`() =
         runTest {
             stubLocalData()
-            val json = repository.exportToJson()
+            val json = repository.exportEncrypted(testPassphrase)
 
-            assertThat(json).contains("\"settings\"")
-            repository.importFromJson(json, ImportMode.REPLACE)
+            repository.importFromJson(json, ImportMode.REPLACE, testPassphrase)
 
             io.mockk.verify { settingsDataSource.apply(backupSettings()) }
         }
@@ -310,9 +348,9 @@ class BackupRepositoryImplTest {
     fun `merge never applies the file settings`() =
         runTest {
             stubLocalData()
-            val json = repository.exportToJson()
+            val json = repository.exportEncrypted(testPassphrase)
 
-            repository.importFromJson(json, ImportMode.MERGE)
+            repository.importFromJson(json, ImportMode.MERGE, testPassphrase)
 
             io.mockk.verify(exactly = 0) { settingsDataSource.apply(any()) }
         }
@@ -321,10 +359,10 @@ class BackupRepositoryImplTest {
     fun `replace still reports success when applying settings throws`() =
         runTest {
             stubLocalData()
-            val json = repository.exportToJson()
+            val json = repository.exportEncrypted(testPassphrase)
             every { settingsDataSource.apply(any()) } throws IllegalStateException("prefs unavailable")
 
-            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE, testPassphrase)
 
             assertThat(outcome).isInstanceOf(ImportOutcome.Success::class.java)
         }

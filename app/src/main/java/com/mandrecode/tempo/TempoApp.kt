@@ -18,6 +18,10 @@ class TempoApp :
 
     override fun onCreate() {
         ComposeUiFlags.isMediaQueryIntegrationEnabled = true
+        // SQLCipher's native core must be loaded explicitly before any database access —
+        // unlike the deprecated android-database-sqlcipher library, this one does not do it
+        // automatically as part of opening a database.
+        System.loadLibrary("sqlcipher")
         super.onCreate()
     }
 

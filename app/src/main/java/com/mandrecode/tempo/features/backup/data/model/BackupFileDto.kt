@@ -43,6 +43,22 @@ data class BackupEnvelopeDto(
     val schemaVersion: Int,
 )
 
+/**
+ * On-disk shape of an encrypted export (the `.tempo` format) — an outer envelope wrapping an
+ * AES-256-GCM-encrypted [BackupFileDto] JSON string, keyed by a passphrase-derived key (see
+ * `BackupEncryptionService`). Orthogonal to [BackupFileDto.schemaVersion]: this only changes
+ * when the *encryption* format changes, documented in `docs/BACKUP_FORMAT.md`.
+ */
+@Serializable
+data class BackupEncryptedEnvelopeDto(
+    val encryptionVersion: Int = 1,
+    val kdf: String,
+    val iterations: Int,
+    val salt: String,
+    val iv: String,
+    val ciphertext: String,
+)
+
 @Serializable
 data class CategoryBackupDto(
     val id: Long,

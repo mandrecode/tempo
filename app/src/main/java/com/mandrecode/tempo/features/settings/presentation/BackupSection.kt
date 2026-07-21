@@ -59,8 +59,14 @@ private fun BackupDialogs(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     when (val dialog = uiState.backupDialog) {
+        is SettingsContract.BackupDialog.EnterExportPassphrase ->
+            ExportPassphraseDialog(onEvent = onEvent)
+
         is SettingsContract.BackupDialog.ChooseImportMode ->
             ImportModeDialog(onEvent = onEvent)
+
+        is SettingsContract.BackupDialog.EnterImportPassphrase ->
+            ImportPassphraseDialog(dialog = dialog, onEvent = onEvent)
 
         is SettingsContract.BackupDialog.ImportSucceeded ->
             ImportSucceededDialog(dialog = dialog, onEvent = onEvent)

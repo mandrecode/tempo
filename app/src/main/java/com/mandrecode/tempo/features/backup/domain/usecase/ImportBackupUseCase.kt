@@ -21,12 +21,13 @@ class ImportBackupUseCase
         suspend operator fun invoke(
             json: String,
             mode: ImportMode,
+            passphrase: CharArray? = null,
         ): ImportOutcome =
             try {
                 if (mode == ImportMode.REPLACE) {
                     reminderScheduler.cancelAllReminders()
                 }
-                backupRepository.importFromJson(json, mode)
+                backupRepository.importFromJson(json, mode, passphrase)
             } finally {
                 // Runs even when cancellation fails part-way: rescheduling reads
                 // whatever the database now holds, restoring a consistent alarm set.

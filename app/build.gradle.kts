@@ -243,6 +243,8 @@ dependencies {
 
     implementation(libs.androidx.room.common)
     implementation(libs.androidx.room.ktx)
+    implementation(libs.sqlcipher.android)
+    implementation(libs.androidx.sqlite)
     implementation(libs.android.hilt)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)

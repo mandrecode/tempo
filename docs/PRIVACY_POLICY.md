@@ -1,6 +1,6 @@
 # Privacy Policy for Tempo
 
-**Last Updated: July 14, 2026**
+**Last Updated: July 21, 2026**
 
 This Privacy Policy describes how your personal information is handled in the **Tempo** mobile
 application ("the App").
@@ -38,9 +38,17 @@ The App requests the following permissions to function correctly:
 
 ### 4. Data Security
 
-Because your data is stored locally on your device, its security depends on the security of your
-device itself. We recommend using device-level security features such as PINs, passwords, or
-biometric authentication to protect your information.
+* **Local database:** Your tasks, habits, and routines are stored in an encrypted local database
+  (SQLCipher). The encryption key is generated on your device and protected by the Android
+  Keystore; it never leaves your device and you do not need to set or remember a password for
+  everyday use of the app.
+* **Backup exports:** When you export a backup (Settings → Backup → Export data), the file is
+  encrypted with a passphrase you choose at export time. You must remember this passphrase to
+  restore the backup later — we cannot recover it or decrypt the file if it's lost, since we
+  never see or store it.
+* Because your data is stored locally on your device, its overall security also depends on the
+  security of your device itself. We recommend using device-level security features such as
+  PINs, passwords, or biometric authentication to protect your information.
 
 ### 5. Changes to This Privacy Policy
 
