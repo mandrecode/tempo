@@ -28,12 +28,17 @@ This is most reachable on the Tasks route when there are completed tasks (both S
 
 ## Decisions
 
-**Decision: wrap the rail's `Column` content in `Modifier.verticalScroll(rememberScrollState())`.**
+**Decision: split the rail into a scrollable, weighted content `Column` (`RailScrollableContent`) followed by a fixed `SettingsRailButton` sibling — do not put `Modifier.verticalScroll()` and `Modifier.weight()` on the same `Column`.**
 
-When the fixed content is shorter than the available height (the common case), a scrollable `Column` behaves identically to a non-scrollable one — no visible scrollbar, no layout change, `Spacer(weight(1f))` still pushes Settings to the bottom. When content overflows, the column becomes scrollable instead of letting the last item run past the clipped bounds, so Settings remains fully drawn at its correct size and is reachable by scrolling.
+The initial idea was to simply add `Modifier.verticalScroll(rememberScrollState())` to the existing rail `Column` and keep the trailing `Spacer(Modifier.weight(1f))` pinning Settings to the bottom. That does not work: Jetpack Compose does not support combining `Modifier.weight()` on a child with `Modifier.verticalScroll()` on its parent `Column` — the scroll modifier measures children with an unbounded (infinite) max height in the scroll direction, but weight resolution requires a bounded max height to divide remaining space among weighted children. Applying both fails to satisfy the intended layout.
+
+The implemented approach avoids this by scoping `verticalScroll` to a separate inner `Column` (`RailScrollableContent`) that holds the title, add action, nav tabs, and Sort/Clear-completed buttons. That inner `Column` is given `Modifier.weight(1f)` **as a child of the outer (non-scrolling) rail `Column`** — legal, since the weight is resolved by the outer `Column`, not by the scrollable one. `SettingsRailButton` is placed as the outer `Column`'s next (and last) child, outside the scrollable region, so it always renders at its full size regardless of how much the inner content overflows.
+
+When the inner content is shorter than the weighted space allotted to it (the common case), it renders top-aligned with empty space below, and Settings — the very next sibling — lands at the bottom of the outer `Column`, identical to the old `Spacer(weight(1f))` behavior. When content overflows, the inner `Column` scrolls within its bounded weighted space instead of overflowing/clipping, and Settings remains a normal, fully-rendered sibling immediately after it.
 
 Alternatives considered:
 - *Let content overflow/clip (status quo)*: this is the bug; rejected.
+- *`verticalScroll` directly on the rail's single `Column`, keeping the `Spacer(weight(1f))`*: incompatible with Compose's weight/scroll constraint model as described above; rejected.
 - *Shrink item sizes or hide labels earlier when space is tight*: would require intrinsic-height measurement/coordination across independently defined child composables (title, add button, nav pill, sort/clear-completed) and a new "compact under pressure" mode for each; substantially more invasive for a rare edge case, and changes visual identity of the rail contents. Rejected as disproportionate to the bug.
 - *Give the Spacer a minimum height / reserve fixed space for Settings and let earlier items scroll or wrap*: equivalent in effect to the scroll approach but more custom code (manual overflow detection via `onSizeChanged`) instead of reusing the standard `verticalScroll` modifier. Rejected in favor of the simpler, standard solution.
 

@@ -1,6 +1,6 @@
 ## 1. Implementation
 
-- [x] 1.1 In `app/src/main/java/com/mandrecode/tempo/core/ui/navigation/PersistentFloatingBar.kt`, add `Modifier.verticalScroll(rememberScrollState())` to the `Column` in `PersistentLandscapeFloatingBar` so its content scrolls instead of overflowing/clipping when it exceeds the available height.
+- [x] 1.1 In `app/src/main/java/com/mandrecode/tempo/core/ui/navigation/PersistentFloatingBar.kt`, extract the title/add-action/nav/task-action content of `PersistentLandscapeFloatingBar` into a new `RailScrollableContent` composable with `Modifier.weight(1f).verticalScroll(rememberScrollState())` applied as a child of the outer rail `Column`, and keep `SettingsRailButton` as a fixed sibling after it (outside the scroll) — `Modifier.weight()` cannot be combined with `Modifier.verticalScroll()` on the same `Column`, so the scrollable region must be a separate weighted child, not the root rail `Column` itself.
 - [x] 1.2 Verify the required `androidx.compose.foundation.verticalScroll` / `rememberScrollState` imports are added and unused imports are not left behind.
 
 ## 2. Verification
