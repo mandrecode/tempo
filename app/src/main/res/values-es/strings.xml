@@ -442,6 +442,10 @@
     <string name="backup_import_title">Importar datos</string>
     <string name="backup_import_description">Restaura datos desde un archivo exportado</string>
     <string name="backup_export_success">Datos exportados</string>
+    <string name="backup_export_success_at">Exportado a %1$s</string>
+    <string name="backup_export_location_downloads">Descargas</string>
+    <string name="backup_export_location_documents">Documentos</string>
+    <string name="backup_export_location_internal_storage">almacenamiento interno</string>
     <string name="backup_export_error">No se pudieron exportar los datos</string>
     <string name="backup_in_progress">Procesando…</string>
     <string name="backup_import_mode_title">Importar datos</string>

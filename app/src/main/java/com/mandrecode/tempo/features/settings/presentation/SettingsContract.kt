@@ -136,6 +136,7 @@ object SettingsContract {
 
         data class ShowMessage(
             @param:StringRes val message: Int,
+            val formatArgs: List<Any> = emptyList(),
         ) : UiEffect
     }
 

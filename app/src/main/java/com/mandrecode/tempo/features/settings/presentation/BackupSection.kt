@@ -11,7 +11,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,10 +18,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoMessageDialog
+import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.features.backup.domain.model.BackupEntityKind
 import com.mandrecode.tempo.features.backup.domain.model.ConflictReason
 import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
-import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
 import com.mandrecode.tempo.features.backup.domain.model.ValidationIssueKind
 
@@ -73,78 +73,30 @@ private fun BackupDialogs(
 }
 
 @Composable
-private fun ImportModeDialog(onEvent: (SettingsContract.UiEvent) -> Unit) {
-    AlertDialog(
-        onDismissRequest = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
-        title = { Text(stringResource(R.string.backup_import_mode_title)) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(stringResource(R.string.backup_import_mode_message))
-                Text(
-                    text = stringResource(R.string.backup_import_mode_replace_warning),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error,
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                onClick = { onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE)) },
-            ) {
-                Text(stringResource(R.string.backup_import_mode_merge))
-            }
-        },
-        dismissButton = {
-            Row {
-                TextButton(
-                    onClick = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
-                ) {
-                    Text(stringResource(R.string.cancel))
-                }
-                TextButton(
-                    onClick = { onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.REPLACE)) },
-                ) {
-                    Text(
-                        text = stringResource(R.string.backup_import_mode_replace),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        },
-    )
-}
-
-@Composable
 private fun ImportSucceededDialog(
     dialog: SettingsContract.BackupDialog.ImportSucceeded,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
-        title = { Text(stringResource(R.string.backup_import_success_title)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(stringResource(R.string.backup_import_summary_imported, dialog.imported))
-                Text(stringResource(R.string.backup_import_summary_skipped, dialog.skipped))
-                Text(stringResource(R.string.backup_import_summary_conflicts, dialog.conflicts.size))
-                dialog.conflicts.forEach { conflict ->
-                    Text(
-                        text = conflict.label(),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+    TempoMessageDialog(
+        title = stringResource(R.string.backup_import_success_title),
+        onDismiss = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
+    ) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(stringResource(R.string.backup_import_summary_imported, dialog.imported))
+            Text(stringResource(R.string.backup_import_summary_skipped, dialog.skipped))
+            Text(stringResource(R.string.backup_import_summary_conflicts, dialog.conflicts.size))
+            dialog.conflicts.forEach { conflict ->
+                Text(
+                    text = conflict.label(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) }) {
-                Text(stringResource(R.string.ok))
-            }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -152,32 +104,26 @@ private fun ImportFailedDialog(
     error: SettingsContract.ImportError,
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
-    AlertDialog(
-        onDismissRequest = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
-        title = { Text(stringResource(R.string.backup_import_error_title)) },
-        text = {
-            Column(
-                modifier = Modifier.verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Text(error.message())
-                if (error is SettingsContract.ImportError.ValidationFailed) {
-                    error.issues.forEach { issue ->
-                        Text(
-                            text = issue.label(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
+    TempoMessageDialog(
+        title = stringResource(R.string.backup_import_error_title),
+        onDismiss = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
+    ) {
+        Column(
+            modifier = Modifier.verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(error.message())
+            if (error is SettingsContract.ImportError.ValidationFailed) {
+                error.issues.forEach { issue ->
+                    Text(
+                        text = issue.label(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) }) {
-                Text(stringResource(R.string.ok))
-            }
-        },
-    )
+        }
+    }
 }
 
 @Composable
@@ -198,7 +144,12 @@ private fun BackupProgressDialog() {
     AlertDialog(
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
-        title = { Text(stringResource(R.string.backup_in_progress)) },
+        title = {
+            Text(
+                text = stringResource(R.string.backup_in_progress),
+                style = MaterialTheme.typography.dialogTitle,
+            )
+        },
         text = {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 CircularProgressIndicator(modifier = Modifier.size(32.dp))

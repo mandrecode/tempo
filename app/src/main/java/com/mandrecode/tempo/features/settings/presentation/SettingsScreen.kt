@@ -76,8 +76,16 @@ fun SettingsScreen(
                 is SettingsContract.UiEffect.LaunchImportPicker ->
                     importLauncher.launch(arrayOf("application/json"))
 
-                is SettingsContract.UiEffect.ShowMessage ->
-                    Toast.makeText(context, effect.message, Toast.LENGTH_SHORT).show()
+                is SettingsContract.UiEffect.ShowMessage -> {
+                    @Suppress("LocalContextGetResourceValueCall")
+                    val message =
+                        if (effect.formatArgs.isNotEmpty()) {
+                            context.getString(effect.message, *effect.formatArgs.toTypedArray())
+                        } else {
+                            context.getString(effect.message)
+                        }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
             }
         }
     }

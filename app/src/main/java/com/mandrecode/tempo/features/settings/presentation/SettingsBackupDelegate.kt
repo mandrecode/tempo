@@ -104,9 +104,7 @@ class SettingsBackupDelegate
                     val json = pendingExportJson ?: exportBackup().json
                     pendingExportJson = null
                     backupFileDataSource.write(uri, json)
-                    host.sendEffect(
-                        SettingsContract.UiEffect.ShowMessage(R.string.backup_export_success),
-                    )
+                    host.sendEffect(exportSuccessMessage(uri))
                 } catch (e: CancellationException) {
                     throw e
                 } catch (_: Exception) {
@@ -146,6 +144,13 @@ class SettingsBackupDelegate
                 host.updateState { it.copy(backupDialog = dialog, backupInProgress = false) }
             }
         }
+
+        /** Names the destination folder when recognizable, e.g. "Exported to Downloads". */
+        private fun exportSuccessMessage(uri: Uri): SettingsContract.UiEffect.ShowMessage =
+            when (val location = backupFileDataSource.locationLabel(uri)) {
+                null -> SettingsContract.UiEffect.ShowMessage(R.string.backup_export_success)
+                else -> SettingsContract.UiEffect.ShowMessage(R.string.backup_export_success_at, listOf(location))
+            }
     }
 
 private fun ImportOutcome.toDialog(): SettingsContract.BackupDialog =

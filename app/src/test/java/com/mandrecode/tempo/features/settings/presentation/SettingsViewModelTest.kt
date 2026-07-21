@@ -288,6 +288,7 @@ class SettingsViewModelTest {
             coEvery { exportBackup() } returns
                 ExportBackupUseCase.Export(json = "{\"schemaVersion\":1}", suggestedFileName = "f.json")
             val uri = mockk<Uri>()
+            every { backupFileDataSource.locationLabel(uri) } returns null
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
@@ -299,6 +300,30 @@ class SettingsViewModelTest {
                 coVerify { backupFileDataSource.write(uri, "{\"schemaVersion\":1}") }
                 assertThat(awaitItem()).isEqualTo(
                     SettingsContract.UiEffect.ShowMessage(com.mandrecode.tempo.R.string.backup_export_success),
+                )
+            }
+        }
+
+    @Test
+    fun `picked export destination names the destination folder when known`() =
+        runTest {
+            coEvery { exportBackup() } returns
+                ExportBackupUseCase.Export(json = "{}", suggestedFileName = "f.json")
+            val uri = mockk<Uri>()
+            every { backupFileDataSource.locationLabel(uri) } returns "Downloads"
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
+                advanceUntilIdle()
+                awaitItem()
+                viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
+                advanceUntilIdle()
+
+                assertThat(awaitItem()).isEqualTo(
+                    SettingsContract.UiEffect.ShowMessage(
+                        com.mandrecode.tempo.R.string.backup_export_success_at,
+                        listOf("Downloads"),
+                    ),
                 )
             }
         }

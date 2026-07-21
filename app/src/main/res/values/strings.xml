@@ -438,6 +438,10 @@
     <string name="backup_import_title">Import data</string>
     <string name="backup_import_description">Restore data from an exported file</string>
     <string name="backup_export_success">Data exported</string>
+    <string name="backup_export_success_at">Exported to %1$s</string>
+    <string name="backup_export_location_downloads">Downloads</string>
+    <string name="backup_export_location_documents">Documents</string>
+    <string name="backup_export_location_internal_storage">internal storage</string>
     <string name="backup_export_error">Couldn\'t export data</string>
     <string name="backup_in_progress">Working…</string>
     <string name="backup_import_mode_title">Import data</string>
