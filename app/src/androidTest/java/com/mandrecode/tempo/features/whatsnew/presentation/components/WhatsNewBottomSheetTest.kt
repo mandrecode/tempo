@@ -8,7 +8,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
-import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
+import com.mandrecode.tempo.features.whatsnew.presentation.WhatsNewRegistry
 import org.junit.Rule
 import org.junit.Test
 
@@ -18,31 +18,28 @@ class WhatsNewBottomSheetTest {
 
     private fun targetContext() = InstrumentationRegistry.getInstrumentation().targetContext
 
-    private fun entry() =
-        WhatsNewEntry(
-            versionCode = 1_001_000,
-            versionName = "1.1.0",
-            titleRes = R.string.whats_new_210_title,
-            descriptionRes = R.string.whats_new_210_description,
-        )
+    // References the registry's actual latest entry rather than a hardcoded copy, so this test
+    // keeps validating real rendered content as WhatsNewRegistry.entries evolves.
+    private fun entry() = WhatsNewRegistry.entries.first()
 
     @Test
     fun givenEntry_whenRendered_thenLegendAndDescriptionAreDisplayed() {
+        val latestEntry = entry()
         composeTestRule.setContent {
             TempoTheme {
-                WhatsNewBottomSheet(entry = entry(), onDismissRequest = {})
+                WhatsNewBottomSheet(entry = latestEntry, onDismissRequest = {})
             }
         }
 
         val legend =
             targetContext().getString(
                 R.string.whats_new_legend,
-                "1.1.0",
-                targetContext().getString(R.string.whats_new_210_title),
+                latestEntry.versionName,
+                targetContext().getString(latestEntry.titleRes),
             )
         composeTestRule.onNodeWithText(legend).assertIsDisplayed()
         composeTestRule
-            .onNodeWithText(targetContext().getString(R.string.whats_new_210_description))
+            .onNodeWithText(targetContext().getString(latestEntry.descriptionRes))
             .assertIsDisplayed()
     }
 

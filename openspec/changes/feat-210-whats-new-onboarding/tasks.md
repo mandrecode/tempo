@@ -1,7 +1,7 @@
 ## 1. Domain / Presentation Model
 
 - [x] 1.1 Create `WhatsNewEntry` data class (`versionCode: Int`, `versionName: String`, `@StringRes titleRes: Int`, `@StringRes descriptionRes: Int`) under `features/whatsnew/presentation/model/WhatsNewEntry.kt`
-- [x] 1.2 Create `WhatsNewRegistry` object under `features/whatsnew/presentation/WhatsNewRegistry.kt` holding the newest-first `List<WhatsNewEntry>`, seeded with two entries (newest first): this "what's new" onboarding feature itself (#210), then the Import/Export feature (#26) — both ship in the same upcoming release, so the self-referential entry is listed first and is the one actually shown, letting us verify the mechanism end-to-end on first release
+- [x] 1.2 Create `WhatsNewRegistry` object under `features/whatsnew/presentation/WhatsNewRegistry.kt` holding the newest-first `List<WhatsNewEntry>`, seeded with two entries (newest first): this "what's new" onboarding feature itself (#210, `v1.2.0`), then the Import/Export feature (#26, `v1.1.0` — already released while this PR was in review). The self-referential entry is listed first and is the one actually shown, letting us verify the mechanism end-to-end on release
 
 ## 2. Data Layer (SharedPreferences repository)
 

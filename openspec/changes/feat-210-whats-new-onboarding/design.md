@@ -43,9 +43,9 @@ Every existing bottom sheet in the app (`SortBottomSheet`, `TaskBottomSheetConte
 
 ## Migration Plan
 
-- No data migration: `lastSeenVersionCode` defaults to `0` for all existing installs, so the first entry in the registry (the already-shipped Import/Export feature, #26) will show once on the first launch after this change ships — this is the intended "announce what you missed" behavior, not a bug.
+- No data migration: `lastSeenVersionCode` defaults to `0` for all existing installs, so the registry's newest entry will show once on the first launch after this change ships — this is the intended "announce what you missed" behavior, not a bug.
 - No feature flag / rollback complexity: the sheet is purely additive UI; reverting the change removes the trigger and repository with no data cleanup required (the orphaned `SharedPreferences` file is harmless).
 
 ## Open Questions
 
-- Resolved: the registry ships seeded with two entries so the mechanism is visibly exercised on the very first release that includes it — (1) this "what's new" onboarding feature itself (#210), listed first/newest so it's the entry users actually see, and (2) the Import/Export feature (#26), which merged to `main` after the `1.0.0` tag and is also still unreleased. Both land in the same upcoming release and therefore share the same `versionCode`; list order (not just `versionCode`) breaks the tie, so newly appended entries must always be prepended, not appended, to stay "newest first."
+- Resolved: the registry ships seeded with two entries so the mechanism is visibly exercised as soon as it ships — (1) this "what's new" onboarding feature itself (#210), listed first/newest so it's the entry users actually see, and (2) the Import/Export feature (#26). Initially both were assumed to land in the same upcoming release and share a `versionCode`, but `main` cut `v1.1.0` (Import/Export only) while this PR was in review — so the entries now carry their true, distinct versions: Import/Export at `1.1.0` (`1_001_000`, already shipped) and this feature at `1.2.0` (`1_002_000`, the next release). This is exactly the scenario the append-only-list design (over a single mutable "current feature" slot) was meant to handle: as release cadence shifts underneath a long-lived branch, each entry keeps its own accurate version instead of all sharing one guessed value.
