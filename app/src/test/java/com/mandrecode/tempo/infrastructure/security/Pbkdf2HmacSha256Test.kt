@@ -53,5 +53,8 @@ class Pbkdf2HmacSha256Test {
         return pbkdf2Block(mac, salt.toByteArray(Charsets.UTF_8), iterations)
     }
 
-    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
+    // Mask to an unsigned int before formatting: relying on "%02x" alone to render a negative
+    // Byte as exactly two hex digits depends on java.util.Formatter's own byte-specific handling
+    // rather than anything this code controls.
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it.toInt() and 0xFF) }
 }

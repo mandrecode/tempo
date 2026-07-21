@@ -506,7 +506,7 @@
     <string name="onboarding_appearance_description">Start with Tempo’s signature palette or match supported devices to your wallpaper.</string>
     <string name="onboarding_setup_title">Set up your first session</string>
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
-    <string name="whats_new_legend">New features in v%1$s: %2$s</string>
+    <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
     <string name="whats_new_title">Your data is now encrypted</string>
     <string name="whats_new_description">Your tasks and habits are encrypted on your device, and backup exports are protected with a passphrase only you know.</string>

@@ -85,7 +85,11 @@ class BackupRepositoryImpl
             return jsonFormat.encodeToString(envelope.toDto())
         }
 
-        override fun isEncryptedBackup(content: String): Boolean = decodeEnvelopeOrNull(content, jsonFormat) != null
+        // Also requires the base64 fields to decode, not just the JSON shape/version — a
+        // malformed envelope would otherwise prompt for a passphrase before failing as
+        // CorruptFile anyway, an unnecessary step for a file that can never succeed.
+        override fun isEncryptedBackup(content: String): Boolean =
+            decodeEnvelopeOrNull(content, jsonFormat)?.let { toEncryptedEnvelopeOrNull(it) } != null
 
         override suspend fun importFromJson(
             content: String,
