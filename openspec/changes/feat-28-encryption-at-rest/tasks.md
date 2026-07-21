@@ -59,6 +59,6 @@
 
 ## 8. Wrap-up
 
-- [ ] 8.1 Run `openspec validate feat-28-encryption-at-rest` and resolve any issues
-- [ ] 8.2 Open the PR against `main`, referencing `Closes #28`
-- [ ] 8.3 Close GitHub issue #5 with a comment pointing to #28/this PR, noting it is fully covered by this change
+- [x] 8.1 Ran `openspec validate feat-28-encryption-at-rest` — valid, no issues
+- [x] 8.2 Pushed `feat/28-encryption-at-rest` and opened [PR #212](https://github.com/mandrecode/tempo/pull/212) against `main` (`Closes #28`, `Closes #5`)
+- [x] 8.3 Closed GitHub issue #5 with a comment pointing to #28/PR #212, noting it is fully covered by this change
