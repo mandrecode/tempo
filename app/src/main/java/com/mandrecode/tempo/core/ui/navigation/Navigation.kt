@@ -108,12 +108,14 @@ fun TempoNavHost(
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
 
-    // Onboarding (including a Settings-triggered replay) fully replaces the nav display content
-    // for its section, so callers hosting overlays above TempoNavHost (e.g. a "what's new" sheet)
-    // need this signal to avoid showing on top of it.
+    // Onboarding (including a Settings-triggered replay) fully replaces the nav display content,
+    // so callers hosting overlays above TempoNavHost (e.g. a "what's new" sheet) need this signal
+    // to avoid showing on top of it. A replay is pushed onto whichever back stack is currently
+    // active (e.g. settingsBackStack) without changing navigator.section, so this must key off the
+    // resolved current route rather than the section alone.
     val currentOnOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
-    LaunchedEffect(navigator.section) {
-        currentOnOnboardingActiveChange(navigator.section == TempoNavigator.Section.ONBOARDING)
+    LaunchedEffect(navigator.currentRoute) {
+        currentOnOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
     }
 
     NotificationNavigationEffects(
