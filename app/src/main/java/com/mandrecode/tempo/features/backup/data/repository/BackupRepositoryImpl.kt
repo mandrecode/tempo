@@ -78,7 +78,8 @@ class BackupRepositoryImpl
         ): ImportOutcome {
             val fileVersion = decodeSchemaVersion(json)
             return when {
-                fileVersion == null -> ImportOutcome.CorruptFile
+                // Versions below 1 never existed; such a file is not a Tempo backup.
+                fileVersion == null || fileVersion < 1 -> ImportOutcome.CorruptFile
                 fileVersion > BACKUP_SCHEMA_VERSION ->
                     ImportOutcome.UnsupportedVersion(
                         fileVersion = fileVersion,
@@ -155,7 +156,7 @@ class BackupRepositoryImpl
                 database.categoryDao().deleteAllCategories()
 
                 data.categories.forEach { database.categoryDao().insertCategory(it.toEntity()) }
-                ensureDefaultCategory(data.categories)
+                val seededInboxCount = ensureDefaultCategory(data.categories)
                 data.tasks.forEach { database.taskDao().insertTask(it.toEntity()) }
                 data.habits.forEach { database.habitDao().insertHabit(it.toEntity()) }
                 data.habitChains.forEach { database.habitChainDao().insertHabitChain(it.toEntity()) }
@@ -166,7 +167,7 @@ class BackupRepositoryImpl
                 )
 
                 ImportSummary(
-                    categories = ImportCounts(imported = data.categories.size),
+                    categories = ImportCounts(imported = data.categories.size + seededInboxCount),
                     tasks = ImportCounts(imported = data.tasks.size),
                     habits = ImportCounts(imported = data.habits.size),
                     habitChains = ImportCounts(imported = data.habitChains.size),
@@ -178,11 +179,13 @@ class BackupRepositoryImpl
          * or edited files): the seeded Inbox row (id -1) always exists — other code
          * references it directly, e.g. as the fallback task category — and some
          * category is marked default (the Inbox only when the payload brought none).
+         * Returns the number of category rows this inserted beyond the payload (0 or 1)
+         * so the import summary counts them.
          */
-        private suspend fun ensureDefaultCategory(categories: List<Category>) {
+        private suspend fun ensureDefaultCategory(categories: List<Category>): Int {
             val hasDefault = categories.any { it.isDefault }
             val inboxId = DEFAULT_INBOX_CATEGORY_ENTITY.id
-            if (categories.none { it.id == inboxId }) {
+            return if (categories.none { it.id == inboxId }) {
                 database.categoryDao().insertCategory(
                     CategoryEntity(
                         id = inboxId,
@@ -192,8 +195,12 @@ class BackupRepositoryImpl
                         sortOrder = -1,
                     ),
                 )
-            } else if (!hasDefault) {
-                database.categoryDao().setDefault(inboxId)
+                1
+            } else {
+                if (!hasDefault) {
+                    database.categoryDao().setDefault(inboxId)
+                }
+                0
             }
         }
 

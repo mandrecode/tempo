@@ -58,6 +58,17 @@ class ImportBackupUseCaseTest {
         }
 
     @Test
+    fun `reschedules even when cancelling alarms throws`() =
+        runTest {
+            coEvery { reminderScheduler.cancelAllReminders() } throws IllegalStateException("alarm service gone")
+
+            val thrown = runCatching { useCase("{}", ImportMode.REPLACE) }.exceptionOrNull()
+
+            assertThat(thrown).isInstanceOf(IllegalStateException::class.java)
+            verify { reminderScheduler.rescheduleAllReminders() }
+        }
+
+    @Test
     fun `returns the repository outcome`() =
         runTest {
             val outcome = ImportOutcome.UnsupportedVersion(fileVersion = 9, maxSupported = 1)

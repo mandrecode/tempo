@@ -104,6 +104,14 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `schema version below 1 is reported as corrupt`() =
+        runTest {
+            assertThat(repository.importFromJson("""{"schemaVersion":0}""", ImportMode.REPLACE))
+                .isEqualTo(ImportOutcome.CorruptFile)
+            coVerify(exactly = 0) { taskDao.deleteAllTasks() }
+        }
+
+    @Test
     fun `payload with missing schema version is reported as corrupt`() =
         runTest {
             assertThat(repository.importFromJson("""{"foo":1}""", ImportMode.MERGE))
@@ -231,11 +239,13 @@ class BackupRepositoryImplTest {
                 {"schemaVersion":1,"categories":[{"id":1,"name":"Work"}]}
                 """.trimIndent()
 
-            repository.importFromJson(json, ImportMode.REPLACE)
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE) as ImportOutcome.Success
 
             val inbox = inserted.first { it.id == -1L }
             assertThat(inbox.isDefault).isTrue()
             assertThat(inbox.icon).isEqualTo("inbox")
+            // The re-seeded Inbox row counts as an imported category.
+            assertThat(outcome.summary.categories.imported).isEqualTo(2)
         }
 
     @Test
