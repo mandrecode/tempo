@@ -135,7 +135,14 @@ class SettingsViewModel
                     )
                 }
 
-                else -> backupDelegate.onEvent(event, backupHost)
+                is SettingsContract.UiEvent.ExportClicked,
+                is SettingsContract.UiEvent.ExportDestinationPicked,
+                is SettingsContract.UiEvent.ExportCancelled,
+                is SettingsContract.UiEvent.ImportClicked,
+                is SettingsContract.UiEvent.ImportFilePicked,
+                is SettingsContract.UiEvent.ImportModeChosen,
+                is SettingsContract.UiEvent.BackupDialogDismissed,
+                -> backupDelegate.onEvent(event, backupHost)
             }
         }
 
