@@ -8,6 +8,7 @@ import jakarta.inject.Inject
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.withContext
 import java.io.IOException
+import java.io.OutputStream
 
 /**
  * Reads and writes backup documents at SAF (`content://`) URIs picked by the
@@ -27,11 +28,28 @@ class BackupFileDataSource
             content: String,
         ) = withContext(ioDispatcher) {
             asIoFailure {
-                val stream =
-                    context.contentResolver.openOutputStream(uri, "wt")
-                        ?: throw IOException("Cannot open $uri for writing")
-                stream.bufferedWriter().use { it.write(content) }
+                openTruncatingOutputStream(uri).bufferedWriter().use { it.write(content) }
             }
+        }
+
+        /**
+         * Opens the destination in a truncating mode — plain "w" would leave the
+         * tail of a longer previous file in place, corrupting the JSON. SAF
+         * document providers accept "wt" ([android.os.ParcelFileDescriptor.parseMode]);
+         * providers that only take the modes documented on
+         * [android.content.ContentResolver.openOutputStream] get the "rwt" fallback,
+         * which also truncates.
+         */
+        private fun openTruncatingOutputStream(uri: Uri): OutputStream {
+            val stream =
+                try {
+                    context.contentResolver.openOutputStream(uri, "wt")
+                } catch (_: IllegalArgumentException) {
+                    context.contentResolver.openOutputStream(uri, "rwt")
+                } catch (_: UnsupportedOperationException) {
+                    context.contentResolver.openOutputStream(uri, "rwt")
+                }
+            return stream ?: throw IOException("Cannot open $uri for writing")
         }
 
         suspend fun read(uri: Uri): String =
