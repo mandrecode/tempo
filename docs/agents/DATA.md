@@ -332,7 +332,7 @@ For simple key-value storage (settings, preferences).
 ### Rules
 - Use DataStore instead of SharedPreferences when possible
 - Create interface + implementation
-- Bind in `RepositoryModule`
+- Bind in `PreferencesRepositoryModule` (`core/di/PreferencesRepositoryModule.kt`), not `RepositoryModule`
 - Use `@ApplicationContext` for Context injection
 
 **Example:**
@@ -380,7 +380,7 @@ class SettingsRepositoryImpl @Inject constructor(
 Before completing a data layer task, verify:
 - [ ] Did you create the mapper (`toDomain()` / `toEntity()` extensions)?
 - [ ] Is the repository interface defined in the domain layer?
-- [ ] Did you add the `@Binds` entry in `core/di/RepositoryModule.kt`?
+- [ ] Did you add the `@Binds` entry in `core/di/RepositoryModule.kt` (domain/data repos) or `core/di/PreferencesRepositoryModule.kt` (`SharedPreferences`-backed repos)?
 - [ ] Are entities using `@TypeConverter` for complex types?
 - [ ] Does the repository inject `@IoDispatcher`?
 - [ ] Are Flow operations using `.flowOn(dispatcher)`?

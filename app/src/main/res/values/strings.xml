@@ -495,6 +495,10 @@
     <string name="onboarding_appearance_description">Start with Tempo’s signature palette or match supported devices to your wallpaper.</string>
     <string name="onboarding_setup_title">Set up your first session</string>
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
+    <string name="whats_new_legend">New features in v%1$s: %2$s</string>
+    <string name="whats_new_got_it">Got it</string>
+    <string name="whats_new_title">See what’s new</string>
+    <string name="whats_new_description">After an update, a quick summary of the latest feature appears here — just like this one.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
