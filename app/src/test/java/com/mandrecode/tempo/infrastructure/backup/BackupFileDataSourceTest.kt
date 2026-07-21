@@ -155,6 +155,31 @@ class BackupFileDataSourceTest {
             assertThat(thrown).isInstanceOf(IOException::class.java)
         }
 
+    @Test
+    fun `write wraps an UnsupportedOperationException from the rwt fallback as IOException`() =
+        runTest {
+            val uri = uriWithAuthority("com.android.externalstorage.documents")
+            val resolver = mockResolver()
+            every { resolver.openOutputStream(uri, "wt") } throws IllegalArgumentException("mode not supported")
+            every { resolver.openOutputStream(uri, "rwt") } throws UnsupportedOperationException("nope")
+
+            val thrown = runCatching { dataSource.write(uri, "hello") }.exceptionOrNull()
+
+            assertThat(thrown).isInstanceOf(IOException::class.java)
+        }
+
+    @Test
+    fun `read wraps an UnsupportedOperationException as IOException`() =
+        runTest {
+            val uri = uriWithAuthority("com.android.externalstorage.documents")
+            val resolver = mockResolver()
+            every { resolver.openInputStream(uri) } throws UnsupportedOperationException("nope")
+
+            val thrown = runCatching { dataSource.read(uri) }.exceptionOrNull()
+
+            assertThat(thrown).isInstanceOf(IOException::class.java)
+        }
+
     private fun mockResolver(): ContentResolver {
         val resolver = mockk<ContentResolver>()
         every { context.contentResolver } returns resolver

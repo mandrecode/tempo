@@ -15,9 +15,9 @@ import java.io.OutputStream
 /**
  * Reads and writes backup documents at SAF (`content://`) URIs picked by the
  * user via the system file picker. All provider failures — including the
- * [SecurityException]/[IllegalArgumentException] the resolver can throw for
- * revoked or invalid URIs — surface as [IOException] so callers have a single
- * error contract.
+ * [SecurityException]/[IllegalArgumentException]/[UnsupportedOperationException]
+ * the resolver can throw for revoked, invalid, or unsupported-mode URIs —
+ * surface as [IOException] so callers have a single error contract.
  */
 class BackupFileDataSource
     @Inject
@@ -72,6 +72,8 @@ class BackupFileDataSource
             } catch (e: SecurityException) {
                 throw IOException(e)
             } catch (e: IllegalArgumentException) {
+                throw IOException(e)
+            } catch (e: UnsupportedOperationException) {
                 throw IOException(e)
             }
 
