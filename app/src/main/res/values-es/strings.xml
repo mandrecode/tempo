@@ -476,7 +476,7 @@
     <string name="backup_issue_unknown_chain">Una pertenencia a cadena hace referencia a la cadena inexistente %1$s</string>
     <string name="backup_issue_unknown_habit">Una pertenencia a cadena hace referencia al hábito inexistente %1$s</string>
     <string name="backup_export_passphrase_title">Establece una contraseña</string>
-    <string name="backup_export_passphrase_message">Tu exportación se cifrará con esta contraseña. Recuérdala — Tempo no puede recuperar una copia de seguridad si se pierde.</string>
+    <string name="backup_export_passphrase_message">Tu exportación se cifrará con esta contraseña. Recuérdala — si la olvidas, Tempo no podrá recuperar la copia de seguridad.</string>
     <string name="backup_export_passphrase_label">Contraseña</string>
     <string name="backup_export_passphrase_confirm_label">Confirmar contraseña</string>
     <string name="backup_export_passphrase_mismatch">Las contraseñas no coinciden</string>

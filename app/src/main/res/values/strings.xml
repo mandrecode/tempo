@@ -472,7 +472,7 @@
     <string name="backup_issue_unknown_chain">A chain membership references missing chain %1$s</string>
     <string name="backup_issue_unknown_habit">A chain membership references missing habit %1$s</string>
     <string name="backup_export_passphrase_title">Set a passphrase</string>
-    <string name="backup_export_passphrase_message">Your export will be encrypted with this passphrase. Remember it — Tempo cannot recover a backup if it\'s lost.</string>
+    <string name="backup_export_passphrase_message">Your export will be encrypted with this passphrase. Remember it — if you forget the passphrase, Tempo cannot recover the backup.</string>
     <string name="backup_export_passphrase_label">Passphrase</string>
     <string name="backup_export_passphrase_confirm_label">Confirm passphrase</string>
     <string name="backup_export_passphrase_mismatch">Passphrases don\'t match</string>
