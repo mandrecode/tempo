@@ -40,17 +40,19 @@ class BackupFileDataSource
          * document providers accept "wt" ([android.os.ParcelFileDescriptor.parseMode]);
          * providers that only take the modes documented on
          * [android.content.ContentResolver.openOutputStream] get the "rwt" fallback,
-         * which also truncates.
+         * which also truncates. `openOutputStream` may reject "wt" by throwing
+         * ([IllegalArgumentException]/[UnsupportedOperationException]) or by
+         * returning null, so both cases retry with "rwt".
          */
         private fun openTruncatingOutputStream(uri: Uri): OutputStream {
             val stream =
                 try {
                     context.contentResolver.openOutputStream(uri, "wt")
                 } catch (_: IllegalArgumentException) {
-                    context.contentResolver.openOutputStream(uri, "rwt")
+                    null
                 } catch (_: UnsupportedOperationException) {
-                    context.contentResolver.openOutputStream(uri, "rwt")
-                }
+                    null
+                } ?: context.contentResolver.openOutputStream(uri, "rwt")
             return stream ?: throw IOException("Cannot open $uri for writing")
         }
 

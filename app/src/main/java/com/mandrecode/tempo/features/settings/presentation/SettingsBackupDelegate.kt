@@ -26,7 +26,7 @@ class SettingsBackupDelegate
         private val importBackup: ImportBackupUseCase,
         private val backupFileDataSource: BackupFileDataSource,
     ) {
-        /** The ViewModel surface the delegate acts through. */
+        /** The ViewModel surface that the delegate acts through. */
         data class Host(
             val scope: CoroutineScope,
             val updateState: (transform: (SettingsContract.UiState) -> SettingsContract.UiState) -> Unit,
