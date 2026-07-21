@@ -5,8 +5,9 @@ import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
 
 /**
  * Holds only the latest shipped feature — [latest] is the only entry ever shown to users, so
- * older entries carry no runtime value. Replace this value (not append to it) when shipping a
- * new feature (see openspec/changes/feat-210-whats-new-onboarding/design.md).
+ * older entries carry no runtime value. Replace this value (not append to it) — including
+ * `whats_new_title`/`whats_new_description` in strings.xml — when shipping a new feature (see
+ * openspec/changes/feat-210-whats-new-onboarding/design.md).
  */
 object WhatsNewRegistry {
     val latest: WhatsNewEntry =
@@ -15,7 +16,7 @@ object WhatsNewRegistry {
             // registry existed), so this feature (#210) ships in the next release, v1.2.0.
             versionCode = 1_002_000,
             versionName = "1.2.0",
-            titleRes = R.string.whats_new_210_title,
-            descriptionRes = R.string.whats_new_210_description,
+            titleRes = R.string.whats_new_title,
+            descriptionRes = R.string.whats_new_description,
         )
 }
