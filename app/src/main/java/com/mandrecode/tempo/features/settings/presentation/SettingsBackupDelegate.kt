@@ -246,16 +246,13 @@ class SettingsBackupDelegate
                             clearPendingImportState()
                         }
                         outcome.toDialog()
-                    } catch (_: IOException) {
-                        clearPendingImportState()
-                        SettingsContract.BackupDialog.ImportFailed(
-                            SettingsContract.ImportError.ReadFailed,
-                        )
                     } catch (e: CancellationException) {
                         throw e
                     } catch (_: Exception) {
-                        // Unexpected failure below the repository; the import
-                        // transaction has rolled back, so local data is intact.
+                        // Unexpected failure below the repository — the file read (the only
+                        // IOException source in this flow) already happened in
+                        // handleImportFilePicked(); nothing past that point throws IOException.
+                        // The import transaction has rolled back, so local data is intact.
                         clearPendingImportState()
                         SettingsContract.BackupDialog.ImportFailed(
                             SettingsContract.ImportError.Unexpected,
