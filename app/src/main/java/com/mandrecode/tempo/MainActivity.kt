@@ -14,7 +14,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
@@ -31,6 +33,7 @@ import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
 import com.mandrecode.tempo.core.ui.navigation.TasksRoute
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
 import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
@@ -82,6 +85,7 @@ class MainActivity : ComponentActivity() {
 
                 is MainUiState.Success -> {
                     val startDestination = rememberStartDestination(state)
+                    var isOnboardingSectionActive by remember { mutableStateOf(false) }
 
                     TempoTheme(
                         darkTheme =
@@ -109,7 +113,16 @@ class MainActivity : ComponentActivity() {
                                 onRouteChange = { routeName ->
                                     navigationPreferencesRepository.saveLastRoute(routeName)
                                 },
+                                onOnboardingActiveChange = { isOnboardingSectionActive = it },
                             )
+
+                            val whatsNewEntry = state.whatsNewEntry
+                            if (whatsNewEntry != null && !isOnboardingSectionActive) {
+                                WhatsNewBottomSheet(
+                                    entry = whatsNewEntry,
+                                    onDismissRequest = mainViewModel::onWhatsNewDismissed,
+                                )
+                            }
                         }
                     }
                 }

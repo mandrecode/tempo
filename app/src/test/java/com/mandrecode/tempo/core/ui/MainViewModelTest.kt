@@ -6,11 +6,14 @@ import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
+import com.mandrecode.tempo.features.whatsnew.presentation.WhatsNewRegistry
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +33,7 @@ class MainViewModelTest {
     private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
     private lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
+    private lateinit var whatsNewPreferencesRepository: WhatsNewPreferencesRepository
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -38,6 +42,7 @@ class MainViewModelTest {
         navigationPreferencesRepository = mockk()
         themePreferencesRepository = mockk()
         onboardingPreferencesRepository = mockk()
+        whatsNewPreferencesRepository = mockk(relaxed = true)
 
         every { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         every { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
@@ -45,6 +50,10 @@ class MainViewModelTest {
         every { navigationPreferencesRepository.isRoutinesTabEnabled() } returns flowOf(true)
         every { navigationPreferencesRepository.isTasksTabEnabled() } returns flowOf(true)
         every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
+        // Defaults to "already seen" so existing assertions are unaffected by the new field;
+        // whats-new-specific tests below override this per scenario.
+        every { whatsNewPreferencesRepository.lastSeenVersionCode } returns
+            MutableStateFlow(WhatsNewRegistry.latest.versionCode)
     }
 
     @After
@@ -260,11 +269,73 @@ class MainViewModelTest {
             assertThat(savedStateHandle.get<String>("pending_notification_action_type")).isNull()
         }
 
+    @Test
+    fun `emits Success with unseen whats-new entry when onboarding completed`() =
+        runTest {
+            every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(true)
+            every { whatsNewPreferencesRepository.lastSeenVersionCode } returns MutableStateFlow(0)
+
+            val viewModel = createViewModel()
+
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                val success = awaitItem() as MainUiState.Success
+                assertThat(success.whatsNewEntry).isEqualTo(WhatsNewRegistry.latest)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `whats-new entry is null when already seen`() =
+        runTest {
+            every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(true)
+            every { whatsNewPreferencesRepository.lastSeenVersionCode } returns
+                MutableStateFlow(WhatsNewRegistry.latest.versionCode)
+
+            val viewModel = createViewModel()
+
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                val success = awaitItem() as MainUiState.Success
+                assertThat(success.whatsNewEntry).isNull()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `whats-new entry is null when onboarding not completed`() =
+        runTest {
+            every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
+            every { whatsNewPreferencesRepository.lastSeenVersionCode } returns MutableStateFlow(0)
+
+            val viewModel = createViewModel()
+
+            viewModel.uiState.test {
+                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
+                val success = awaitItem() as MainUiState.Success
+                assertThat(success.whatsNewEntry).isNull()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `onWhatsNewDismissed persists the latest entry's version code`() =
+        runTest {
+            val viewModel = createViewModel()
+
+            viewModel.onWhatsNewDismissed()
+
+            verify(exactly = 1) {
+                whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.latest.versionCode)
+            }
+        }
+
     private fun createViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()): MainViewModel =
         MainViewModel(
             savedStateHandle = savedStateHandle,
             navigationPreferencesRepository = navigationPreferencesRepository,
             themePreferencesRepository = themePreferencesRepository,
             onboardingPreferencesRepository = onboardingPreferencesRepository,
+            whatsNewPreferencesRepository = whatsNewPreferencesRepository,
         )
 }

@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.2.0](https://github.com/mandrecode/tempo/compare/v1.1.0...v1.2.0) (2026-07-21)
+
+
+### Features
+
+* **#210:** add what's-new onboarding bottom sheet for latest feature ([#211](https://github.com/mandrecode/tempo/issues/211)) ([3e89c56](https://github.com/mandrecode/tempo/commit/3e89c560de9bf84d8dad2c802e69054e7b27752f))
+
+## [1.1.0](https://github.com/mandrecode/tempo/compare/v1.0.0...v1.1.0) (2026-07-21)
+
+
+### Features
+
+* **#26:** add export/import with schema versioning and conflict reporting ([#208](https://github.com/mandrecode/tempo/issues/208)) ([a709ca0](https://github.com/mandrecode/tempo/commit/a709ca0343e14ffe22de00daa402414d40e04367))
+
+
+### Bug Fixes
+
+* **#199:** keep settings button visible when floating rail overflows ([#207](https://github.com/mandrecode/tempo/issues/207)) ([11d2b4b](https://github.com/mandrecode/tempo/commit/11d2b4bf0e9b7961291ac6032625b0fe7ddfa755))
+
 ## [1.0.0](https://github.com/mandrecode/tempo/compare/v0.9.10...v1.0.0) (2026-07-18)
 
 

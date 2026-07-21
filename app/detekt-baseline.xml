@@ -121,7 +121,7 @@
     <ID>MaxLineLength:HabitReminderSchedulerImpl.kt:HabitReminderSchedulerImpl$return@withContext ScheduleResult.PermissionError(context.getString(R.string.error_exact_alarm_permission))</ID>
     <ID>MaxLineLength:HabitRepositoryImpl.kt:HabitRepositoryImpl$override suspend fun getHabitsByIds: List&lt;Habit&gt;</ID>
     <ID>MaxLineLength:IconPicker.kt:listOf(allIcons[selectedIndex]) + allIcons.filter { it.iconName != selectedIconName }.take(firstRowIconsCount - 1)</ID>
-    <ID>MaxLineLength:RepositoryModule.kt:RepositoryModule$abstract</ID>
+    <ID>MaxLineLength:PreferencesRepositoryModule.kt:PreferencesRepositoryModule$abstract</ID>
     <ID>MaxLineLength:RescheduleRemindersWorkerTest.kt:RescheduleRemindersWorkerTest$habitReminderScheduler.scheduleHabitChain(match { it.id == 1L &amp;&amp; it.periodicReminder!! &gt; pastChainTime })</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:internal</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:mutableUiState.update { it.copy(habitForm = it.habitForm.copy(descriptionError = R.string.error_habit_description_too_long)) }</ID>
