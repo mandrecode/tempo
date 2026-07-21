@@ -352,7 +352,17 @@ private fun memberTitles(
 
 private fun Category.contentKey() = copy(id = 0, sortOrder = 0, isDefault = false)
 
-private fun Task.contentKey() = copy(id = 0, sortOrder = 0, nextInstanceId = null, categoryId = 0, parentTaskId = null)
+// nextInstanceId values are database ids and meaningless across devices, but
+// *having* a next-occurrence link is content: a linked archived task must not
+// classify as an exact duplicate of an unlinked local task (or vice versa).
+private fun Task.contentKey() =
+    copy(
+        id = 0,
+        sortOrder = 0,
+        nextInstanceId = if (nextInstanceId == null) null else 0,
+        categoryId = 0,
+        parentTaskId = null,
+    )
 
 private fun Habit.contentKey() = copy(id = 0)
 

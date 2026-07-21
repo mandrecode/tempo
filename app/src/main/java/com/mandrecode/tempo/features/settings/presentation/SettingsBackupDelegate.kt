@@ -8,6 +8,7 @@ import com.mandrecode.tempo.features.backup.domain.usecase.ExportBackupUseCase
 import com.mandrecode.tempo.features.backup.domain.usecase.ImportBackupUseCase
 import com.mandrecode.tempo.infrastructure.backup.BackupFileDataSource
 import kotlinx.collections.immutable.toImmutableList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -81,6 +82,12 @@ class SettingsBackupDelegate
                     host.sendEffect(
                         SettingsContract.UiEffect.LaunchExportPicker(export.suggestedFileName),
                     )
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    host.sendEffect(
+                        SettingsContract.UiEffect.ShowMessage(R.string.backup_export_error),
+                    )
                 } finally {
                     host.updateState { it.copy(backupInProgress = false) }
                 }
@@ -92,15 +99,17 @@ class SettingsBackupDelegate
             host: Host,
         ) {
             host.scope.launch {
-                val json = pendingExportJson ?: exportBackup().json
-                pendingExportJson = null
                 host.updateState { it.copy(backupInProgress = true) }
                 try {
+                    val json = pendingExportJson ?: exportBackup().json
+                    pendingExportJson = null
                     backupFileDataSource.write(uri, json)
                     host.sendEffect(
                         SettingsContract.UiEffect.ShowMessage(R.string.backup_export_success),
                     )
-                } catch (_: IOException) {
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
                     host.sendEffect(
                         SettingsContract.UiEffect.ShowMessage(R.string.backup_export_error),
                     )

@@ -218,6 +218,29 @@ class MergePlannerTest {
     }
 
     @Test
+    fun `task with a next-instance link is not a duplicate of an unlinked local task`() {
+        val incoming =
+            backupData(
+                categories = listOf(category(id = 1, name = "Work")),
+                tasks =
+                    listOf(
+                        task(id = 10, categoryId = 1, title = "Report").copy(nextInstanceId = 11),
+                        task(id = 11, categoryId = 1, title = "Report next"),
+                    ),
+            )
+        val local =
+            backupData(
+                categories = listOf(category(id = 1, name = "Work")),
+                tasks = listOf(task(id = 50, categoryId = 1, title = "Report")),
+            )
+
+        val plan = planner.plan(incoming, local)
+
+        assertThat(plan.summary.tasks.conflicts).isEqualTo(1)
+        assertThat(plan.summary.tasks.skipped).isEqualTo(0)
+    }
+
+    @Test
     fun `tasks in newly inserted categories keep their incoming sort order`() {
         val incoming =
             backupData(

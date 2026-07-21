@@ -46,28 +46,22 @@ class BackupPayloadValidator
 
         private fun duplicateIdIssues(data: BackupData): List<ValidationIssue> =
             buildList {
-                addAll(duplicates(data.categories.map { it.id }, "category"))
-                addAll(duplicates(data.tasks.map { it.id }, "task"))
-                addAll(duplicates(data.habits.map { it.id }, "habit"))
-                addAll(duplicates(data.habitChains.map { it.id }, "habit chain"))
-                addAll(
-                    duplicates(
-                        data.chainMemberships.map { "${it.chainId}:${it.habitId}" },
-                        "chain membership",
-                    ),
-                )
+                addAll(duplicates(data.categories.map { it.id }))
+                addAll(duplicates(data.tasks.map { it.id }))
+                addAll(duplicates(data.habits.map { it.id }))
+                addAll(duplicates(data.habitChains.map { it.id }))
+                addAll(duplicates(data.chainMemberships.map { "${it.chainId}:${it.habitId}" }))
             }
 
-        private fun duplicates(
-            ids: List<Any>,
-            label: String,
-        ): List<ValidationIssue> =
+        // Details stay locale-neutral identifiers (titles or ids); the UI wraps
+        // them in localized sentences per ValidationIssueKind.
+        private fun duplicates(ids: List<Any>): List<ValidationIssue> =
             ids
                 .groupingBy { it }
                 .eachCount()
                 .filterValues { it > 1 }
                 .keys
-                .map { ValidationIssue(ValidationIssueKind.DUPLICATE_ID, "$label $it") }
+                .map { ValidationIssue(ValidationIssueKind.DUPLICATE_ID, it.toString()) }
 
         private fun referenceIssues(data: BackupData): List<ValidationIssue> {
             val categoryIds = data.categories.mapTo(mutableSetOf()) { it.id }
@@ -98,7 +92,7 @@ class BackupPayloadValidator
                         add(
                             ValidationIssue(
                                 ValidationIssueKind.UNKNOWN_CHAIN_REFERENCE,
-                                "chain ${membership.chainId}",
+                                membership.chainId.toString(),
                             ),
                         )
                     }
@@ -106,7 +100,7 @@ class BackupPayloadValidator
                         add(
                             ValidationIssue(
                                 ValidationIssueKind.UNKNOWN_HABIT_REFERENCE,
-                                "habit ${membership.habitId}",
+                                membership.habitId.toString(),
                             ),
                         )
                     }

@@ -11,8 +11,10 @@ import java.io.IOException
 
 /**
  * Reads and writes backup documents at SAF (`content://`) URIs picked by the
- * user via the system file picker. Throws [IOException] when the provider
- * rejects the operation.
+ * user via the system file picker. All provider failures — including the
+ * [SecurityException]/[IllegalArgumentException] the resolver can throw for
+ * revoked or invalid URIs — surface as [IOException] so callers have a single
+ * error contract.
  */
 class BackupFileDataSource
     @Inject
@@ -24,17 +26,30 @@ class BackupFileDataSource
             uri: Uri,
             content: String,
         ) = withContext(ioDispatcher) {
-            val stream =
-                context.contentResolver.openOutputStream(uri, "wt")
-                    ?: throw IOException("Cannot open $uri for writing")
-            stream.bufferedWriter().use { it.write(content) }
+            asIoFailure {
+                val stream =
+                    context.contentResolver.openOutputStream(uri, "wt")
+                        ?: throw IOException("Cannot open $uri for writing")
+                stream.bufferedWriter().use { it.write(content) }
+            }
         }
 
         suspend fun read(uri: Uri): String =
             withContext(ioDispatcher) {
-                val stream =
-                    context.contentResolver.openInputStream(uri)
-                        ?: throw IOException("Cannot open $uri for reading")
-                stream.bufferedReader().use { it.readText() }
+                asIoFailure {
+                    val stream =
+                        context.contentResolver.openInputStream(uri)
+                            ?: throw IOException("Cannot open $uri for reading")
+                    stream.bufferedReader().use { it.readText() }
+                }
+            }
+
+        private inline fun <T> asIoFailure(block: () -> T): T =
+            try {
+                block()
+            } catch (e: SecurityException) {
+                throw IOException(e)
+            } catch (e: IllegalArgumentException) {
+                throw IOException(e)
             }
     }

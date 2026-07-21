@@ -465,6 +465,11 @@
     <string name="backup_import_error_corrupt">El archivo no es una copia de seguridad válida de Tempo.</string>
     <string name="backup_import_error_validation">El archivo contiene datos incoherentes y no se importó.</string>
     <string name="backup_import_error_read">No se pudo leer el archivo.</string>
+    <string name="backup_issue_duplicate_id">Identificador de registro duplicado: %1$s</string>
+    <string name="backup_issue_unknown_category">La tarea "%1$s" hace referencia a una categoría inexistente</string>
+    <string name="backup_issue_unknown_parent_task">La tarea "%1$s" hace referencia a una tarea superior inexistente</string>
+    <string name="backup_issue_unknown_chain">Una pertenencia a cadena hace referencia a la cadena inexistente %1$s</string>
+    <string name="backup_issue_unknown_habit">Una pertenencia a cadena hace referencia al hábito inexistente %1$s</string>
 
     <!-- ABOUT SECTION -->
     <string name="about">Acerca de</string>

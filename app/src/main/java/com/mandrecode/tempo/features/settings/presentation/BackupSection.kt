@@ -23,6 +23,8 @@ import com.mandrecode.tempo.features.backup.domain.model.BackupEntityKind
 import com.mandrecode.tempo.features.backup.domain.model.ConflictReason
 import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
+import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
+import com.mandrecode.tempo.features.backup.domain.model.ValidationIssueKind
 
 @Composable
 internal fun BackupSection(
@@ -153,7 +155,23 @@ private fun ImportFailedDialog(
     AlertDialog(
         onDismissRequest = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
         title = { Text(stringResource(R.string.backup_import_error_title)) },
-        text = { Text(error.message()) },
+        text = {
+            Column(
+                modifier = Modifier.verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Text(error.message())
+                if (error is SettingsContract.ImportError.ValidationFailed) {
+                    error.issues.forEach { issue ->
+                        Text(
+                            text = issue.label(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                }
+            }
+        },
         confirmButton = {
             TextButton(onClick = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) }) {
                 Text(stringResource(R.string.ok))
@@ -161,6 +179,19 @@ private fun ImportFailedDialog(
         },
     )
 }
+
+@Composable
+private fun ValidationIssue.label(): String =
+    stringResource(
+        when (kind) {
+            ValidationIssueKind.DUPLICATE_ID -> R.string.backup_issue_duplicate_id
+            ValidationIssueKind.UNKNOWN_CATEGORY_REFERENCE -> R.string.backup_issue_unknown_category
+            ValidationIssueKind.UNKNOWN_PARENT_TASK_REFERENCE -> R.string.backup_issue_unknown_parent_task
+            ValidationIssueKind.UNKNOWN_CHAIN_REFERENCE -> R.string.backup_issue_unknown_chain
+            ValidationIssueKind.UNKNOWN_HABIT_REFERENCE -> R.string.backup_issue_unknown_habit
+        },
+        detail,
+    )
 
 @Composable
 private fun BackupProgressDialog() {
