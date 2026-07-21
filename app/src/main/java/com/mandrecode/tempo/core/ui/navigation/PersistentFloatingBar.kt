@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -24,7 +23,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -137,7 +138,9 @@ private fun PersistentLandscapeFloatingBar(
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
     // navigation tabs, contextual secondary actions (sort, clear completed), and finally
-    // settings pinned to the bottom.
+    // settings pinned to the bottom. The scrollable/weighted content above settings is split
+    // into its own Column so settings never gets pushed out of bounds when the rail runs out
+    // of vertical space (e.g. an expanded rail with both task action buttons visible).
     Column(
         modifier =
             Modifier
@@ -145,6 +148,39 @@ private fun PersistentLandscapeFloatingBar(
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+        horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,
+    ) {
+        RailScrollableContent(
+            isTasksRoute = isTasksRoute,
+            navigationContent = navigationContent,
+            tasksState = tasksState,
+            addAction = addAction,
+            isExpandedRail = isExpandedRail,
+            settingsSelected = settingsSelected,
+            modifier = Modifier.weight(1f),
+        )
+
+        SettingsRailButton(
+            selected = settingsSelected,
+            expanded = isExpandedRail,
+            onClick = onOpenSettings,
+        )
+    }
+}
+
+@Composable
+private fun RailScrollableContent(
+    isTasksRoute: Boolean,
+    navigationContent: @Composable () -> Unit,
+    tasksState: TasksFloatingBarState,
+    addAction: AddAction,
+    isExpandedRail: Boolean,
+    settingsSelected: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
         horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,
     ) {
@@ -188,13 +224,6 @@ private fun PersistentLandscapeFloatingBar(
             showActions = isTasksRoute && !settingsSelected,
             modifier = Modifier.padding(start = if (isExpandedRail) FloatingToolbarRailSurfacePadding else 0.dp),
             expanded = isExpandedRail,
-        )
-
-        Spacer(modifier = Modifier.weight(1f))
-        SettingsRailButton(
-            selected = settingsSelected,
-            expanded = isExpandedRail,
-            onClick = onOpenSettings,
         )
     }
 }
