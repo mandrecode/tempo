@@ -22,6 +22,7 @@
 - [x] 4.2 Create `WhatsNewBottomSheet.kt` (Content composable) under `features/whatsnew/presentation/components/` using `TempoModalBottomSheet`, rendering the "New features in vX.Y.Z: <title>" legend + description + dismiss action. The "Got it" button uses the app's shared `rememberPressableButtonAnimation` squircle-press shape animation plus haptic feedback (matching `TempoConfirmDialog`/onboarding's primary CTA), not a stock Material3 `Button`
 - [x] 4.3 Wire `WhatsNewBottomSheet` into `MainActivity.kt`'s composable tree, shown when `state.whatsNewEntry != null && !isOnboardingSectionActive`, calling `onWhatsNewDismissed()` on dismissal
 - [x] 4.4 Add `@Preview` composables for `WhatsNewBottomSheet` under `src/debug/`
+- [x] 4.5 Add `WhatsNewBottomSheetTest.kt` (androidTest) covering legend/description rendering and "Got it" dismissal, mirroring `HabitBottomSheetTest`/`TaskBottomSheetTest` conventions; verified passing on the `Pixel_10` AVD
 
 ## 5. Strings
 
