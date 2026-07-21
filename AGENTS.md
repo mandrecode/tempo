@@ -23,7 +23,7 @@ Before writing code, read the reference doc for the layer you are touching:
 |:---|:---|:---|
 | UI / Screens | [`docs/agents/UI_UX.md`](docs/agents/UI_UX.md) | Screen/Content split; `@Preview` in `src/debug/` only; `kotlinx.collections.immutable` for state |
 | Domain / UseCases | [`docs/agents/DOMAIN.md`](docs/agents/DOMAIN.md) | Pure Kotlin — zero `android.*` imports; `kotlinx-datetime` only (no `java.time`) |
-| Data / Room / Repos | [`docs/agents/DATA.md`](docs/agents/DATA.md) | Mapper extensions (`toDomain()`/`toEntity()`); bind in `core/di/RepositoryModule.kt` |
+| Data / Room / Repos | [`docs/agents/DATA.md`](docs/agents/DATA.md) | Mapper extensions (`toDomain()`/`toEntity()`); bind domain/data repos in `core/di/RepositoryModule.kt`, `SharedPreferences`-backed repos in `core/di/PreferencesRepositoryModule.kt` |
 | Tests | [`docs/agents/TESTING.md`](docs/agents/TESTING.md) | MockK (`relaxed = true`), Truth assertions, Turbine for Flows |
 | Tech stack / versions | [`docs/agents/TECH_STACK.md`](docs/agents/TECH_STACK.md) | Do not add libraries not listed here without asking |
 
@@ -86,7 +86,7 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it i
 ## New Feature Checklist
 
 1. **Domain**: models in `features/[feat]/domain/model/`, repo interface in `domain/repository/`, use cases in `domain/usecase/`
-2. **Data**: entity in `core/data/entity/`, DAO in `core/data/local/dao/`, mapper in `features/[feat]/data/mapper/`, repo impl in `data/repository/`, add `@Binds` in `core/di/RepositoryModule.kt`
+2. **Data**: entity in `core/data/entity/`, DAO in `core/data/local/dao/`, mapper in `features/[feat]/data/mapper/`, repo impl in `data/repository/`, add `@Binds` in `core/di/RepositoryModule.kt` (domain/data repos) or `core/di/PreferencesRepositoryModule.kt` (`SharedPreferences`-backed repos)
 3. **UI**: Contract (`UiState`/`UiEvent`/`UiEffect`), ViewModel, Screen, Content + Previews in `src/debug/`
 4. **Tests**: unit test use cases and ViewModel; UI test Content composable
 5. **What's New**: prepend a `WhatsNewEntry` to `WhatsNewRegistry.entries` (`features/whatsnew/presentation/WhatsNewRegistry.kt`) with the feature's version, title, and a short description, so it's announced once via the "what's new" bottom sheet

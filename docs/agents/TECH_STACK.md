@@ -46,7 +46,8 @@ app/src/main/java/com.mandrecode.tempo/
 │   ├── di/                # Hilt modules
 │   │   ├── DatabaseModule.kt
 │   │   ├── DispatcherModule.kt    # @IoDispatcher, @DefaultDispatcher
-│   │   ├── RepositoryModule.kt    # All @Binds for repos
+│   │   ├── RepositoryModule.kt    # @Binds for domain/data repos
+│   │   ├── PreferencesRepositoryModule.kt    # @Binds for SharedPreferences-backed repos
 │   │   └── InfrastructureModule.kt
 │   ├── domain/
 │   │   └── model/         # Shared enums (Priority, Periodicity, DayOfWeek, ThemeMode, AppLanguage)
