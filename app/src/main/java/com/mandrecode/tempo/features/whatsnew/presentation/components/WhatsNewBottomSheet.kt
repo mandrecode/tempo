@@ -16,6 +16,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
+import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.sheetTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
@@ -80,6 +81,9 @@ private fun GotItButton(
         shape = RoundedCornerShape(cornerRadius.value),
         modifier = modifier.height(48.dp),
     ) {
-        Text(stringResource(R.string.whats_new_got_it))
+        Text(
+            text = stringResource(R.string.whats_new_got_it),
+            style = MaterialTheme.typography.dialogAction,
+        )
     }
 }

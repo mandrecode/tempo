@@ -113,9 +113,9 @@ fun TempoNavHost(
     // to avoid showing on top of it. A replay is pushed onto whichever back stack is currently
     // active (e.g. settingsBackStack) without changing navigator.section, so this must key off the
     // resolved current route rather than the section alone.
-    val currentOnOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
+    val currentOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
     LaunchedEffect(navigator.currentRoute) {
-        currentOnOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
+        currentOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
     }
 
     NotificationNavigationEffects(
