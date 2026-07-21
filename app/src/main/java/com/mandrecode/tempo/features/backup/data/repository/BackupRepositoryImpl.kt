@@ -15,6 +15,7 @@ import com.mandrecode.tempo.features.backup.data.mapper.toDto
 import com.mandrecode.tempo.features.backup.data.model.BackupEnvelopeDto
 import com.mandrecode.tempo.features.backup.data.model.BackupFileDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
+import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ChainMembership
 import com.mandrecode.tempo.features.backup.domain.model.ImportCounts
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
@@ -31,6 +32,7 @@ import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
 import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.serialization.SerializationException
@@ -143,7 +145,7 @@ class BackupRepositoryImpl
          */
         private suspend fun replace(data: BackupData): ImportSummary {
             val summary = replaceDatabase(data)
-            data.settings?.let(settingsDataSource::apply)
+            applySettingsBestEffort(settingsDataSource, data.settings)
             return summary
         }
 
@@ -264,6 +266,27 @@ class BackupRepositoryImpl
             return taskIds
         }
     }
+
+/**
+ * [BackupRepository.importFromJson] promises local data is untouched whenever it
+ * throws or returns anything but [ImportOutcome.Success]. By the time this runs
+ * the database restore has already committed, so a failure applying settings
+ * must not violate that contract by escaping as an exception — it is swallowed
+ * and the restore is still reported as a success.
+ */
+private fun applySettingsBestEffort(
+    settingsDataSource: BackupSettingsDataSource,
+    settings: BackupSettings?,
+) {
+    if (settings == null) return
+    try {
+        settingsDataSource.apply(settings)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        // Best-effort: the data restore already committed successfully.
+    }
+}
 
 private fun HabitChainEntity.toDomainChain(): HabitChain =
     HabitChain(

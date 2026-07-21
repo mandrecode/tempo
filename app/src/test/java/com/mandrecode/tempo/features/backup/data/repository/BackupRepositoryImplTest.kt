@@ -318,6 +318,18 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `replace still reports success when applying settings throws`() =
+        runTest {
+            stubLocalData()
+            val json = repository.exportToJson()
+            every { settingsDataSource.apply(any()) } throws IllegalStateException("prefs unavailable")
+
+            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+
+            assertThat(outcome).isInstanceOf(ImportOutcome.Success::class.java)
+        }
+
+    @Test
     fun `replace of a file without a settings section leaves settings untouched`() =
         runTest {
             val json = """{"schemaVersion":1,"categories":[{"id":-1,"name":"Inbox","isDefault":true}]}"""
