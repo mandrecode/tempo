@@ -15,7 +15,7 @@
 ## Mandatory Libraries
 - **Date/Time:** `kotlin.time` (Primary for durations), `kotlinx-datetime` (Secondary for dates/timestamps). *No `java.util.Date` or `java.time`*.
 - **Serialization:** `kotlinx.serialization`
-- **Database:** Room (with KSP for annotation processing)
+- **Database:** Room (with KSP for annotation processing), encrypted at rest via SQLCipher (`net.zetetic:sqlcipher-android`) — see [`docs/DB_ENCRYPTION.md`](../DB_ENCRYPTION.md)
 - **Collections:** `kotlinx.collections.immutable` (For stable Compose state)
 - **Adaptive layout:** `androidx.compose.material3.adaptive:adaptive` (BOM-managed) — window size classes via `currentWindowAdaptiveInfo()`; never use `LocalConfiguration` screen fields for layout decisions
 

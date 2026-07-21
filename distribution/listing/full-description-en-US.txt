@@ -14,13 +14,13 @@ Capture daily to-dos instantly. Organize with tags, priorities, and deadlines. I
 Built with the latest Material You design standards. Tempo adapts to your wallpaper colors and offers a beautiful, modern interface that feels at home on your Android device.
 
 🛡️ <b>Privacy First & Offline</b>
-Tempo works completely offline. Your data never leaves your device. No accounts, no cloud sync, no tracking — just you and your goals.
+Tempo works completely offline and encrypts your data at rest — including anything you export as a backup. Your data never leaves your device. No accounts, no cloud sync, no tracking — just you and your goals.
 
 <b>⭐ WHY CHOOSE TEMPO?</b>
 🎯 <b>Focused</b> — no ads, no distractions
 🗓️ <b>Flexible</b> — build routines for specific days of the week
 📊 <b>Visual</b> — beautiful progress indicators and expressive animations
 🔔 <b>Gentle Reminders</b> — notifications that help, not nag
-🔒 <b>Private by design</b> — a true offline habit tracker and productivity app
+🔐 <b>Encrypted & private by design</b> — a true offline habit tracker and productivity app
 
 Start small, build chains, and master your day with Tempo — your habit tracker, routine builder, and to-do list, all in one.

@@ -26,6 +26,8 @@ and Spanish — are in [`distribution/screenshots/`](distribution/screenshots/RE
 - **Habits & routines** — habit chains, history visualization, and live-activity style
   reminder notifications.
 - **Reminders** — exact-alarm scheduling that survives reboot and time/timezone changes.
+- **Encrypted at rest** — local database (SQLCipher, Android Keystore-protected key) and
+  backup exports (user passphrase) are both encrypted.
 - **Theming** — Material 3 / Material You dynamic color and a configurable theme setting.
 - **Localized** — English and Spanish (`values/`, `values-es/`).
 
@@ -37,7 +39,7 @@ and Spanish — are in [`distribution/screenshots/`](distribution/screenshots/RE
 | UI | Jetpack Compose, Material 3, Navigation 3 |
 | Architecture | Clean Architecture + MVI (Screen/Content split) |
 | DI | Hilt |
-| Persistence | Room (schemas exported & verified in CI) |
+| Persistence | Room, encrypted at rest via SQLCipher (schemas exported & verified in CI) |
 | Async | Coroutines, `kotlinx-datetime`, `kotlinx-collections-immutable` |
 | Background | WorkManager + AlarmManager reminders |
 | Testing | JUnit 4, MockK, Truth, Turbine, Compose UI tests |
@@ -88,6 +90,9 @@ this project.
 
 ## Security & privacy
 
+- The local database and exported backups are encrypted at rest — see
+  [`docs/DB_ENCRYPTION.md`](docs/DB_ENCRYPTION.md) and the
+  [Encryption section](docs/BACKUP_FORMAT.md#encryption) of the backup format doc.
 - Report vulnerabilities per [`SECURITY.md`](SECURITY.md).
 - See the [Privacy Policy](docs/PRIVACY_POLICY.md).
 
