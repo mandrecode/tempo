@@ -27,12 +27,23 @@ that distinction matters.
 ### Unrecoverable key failure
 
 If the encrypted-passphrase blob exists but the Keystore key needed to decrypt it is gone or
-invalidated (an unusual OS/device condition), `KeystoreDbPassphraseProvider` throws
-`UnrecoverableDatabaseKeyException` rather than silently minting a new passphrase. Generating a
-new passphrase in that state would permanently orphan the existing encrypted database — the old
-data would still be on disk, encrypted with a key nothing can reproduce. This exception must
-propagate as a loud, distinct failure at the `TempoDatabase.getDatabase()` call site, never be
-swallowed into a generic crash or a silent data reset.
+invalidated, `KeystoreDbPassphraseProvider` throws `UnrecoverableDatabaseKeyException` rather
+than silently minting a new passphrase. Generating a new passphrase in that state would
+permanently orphan the existing encrypted database — the old data would still be on disk,
+encrypted with a key nothing can reproduce. This exception must propagate as a loud, distinct
+failure at the `TempoDatabase.getDatabase()` call site, never be swallowed into a generic crash
+or a silent data reset.
+
+This is not just a rare OS/device edge case: Android Keystore keys are hardware-bound and are
+**never** included in Auto Backup or device-to-device transfer, by design. Without an explicit
+exclusion, a stock Android backup would restore `tempo_database` and the `tempo_secure_prefs`
+blob to a new device while leaving the Keystore key behind — hitting this exact failure on every
+launch of the restored app. `app/src/main/res/xml/data_extraction_rules.xml` (API 31+) and
+`backup_rules.xml` (API 23-30) both exclude the database file (plus its `-wal`/`-shm` sidecars)
+and the secure prefs file for exactly this reason, so a restore/transfer is indistinguishable
+from a fresh install instead of reproducing this failure. Users who want their data on a new
+device should use **Settings → Backup** export/import, which carries its own passphrase and
+isn't tied to Keystore state at all.
 
 ## Migrating existing installs
 

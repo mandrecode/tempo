@@ -43,15 +43,22 @@ data class BackupEnvelopeDto(
     val schemaVersion: Int,
 )
 
+/** Highest encryption envelope version this app can decrypt and the version it writes. */
+const val ENCRYPTION_ENVELOPE_VERSION = 1
+
 /**
  * On-disk shape of an encrypted export (the `.tempo` format) — an outer envelope wrapping an
  * AES-256-GCM-encrypted [BackupFileDto] JSON string, keyed by a passphrase-derived key (see
  * `BackupEncryptionService`). Orthogonal to [BackupFileDto.schemaVersion]: this only changes
  * when the *encryption* format changes, documented in `docs/BACKUP_FORMAT.md`.
+ *
+ * [encryptionVersion] has no default: a missing value must fail to decode rather than silently
+ * defaulting to a version — that would let arbitrary JSON sharing the other field names be
+ * misidentified as a genuine encrypted envelope.
  */
 @Serializable
 data class BackupEncryptedEnvelopeDto(
-    val encryptionVersion: Int = 1,
+    val encryptionVersion: Int,
     val kdf: String,
     val iterations: Int,
     val salt: String,

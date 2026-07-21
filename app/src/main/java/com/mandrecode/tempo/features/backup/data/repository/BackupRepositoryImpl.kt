@@ -16,6 +16,7 @@ import com.mandrecode.tempo.features.backup.data.mapper.toEnvelope
 import com.mandrecode.tempo.features.backup.data.model.BackupEncryptedEnvelopeDto
 import com.mandrecode.tempo.features.backup.data.model.BackupEnvelopeDto
 import com.mandrecode.tempo.features.backup.data.model.BackupFileDto
+import com.mandrecode.tempo.features.backup.data.model.ENCRYPTION_ENVELOPE_VERSION
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ChainMembership
@@ -49,9 +50,6 @@ import kotlin.time.Clock
 
 /** Highest backup schema version this app can read and the version it writes. */
 const val BACKUP_SCHEMA_VERSION = 1
-
-/** Highest encryption envelope version this app can decrypt and the version it writes. */
-private const val SUPPORTED_ENCRYPTION_VERSION = 1
 
 class BackupRepositoryImpl
     @Inject
@@ -355,7 +353,7 @@ private fun resolvePlaintext(
 }
 
 /**
- * Only decodes envelopes at [SUPPORTED_ENCRYPTION_VERSION]; a future, newer envelope version
+ * Only decodes envelopes at [ENCRYPTION_ENVELOPE_VERSION]; a future, newer envelope version
  * this build doesn't understand must be treated as "not a decryptable envelope" rather than
  * risk decrypting a payload laid out differently than this code assumes.
  */
@@ -369,7 +367,7 @@ private fun decodeEnvelopeOrNull(
         } catch (_: SerializationException) {
             return null
         }
-    return dto.takeIf { it.encryptionVersion == SUPPORTED_ENCRYPTION_VERSION }
+    return dto.takeIf { it.encryptionVersion == ENCRYPTION_ENVELOPE_VERSION }
 }
 
 /** [BackupEncryptedEnvelopeDto.toEnvelope] base64-decodes its fields and can throw on bad input. */

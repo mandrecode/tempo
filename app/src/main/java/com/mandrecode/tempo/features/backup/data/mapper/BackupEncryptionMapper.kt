@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.backup.data.mapper
 
 import com.mandrecode.tempo.features.backup.data.model.BackupEncryptedEnvelopeDto
+import com.mandrecode.tempo.features.backup.data.model.ENCRYPTION_ENVELOPE_VERSION
 import com.mandrecode.tempo.infrastructure.security.EncryptedEnvelope
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
@@ -15,6 +16,7 @@ import kotlin.io.encoding.ExperimentalEncodingApi
 @OptIn(ExperimentalEncodingApi::class)
 fun EncryptedEnvelope.toDto(): BackupEncryptedEnvelopeDto =
     BackupEncryptedEnvelopeDto(
+        encryptionVersion = ENCRYPTION_ENVELOPE_VERSION,
         kdf = kdf,
         iterations = iterations,
         salt = Base64.Default.encode(salt),
