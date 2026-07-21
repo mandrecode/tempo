@@ -9,8 +9,10 @@ device storage); it does not protect against an attacker who can already run cod
 ## Key lifecycle
 
 The database passphrase is not a human password — it's 32 random bytes generated once per
-install and used directly as SQLCipher's raw encryption key (no additional KDF pass, since it's
-already high-entropy key material rather than something requiring stretching).
+install. It is still passed to SQLCipher as a bound byte[] parameter (never as the `x'<hex>'`
+raw-key literal), so SQLCipher runs it through its own internal PBKDF2 derivation just like any
+other passphrase; see [Migrating existing installs](#migrating-existing-installs) below for why
+that distinction matters.
 
 1. On first run, `KeystoreDbPassphraseProvider` (`core/data/local/security/`) generates an
    AES-256 key in the Android Keystore (alias `tempo_db_passphrase_key`, `AndroidKeyStore`

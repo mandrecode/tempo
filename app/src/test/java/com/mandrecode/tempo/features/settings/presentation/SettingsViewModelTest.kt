@@ -470,13 +470,18 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `export destination without a confirmed passphrase does nothing`() =
+    fun `export destination without a confirmed passphrase shows an error instead of silently doing nothing`() =
         runTest {
             val uri = mockk<Uri>()
 
-            viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
-            advanceUntilIdle()
+            viewModel.uiEffect.test {
+                viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
+                advanceUntilIdle()
 
+                assertThat(awaitItem()).isEqualTo(
+                    SettingsContract.UiEffect.ShowMessage(com.mandrecode.tempo.R.string.backup_export_error),
+                )
+            }
             coVerify(exactly = 0) { exportBackup(any()) }
             coVerify(exactly = 0) { backupFileDataSource.write(any(), any()) }
         }
@@ -501,6 +506,28 @@ class SettingsViewModelTest {
                     SettingsContract.UiEffect.ShowMessage(com.mandrecode.tempo.R.string.backup_export_error),
                 )
             }
+        }
+
+    @Test
+    fun `failed export write keeps the pending payload so a retry can succeed without re-entering the passphrase`() =
+        runTest {
+            coEvery { exportBackup(any()) } returns
+                ExportBackupUseCase.Export(json = "{\"encryptionVersion\":1}", suggestedFileName = "f.tempo")
+            coEvery { backupFileDataSource.write(any(), any()) } throws java.io.IOException("nope") andThen Unit
+            val uri = mockk<Uri>()
+
+            viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
+            viewModel.onEvent(SettingsContract.UiEvent.ExportPassphraseConfirmed("secret", "secret"))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
+            advanceUntilIdle()
+
+            // Retry without generating a new export or re-entering the passphrase.
+            viewModel.onEvent(SettingsContract.UiEvent.ExportDestinationPicked(uri))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { exportBackup(any()) }
+            coVerify(exactly = 2) { backupFileDataSource.write(uri, "{\"encryptionVersion\":1}") }
         }
 
     @Test

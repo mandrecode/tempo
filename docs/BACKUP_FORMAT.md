@@ -21,7 +21,7 @@ The written file is a JSON **envelope** distinct from the record schema below, m
 |:---|:---|:---|
 | `encryptionVersion` | int | Encryption envelope format version. |
 | `kdf` | string | Key derivation function, currently always `"PBKDF2WithHmacSHA256"`. |
-| `iterations` | int | KDF iteration count (200,000 for envelope version 1). |
+| `iterations` | int | KDF iteration count, recorded per-file at export time so a stronger value can be adopted later without breaking older exports (currently 200,000). |
 | `salt` | string | Base64-encoded random salt, unique per export. |
 | `iv` | string | Base64-encoded AES-GCM initialization vector. |
 | `ciphertext` | string | Base64-encoded AES-256-GCM ciphertext of the plaintext record JSON described below. |

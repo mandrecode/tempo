@@ -25,8 +25,10 @@ import kotlin.io.encoding.ExperimentalEncodingApi
  * Protects the local database's passphrase with an Android Keystore-backed AES key so the
  * database can be opened transparently on every launch, with no user-facing secret.
  *
- * The passphrase itself is random key material (not a human password), so it is used directly
- * as SQLCipher's raw encryption key rather than a KDF-stretched passphrase.
+ * The passphrase itself is random key material (not a human password) — but it is still passed
+ * to SQLCipher as a bound byte[] parameter, so SQLCipher runs it through its own internal PBKDF2
+ * derivation like any other passphrase (as opposed to the `x'<hex>'` raw-key literal syntax,
+ * which would skip that derivation and produce a different final encryption key).
  */
 @OptIn(ExperimentalEncodingApi::class)
 class KeystoreDbPassphraseProvider
@@ -73,7 +75,11 @@ class KeystoreDbPassphraseProvider
             if (parts.size != 2) {
                 throw UnrecoverableDatabaseKeyException("Stored database key blob is malformed")
             }
-            return Base64.Default.decode(parts[0]) to Base64.Default.decode(parts[1])
+            return try {
+                Base64.Default.decode(parts[0]) to Base64.Default.decode(parts[1])
+            } catch (e: IllegalArgumentException) {
+                throw UnrecoverableDatabaseKeyException("Stored database key blob is not valid base64", e)
+            }
         }
 
         private fun requireKeystoreKey(): SecretKey =
@@ -92,12 +98,27 @@ class KeystoreDbPassphraseProvider
             ciphertext: ByteArray,
         ): ByteArray =
             try {
-                val cipher = Cipher.getInstance(TRANSFORMATION)
-                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
-                cipher.doFinal(ciphertext)
+                runCipher(key, iv, ciphertext)
             } catch (e: KeyPermanentlyInvalidatedException) {
                 throw UnrecoverableDatabaseKeyException("Database Keystore key was invalidated", e)
             } catch (e: GeneralSecurityException) {
+                throw UnrecoverableDatabaseKeyException("Unable to decrypt the stored database key", e)
+            }
+
+        /** Split out so both this and [decryptWithKey] stay within detekt's per-function ThrowsCount. */
+        private fun runCipher(
+            key: SecretKey,
+            iv: ByteArray,
+            ciphertext: ByteArray,
+        ): ByteArray =
+            try {
+                val cipher = Cipher.getInstance(TRANSFORMATION)
+                cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
+                cipher.doFinal(ciphertext)
+            } catch (e: IllegalArgumentException) {
+                // e.g. a malformed IV length from a corrupted blob that still happened to be
+                // valid base64 — GCMParameterSpec/Cipher.init can throw this instead of a
+                // GeneralSecurityException, and it must map to the same domain exception.
                 throw UnrecoverableDatabaseKeyException("Unable to decrypt the stored database key", e)
             }
 

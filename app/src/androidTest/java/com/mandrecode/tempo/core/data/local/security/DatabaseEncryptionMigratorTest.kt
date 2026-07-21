@@ -155,4 +155,31 @@ class DatabaseEncryptionMigratorTest {
             assertThat(a).isEqualTo("one for the money")
             assertThat(b).isEqualTo("two for the show")
         }
+
+    @Test
+    fun migrateIfNeeded_cleansUpLeftoverPlaintextBackupAfterASuccessfulSwap() =
+        runTest {
+            seedPlaintextDatabase()
+            migrator.migrateIfNeeded(dbName, passphrase)
+
+            // Simulate a crash *after* both swap renames succeeded but *before* the leftover
+            // plaintext backup (and its stale sidecars, still named after the primary db) were
+            // deleted: recreate that backup file plus fake sidecars alongside the now-current
+            // (already encrypted) primary db file.
+            assertThat(dbFile().exists()).isTrue()
+            backupFile().writeText("leftover plaintext copy of the user's data")
+            val staleWal = File(dbFile().parentFile, "${dbFile().name}-wal")
+            val staleShm = File(dbFile().parentFile, "${dbFile().name}-shm")
+            staleWal.writeText("stale plaintext WAL frames")
+            staleShm.writeText("stale plaintext shared-memory file")
+
+            migrator.migrateIfNeeded(dbName, passphrase)
+
+            assertThat(backupFile().exists()).isFalse()
+            assertThat(staleWal.exists()).isFalse()
+            assertThat(staleShm.exists()).isFalse()
+            val (a, b) = readRowFromEncrypted()
+            assertThat(a).isEqualTo("one for the money")
+            assertThat(b).isEqualTo("two for the show")
+        }
 }

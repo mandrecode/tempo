@@ -40,7 +40,14 @@ class TempoApp :
         // (DoubleCheck), so triggering that resolution here means the first ViewModel that
         // needs the database moments later — on the main thread — finds it already built (or
         // waits only for whatever's left) instead of paying the full cost itself.
-        applicationScope.launch { tempoDatabaseLazy.get() }
+        //
+        // A failure here (e.g. UnrecoverableDatabaseKeyException) must not crash the process:
+        // an uncaught exception on a coroutine without a CoroutineExceptionHandler propagates
+        // to this thread's default handler and takes the app down before any UI can show an
+        // error. Swallowing it here is safe — Dagger's DoubleCheck doesn't cache a failed
+        // resolution, so the real caller (e.g. the first ViewModel) retries and surfaces the
+        // same failure properly through the normal call path.
+        applicationScope.launch { runCatching { tempoDatabaseLazy.get() } }
     }
 
     override val workManagerConfiguration: Configuration

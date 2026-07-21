@@ -57,9 +57,29 @@ class KeystoreDbPassphraseProviderTest {
             assertThat(passphrase).hasLength(32)
         }
 
+    @Test
+    fun getOrCreatePassphrase_malformedStoredBlobThrowsUnrecoverableException() =
+        runTest {
+            // A corrupted blob's base64 decode failing must surface as the domain-specific
+            // exception, not a raw IllegalArgumentException, so callers have one exception
+            // type to handle for "this database's key can never be recovered".
+            context
+                .getSharedPreferences(SECURE_PREFS_FILE_NAME, Context.MODE_PRIVATE)
+                .edit()
+                .putString(KEY_PASSPHRASE_BLOB, "not-valid-base64!!!.also-not-valid!!!")
+                .commit()
+
+            val thrown =
+                runCatching { KeystoreDbPassphraseProvider(context).getOrCreatePassphrase() }
+                    .exceptionOrNull()
+
+            assertThat(thrown).isInstanceOf(UnrecoverableDatabaseKeyException::class.java)
+        }
+
     private companion object {
         const val ANDROID_KEY_STORE = "AndroidKeyStore"
         const val KEY_ALIAS = "tempo_db_passphrase_key"
         const val SECURE_PREFS_FILE_NAME = "tempo_secure_prefs"
+        const val KEY_PASSPHRASE_BLOB = "db_passphrase_blob"
     }
 }

@@ -272,6 +272,23 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `envelope with an unsupported encryption version is not treated as an envelope`() =
+        runTest {
+            // A future, newer envelope version this build doesn't understand must fall back to
+            // "not decryptable" rather than risk decrypting a payload laid out differently than
+            // this code assumes.
+            val json =
+                """
+                {"encryptionVersion":2,"kdf":"PBKDF2WithHmacSHA256","iterations":200000,
+                 "salt":"c2FsdA==","iv":"aXY=","ciphertext":"Y2lwaGVy"}
+                """.trimIndent()
+
+            assertThat(repository.isEncryptedBackup(json)).isFalse()
+            val outcome = repository.importFromJson(json, ImportMode.MERGE, testPassphrase)
+            assertThat(outcome).isEqualTo(ImportOutcome.CorruptFile)
+        }
+
+    @Test
     fun `replace payload without a default but containing inbox id marks it default`() =
         runTest {
             val json =

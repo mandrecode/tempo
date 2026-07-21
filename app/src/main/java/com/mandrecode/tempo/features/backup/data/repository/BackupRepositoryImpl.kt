@@ -50,6 +50,9 @@ import kotlin.time.Clock
 /** Highest backup schema version this app can read and the version it writes. */
 const val BACKUP_SCHEMA_VERSION = 1
 
+/** Highest encryption envelope version this app can decrypt and the version it writes. */
+private const val SUPPORTED_ENCRYPTION_VERSION = 1
+
 class BackupRepositoryImpl
     @Inject
     constructor(
@@ -351,15 +354,23 @@ private fun resolvePlaintext(
     }
 }
 
+/**
+ * Only decodes envelopes at [SUPPORTED_ENCRYPTION_VERSION]; a future, newer envelope version
+ * this build doesn't understand must be treated as "not a decryptable envelope" rather than
+ * risk decrypting a payload laid out differently than this code assumes.
+ */
 private fun decodeEnvelopeOrNull(
     content: String,
     jsonFormat: Json,
-): BackupEncryptedEnvelopeDto? =
-    try {
-        jsonFormat.decodeFromString<BackupEncryptedEnvelopeDto>(content)
-    } catch (_: SerializationException) {
-        null
-    }
+): BackupEncryptedEnvelopeDto? {
+    val dto =
+        try {
+            jsonFormat.decodeFromString<BackupEncryptedEnvelopeDto>(content)
+        } catch (_: SerializationException) {
+            return null
+        }
+    return dto.takeIf { it.encryptionVersion == SUPPORTED_ENCRYPTION_VERSION }
+}
 
 /** [BackupEncryptedEnvelopeDto.toEnvelope] base64-decodes its fields and can throw on bad input. */
 private fun toEncryptedEnvelopeOrNull(dto: BackupEncryptedEnvelopeDto): EncryptedEnvelope? =

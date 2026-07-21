@@ -39,7 +39,13 @@ class SettingsBackupDelegate
 
         private var pendingExportPayload: String? = null
         private var pendingImportContent: String? = null
-        private var pendingImportPassphrase: String? = null
+
+        /**
+         * Held as a [CharArray], not a [String]: strings are immutable and can't be wiped from
+         * memory, so this is zeroed explicitly via [clearImportPassphrase] as soon as it's no
+         * longer needed instead of waiting on the garbage collector.
+         */
+        private var pendingImportPassphrase: CharArray? = null
         private var pendingImportMode: ImportMode? = null
 
         /**
@@ -124,12 +130,18 @@ class SettingsBackupDelegate
             uri: Uri,
             host: Host,
         ) {
-            val payload = pendingExportPayload ?: return
-            pendingExportPayload = null
+            val payload = pendingExportPayload
+            if (payload == null) {
+                host.sendEffect(SettingsContract.UiEffect.ShowMessage(R.string.backup_export_error))
+                return
+            }
             host.scope.launch {
                 host.updateState { it.copy(backupInProgress = true) }
                 try {
                     backupFileDataSource.write(uri, payload)
+                    // Only clear on success — keeping it on failure lets the user retry (e.g.
+                    // pick a different destination) without redoing the whole export flow.
+                    pendingExportPayload = null
                     host.sendEffect(exportSuccessMessage(uri))
                 } catch (e: CancellationException) {
                     throw e
@@ -183,7 +195,7 @@ class SettingsBackupDelegate
             passphrase: String,
             host: Host,
         ) {
-            pendingImportPassphrase = passphrase
+            pendingImportPassphrase = passphrase.toCharArray()
             val rememberedMode = pendingImportMode
             if (rememberedMode != null) {
                 attemptImport(rememberedMode, host)
@@ -210,9 +222,9 @@ class SettingsBackupDelegate
                 host.updateState { it.copy(backupDialog = null, backupInProgress = true) }
                 val dialog =
                     try {
-                        val outcome = importBackup(content, mode, passphrase?.toCharArray())
+                        val outcome = importBackup(content, mode, passphrase)
                         if (outcome is ImportOutcome.WrongPassphrase) {
-                            pendingImportPassphrase = null
+                            clearImportPassphrase()
                         } else {
                             clearPendingImportState()
                         }
@@ -238,8 +250,13 @@ class SettingsBackupDelegate
 
         private fun clearPendingImportState() {
             pendingImportContent = null
-            pendingImportPassphrase = null
+            clearImportPassphrase()
             pendingImportMode = null
+        }
+
+        private fun clearImportPassphrase() {
+            pendingImportPassphrase?.fill('\u0000')
+            pendingImportPassphrase = null
         }
 
         /** Names the destination folder when recognizable, e.g. "Exported to Downloads". */
