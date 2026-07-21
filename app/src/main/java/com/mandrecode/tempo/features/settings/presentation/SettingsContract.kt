@@ -1,6 +1,11 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import android.net.Uri
+import androidx.annotation.StringRes
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
+import com.mandrecode.tempo.features.backup.domain.model.ImportMode
+import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -27,7 +32,44 @@ object SettingsContract {
         val defaultTab: DefaultTab = DefaultTab.ROUTINES,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
+        val backupInProgress: Boolean = false,
+        val backupDialog: BackupDialog? = null,
     )
+
+    /** Modal state of the Settings Backup section. */
+    sealed interface BackupDialog {
+        /** A file was picked for import; the user chooses Merge or Replace. */
+        data object ChooseImportMode : BackupDialog
+
+        data class ImportSucceeded(
+            val imported: Int,
+            val skipped: Int,
+            val conflicts: ImmutableList<ImportConflict>,
+        ) : BackupDialog
+
+        data class ImportFailed(
+            val error: ImportError,
+        ) : BackupDialog
+    }
+
+    /** User-facing import failure, mirroring the domain outcome plus file-read errors. */
+    sealed interface ImportError {
+        data class UnsupportedVersion(
+            val fileVersion: Int,
+            val maxSupported: Int,
+        ) : ImportError
+
+        data object CorruptFile : ImportError
+
+        data class ValidationFailed(
+            val issues: ImmutableList<ValidationIssue>,
+        ) : ImportError
+
+        data object ReadFailed : ImportError
+
+        /** Unexpected failure while applying the import; the database was rolled back. */
+        data object Unexpected : ImportError
+    }
 
     /**
      * UI Events that can be triggered from the Settings screen.
@@ -60,13 +102,42 @@ object SettingsContract {
         data class CompletedTaskRetentionDaysChanged(
             val days: Int,
         ) : UiEvent
+
+        data object ExportClicked : UiEvent
+
+        data class ExportDestinationPicked(
+            val uri: Uri,
+        ) : UiEvent
+
+        data object ExportCancelled : UiEvent
+
+        data object ImportClicked : UiEvent
+
+        data class ImportFilePicked(
+            val uri: Uri,
+        ) : UiEvent
+
+        data class ImportModeChosen(
+            val mode: ImportMode,
+        ) : UiEvent
+
+        data object BackupDialogDismissed : UiEvent
     }
 
     /**
      * One-time UI Effects for Settings screen.
      */
     sealed interface UiEffect {
-        // No effects needed for now
+        data class LaunchExportPicker(
+            val suggestedFileName: String,
+        ) : UiEffect
+
+        data object LaunchImportPicker : UiEffect
+
+        data class ShowMessage(
+            @param:StringRes val message: Int,
+            val formatArgs: List<Any> = emptyList(),
+        ) : UiEffect
     }
 
     /**

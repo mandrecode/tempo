@@ -11,6 +11,8 @@ import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesReposito
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepositoryImpl
+import com.mandrecode.tempo.features.backup.data.repository.BackupRepositoryImpl
+import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
 import com.mandrecode.tempo.features.routines.data.repository.HabitChainRepositoryImpl
 import com.mandrecode.tempo.features.routines.data.repository.HabitRepositoryImpl
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
@@ -57,4 +59,7 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCompletedTaskRetentionPreferences(impl: CompletedTaskRetentionPreferencesImpl): CompletedTaskRetentionPreferences
+
+    @Binds
+    abstract fun bindBackupRepository(impl: BackupRepositoryImpl): BackupRepository
 }

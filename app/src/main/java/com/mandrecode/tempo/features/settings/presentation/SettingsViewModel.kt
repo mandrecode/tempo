@@ -10,10 +10,12 @@ import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetent
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,9 +29,20 @@ class SettingsViewModel
         private val appVersionProvider: AppVersionProvider,
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
+        private val backupDelegate: SettingsBackupDelegate,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
         val uiState: StateFlow<SettingsContract.UiState> = _uiState.asStateFlow()
+
+        private val _uiEffect = Channel<SettingsContract.UiEffect>(Channel.BUFFERED)
+        val uiEffect = _uiEffect.receiveAsFlow()
+
+        private val backupHost =
+            SettingsBackupDelegate.Host(
+                scope = viewModelScope,
+                updateState = { transform -> _uiState.update(transform) },
+                sendEffect = { effect -> _uiEffect.trySend(effect) },
+            )
 
         init {
             observeThemeMode()
@@ -121,6 +134,15 @@ class SettingsViewModel
                         days = event.days,
                     )
                 }
+
+                is SettingsContract.UiEvent.ExportClicked,
+                is SettingsContract.UiEvent.ExportDestinationPicked,
+                is SettingsContract.UiEvent.ExportCancelled,
+                is SettingsContract.UiEvent.ImportClicked,
+                is SettingsContract.UiEvent.ImportFilePicked,
+                is SettingsContract.UiEvent.ImportModeChosen,
+                is SettingsContract.UiEvent.BackupDialogDismissed,
+                -> backupDelegate.onEvent(event, backupHost)
             }
         }
 

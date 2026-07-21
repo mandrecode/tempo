@@ -45,4 +45,10 @@ interface HabitChainDao {
         id: Long,
         completionHistory: String,
     )
+
+    @Query("SELECT * FROM habit_chains ORDER BY id ASC")
+    suspend fun getAllHabitChainsSync(): List<HabitChainEntity>
+
+    @Query("DELETE FROM habit_chains")
+    suspend fun deleteAllHabitChains()
 }

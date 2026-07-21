@@ -66,6 +66,7 @@ fun SettingsContent(
         CompletedTaskRetentionSection(uiState = uiState, onEvent = onEvent)
         TabsAndNavigationSection(uiState = uiState, onEvent = onEvent)
         DefaultTabSection(uiState = uiState, onEvent = onEvent)
+        BackupSection(uiState = uiState, onEvent = onEvent)
         NotificationsSection()
         LanguageSection()
         AboutSection(

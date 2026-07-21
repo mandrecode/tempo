@@ -22,4 +22,10 @@ interface HabitChainMemberDao {
 
     @Query("DELETE FROM habit_chain_members WHERE chainId = :chainId")
     suspend fun deleteByChainId(chainId: Long)
+
+    @Query("SELECT * FROM habit_chain_members ORDER BY chainId, sortOrder")
+    suspend fun getAllMembersSync(): List<HabitChainMemberEntity>
+
+    @Query("DELETE FROM habit_chain_members")
+    suspend fun deleteAllMembers()
 }
