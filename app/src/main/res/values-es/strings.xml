@@ -499,6 +499,12 @@
     <string name="onboarding_appearance_description">Empieza con la paleta característica de Tempo o adapta la app al fondo en dispositivos compatibles.</string>
     <string name="onboarding_setup_title">Prepara tu primera sesión</string>
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
+    <string name="whats_new_legend">Novedades en la v%1$s: %2$s</string>
+    <string name="whats_new_got_it">Entendido</string>
+    <string name="whats_new_210_title">Descubre las novedades</string>
+    <string name="whats_new_210_description">Tras una actualización, aquí aparecerá un breve resumen de la última función — como este mismo.</string>
+    <string name="whats_new_26_title">Importa y exporta tus datos</string>
+    <string name="whats_new_26_description">Haz una copia de seguridad de tus tareas y rutinas en un archivo, o restáuralas en otro dispositivo, desde Ajustes.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>

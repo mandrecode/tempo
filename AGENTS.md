@@ -89,6 +89,7 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it i
 2. **Data**: entity in `core/data/entity/`, DAO in `core/data/local/dao/`, mapper in `features/[feat]/data/mapper/`, repo impl in `data/repository/`, add `@Binds` in `core/di/RepositoryModule.kt`
 3. **UI**: Contract (`UiState`/`UiEvent`/`UiEffect`), ViewModel, Screen, Content + Previews in `src/debug/`
 4. **Tests**: unit test use cases and ViewModel; UI test Content composable
+5. **What's New**: prepend a `WhatsNewEntry` to `WhatsNewRegistry.entries` (`features/whatsnew/presentation/WhatsNewRegistry.kt`) with the feature's version, title, and a short description, so it's announced once via the "what's new" bottom sheet
 
 ## Room Schema
 
