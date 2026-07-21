@@ -7,16 +7,17 @@ interface BackupRepository {
     /** Serializes the full local dataset and encrypts it with a key derived from [passphrase]. */
     suspend fun exportEncrypted(passphrase: CharArray): String
 
-    /** True when [content] is this app's encrypted backup envelope rather than a legacy plaintext export. */
+    /** True when [content] is this app's encrypted backup envelope — every valid export is one. */
     fun isEncryptedBackup(content: String): Boolean
 
     /**
-     * Applies a backup document to the local database. [passphrase] is required when
-     * [content] is an encrypted envelope (see [isEncryptedBackup]) and ignored otherwise;
-     * a wrong passphrase surfaces as [ImportOutcome.WrongPassphrase]. Decoding, decryption,
-     * version check and payload validation all happen before any write; database mutations
-     * run in a single transaction, so any non-[ImportOutcome.Success] result (or thrown
-     * error) leaves local data untouched.
+     * Applies a backup document to the local database. [passphrase] decrypts [content], which
+     * must be an encrypted envelope (see [isEncryptedBackup]) — there is no unencrypted backup
+     * format to fall back to, so a missing envelope or a missing/wrong passphrase both surface
+     * as a failure ([ImportOutcome.CorruptFile] or [ImportOutcome.WrongPassphrase] respectively).
+     * Decoding, decryption, version check and payload validation all happen before any write;
+     * database mutations run in a single transaction, so any non-[ImportOutcome.Success] result
+     * (or thrown error) leaves local data untouched.
      */
     suspend fun importFromJson(
         content: String,

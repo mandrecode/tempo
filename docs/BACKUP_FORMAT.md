@@ -31,11 +31,10 @@ described in [Envelope](#envelope) onward. Encryption is a wrapper around that d
 replacement for it — `encryptionVersion` and `schemaVersion` evolve independently. A wrong
 passphrase is detected via AES-GCM authentication failure, not garbled output.
 
-The suggested export filename uses the `.tempo` extension (e.g. `tempo-backup-20260721-1000.tempo`)
-rather than `.json`, signaling that the file is this encrypted envelope, not plain JSON. Import
-still accepts older plaintext `.json` exports (files written before this envelope existed):
-the importer detects the format by attempting to decode the encrypted envelope first, falling
-back to plain-JSON decoding when that fails, so no passphrase is requested for those files.
+The suggested export filename uses the `.tempo` extension (e.g. `backup-20260721-1000.tempo`)
+rather than `.json`, signaling that the file is this encrypted envelope, not plain JSON. There is
+no unencrypted backup format to import: content that doesn't decode as an envelope is reported
+as corrupt rather than imported as-is.
 
 The encryption DTOs live in `BackupEncryptedEnvelopeDto` in the same `BackupFileDto.kt` file, and
 the KDF/cipher logic lives in `infrastructure/security/BackupEncryptionService.kt`.

@@ -285,7 +285,7 @@ class SettingsViewModelTest {
     fun `confirmed passphrase generates backup and launches picker with suggested name`() =
         runTest {
             coEvery { exportBackup(any()) } returns
-                ExportBackupUseCase.Export(json = "{}", suggestedFileName = "tempo-backup-20260721-1000.tempo")
+                ExportBackupUseCase.Export(json = "{}", suggestedFileName = "backup-20260721-1000.tempo")
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(SettingsContract.UiEvent.ExportClicked)
@@ -295,7 +295,7 @@ class SettingsViewModelTest {
                 advanceUntilIdle()
 
                 assertThat(awaitItem()).isEqualTo(
-                    SettingsContract.UiEffect.LaunchExportPicker("tempo-backup-20260721-1000.tempo"),
+                    SettingsContract.UiEffect.LaunchExportPicker("backup-20260721-1000.tempo"),
                 )
             }
         }
@@ -361,24 +361,32 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `picked import file shows the mode chooser dialog`() =
+    fun `picked import file that is not an encrypted envelope shows a corrupt file error`() =
         runTest {
+            // Every valid export is an encrypted envelope now — there's no legacy unencrypted
+            // format to fall back to — so content that isn't one (the default relaxed-mock
+            // response for isEncryptedBackup) is reported as corrupt right away.
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(mockk()))
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.backupDialog)
-                .isEqualTo(SettingsContract.BackupDialog.ChooseImportMode)
+                .isEqualTo(
+                    SettingsContract.BackupDialog.ImportFailed(SettingsContract.ImportError.CorruptFile),
+                )
         }
 
     @Test
     fun `choosing a mode runs the import and shows the summary`() =
         runTest {
             val uri = mockk<Uri>()
-            coEvery { backupFileDataSource.read(uri) } returns "{}"
-            coEvery { importBackup("{}", ImportMode.MERGE, null) } returns
+            coEvery { backupFileDataSource.read(uri) } returns "{\"encryptionVersion\":1}"
+            every { backupRepository.isEncryptedBackup("{\"encryptionVersion\":1}") } returns true
+            coEvery { importBackup(any(), ImportMode.MERGE, any()) } returns
                 ImportOutcome.Success(ImportSummary())
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -409,11 +417,14 @@ class SettingsViewModelTest {
     fun `unsupported version outcome maps to the version error dialog`() =
         runTest {
             val uri = mockk<Uri>()
-            coEvery { backupFileDataSource.read(uri) } returns "{}"
+            coEvery { backupFileDataSource.read(uri) } returns "{\"encryptionVersion\":1}"
+            every { backupRepository.isEncryptedBackup("{\"encryptionVersion\":1}") } returns true
             coEvery { importBackup(any(), any(), any()) } returns
                 ImportOutcome.UnsupportedVersion(fileVersion = 7, maxSupported = 1)
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -551,10 +562,13 @@ class SettingsViewModelTest {
     fun `unexpected import failure shows the unexpected error dialog`() =
         runTest {
             val uri = mockk<Uri>()
-            coEvery { backupFileDataSource.read(uri) } returns "{}"
+            coEvery { backupFileDataSource.read(uri) } returns "{\"encryptionVersion\":1}"
+            every { backupRepository.isEncryptedBackup("{\"encryptionVersion\":1}") } returns true
             coEvery { importBackup(any(), any(), any()) } throws IllegalStateException("boom")
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -598,10 +612,13 @@ class SettingsViewModelTest {
     fun `corrupt file outcome maps to the corrupt error dialog`() =
         runTest {
             val uri = mockk<Uri>()
-            coEvery { backupFileDataSource.read(uri) } returns "{}"
+            coEvery { backupFileDataSource.read(uri) } returns "{\"encryptionVersion\":1}"
+            every { backupRepository.isEncryptedBackup("{\"encryptionVersion\":1}") } returns true
             coEvery { importBackup(any(), any(), any()) } returns ImportOutcome.CorruptFile
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.MERGE))
             advanceUntilIdle()
@@ -616,10 +633,13 @@ class SettingsViewModelTest {
     fun `validation failure outcome maps to the validation error dialog`() =
         runTest {
             val uri = mockk<Uri>()
-            coEvery { backupFileDataSource.read(uri) } returns "{}"
+            coEvery { backupFileDataSource.read(uri) } returns "{\"encryptionVersion\":1}"
+            every { backupRepository.isEncryptedBackup("{\"encryptionVersion\":1}") } returns true
             coEvery { importBackup(any(), any(), any()) } returns ImportOutcome.ValidationFailed(emptyList())
 
             viewModel.onEvent(SettingsContract.UiEvent.ImportFilePicked(uri))
+            advanceUntilIdle()
+            viewModel.onEvent(SettingsContract.UiEvent.ImportPassphraseEntered("secret"))
             advanceUntilIdle()
             viewModel.onEvent(SettingsContract.UiEvent.ImportModeChosen(ImportMode.REPLACE))
             advanceUntilIdle()

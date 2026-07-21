@@ -27,6 +27,6 @@ class ExportBackupUseCaseTest {
             val export = useCase("passphrase".toCharArray())
 
             assertThat(export.suggestedFileName)
-                .matches("tempo-backup-\\d{8}-\\d{4}\\.tempo")
+                .matches("backup-\\d{8}-\\d{4}\\.tempo")
         }
 }

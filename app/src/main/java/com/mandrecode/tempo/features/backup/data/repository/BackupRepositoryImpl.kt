@@ -325,9 +325,9 @@ private sealed interface PlaintextResolution {
 }
 
 /**
- * Detects and, if needed, decrypts an encrypted backup envelope. Legacy plaintext content
- * (no `encryptionVersion` field) passes through unchanged; a missing or wrong passphrase for
- * genuinely encrypted content resolves to the matching [ImportOutcome] failure.
+ * Decrypts an encrypted backup envelope down to plaintext backup JSON. Every valid export is an
+ * envelope — there is no unencrypted backup format to fall back to — so content that isn't one
+ * is reported as corrupt rather than imported as-is.
  */
 private fun resolvePlaintext(
     content: String,
@@ -338,9 +338,9 @@ private fun resolvePlaintext(
     val envelopeDto = decodeEnvelopeOrNull(content, jsonFormat)
     val envelope = envelopeDto?.let { toEncryptedEnvelopeOrNull(it) }
     return when {
-        envelopeDto == null -> PlaintextResolution.Ready(content)
-        // The JSON decoded fine (right field names/types) but its base64 payloads are
-        // malformed — a tampered or truncated .tempo file, not a wrong-passphrase case.
+        // Not a decodable envelope at all, or one whose base64 payloads are malformed — a
+        // tampered/truncated .tempo file or unrelated JSON, not a wrong-passphrase case.
+        envelopeDto == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
         envelope == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
         passphrase == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
         else ->

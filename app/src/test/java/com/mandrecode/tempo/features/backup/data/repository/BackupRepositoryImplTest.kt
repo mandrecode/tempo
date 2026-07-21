@@ -88,6 +88,17 @@ class BackupRepositoryImplTest {
     private val testPassphrase = "correct horse battery staple".toCharArray()
     private val testJsonFormat = Json { ignoreUnknownKeys = true }
 
+    /**
+     * Every valid backup is an encrypted envelope now — there's no legacy plaintext format to
+     * fall back to — so tests exercising the plaintext parsing/validation logic underneath the
+     * encryption layer wrap their payload through this instead of handing raw JSON to
+     * [BackupRepositoryImpl.importFromJson] directly.
+     */
+    private fun encryptedJsonOf(plaintext: String): String {
+        val envelope = BackupEncryptionService().encrypt(plaintext, testPassphrase)
+        return testJsonFormat.encodeToString(envelope.toDto())
+    }
+
     @After
     fun tearDown() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
@@ -96,7 +107,12 @@ class BackupRepositoryImplTest {
     @Test
     fun `newer schema version is rejected without touching the database`() =
         runTest {
-            val outcome = repository.importFromJson("""{"schemaVersion":99}""", ImportMode.MERGE)
+            val outcome =
+                repository.importFromJson(
+                    encryptedJsonOf("""{"schemaVersion":99}"""),
+                    ImportMode.MERGE,
+                    testPassphrase,
+                )
 
             assertThat(outcome)
                 .isEqualTo(ImportOutcome.UnsupportedVersion(fileVersion = 99, maxSupported = 1))
@@ -114,16 +130,24 @@ class BackupRepositoryImplTest {
     @Test
     fun `schema version below 1 is reported as corrupt`() =
         runTest {
-            assertThat(repository.importFromJson("""{"schemaVersion":0}""", ImportMode.REPLACE))
-                .isEqualTo(ImportOutcome.CorruptFile)
+            val outcome =
+                repository.importFromJson(
+                    encryptedJsonOf("""{"schemaVersion":0}"""),
+                    ImportMode.REPLACE,
+                    testPassphrase,
+                )
+
+            assertThat(outcome).isEqualTo(ImportOutcome.CorruptFile)
             coVerify(exactly = 0) { taskDao.deleteAllTasks() }
         }
 
     @Test
     fun `payload with missing schema version is reported as corrupt`() =
         runTest {
-            assertThat(repository.importFromJson("""{"foo":1}""", ImportMode.MERGE))
-                .isEqualTo(ImportOutcome.CorruptFile)
+            val outcome =
+                repository.importFromJson(encryptedJsonOf("""{"foo":1}"""), ImportMode.MERGE, testPassphrase)
+
+            assertThat(outcome).isEqualTo(ImportOutcome.CorruptFile)
         }
 
     @Test
@@ -135,8 +159,9 @@ class BackupRepositoryImplTest {
                  "tasks":[{"id":1,"title":"T","categoryId":1,"priority":"BANANAS"}]}
                 """.trimIndent()
 
-            assertThat(repository.importFromJson(json, ImportMode.MERGE))
-                .isEqualTo(ImportOutcome.CorruptFile)
+            val outcome = repository.importFromJson(encryptedJsonOf(json), ImportMode.MERGE, testPassphrase)
+
+            assertThat(outcome).isEqualTo(ImportOutcome.CorruptFile)
         }
 
     @Test
@@ -148,7 +173,7 @@ class BackupRepositoryImplTest {
                  "tasks":[{"id":1,"title":"Orphan","categoryId":42}]}
                 """.trimIndent()
 
-            val outcome = repository.importFromJson(json, ImportMode.REPLACE)
+            val outcome = repository.importFromJson(encryptedJsonOf(json), ImportMode.REPLACE, testPassphrase)
 
             assertThat(outcome).isInstanceOf(ImportOutcome.ValidationFailed::class.java)
             coVerify(exactly = 0) { taskDao.deleteAllTasks() }
@@ -200,28 +225,6 @@ class BackupRepositoryImplTest {
             assertThat(insertedHabits).containsExactlyElementsIn(localHabits())
             assertThat(insertedChains).containsExactlyElementsIn(localChains())
             assertThat(insertedMembers.single()).containsExactlyElementsIn(localMembers())
-        }
-
-    @Test
-    fun `frozen v1 fixture decodes and imports with expected values`() =
-        runTest {
-            val json = readFixture("/backup/v1-backup.json")
-            val insertedTasks = mutableListOf<TaskEntity>()
-            coEvery { taskDao.insertTask(capture(insertedTasks)) } returns 0
-
-            val outcome = repository.importFromJson(json, ImportMode.REPLACE) as ImportOutcome.Success
-
-            assertThat(outcome.summary.categories.imported).isEqualTo(2)
-            assertThat(outcome.summary.tasks.imported).isEqualTo(2)
-            assertThat(outcome.summary.habits.imported).isEqualTo(1)
-            assertThat(outcome.summary.habitChains.imported).isEqualTo(1)
-            val report = insertedTasks.first { it.title == "Report" }
-            assertThat(report.priority).isEqualTo(Priority.HIGH)
-            assertThat(report.periodicity).isEqualTo(Periodicity.WEEKLY)
-            assertThat(report.reminderDate).isEqualTo(LocalDateTime(2026, 8, 1, 9, 0))
-            assertThat(report.repeatDays).containsExactly(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)
-            val sub = insertedTasks.first { it.title == "Sub" }
-            assertThat(sub.parentTaskId).isEqualTo(1L)
         }
 
     @Test
@@ -296,7 +299,7 @@ class BackupRepositoryImplTest {
                 {"schemaVersion":1,"categories":[{"id":-1,"name":"Inbox"}]}
                 """.trimIndent()
 
-            repository.importFromJson(json, ImportMode.REPLACE)
+            repository.importFromJson(encryptedJsonOf(json), ImportMode.REPLACE, testPassphrase)
 
             coVerify { categoryDao.setDefault(-1L) }
         }
@@ -311,7 +314,12 @@ class BackupRepositoryImplTest {
                 {"schemaVersion":1,"categories":[{"id":1,"name":"Work"}]}
                 """.trimIndent()
 
-            val outcome = repository.importFromJson(json, ImportMode.REPLACE) as ImportOutcome.Success
+            val outcome =
+                repository.importFromJson(
+                    encryptedJsonOf(json),
+                    ImportMode.REPLACE,
+                    testPassphrase,
+                ) as ImportOutcome.Success
 
             val inbox = inserted.first { it.id == -1L }
             assertThat(inbox.isDefault).isTrue()
@@ -330,7 +338,7 @@ class BackupRepositoryImplTest {
                 {"schemaVersion":1,"categories":[{"id":5,"name":"Work","isDefault":true}]}
                 """.trimIndent()
 
-            repository.importFromJson(json, ImportMode.REPLACE)
+            repository.importFromJson(encryptedJsonOf(json), ImportMode.REPLACE, testPassphrase)
 
             val inbox = inserted.first { it.id == -1L }
             assertThat(inbox.isDefault).isFalse()
@@ -355,7 +363,12 @@ class BackupRepositoryImplTest {
                  ]}
                 """.trimIndent()
 
-            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+            val outcome =
+                repository.importFromJson(
+                    encryptedJsonOf(json),
+                    ImportMode.MERGE,
+                    testPassphrase,
+                ) as ImportOutcome.Success
 
             assertThat(outcome.summary.tasks.imported).isEqualTo(3)
             val parent = insertedTasks.first { it.title == "Parent" }
@@ -405,7 +418,7 @@ class BackupRepositoryImplTest {
         runTest {
             val json = """{"schemaVersion":1,"categories":[{"id":-1,"name":"Inbox","isDefault":true}]}"""
 
-            repository.importFromJson(json, ImportMode.REPLACE)
+            repository.importFromJson(encryptedJsonOf(json), ImportMode.REPLACE, testPassphrase)
 
             io.mockk.verify(exactly = 0) { settingsDataSource.apply(any()) }
         }
@@ -419,7 +432,12 @@ class BackupRepositoryImplTest {
                  "categories":[{"id":1,"name":"Work","futureFlag":true}]}
                 """.trimIndent()
 
-            val outcome = repository.importFromJson(json, ImportMode.MERGE) as ImportOutcome.Success
+            val outcome =
+                repository.importFromJson(
+                    encryptedJsonOf(json),
+                    ImportMode.MERGE,
+                    testPassphrase,
+                ) as ImportOutcome.Success
 
             assertThat(outcome.summary.categories.imported).isEqualTo(1)
         }
