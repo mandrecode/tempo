@@ -207,10 +207,15 @@ class BackupRepositoryImpl
             }
         }
 
-        /** Applies a [MergePlan]: inserts new records with fresh ids, remapping references. */
-        private suspend fun merge(data: BackupData): ImportSummary =
-            database.withTransaction {
-                val plan = mergePlanner.plan(incoming = data, local = readAll())
+        /**
+         * Applies a [MergePlan]: inserts new records with fresh ids, remapping
+         * references. The plan is computed (reading current data and running the
+         * CPU-bound classification) before opening the write transaction, so the
+         * transaction itself only performs mutations.
+         */
+        private suspend fun merge(data: BackupData): ImportSummary {
+            val plan = mergePlanner.plan(incoming = data, local = readAll())
+            return database.withTransaction {
                 val categoryIds = plan.categoryIdMap.toMutableMap()
                 plan.categoriesToInsert.forEach { category ->
                     categoryIds[category.id] =
@@ -237,6 +242,7 @@ class BackupRepositoryImpl
                 )
                 plan.summary
             }
+        }
 
         private suspend fun insertMergedTasks(
             plan: MergePlan,

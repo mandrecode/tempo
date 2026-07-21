@@ -118,6 +118,9 @@ class MergePlanner
             conflicts: MutableList<ImportConflict>,
         ): EntityPlan<Task> {
             val plan = EntityPlan<Task>()
+            // Grouped once so sibling lookup below is a map read instead of a full
+            // scan of local.tasks per incoming task (avoids O(incoming × local)).
+            val localByScope = local.tasks.groupBy { it.scope() }
             val nextSortOrders = mutableMapOf<TaskScope, Int>()
             forEachTaskParentsFirst(incoming.tasks) { task ->
                 // The local scope an incoming task would land in (matched local
@@ -147,7 +150,7 @@ class MergePlanner
                                 plan,
                                 conflicts,
                                 task,
-                                localSiblings(local, scope),
+                                localByScope[scope].orEmpty(),
                                 scope,
                                 nextSortOrders,
                             )
@@ -158,14 +161,11 @@ class MergePlanner
             return plan
         }
 
-        private fun localSiblings(
-            local: BackupData,
-            scope: TaskScope,
-        ): List<Task> =
-            if (scope.parentId != null) {
-                local.tasks.filter { it.parentTaskId == scope.parentId }
+        private fun Task.scope(): TaskScope =
+            if (parentTaskId != null) {
+                TaskScope(parentId = parentTaskId, categoryId = null)
             } else {
-                local.tasks.filter { it.parentTaskId == null && it.categoryId == scope.categoryId }
+                TaskScope(parentId = null, categoryId = categoryId)
             }
 
         private fun classifyScopedTask(
