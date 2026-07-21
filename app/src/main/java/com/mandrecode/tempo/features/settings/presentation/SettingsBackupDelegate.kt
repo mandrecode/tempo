@@ -81,9 +81,12 @@ class SettingsBackupDelegate
                 is SettingsContract.UiEvent.ImportModeChosen -> handleImportModeChosen(event.mode, host)
 
                 is SettingsContract.UiEvent.BackupDialogDismissed -> {
+                    // If a file read is still in flight, cancelling it means neither of its own
+                    // updateState calls (success or IOException branch) will ever run — reset
+                    // backupInProgress here too, or it would stay stuck true (spinner/disabled UI).
                     importReadJob?.cancel()
                     clearPendingImportState()
-                    host.updateState { it.copy(backupDialog = null) }
+                    host.updateState { it.copy(backupDialog = null, backupInProgress = false) }
                 }
 
                 else -> return false

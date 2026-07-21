@@ -85,6 +85,24 @@ class DatabaseEncryptionMigratorTest {
         }
 
     @Test
+    fun migrateIfNeeded_removesStalePlaintextWalAndShmSidecars() =
+        runTest {
+            seedPlaintextDatabase()
+            // A file rename doesn't rename its WAL/SHM sidecars — they stay under the
+            // *original* name, not the `.plaintext.bak` name swapInPlace() renames the main
+            // file to. Simulate leftover sidecars from the plaintext database explicitly.
+            val staleWal = File(dbFile().parentFile, "${dbFile().name}-wal")
+            val staleShm = File(dbFile().parentFile, "${dbFile().name}-shm")
+            staleWal.writeText("stale plaintext WAL frames")
+            staleShm.writeText("stale plaintext shared-memory file")
+
+            migrator.migrateIfNeeded(dbName, passphrase)
+
+            assertThat(staleWal.exists()).isFalse()
+            assertThat(staleShm.exists()).isFalse()
+        }
+
+    @Test
     fun migrateIfNeeded_freshInstallWithNoFile_doesNothing() =
         runTest {
             migrator.migrateIfNeeded(dbName, passphrase)

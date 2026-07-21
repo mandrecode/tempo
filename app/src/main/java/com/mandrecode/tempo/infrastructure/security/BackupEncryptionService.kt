@@ -92,8 +92,14 @@ class BackupEncryptionService
         ): SecretKeySpec {
             val factory = SecretKeyFactory.getInstance(KDF_NAME)
             val spec = PBEKeySpec(passphrase, salt, iterations, KEY_LENGTH_BITS)
-            val keyBytes = factory.generateSecret(spec).encoded
-            return SecretKeySpec(keyBytes, "AES")
+            return try {
+                val keyBytes = factory.generateSecret(spec).encoded
+                SecretKeySpec(keyBytes, "AES")
+            } finally {
+                // PBEKeySpec clones the passphrase internally; clear that copy promptly rather
+                // than leaving it to the GC, minimizing how long it lingers in memory.
+                spec.clearPassword()
+            }
         }
 
         private companion object {
