@@ -621,7 +621,7 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `export cancelled clears the pending payload so a later pick does nothing`() =
+    fun `export cancelled clears the pending payload so a later pick shows an error instead of writing`() =
         runTest {
             coEvery { exportBackup(any()) } returns
                 ExportBackupUseCase.Export(json = "{}", suggestedFileName = "f.tempo")
