@@ -256,6 +256,22 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `encrypted envelope with malformed base64 fields is reported as corrupt, not thrown`() =
+        runTest {
+            // Well-formed JSON (right field names/types) but the base64 payloads are garbage —
+            // must not crash the import, just report CorruptFile.
+            val json =
+                """
+                {"encryptionVersion":1,"kdf":"PBKDF2WithHmacSHA256","iterations":200000,
+                 "salt":"not-valid-base64!!!","iv":"also-not-base64!!!","ciphertext":"nope!!!"}
+                """.trimIndent()
+
+            val outcome = repository.importFromJson(json, ImportMode.MERGE, testPassphrase)
+
+            assertThat(outcome).isEqualTo(ImportOutcome.CorruptFile)
+        }
+
+    @Test
     fun `replace payload without a default but containing inbox id marks it default`() =
         runTest {
             val json =

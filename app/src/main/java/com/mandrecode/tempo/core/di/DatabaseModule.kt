@@ -31,6 +31,13 @@ object DatabaseModule {
     @Singleton
     fun provideDbPassphraseProvider(impl: KeystoreDbPassphraseProvider): DbPassphraseProvider = impl
 
+    /**
+     * Hilt's `@Provides` can't be `suspend`, so resolving this singleton blocks its calling
+     * thread on Keystore I/O and a potential one-time migration. [com.mandrecode.tempo.TempoApp]
+     * mitigates this by resolving the same Hilt-memoized singleton on a background coroutine
+     * as early as app startup, so this provider is very likely already resolved (or close to
+     * it) by the time anything on the main thread — e.g. the first ViewModel — needs it.
+     */
     @Provides
     @Singleton
     fun provideTempoDatabase(

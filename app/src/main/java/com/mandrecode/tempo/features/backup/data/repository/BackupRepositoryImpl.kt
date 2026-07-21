@@ -35,6 +35,7 @@ import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.infrastructure.security.BackupEncryptionService
 import com.mandrecode.tempo.infrastructure.security.DecryptResult
+import com.mandrecode.tempo.infrastructure.security.EncryptedEnvelope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.TimeZone
@@ -334,11 +335,15 @@ private fun resolvePlaintext(
     encryptionService: BackupEncryptionService,
 ): PlaintextResolution {
     val envelopeDto = decodeEnvelopeOrNull(content, jsonFormat)
+    val envelope = envelopeDto?.let { toEncryptedEnvelopeOrNull(it) }
     return when {
         envelopeDto == null -> PlaintextResolution.Ready(content)
+        // The JSON decoded fine (right field names/types) but its base64 payloads are
+        // malformed — a tampered or truncated .tempo file, not a wrong-passphrase case.
+        envelope == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
         passphrase == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
         else ->
-            when (val decrypted = encryptionService.decrypt(envelopeDto.toEnvelope(), passphrase)) {
+            when (val decrypted = encryptionService.decrypt(envelope, passphrase)) {
                 is DecryptResult.Success -> PlaintextResolution.Ready(decrypted.plaintext)
                 DecryptResult.WrongPassphrase -> PlaintextResolution.Failed(ImportOutcome.WrongPassphrase)
                 DecryptResult.Corrupt -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
@@ -353,6 +358,14 @@ private fun decodeEnvelopeOrNull(
     try {
         jsonFormat.decodeFromString<BackupEncryptedEnvelopeDto>(content)
     } catch (_: SerializationException) {
+        null
+    }
+
+/** [BackupEncryptedEnvelopeDto.toEnvelope] base64-decodes its fields and can throw on bad input. */
+private fun toEncryptedEnvelopeOrNull(dto: BackupEncryptedEnvelopeDto): EncryptedEnvelope? =
+    try {
+        dto.toEnvelope()
+    } catch (_: IllegalArgumentException) {
         null
     }
 

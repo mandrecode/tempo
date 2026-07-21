@@ -122,7 +122,13 @@ class KeystoreDbPassphraseProvider
             val blob =
                 Base64.Default.encode(cipher.iv) + BLOB_SEPARATOR +
                     Base64.Default.encode(ciphertext)
-            prefs.edit().putString(KEY_PASSPHRASE_BLOB, blob).apply()
+            // Must be a synchronous, verified write: this passphrase may be used to key/migrate
+            // the database within this same call before returning. An async apply() that hasn't
+            // flushed by the time the process dies would leave the blob missing on next launch,
+            // silently minting a *different* passphrase and permanently orphaning that database.
+            check(prefs.edit().putString(KEY_PASSPHRASE_BLOB, blob).commit()) {
+                "Failed to persist the database passphrase blob"
+            }
 
             return passphrase
         }

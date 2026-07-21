@@ -61,8 +61,16 @@ class BackupEncryptionService
         fun decrypt(
             envelope: EncryptedEnvelope,
             passphrase: CharArray,
-        ): DecryptResult =
-            try {
+        ): DecryptResult {
+            // Reject an unsupported KDF or an out-of-range iteration count up front: an
+            // untrusted/corrupted envelope could otherwise drive key derivation with a
+            // wildly excessive iteration count (CPU-exhaustion on import) or trip
+            // IllegalArgumentException out of PBEKeySpec/SecretKeyFactory, which isn't a
+            // GeneralSecurityException and would otherwise escape uncaught below.
+            if (envelope.kdf != KDF_NAME || envelope.iterations !in MIN_ITERATIONS..MAX_ITERATIONS) {
+                return DecryptResult.Corrupt
+            }
+            return try {
                 val key = deriveKey(passphrase, envelope.salt, envelope.iterations)
                 val cipher = Cipher.getInstance(TRANSFORMATION)
                 cipher.init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, envelope.iv))
@@ -72,7 +80,10 @@ class BackupEncryptionService
                 DecryptResult.WrongPassphrase
             } catch (_: GeneralSecurityException) {
                 DecryptResult.Corrupt
+            } catch (_: IllegalArgumentException) {
+                DecryptResult.Corrupt
             }
+        }
 
         private fun deriveKey(
             passphrase: CharArray,
@@ -92,5 +103,7 @@ class BackupEncryptionService
             const val SALT_LENGTH_BYTES = 16
             const val TRANSFORMATION = "AES/GCM/NoPadding"
             const val GCM_TAG_LENGTH_BITS = 128
+            const val MIN_ITERATIONS = 1
+            const val MAX_ITERATIONS = 2_000_000
         }
     }

@@ -63,4 +63,34 @@ class BackupEncryptionServiceTest {
         assertThat(envelope.kdf).isEqualTo("PBKDF2WithHmacSHA256")
         assertThat(envelope.iterations).isEqualTo(200_000)
     }
+
+    @Test
+    fun `unsupported kdf name is reported as corrupt without attempting derivation`() {
+        val envelope = service.encrypt("secret data", "pw".toCharArray())
+        val malformed = envelope.copy(kdf = "PBKDF2WithHmacSHA1")
+
+        val result = service.decrypt(malformed, "pw".toCharArray())
+
+        assertThat(result).isEqualTo(DecryptResult.Corrupt)
+    }
+
+    @Test
+    fun `zero iteration count is reported as corrupt rather than throwing`() {
+        val envelope = service.encrypt("secret data", "pw".toCharArray())
+        val malformed = envelope.copy(iterations = 0)
+
+        val result = service.decrypt(malformed, "pw".toCharArray())
+
+        assertThat(result).isEqualTo(DecryptResult.Corrupt)
+    }
+
+    @Test
+    fun `excessive iteration count is reported as corrupt rather than hanging`() {
+        val envelope = service.encrypt("secret data", "pw".toCharArray())
+        val malformed = envelope.copy(iterations = Int.MAX_VALUE)
+
+        val result = service.decrypt(malformed, "pw".toCharArray())
+
+        assertThat(result).isEqualTo(DecryptResult.Corrupt)
+    }
 }
