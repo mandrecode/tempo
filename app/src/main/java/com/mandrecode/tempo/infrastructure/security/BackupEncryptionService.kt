@@ -54,14 +54,18 @@ class BackupEncryptionService
         ): EncryptedEnvelope {
             val salt = ByteArray(SALT_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
             val key = deriveKey(passphrase, salt, PBKDF2_ITERATIONS)
+            val iv = ByteArray(GCM_IV_LENGTH_BYTES).also { SecureRandom().nextBytes(it) }
             val cipher = Cipher.getInstance(TRANSFORMATION)
-            cipher.init(Cipher.ENCRYPT_MODE, key)
+            // Explicit IV/tag length rather than relying on provider defaults for a bare
+            // ENCRYPT_MODE init — decrypt() already hard-codes GCM_TAG_LENGTH_BITS, so encrypt
+            // must produce exactly that, not whatever a given provider happens to default to.
+            cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv))
             val ciphertext = cipher.doFinal(plaintext.toByteArray(Charsets.UTF_8))
             return EncryptedEnvelope(
                 kdf = KDF_NAME,
                 iterations = PBKDF2_ITERATIONS,
                 salt = salt,
-                iv = cipher.iv,
+                iv = iv,
                 ciphertext = ciphertext,
             )
         }
@@ -125,6 +129,7 @@ class BackupEncryptionService
             const val BITS_PER_BYTE = 8
             const val SALT_LENGTH_BYTES = 16
             const val TRANSFORMATION = "AES/GCM/NoPadding"
+            const val GCM_IV_LENGTH_BYTES = 12
             const val GCM_TAG_LENGTH_BITS = 128
             const val MIN_ITERATIONS = 1
             const val MAX_ITERATIONS = 2_000_000
