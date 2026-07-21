@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/mandrecode/tempo/compare/v1.1.0...v1.2.0) (2026-07-21)
+
+
+### Features
+
+* **#210:** add what's-new onboarding bottom sheet for latest feature ([#211](https://github.com/mandrecode/tempo/issues/211)) ([3e89c56](https://github.com/mandrecode/tempo/commit/3e89c560de9bf84d8dad2c802e69054e7b27752f))
+
 ## [1.1.0](https://github.com/mandrecode/tempo/compare/v1.0.0...v1.1.0) (2026-07-21)
 
 
