@@ -239,6 +239,23 @@ class BackupRepositoryImplTest {
         }
 
     @Test
+    fun `replace payload with a foreign default still re-creates the inbox row without stealing default`() =
+        runTest {
+            val inserted = mutableListOf<CategoryEntity>()
+            coEvery { categoryDao.insertCategory(capture(inserted)) } returns 0
+            val json =
+                """
+                {"schemaVersion":1,"categories":[{"id":5,"name":"Work","isDefault":true}]}
+                """.trimIndent()
+
+            repository.importFromJson(json, ImportMode.REPLACE)
+
+            val inbox = inserted.first { it.id == -1L }
+            assertThat(inbox.isDefault).isFalse()
+            coVerify(exactly = 0) { categoryDao.setDefault(any()) }
+        }
+
+    @Test
     fun `merge remaps subtask parents and next-instance links to fresh ids`() =
         runTest {
             val insertedTasks = mutableListOf<TaskEntity>()

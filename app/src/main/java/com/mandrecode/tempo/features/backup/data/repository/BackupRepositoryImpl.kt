@@ -5,6 +5,7 @@ import androidx.room.withTransaction
 import com.mandrecode.tempo.BuildConfig
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.entity.CategoryEntity
+import com.mandrecode.tempo.core.data.entity.DEFAULT_INBOX_CATEGORY_ENTITY
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
@@ -173,24 +174,26 @@ class BackupRepositoryImpl
             }
 
         /**
-         * Restores the app invariant that a default category always exists when the
-         * payload does not carry one (pre-existing exports or edited files).
+         * Restores two app invariants a payload may violate (pre-existing exports
+         * or edited files): the seeded Inbox row (id -1) always exists — other code
+         * references it directly, e.g. as the fallback task category — and some
+         * category is marked default (the Inbox only when the payload brought none).
          */
         private suspend fun ensureDefaultCategory(categories: List<Category>) {
-            if (categories.any { it.isDefault }) return
-            val inboxId = -1L
-            if (categories.any { it.id == inboxId }) {
-                database.categoryDao().setDefault(inboxId)
-            } else {
+            val hasDefault = categories.any { it.isDefault }
+            val inboxId = DEFAULT_INBOX_CATEGORY_ENTITY.id
+            if (categories.none { it.id == inboxId }) {
                 database.categoryDao().insertCategory(
                     CategoryEntity(
                         id = inboxId,
                         name = context.getString(R.string.category_inbox),
                         icon = "inbox",
-                        isDefault = true,
+                        isDefault = !hasDefault,
                         sortOrder = -1,
                     ),
                 )
+            } else if (!hasDefault) {
+                database.categoryDao().setDefault(inboxId)
             }
         }
 
