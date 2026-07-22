@@ -16,19 +16,19 @@ class WhatsNewPreferencesRepositoryImpl
         @ApplicationContext context: Context,
     ) : WhatsNewPreferencesRepository {
         private val preferences = context.getSharedPreferences(PREFERENCES_NAME, Context.MODE_PRIVATE)
-        private val lastSeen = MutableStateFlow(preferences.getInt(KEY_LAST_SEEN_VERSION_CODE, 0))
+        private val lastSeen = MutableStateFlow(preferences.getString(KEY_LAST_SEEN_ENTRY_ID, null))
 
-        override val lastSeenVersionCode: StateFlow<Int> = lastSeen.asStateFlow()
+        override val lastSeenEntryId: StateFlow<String?> = lastSeen.asStateFlow()
 
-        override fun setLastSeenVersionCode(versionCode: Int) {
-            if (lastSeen.value >= versionCode) return
+        override fun setLastSeenEntryId(id: String) {
+            if (lastSeen.value == id) return
 
-            preferences.edit(commit = true) { putInt(KEY_LAST_SEEN_VERSION_CODE, versionCode) }
-            lastSeen.value = versionCode
+            preferences.edit(commit = true) { putString(KEY_LAST_SEEN_ENTRY_ID, id) }
+            lastSeen.value = id
         }
 
         private companion object {
             const val PREFERENCES_NAME = "whats_new_preferences"
-            const val KEY_LAST_SEEN_VERSION_CODE = "last_seen_version_code"
+            const val KEY_LAST_SEEN_ENTRY_ID = "last_seen_entry_id"
         }
     }

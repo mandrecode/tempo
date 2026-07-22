@@ -1,7 +1,7 @@
 package com.mandrecode.tempo.features.routines.domain.usecase
 
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
-import com.mandrecode.tempo.core.domain.util.ValidationResult
+import com.mandrecode.tempo.core.domain.util.TitleDescriptionValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -33,14 +33,14 @@ class UpdateHabitUseCase
 
         suspend operator fun invoke(habit: Habit): Result {
             val trimmedHabit = habit.copy(title = habit.title.trim(), description = habit.description.trim())
-            when (ValidationUtils.validateTitle(trimmedHabit.title)) {
-                ValidationResult.Empty -> return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_EMPTY)
-                ValidationResult.TooLong -> return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_TOO_LONG)
-                ValidationResult.Valid -> {}
-                else -> {}
-            }
-            if (ValidationUtils.validateDescription(trimmedHabit.description) is ValidationResult.TooLong) {
-                return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.DESCRIPTION_TOO_LONG)
+            when (ValidationUtils.validateTitleAndDescription(trimmedHabit.title, trimmedHabit.description)) {
+                TitleDescriptionValidationResult.TitleEmpty ->
+                    return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_EMPTY)
+                TitleDescriptionValidationResult.TitleTooLong ->
+                    return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_TOO_LONG)
+                TitleDescriptionValidationResult.DescriptionTooLong ->
+                    return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.DESCRIPTION_TOO_LONG)
+                TitleDescriptionValidationResult.Valid -> {}
             }
 
             // Quit habits are daily by definition — coerce repeatDays = null at the domain

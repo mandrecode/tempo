@@ -25,6 +25,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.TASK_COMPLETION_CHECKBOX_TEST_TAG
+import com.mandrecode.tempo.core.ui.editor.EDITOR_AUTO_SAVE_DEBOUNCE_MS
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
@@ -341,7 +342,7 @@ class TaskBottomSheetTest {
         descriptionField.performTextReplacement("ab")
         descriptionField.performTextReplacement("abc")
 
-        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.mainClock.advanceTimeBy(EDITOR_AUTO_SAVE_DEBOUNCE_MS + 1)
         composeTestRule.runOnIdle { assertEquals(listOf("abc"), savedDescriptions) }
         composeTestRule.mainClock.autoAdvance = true
     }

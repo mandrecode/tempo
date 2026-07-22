@@ -497,3 +497,50 @@ internal fun rememberFormattedDateTime(dateTime: LocalDateTime?): String? {
         }
     }
 }
+
+/**
+ * Chain-level counterpart to the single-habit title checkbox (issue #45): shows the chain's
+ * icon/color and toggles completion for every member habit at once, so a chain can be
+ * completed or undone from the bottom sheet the same way a single habit can.
+ */
+@Composable
+internal fun HabitChainTitleCheckboxRow(
+    state: HabitBottomSheetBodyState,
+    actions: HabitBottomSheetBodyActions,
+    focusConfig: HabitBottomSheetFocusConfig,
+    editingHabitChain: com.mandrecode.tempo.features.routines.domain.model.HabitChain,
+    onToggleHabitCompletion: (habitId: Long, isCompleted: Boolean) -> Unit,
+) {
+    val dateStr = remember(state.selectedDate) { state.selectedDate.toString() }
+    val chainHabits =
+        remember(state.habits, editingHabitChain.habitIds) {
+            val habitsById = state.habits.associateBy { it.id }
+            editingHabitChain.habitIds.mapNotNull { id -> habitsById[id] }
+        }
+    val isCompleted =
+        remember(chainHabits, dateStr) {
+            chainHabits.isNotEmpty() &&
+                chainHabits.all { CompletionHistoryUtil.isDateInHistory(it.completionHistory, dateStr) }
+        }
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val yesterday = today.minus(DatePeriod(days = 1))
+
+    HabitCheckboxTitleRow(
+        state = state,
+        actions = actions,
+        focusConfig = focusConfig,
+        isCompleted = isCompleted,
+        canToggle = chainHabits.isNotEmpty() && (state.selectedDate == today || state.selectedDate == yesterday),
+        iconName = state.formState.selectedIcon ?: editingHabitChain.icon,
+        colorKey = state.formState.selectedColorKey ?: editingHabitChain.colorKey,
+        onToggle = {
+            val target = !isCompleted
+            chainHabits.forEach { habit ->
+                val habitIsCompleted = CompletionHistoryUtil.isDateInHistory(habit.completionHistory, dateStr)
+                if (habitIsCompleted != target) {
+                    onToggleHabitCompletion(habit.id, target)
+                }
+            }
+        },
+    )
+}

@@ -22,19 +22,21 @@ class WhatsNewBottomSheetTest {
     // keeps validating real rendered content as WhatsNewRegistry.latest evolves.
     private fun entry() = WhatsNewRegistry.latest
 
+    private val versionName = "1.4.0"
+
     @Test
     fun givenEntry_whenRendered_thenLegendAndDescriptionAreDisplayed() {
         val latestEntry = entry()
         composeTestRule.setContent {
             TempoTheme {
-                WhatsNewBottomSheet(entry = latestEntry, onDismissRequest = {})
+                WhatsNewBottomSheet(entry = latestEntry, versionName = versionName, onDismissRequest = {})
             }
         }
 
         val legend =
             targetContext().getString(
                 R.string.whats_new_legend,
-                latestEntry.versionName,
+                versionName,
                 targetContext().getString(latestEntry.titleRes),
             )
         composeTestRule.onNodeWithText(legend).assertIsDisplayed()
@@ -48,7 +50,7 @@ class WhatsNewBottomSheetTest {
         var dismissed = false
         composeTestRule.setContent {
             TempoTheme {
-                WhatsNewBottomSheet(entry = entry(), onDismissRequest = { dismissed = true })
+                WhatsNewBottomSheet(entry = entry(), versionName = versionName, onDismissRequest = { dismissed = true })
             }
         }
 

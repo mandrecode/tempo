@@ -1,5 +1,26 @@
 # Changelog
 
+## [1.4.1](https://github.com/mandrecode/tempo/compare/v1.4.0...v1.4.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **#220:** improve what's new generation to avoid manual version linking ([#221](https://github.com/mandrecode/tempo/issues/221)) ([20281c8](https://github.com/mandrecode/tempo/commit/20281c8e057ba8b19300191fae8ec5827a0ca43f))
+
+## [1.4.0](https://github.com/mandrecode/tempo/compare/v1.3.0...v1.4.0) (2026-07-22)
+
+
+### Features
+
+* **#45:** show chain completion checkbox in habit bottom sheet ([#217](https://github.com/mandrecode/tempo/issues/217)) ([ffde589](https://github.com/mandrecode/tempo/commit/ffde589656556f3273fcbe5b399598f596a23d2f))
+
+## [1.3.0](https://github.com/mandrecode/tempo/compare/v1.2.0...v1.3.0) (2026-07-22)
+
+
+### Features
+
+* **#28:** encrypt local database and backup exports at rest ([#212](https://github.com/mandrecode/tempo/issues/212)) ([0e8326d](https://github.com/mandrecode/tempo/commit/0e8326df582fcec92128fada3da2ea4e5549f054))
+
 ## [1.2.0](https://github.com/mandrecode/tempo/compare/v1.1.0...v1.2.0) (2026-07-21)
 
 

@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +22,6 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -42,6 +40,9 @@ import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
+import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
+import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
@@ -118,6 +119,7 @@ internal fun HabitBottomSheetBody(
             actions = actions,
             focusConfig = focusConfig,
             editingHabit = editingHabit,
+            editingHabitChain = editingHabitChain,
         )
 
         HabitDescriptionSection(
@@ -127,7 +129,7 @@ internal fun HabitBottomSheetBody(
             focusConfig = focusConfig,
         )
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         HabitIconSection(
             selectedIcon = state.formState.selectedIcon,
@@ -135,7 +137,7 @@ internal fun HabitBottomSheetBody(
             onClearIcon = actions.onClearIcon,
         )
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         if (!state.isHabitInChain) {
             HabitColorAndRepeatSection(
@@ -158,7 +160,7 @@ internal fun HabitBottomSheetBody(
                     },
             )
 
-            Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
 
         val showReminderUI =
@@ -174,7 +176,7 @@ internal fun HabitBottomSheetBody(
                 onClearReminder = actions.onClearReminder,
             )
 
-            Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
 
         if (state.formState.selectedTab == HabitSheetTab.HABIT && editingHabit != null) {
@@ -185,7 +187,7 @@ internal fun HabitBottomSheetBody(
                 habitType = state.formState.selectedHabitType,
             )
 
-            Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
 
         if (state.formState.selectedTab == HabitSheetTab.HABIT_CHAIN && editingHabitChain != null) {
@@ -196,7 +198,7 @@ internal fun HabitBottomSheetBody(
                 habitType = null,
             )
 
-            Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
 
         HabitBottomSheetFooter(
@@ -221,57 +223,102 @@ private fun HabitTitleSection(
     actions: HabitBottomSheetBodyActions,
     focusConfig: HabitBottomSheetFocusConfig,
     editingHabit: com.mandrecode.tempo.features.routines.domain.model.Habit?,
+    editingHabitChain: com.mandrecode.tempo.features.routines.domain.model.HabitChain?,
 ) {
     val onToggleHabitCompletion = actions.onToggleHabitCompletion
-    if (state.formState.selectedTab == HabitSheetTab.HABIT &&
-        editingHabit != null &&
-        onToggleHabitCompletion != null
-    ) {
-        val dateStr = remember(state.selectedDate) { state.selectedDate.toString() }
-        val isCompleted =
-            remember(editingHabit.completionHistory, dateStr) {
-                CompletionHistoryUtil.isDateInHistory(editingHabit.completionHistory, dateStr)
-            }
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val yesterday = today.minus(DatePeriod(days = 1))
-        val canToggle = state.selectedDate == today || state.selectedDate == yesterday
-        val resolvedColor =
-            remember(
-                state.formState.selectedColorKey,
-                editingHabit.colorKey,
-                state.colorScheme,
-                state.isDarkTheme,
-            ) {
-                val key = state.formState.selectedColorKey ?: editingHabit.colorKey
-                key?.let { resolveColor(it, state.colorScheme, state.isDarkTheme) }
-            }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HabitCompletionCheckbox(
-                isCompleted = isCompleted,
-                onToggle = { onToggleHabitCompletion(editingHabit.id, !isCompleted) },
-                color = resolvedColor,
-                iconName = state.formState.selectedIcon ?: editingHabit.icon,
-                canToggle = canToggle,
-                isContainerCompleted = false,
+    when {
+        state.formState.selectedTab == HabitSheetTab.HABIT &&
+            editingHabit != null &&
+            onToggleHabitCompletion != null ->
+            HabitTitleCheckboxRow(
+                state = state,
+                actions = actions,
+                focusConfig = focusConfig,
+                editingHabit = editingHabit,
+                onToggleHabitCompletion = onToggleHabitCompletion,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+
+        state.formState.selectedTab == HabitSheetTab.HABIT_CHAIN &&
+            editingHabitChain != null &&
+            onToggleHabitCompletion != null ->
+            HabitChainTitleCheckboxRow(
+                state = state,
+                actions = actions,
+                focusConfig = focusConfig,
+                editingHabitChain = editingHabitChain,
+                onToggleHabitCompletion = onToggleHabitCompletion,
+            )
+
+        else ->
             HabitTitleField(
                 state = state,
                 actions = actions,
                 focusConfig = focusConfig,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             )
+    }
+}
+
+@Composable
+private fun HabitTitleCheckboxRow(
+    state: HabitBottomSheetBodyState,
+    actions: HabitBottomSheetBodyActions,
+    focusConfig: HabitBottomSheetFocusConfig,
+    editingHabit: com.mandrecode.tempo.features.routines.domain.model.Habit,
+    onToggleHabitCompletion: (habitId: Long, isCompleted: Boolean) -> Unit,
+) {
+    val isCompleted =
+        remember(editingHabit.completionHistory, state.selectedDate) {
+            CompletionHistoryUtil.isDateInHistory(editingHabit.completionHistory, state.selectedDate.toString())
         }
-    } else {
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val yesterday = today.minus(DatePeriod(days = 1))
+    HabitCheckboxTitleRow(
+        state = state,
+        actions = actions,
+        focusConfig = focusConfig,
+        isCompleted = isCompleted,
+        canToggle = state.selectedDate == today || state.selectedDate == yesterday,
+        iconName = state.formState.selectedIcon ?: editingHabit.icon,
+        colorKey = state.formState.selectedColorKey ?: editingHabit.colorKey,
+        onToggle = { onToggleHabitCompletion(editingHabit.id, !isCompleted) },
+    )
+}
+
+@Composable
+internal fun HabitCheckboxTitleRow(
+    state: HabitBottomSheetBodyState,
+    actions: HabitBottomSheetBodyActions,
+    focusConfig: HabitBottomSheetFocusConfig,
+    isCompleted: Boolean,
+    canToggle: Boolean,
+    iconName: String?,
+    colorKey: String?,
+    onToggle: () -> Unit,
+) {
+    val resolvedColor =
+        remember(colorKey, state.colorScheme, state.isDarkTheme) {
+            colorKey?.let { resolveColor(it, state.colorScheme, state.isDarkTheme) }
+        }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HabitCompletionCheckbox(
+            isCompleted = isCompleted,
+            onToggle = onToggle,
+            color = resolvedColor,
+            iconName = iconName,
+            canToggle = canToggle,
+            isContainerCompleted = false,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         HabitTitleField(
             state = state,
             actions = actions,
             focusConfig = focusConfig,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
         )
     }
 }
@@ -302,15 +349,7 @@ private fun HabitTitleField(
             )
         },
         textStyle = MaterialTheme.typography.inputTitle,
-        colors =
-            TextFieldDefaults.colors(
-                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-            ),
+        colors = editorTransparentTextFieldColors(),
         modifier =
             modifier
                 .testTag(HABIT_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
@@ -351,21 +390,12 @@ private fun HabitDescriptionSection(
     onDescriptionChange: (androidx.compose.ui.text.input.TextFieldValue) -> Unit,
     focusConfig: HabitBottomSheetFocusConfig,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_short_text),
+        iconContentDescription = stringResource(R.string.description),
         verticalAlignment = Alignment.Top,
+        iconBoxModifier = Modifier.width(48.dp).padding(top = 16.dp),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp).padding(top = 16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_short_text),
-                contentDescription = stringResource(R.string.description),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         TextField(
             value = descriptionState.value,
             onValueChange = onDescriptionChange,
@@ -376,15 +406,7 @@ private fun HabitDescriptionSection(
                 )
             },
             textStyle = MaterialTheme.typography.bodyLarge,
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                ),
+            colors = editorTransparentTextFieldColors(),
             modifier =
                 Modifier
                     .weight(1f)
@@ -413,20 +435,12 @@ private fun HabitIconSection(
     onSetIcon: (String) -> Unit,
     onClearIcon: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_mood),
+        iconContentDescription = stringResource(R.string.habit_icon_label),
         verticalAlignment = Alignment.Top,
+        iconBoxModifier = Modifier.size(48.dp),
     ) {
-        Box(
-            modifier = Modifier.size(48.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_mood),
-                contentDescription = stringResource(R.string.habit_icon_label),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         IconPicker(
             selectedIconName = selectedIcon,
             onSelectIcon = onSetIcon,
@@ -444,20 +458,12 @@ private fun HabitColorAndRepeatSection(
     actions: HabitBottomSheetBodyActions,
 ) {
     Column {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
+        EditorPropertyRow(
+            iconPainter = painterResource(R.drawable.ic_draw),
+            iconContentDescription = stringResource(R.string.material_you_colors),
             verticalAlignment = Alignment.Top,
+            iconBoxModifier = Modifier.size(48.dp),
         ) {
-            Box(
-                modifier = Modifier.size(48.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_draw),
-                    contentDescription = stringResource(R.string.material_you_colors),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
             ColorPicker(
                 selectedColorKey = state.formState.selectedColorKey,
                 onSelectColorKey = actions.onSetColorKey,
@@ -466,7 +472,7 @@ private fun HabitColorAndRepeatSection(
             )
         }
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         val showRepeatDays =
             state.formState.selectedTab != HabitSheetTab.HABIT ||
@@ -477,20 +483,10 @@ private fun HabitColorAndRepeatSection(
             exit = shrinkVertically() + fadeOut(),
         ) {
             Column {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
+                EditorPropertyRow(
+                    iconPainter = painterResource(R.drawable.ic_repeat),
+                    iconContentDescription = stringResource(R.string.repeat),
                 ) {
-                    Box(
-                        modifier = Modifier.width(48.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_repeat),
-                            contentDescription = stringResource(R.string.repeat),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
                     DayOfWeekSelector(
                         selectedDays = state.formState.selectedRepeatDays,
                         onDaysChange = { days -> actions.onSetRepeatDays?.invoke(days) },
@@ -498,7 +494,7 @@ private fun HabitColorAndRepeatSection(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+                Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
             }
         }
     }
@@ -514,23 +510,15 @@ private fun HabitChainSelectionSection(
 ) {
     val iconTopPadding = if (selectedHabitIds.isEmpty()) 12.dp else 16.dp
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_list),
+        iconContentDescription = stringResource(R.string.select_habits),
         verticalAlignment = Alignment.Top,
+        iconBoxModifier =
+            Modifier
+                .width(48.dp)
+                .padding(top = iconTopPadding),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(48.dp)
-                    .padding(top = iconTopPadding),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_list),
-                contentDescription = stringResource(R.string.select_habits),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         HabitMultiSelector(
             habits = habits,
             selectedHabitIds = selectedHabitIds,
@@ -548,21 +536,10 @@ private fun HabitReminderSection(
     onSetReminderClick: () -> Unit,
     onClearReminder: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_reminder),
+        iconContentDescription = stringResource(R.string.reminder_label),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_reminder),
-                contentDescription = stringResource(R.string.reminder_label),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         if (formattedReminder != null) {
             InputChip(
                 selected = true,
@@ -624,20 +601,10 @@ private fun HabitHistorySection(
     repeatDays: Set<com.mandrecode.tempo.core.domain.model.DayOfWeek>?,
     habitType: HabitType?,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_calendar),
+        iconContentDescription = stringResource(R.string.completion_history),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_calendar),
-                contentDescription = stringResource(R.string.completion_history),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
         Column(
             modifier = Modifier.weight(1f),
         ) {
