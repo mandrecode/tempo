@@ -26,6 +26,7 @@ import androidx.glance.layout.size
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.util.supportsDynamicColor
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -50,12 +51,9 @@ class QuickAddTaskWidget : GlanceAppWidget() {
                 .fromApplication(context, ThemePreferencesEntryPoint::class.java)
                 .themePreferencesRepository()
         val useTempoColorsPreference = themePreferencesRepository.getUseTempoColors().first()
-        val colors = resolveGlanceColorProviders(context, useTempoColorsPreference)
 
         provideContent {
-            GlanceTheme(colors = colors) {
-                QuickAddTaskWidgetContent()
-            }
+            QuickAddTaskWidgetContent(useTempoColorsPreference)
         }
     }
 
@@ -68,26 +66,39 @@ class QuickAddTaskWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun QuickAddTaskWidgetContent() {
-    val label = LocalContext.current.getString(R.string.widget_quick_add_task_label)
+private fun QuickAddTaskWidgetContent(useTempoColorsPreference: Boolean) {
+    // GlanceTheme.colors (Glance's own default, read here rather than passed implicitly) is
+    // itself built from day/night- and dynamic-color-aware Android resources, so it needs no
+    // resolving on our side — unlike TempoGlanceColorScheme.kt's static bridge, it already
+    // switches automatically on a system light/dark or wallpaper change.
+    val colors =
+        if (shouldUseTempoStaticColors(useTempoColorsPreference, supportsDynamicColor)) {
+            TempoGlanceColorScheme
+        } else {
+            GlanceTheme.colors
+        }
 
-    Box(
-        modifier =
-            GlanceModifier
-                .fillMaxSize()
-                .background(GlanceTheme.colors.background)
-                .clickable(
-                    actionStartActivity<MainActivity>(
-                        parameters = actionParametersOf(QuickAddTaskWidget.openNewTaskDialogKey to true),
-                    ),
-                ).padding(12.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            provider = ImageProvider(R.drawable.ic_add_task),
-            contentDescription = label,
-            colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
-            modifier = GlanceModifier.size(40.dp),
-        )
+    GlanceTheme(colors = colors) {
+        val label = LocalContext.current.getString(R.string.widget_quick_add_task_label)
+
+        Box(
+            modifier =
+                GlanceModifier
+                    .fillMaxSize()
+                    .background(GlanceTheme.colors.background)
+                    .clickable(
+                        actionStartActivity<MainActivity>(
+                            parameters = actionParametersOf(QuickAddTaskWidget.openNewTaskDialogKey to true),
+                        ),
+                    ).padding(12.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Image(
+                provider = ImageProvider(R.drawable.ic_add_task),
+                contentDescription = label,
+                colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
+                modifier = GlanceModifier.size(40.dp),
+            )
+        }
     }
 }
