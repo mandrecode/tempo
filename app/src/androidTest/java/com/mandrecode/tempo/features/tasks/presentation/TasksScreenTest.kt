@@ -5,8 +5,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
@@ -208,5 +210,25 @@ class TasksScreenTest {
         // Verify that the New Style "Add details" placeholder is displayed
         // This placeholder is unique to the new style; old style used "Description" label
         composeTestRule.onNodeWithText("Add details").assertIsDisplayed()
+    }
+
+    @Test
+    fun tasksScreen_opensTaskCreationSheet_whenPendingActionIsOpenNewTaskDialog() {
+        var consumed = false
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksScreen(
+                    viewModel = viewModel,
+                    pendingNotificationAction = PendingNotificationAction.OpenNewTaskDialog,
+                    onConsumePendingNotificationAction = { consumed = true },
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+
+        // Same blank task-creation sheet the in-app "+" button opens (widget entry path)
+        composeTestRule.onNodeWithText("New task…").assertIsDisplayed()
+        assertThat(consumed).isTrue()
     }
 }
