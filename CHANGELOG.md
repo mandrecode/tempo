@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/mandrecode/tempo/compare/v1.5.0...v1.6.0) (2026-07-22)
+
+
+### Features
+
+* **#46:** add quick-add-task home-screen widget ([#218](https://github.com/mandrecode/tempo/issues/218)) ([e205a8e](https://github.com/mandrecode/tempo/commit/e205a8ea77b3bad1a2c355dc83e4ce69e5979136))
+
 ## [1.5.0](https://github.com/mandrecode/tempo/compare/v1.4.1...v1.5.0) (2026-07-22)
 
 
