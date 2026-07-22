@@ -3,7 +3,7 @@ package com.mandrecode.tempo.features.widget.presentation
 import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
-class TempoGlanceColorSchemeTest {
+class WidgetThemePreferenceTest {
     @Test
     fun givenUseTempoColorsEnabled_thenStaticTempoColorsAreUsedRegardlessOfDynamicSupport() {
         assertThat(shouldUseTempoStaticColors(useTempoColorsPreference = true, dynamicColorSupported = true)).isTrue()
