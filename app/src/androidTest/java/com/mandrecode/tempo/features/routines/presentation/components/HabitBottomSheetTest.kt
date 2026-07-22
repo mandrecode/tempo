@@ -31,7 +31,9 @@ import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import kotlinx.collections.immutable.toPersistentSet
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.junit.Assert.assertEquals
@@ -582,6 +584,7 @@ class HabitBottomSheetTest {
         chain: HabitChain = chainContainingHabit(),
         habits: List<Habit> = listOf(habitInChain()),
         onToggleHabitCompletion: ((Long, Boolean) -> Unit)? = null,
+        selectedDate: kotlinx.datetime.LocalDate = today(),
     ) {
         composeTestRule.setContent {
             TempoTheme {
@@ -591,7 +594,7 @@ class HabitBottomSheetTest {
                             editingHabitChain = chain,
                             selectedTab = HabitSheetTab.HABIT_CHAIN,
                         ),
-                    selectedDate = today(),
+                    selectedDate = selectedDate,
                     habits = habits,
                     habitChains = listOf(chain),
                     onSelectTab = {},
@@ -1309,6 +1312,23 @@ class HabitBottomSheetTest {
         )
 
         composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertIsNotEnabled()
+    }
+
+    @Test
+    fun chainTitleCheckbox_disabled_whenSelectedDateOutsideToggleWindow() {
+        val chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L))
+        var toggleInvoked = false
+        renderEditHabitChainSheet(
+            chain = chain,
+            habits = listOf(habitInChain(), secondHabitInChain()),
+            onToggleHabitCompletion = { _, _ -> toggleInvoked = true },
+            selectedDate = today().minus(DatePeriod(days = 5)),
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertIsNotEnabled()
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).performClick()
+        assertFalse(toggleInvoked)
     }
 
     // Regression test for #655: when the upstream habit updates after a toggle (i.e. the

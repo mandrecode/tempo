@@ -514,7 +514,8 @@ internal fun HabitChainTitleCheckboxRow(
     val dateStr = remember(state.selectedDate) { state.selectedDate.toString() }
     val chainHabits =
         remember(state.habits, editingHabitChain.habitIds) {
-            editingHabitChain.habitIds.mapNotNull { id -> state.habits.find { it.id == id } }
+            val habitsById = state.habits.associateBy { it.id }
+            editingHabitChain.habitIds.mapNotNull { id -> habitsById[id] }
         }
     val isCompleted =
         remember(chainHabits, dateStr) {
