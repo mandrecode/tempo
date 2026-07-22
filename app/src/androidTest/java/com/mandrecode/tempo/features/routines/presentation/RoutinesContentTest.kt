@@ -58,7 +58,7 @@ class RoutinesContentTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Loading habits…", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Loading habits…", substring = true).assertIsDisplayed()
     }
 
     @Test
