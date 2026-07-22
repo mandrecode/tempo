@@ -38,8 +38,16 @@ object SettingsContract {
 
     /** Modal state of the Settings Backup section. */
     sealed interface BackupDialog {
+        /** Export was requested; the user must set a passphrase before the file is written. */
+        data object EnterExportPassphrase : BackupDialog
+
         /** A file was picked for import; the user chooses Merge or Replace. */
         data object ChooseImportMode : BackupDialog
+
+        /** The picked file is encrypted; the user must enter the passphrase used to create it. */
+        data class EnterImportPassphrase(
+            val attemptsFailed: Boolean = false,
+        ) : BackupDialog
 
         data class ImportSucceeded(
             val imported: Int,
@@ -105,6 +113,11 @@ object SettingsContract {
 
         data object ExportClicked : UiEvent
 
+        data class ExportPassphraseConfirmed(
+            val passphrase: CharArray,
+            val confirmation: CharArray,
+        ) : UiEvent
+
         data class ExportDestinationPicked(
             val uri: Uri,
         ) : UiEvent
@@ -115,6 +128,10 @@ object SettingsContract {
 
         data class ImportFilePicked(
             val uri: Uri,
+        ) : UiEvent
+
+        data class ImportPassphraseEntered(
+            val passphrase: CharArray,
         ) : UiEvent
 
         data class ImportModeChosen(

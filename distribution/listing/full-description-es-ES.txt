@@ -14,13 +14,13 @@ Anota tus tareas al instante. Organízalas con etiquetas, prioridades y fechas l
 Creado con los últimos estándares de Material You. Tempo se adapta a los colores de tu fondo de pantalla y ofrece una interfaz moderna y hermosa que encaja a la perfección en tu dispositivo Android.
 
 🛡️ <b>Privacidad ante todo, sin conexión</b>
-Tempo funciona completamente sin conexión. Tus datos nunca salen de tu dispositivo. Sin cuentas, sin sincronización en la nube, sin rastreo: solo tú y tus objetivos.
+Tempo funciona completamente sin conexión y cifra tus datos en el dispositivo, incluidas las copias de seguridad que exportes. Tus datos nunca salen de tu dispositivo. Sin cuentas, sin sincronización en la nube, sin rastreo: solo tú y tus objetivos.
 
 <b>⭐ ¿POR QUÉ ELEGIR TEMPO?</b>
 🎯 <b>Enfocado</b>: sin anuncios, sin distracciones
 🗓️ <b>Flexible</b>: crea rutinas para días específicos de la semana
 📊 <b>Visual</b>: indicadores de progreso y animaciones expresivas
 🔔 <b>Recordatorios amables</b>: notificaciones que ayudan, no que agobian
-🔒 <b>Privado por diseño</b>: un verdadero rastreador de hábitos y app de productividad sin conexión
+🔐 <b>Cifrado y privado por diseño</b>: un verdadero rastreador de hábitos y app de productividad sin conexión
 
 Empieza en pequeño, crea cadenas y domina tu día con Tempo: tu rastreador de hábitos, creador de rutinas y lista de tareas, todo en uno.

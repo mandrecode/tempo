@@ -14,19 +14,19 @@ class ExportBackupUseCaseTest {
     @Test
     fun `returns repository json`() =
         runTest {
-            coEvery { backupRepository.exportToJson() } returns """{"schemaVersion":1}"""
+            coEvery { backupRepository.exportEncrypted(any()) } returns """{"encryptionVersion":1}"""
 
-            val export = useCase()
+            val export = useCase("passphrase".toCharArray())
 
-            assertThat(export.json).isEqualTo("""{"schemaVersion":1}""")
+            assertThat(export.json).isEqualTo("""{"encryptionVersion":1}""")
         }
 
     @Test
     fun `suggested file name follows the documented pattern`() =
         runTest {
-            val export = useCase()
+            val export = useCase("passphrase".toCharArray())
 
             assertThat(export.suggestedFileName)
-                .matches("tempo-backup-\\d{8}-\\d{4}\\.json")
+                .matches("backup-\\d{8}-\\d{4}\\.tempo")
         }
 }

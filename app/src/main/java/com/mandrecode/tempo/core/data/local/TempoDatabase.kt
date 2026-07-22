@@ -21,6 +21,11 @@ import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.security.DatabaseEncryptionMigrator
+import com.mandrecode.tempo.core.data.local.security.DbPassphraseProvider
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
     entities = [
@@ -46,9 +51,12 @@ abstract class TempoDatabase : RoomDatabase() {
     abstract fun habitChainMemberDao(): HabitChainMemberDao
 
     companion object {
+        const val DATABASE_NAME = "tempo_database"
+
         @Volatile
         @Suppress("ktlint:standard:property-naming")
         private var INSTANCE: TempoDatabase? = null
+        private val instanceMutex = Mutex()
 
         val MIGRATION_1_2 =
             object : Migration(1, 2) {
@@ -224,21 +232,30 @@ abstract class TempoDatabase : RoomDatabase() {
                 MIGRATION_8_9,
             )
 
-        fun getDatabase(context: Context): TempoDatabase =
-            INSTANCE ?: synchronized(this) {
-                val appContext = context.applicationContext
-                val instance =
-                    Room
-                        .databaseBuilder(
-                            appContext,
-                            TempoDatabase::class.java,
-                            "tempo_database",
-                        ).addMigrations(*MIGRATIONS)
-                        .addCallback(inboxCallback(appContext))
-                        .fallbackToDestructiveMigration(false)
-                        .build()
-                INSTANCE = instance
-                instance
+        suspend fun getDatabase(
+            context: Context,
+            passphraseProvider: DbPassphraseProvider,
+            migrator: DatabaseEncryptionMigrator,
+        ): TempoDatabase =
+            INSTANCE ?: instanceMutex.withLock {
+                INSTANCE ?: run {
+                    val appContext = context.applicationContext
+                    val passphrase = passphraseProvider.getOrCreatePassphrase()
+                    migrator.migrateIfNeeded(DATABASE_NAME, passphrase)
+                    val instance =
+                        Room
+                            .databaseBuilder(
+                                appContext,
+                                TempoDatabase::class.java,
+                                DATABASE_NAME,
+                            ).openHelperFactory(SupportOpenHelperFactory(passphrase))
+                            .addMigrations(*MIGRATIONS)
+                            .addCallback(inboxCallback(appContext))
+                            .fallbackToDestructiveMigration(false)
+                            .build()
+                    INSTANCE = instance
+                    instance
+                }
             }
 
         /**

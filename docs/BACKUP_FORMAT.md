@@ -4,8 +4,40 @@ Tempo exports all user data as a single JSON document via **Settings → Backup 
 This document is the stable, versioned contract for that file. Backup/sync features (present
 and future) must read and write this format.
 
-> Exports are **unencrypted** plain JSON. The user chooses where the file is stored via the
-> system file picker; anyone with access to the file can read its contents.
+> Exports are **encrypted** with a passphrase the user sets at export time (see
+> [Encryption](#encryption) below). The user chooses where the file is stored via the system
+> file picker.
+
+## Encryption
+
+Every export is encrypted — there is no plaintext export option. At export time, the user sets
+a passphrase (with a confirmation field, since it cannot be recovered if forgotten); at import
+time, they re-enter it. The passphrase is never stored by the app.
+
+The written file is a JSON **envelope** distinct from the record schema below, marked by an
+`encryptionVersion` field. This document describes **encryption version 1**:
+
+| Field | Type | Description |
+|:---|:---|:---|
+| `encryptionVersion` | int | Encryption envelope format version. |
+| `kdf` | string | Key derivation function, currently always `"PBKDF2WithHmacSHA256"`. |
+| `iterations` | int | KDF iteration count, recorded per-file at export time so a stronger value can be adopted later without breaking older exports (currently 200,000). |
+| `salt` | string | Base64-encoded random salt, unique per export. |
+| `iv` | string | Base64-encoded AES-GCM initialization vector. |
+| `ciphertext` | string | Base64-encoded AES-256-GCM ciphertext of the plaintext record JSON described below. |
+
+Decrypting `ciphertext` with the passphrase-derived key yields the plaintext JSON document
+described in [Envelope](#envelope) onward. Encryption is a wrapper around that document, not a
+replacement for it — `encryptionVersion` and `schemaVersion` evolve independently. A wrong
+passphrase is detected via AES-GCM authentication failure, not garbled output.
+
+The suggested export filename uses the `.tempo` extension (e.g. `backup-20260721-1000.tempo`)
+rather than `.json`, signaling that the file is this encrypted envelope, not plain JSON. There is
+no unencrypted backup format to import: content that doesn't decode as an envelope is reported
+as corrupt rather than imported as-is.
+
+The encryption DTOs live in `BackupEncryptedEnvelopeDto` in the same `BackupFileDto.kt` file, and
+the KDF/cipher logic lives in `infrastructure/security/BackupEncryptionService.kt`.
 
 ## Envelope
 
@@ -99,3 +131,6 @@ an enabled tab, and retention days snap to the nearest supported value.
   `app/src/main/java/com/mandrecode/tempo/features/backup/data/model/BackupFileDto.kt` and are
   deliberately decoupled from Room entities and domain models — refactors there must not
   change this file format.
+- `encryptionVersion` (see [Encryption](#encryption)) is a separate version number from
+  `schemaVersion` and only bumps when the encryption envelope or crypto parameters change, not
+  when the record schema changes.

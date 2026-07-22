@@ -1,19 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+   See https://developer.android.com/about/versions/12/backup-restore#xml-changes for details.
+
+   The encrypted Room database and the Keystore-wrapped passphrase blob are excluded from both
+   cloud backup and device-to-device transfer: the Android Keystore key that decrypts the
+   passphrase is hardware-bound and never leaves the original device by design, so restoring
+   these files without it would leave a database this install can never open (see
+   docs/DB_ENCRYPTION.md, "Unrecoverable key failure"). Excluding them means a restore/transfer
+   is indistinguishable from a fresh install instead of crash-looping. Users who want their data
+   on a new device should use Settings -> Backup export/import instead.
 -->
 <data-extraction-rules>
     <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+        <exclude domain="database" path="tempo_database"/>
+        <exclude domain="database" path="tempo_database-wal"/>
+        <exclude domain="database" path="tempo_database-shm"/>
+        <exclude domain="sharedpref" path="tempo_secure_prefs.xml"/>
     </cloud-backup>
-    <!--
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <exclude domain="database" path="tempo_database"/>
+        <exclude domain="database" path="tempo_database-wal"/>
+        <exclude domain="database" path="tempo_database-shm"/>
+        <exclude domain="sharedpref" path="tempo_secure_prefs.xml"/>
     </device-transfer>
-    -->
 </data-extraction-rules>

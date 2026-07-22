@@ -12,8 +12,11 @@ import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
 import com.mandrecode.tempo.features.backup.data.mapper.toDomain
 import com.mandrecode.tempo.features.backup.data.mapper.toDto
+import com.mandrecode.tempo.features.backup.data.mapper.toEnvelope
+import com.mandrecode.tempo.features.backup.data.model.BackupEncryptedEnvelopeDto
 import com.mandrecode.tempo.features.backup.data.model.BackupEnvelopeDto
 import com.mandrecode.tempo.features.backup.data.model.BackupFileDto
+import com.mandrecode.tempo.features.backup.data.model.ENCRYPTION_ENVELOPE_VERSION
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ChainMembership
@@ -31,6 +34,9 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
 import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Category
+import com.mandrecode.tempo.infrastructure.security.BackupEncryptionService
+import com.mandrecode.tempo.infrastructure.security.DecryptResult
+import com.mandrecode.tempo.infrastructure.security.EncryptedEnvelope
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.TimeZone
@@ -52,6 +58,7 @@ class BackupRepositoryImpl
         private val validator: BackupPayloadValidator,
         private val mergePlanner: MergePlanner,
         private val settingsDataSource: BackupSettingsDataSource,
+        private val encryptionService: BackupEncryptionService,
         @param:ApplicationContext private val context: Context,
     ) : BackupRepository {
         private val jsonFormat =
@@ -60,26 +67,45 @@ class BackupRepositoryImpl
                 encodeDefaults = true
             }
 
-        override suspend fun exportToJson(): String {
+        override suspend fun exportEncrypted(passphrase: CharArray): String {
             val data =
                 database
                     .withTransaction { readAll() }
                     .copy(settings = settingsDataSource.snapshot())
             val exportedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-            return jsonFormat.encodeToString(
-                data.toDto(
-                    schemaVersion = BACKUP_SCHEMA_VERSION,
-                    appVersion = BuildConfig.VERSION_NAME,
-                    exportedAt = exportedAt,
-                ),
-            )
+            val plaintextJson =
+                jsonFormat.encodeToString(
+                    data.toDto(
+                        schemaVersion = BACKUP_SCHEMA_VERSION,
+                        appVersion = BuildConfig.VERSION_NAME,
+                        exportedAt = exportedAt,
+                    ),
+                )
+            val envelope = encryptionService.encrypt(plaintextJson, passphrase)
+            return jsonFormat.encodeToString(envelope.toDto())
         }
 
+        // Also requires the base64 fields to decode, not just the JSON shape/version — a
+        // malformed envelope would otherwise prompt for a passphrase before failing as
+        // CorruptFile anyway, an unnecessary step for a file that can never succeed.
+        override fun isEncryptedBackup(content: String): Boolean =
+            decodeEnvelopeOrNull(content, jsonFormat)?.let { toEncryptedEnvelopeOrNull(it) } != null
+
         override suspend fun importFromJson(
-            json: String,
+            content: String,
+            mode: ImportMode,
+            passphrase: CharArray?,
+        ): ImportOutcome =
+            when (val resolution = resolvePlaintext(content, passphrase, jsonFormat, encryptionService)) {
+                is PlaintextResolution.Failed -> resolution.outcome
+                is PlaintextResolution.Ready -> importDecodedPlaintext(resolution.json, mode)
+            }
+
+        private suspend fun importDecodedPlaintext(
+            plaintextJson: String,
             mode: ImportMode,
         ): ImportOutcome {
-            val fileVersion = decodeSchemaVersion(json)
+            val fileVersion = decodeSchemaVersion(plaintextJson, jsonFormat)
             return when {
                 // Versions below 1 never existed; such a file is not a Tempo backup.
                 fileVersion == null || fileVersion < 1 -> ImportOutcome.CorruptFile
@@ -89,31 +115,15 @@ class BackupRepositoryImpl
                         maxSupported = BACKUP_SCHEMA_VERSION,
                     )
 
-                else -> validateAndApply(json, mode)
+                else -> validateAndApply(plaintextJson, mode)
             }
         }
-
-        private fun decodeSchemaVersion(json: String): Int? =
-            try {
-                jsonFormat.decodeFromString<BackupEnvelopeDto>(json).schemaVersion
-            } catch (_: SerializationException) {
-                null
-            }
-
-        private fun decodeData(json: String): BackupData? =
-            try {
-                jsonFormat.decodeFromString<BackupFileDto>(json).toDomain()
-            } catch (_: SerializationException) {
-                null
-            } catch (_: IllegalArgumentException) {
-                null
-            }
 
         private suspend fun validateAndApply(
             json: String,
             mode: ImportMode,
         ): ImportOutcome {
-            val data = decodeData(json) ?: return ImportOutcome.CorruptFile
+            val data = decodeData(json, jsonFormat) ?: return ImportOutcome.CorruptFile
             return when (val result = validator.validate(data)) {
                 is BackupPayloadValidator.Result.Invalid ->
                     ImportOutcome.ValidationFailed(result.issues)
@@ -306,3 +316,90 @@ private fun HabitChainEntity.toDomainChain(): HabitChain =
         completionHistory = completionHistory,
         repeatDays = repeatDays,
     )
+
+/** Outcome of resolving a picked file's content down to plaintext backup JSON. */
+private sealed interface PlaintextResolution {
+    data class Ready(
+        val json: String,
+    ) : PlaintextResolution
+
+    data class Failed(
+        val outcome: ImportOutcome,
+    ) : PlaintextResolution
+}
+
+/**
+ * Decrypts an encrypted backup envelope down to plaintext backup JSON. Every valid export is an
+ * envelope — there is no unencrypted backup format to fall back to — so content that isn't one
+ * is reported as corrupt rather than imported as-is.
+ */
+private fun resolvePlaintext(
+    content: String,
+    passphrase: CharArray?,
+    jsonFormat: Json,
+    encryptionService: BackupEncryptionService,
+): PlaintextResolution {
+    val envelopeDto = decodeEnvelopeOrNull(content, jsonFormat)
+    val envelope = envelopeDto?.let { toEncryptedEnvelopeOrNull(it) }
+    return when {
+        // Not a decodable envelope at all, or one whose base64 payloads are malformed — a
+        // tampered/truncated .tempo file or unrelated JSON, not a wrong-passphrase case.
+        envelopeDto == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
+        envelope == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
+        passphrase == null -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
+        else ->
+            when (val decrypted = encryptionService.decrypt(envelope, passphrase)) {
+                is DecryptResult.Success -> PlaintextResolution.Ready(decrypted.plaintext)
+                DecryptResult.WrongPassphrase -> PlaintextResolution.Failed(ImportOutcome.WrongPassphrase)
+                DecryptResult.Corrupt -> PlaintextResolution.Failed(ImportOutcome.CorruptFile)
+            }
+    }
+}
+
+/**
+ * Only decodes envelopes at [ENCRYPTION_ENVELOPE_VERSION]; a future, newer envelope version
+ * this build doesn't understand must be treated as "not a decryptable envelope" rather than
+ * risk decrypting a payload laid out differently than this code assumes.
+ */
+private fun decodeEnvelopeOrNull(
+    content: String,
+    jsonFormat: Json,
+): BackupEncryptedEnvelopeDto? {
+    val dto =
+        try {
+            jsonFormat.decodeFromString<BackupEncryptedEnvelopeDto>(content)
+        } catch (_: SerializationException) {
+            return null
+        }
+    return dto.takeIf { it.encryptionVersion == ENCRYPTION_ENVELOPE_VERSION }
+}
+
+/** [BackupEncryptedEnvelopeDto.toEnvelope] base64-decodes its fields and can throw on bad input. */
+private fun toEncryptedEnvelopeOrNull(dto: BackupEncryptedEnvelopeDto): EncryptedEnvelope? =
+    try {
+        dto.toEnvelope()
+    } catch (_: IllegalArgumentException) {
+        null
+    }
+
+private fun decodeSchemaVersion(
+    json: String,
+    jsonFormat: Json,
+): Int? =
+    try {
+        jsonFormat.decodeFromString<BackupEnvelopeDto>(json).schemaVersion
+    } catch (_: SerializationException) {
+        null
+    }
+
+private fun decodeData(
+    json: String,
+    jsonFormat: Json,
+): BackupData? =
+    try {
+        jsonFormat.decodeFromString<BackupFileDto>(json).toDomain()
+    } catch (_: SerializationException) {
+        null
+    } catch (_: IllegalArgumentException) {
+        null
+    }

@@ -471,6 +471,17 @@
     <string name="backup_issue_unknown_parent_task">Task "%1$s" references a missing parent task</string>
     <string name="backup_issue_unknown_chain">A chain membership references missing chain %1$s</string>
     <string name="backup_issue_unknown_habit">A chain membership references missing habit %1$s</string>
+    <string name="backup_export_passphrase_title">Set a passphrase</string>
+    <string name="backup_export_passphrase_message">Your export will be encrypted with this passphrase. Remember it — if you forget the passphrase, Tempo cannot recover the backup.</string>
+    <string name="backup_export_passphrase_label">Passphrase</string>
+    <string name="backup_export_passphrase_confirm_label">Confirm passphrase</string>
+    <string name="backup_export_passphrase_mismatch">Passphrases don\'t match</string>
+    <string name="backup_export_passphrase_confirm">Export</string>
+    <string name="backup_import_passphrase_title">Enter passphrase</string>
+    <string name="backup_import_passphrase_message">This backup is encrypted. Enter the passphrase used to create it.</string>
+    <string name="backup_import_passphrase_label">Passphrase</string>
+    <string name="backup_import_passphrase_error">Incorrect passphrase. Try again.</string>
+    <string name="backup_import_passphrase_confirm">Continue</string>
 
     <!-- ABOUT SECTION -->
     <string name="about">About</string>
@@ -495,10 +506,10 @@
     <string name="onboarding_appearance_description">Start with Tempo’s signature palette or match supported devices to your wallpaper.</string>
     <string name="onboarding_setup_title">Set up your first session</string>
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
-    <string name="whats_new_legend">New features in v%1$s: %2$s</string>
+    <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">See what’s new</string>
-    <string name="whats_new_description">After an update, a quick summary of the latest feature appears here — just like this one.</string>
+    <string name="whats_new_title">Your data is now encrypted</string>
+    <string name="whats_new_description">Your tasks and habits are encrypted on your device, and backup exports are protected with a passphrase only you know.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

@@ -22,14 +22,14 @@ class ImportBackupUseCaseTest {
     @Test
     fun `replace cancels alarms before importing and reschedules after`() =
         runTest {
-            coEvery { backupRepository.importFromJson(any(), any()) } returns
+            coEvery { backupRepository.importFromJson(any(), any(), any()) } returns
                 ImportOutcome.Success(ImportSummary())
 
             useCase("{}", ImportMode.REPLACE)
 
             coVerifyOrder {
                 reminderScheduler.cancelAllReminders()
-                backupRepository.importFromJson("{}", ImportMode.REPLACE)
+                backupRepository.importFromJson("{}", ImportMode.REPLACE, null)
                 reminderScheduler.rescheduleAllReminders()
             }
         }
@@ -37,7 +37,7 @@ class ImportBackupUseCaseTest {
     @Test
     fun `merge does not cancel alarms but still reschedules`() =
         runTest {
-            coEvery { backupRepository.importFromJson(any(), any()) } returns
+            coEvery { backupRepository.importFromJson(any(), any(), any()) } returns
                 ImportOutcome.Success(ImportSummary())
 
             useCase("{}", ImportMode.MERGE)
@@ -49,7 +49,7 @@ class ImportBackupUseCaseTest {
     @Test
     fun `reschedules even when the repository throws`() =
         runTest {
-            coEvery { backupRepository.importFromJson(any(), any()) } throws IllegalStateException("boom")
+            coEvery { backupRepository.importFromJson(any(), any(), any()) } throws IllegalStateException("boom")
 
             val thrown = runCatching { useCase("{}", ImportMode.REPLACE) }.exceptionOrNull()
 
@@ -72,7 +72,7 @@ class ImportBackupUseCaseTest {
     fun `returns the repository outcome`() =
         runTest {
             val outcome = ImportOutcome.UnsupportedVersion(fileVersion = 9, maxSupported = 1)
-            coEvery { backupRepository.importFromJson(any(), any()) } returns outcome
+            coEvery { backupRepository.importFromJson(any(), any(), any()) } returns outcome
 
             assertThat(useCase("{}", ImportMode.MERGE)).isEqualTo(outcome)
         }

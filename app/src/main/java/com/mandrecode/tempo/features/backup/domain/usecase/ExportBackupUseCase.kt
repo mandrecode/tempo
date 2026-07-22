@@ -18,10 +18,10 @@ class ExportBackupUseCase
             val suggestedFileName: String,
         )
 
-        suspend operator fun invoke(): Export {
+        suspend operator fun invoke(passphrase: CharArray): Export {
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
             return Export(
-                json = backupRepository.exportToJson(),
+                json = backupRepository.exportEncrypted(passphrase),
                 suggestedFileName = suggestedFileName(now),
             )
         }
@@ -30,6 +30,6 @@ class ExportBackupUseCase
             val date =
                 "%04d%02d%02d".format(now.year, now.month.number, now.day)
             val time = "%02d%02d".format(now.hour, now.minute)
-            return "tempo-backup-$date-$time.json"
+            return "backup-$date-$time.tempo"
         }
     }
