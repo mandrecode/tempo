@@ -226,7 +226,7 @@ internal fun TaskBottomSheetContent(
     }
 
     val taskSnapshot =
-        remember(task?.id) {
+        remember(editorKey) {
             task?.let {
                 TaskFormSnapshot(
                     title = it.title,
@@ -280,13 +280,13 @@ internal fun TaskBottomSheetContent(
     val isPriorityReadOnly = task?.isCompleted == true
 
     val autosaveController =
-        rememberEditorAutosaveController(initialSnapshot = taskSnapshot, key = task?.id)
+        rememberEditorAutosaveController(initialSnapshot = taskSnapshot, key = editorKey)
     val dispatchAutosave: (TaskFormSnapshot) -> Unit = { snapshot ->
         onAutoSave?.invoke(snapshot.title, snapshot.description, snapshot.categoryId)
     }
     DebouncedSnapshotEffect(
         enabled = autoSaveEnabled,
-        key = editingTargetId,
+        key = editorKey,
         debounceMillis = EDITOR_AUTO_SAVE_DEBOUNCE_MS,
         snapshotProvider = {
             TaskFormSnapshot(
