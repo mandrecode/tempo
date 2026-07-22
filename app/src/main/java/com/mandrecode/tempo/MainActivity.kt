@@ -219,8 +219,14 @@ class MainActivity : ComponentActivity() {
             intent.removeExtra(TaskReminderReceiver.EXTRA_OPEN_TASKS)
         }
 
-        // Launched from the home-screen quick-add-task widget
-        if (intent.getBooleanExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG, false)) {
+        // Launched from the home-screen quick-add-task widget. Guarded by the notification
+        // flags so a widget extra can never override an already-handled notification deep link
+        // if an Intent somehow carried both.
+        if (
+            !handledRoutineNotificationOpen &&
+            !handledTaskNotificationOpen &&
+            intent.getBooleanExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG, false)
+        ) {
             mainViewModel.setPendingNotificationAction(PendingNotificationAction.OpenNewTaskDialog)
             tasksNavigationTrigger.longValue++
             intent.removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)

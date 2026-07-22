@@ -106,7 +106,9 @@ class MainViewModel
                 // No payload to persist, and the window between a widget tap and this action
                 // being consumed is too short to be worth SavedStateHandle round-tripping — if
                 // missed (e.g. process death), the user just taps the in-app "+" button again.
-                PendingNotificationAction.OpenNewTaskDialog -> Unit
+                // Still clear any previously-persisted action so a process death in that window
+                // can't resurrect an unrelated, older pending action on restart.
+                PendingNotificationAction.OpenNewTaskDialog -> clearPendingNotificationAction()
             }
             _pendingNotificationAction.value = action
         }
