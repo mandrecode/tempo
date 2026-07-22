@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/mandrecode/tempo/compare/v1.2.0...v1.3.0) (2026-07-22)
+
+
+### Features
+
+* **#28:** encrypt local database and backup exports at rest ([#212](https://github.com/mandrecode/tempo/issues/212)) ([0e8326d](https://github.com/mandrecode/tempo/commit/0e8326df582fcec92128fada3da2ea4e5549f054))
+
 ## [1.2.0](https://github.com/mandrecode/tempo/compare/v1.1.0...v1.2.0) (2026-07-21)
 
 
