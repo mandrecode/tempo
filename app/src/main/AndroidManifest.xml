@@ -73,15 +73,9 @@
             </intent-filter>
         </receiver>
 
-        <activity
-            android:name=".features.widget.presentation.QuickAddTaskActivity"
-            android:exported="false"
-            android:excludeFromRecents="true"
-            android:launchMode="singleTask"
-            android:theme="@style/Theme.Tempo.QuickAddTask" />
-
         <receiver
             android:name=".features.widget.presentation.QuickAddTaskWidgetReceiver"
+            android:label="@string/widget_quick_add_task_label"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />

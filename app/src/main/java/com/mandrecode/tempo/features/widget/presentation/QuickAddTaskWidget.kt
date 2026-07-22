@@ -10,6 +10,8 @@ import androidx.glance.GlanceTheme
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
+import androidx.glance.action.ActionParameters
+import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
@@ -17,12 +19,11 @@ import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.layout.Alignment
-import androidx.glance.layout.Column
+import androidx.glance.layout.Box
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
-import androidx.glance.text.Text
-import androidx.glance.text.TextStyle
+import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
 
 class QuickAddTaskWidget : GlanceAppWidget() {
@@ -38,31 +39,36 @@ class QuickAddTaskWidget : GlanceAppWidget() {
             }
         }
     }
+
+    companion object {
+        // Read by MainActivity.handleIntent() to open the existing task-creation sheet
+        // instead of the app's default start destination.
+        const val EXTRA_OPEN_NEW_TASK_DIALOG = "OPEN_NEW_TASK_DIALOG"
+        val openNewTaskDialogKey = ActionParameters.Key<Boolean>(EXTRA_OPEN_NEW_TASK_DIALOG)
+    }
 }
 
 @Composable
 private fun QuickAddTaskWidgetContent() {
     val label = LocalContext.current.getString(R.string.widget_quick_add_task_label)
 
-    Column(
+    Box(
         modifier =
             GlanceModifier
                 .fillMaxSize()
                 .background(GlanceTheme.colors.background)
-                .clickable(actionStartActivity<QuickAddTaskActivity>())
-                .padding(12.dp),
-        horizontalAlignment = Alignment.Horizontal.CenterHorizontally,
-        verticalAlignment = Alignment.Vertical.CenterVertically,
+                .clickable(
+                    actionStartActivity<MainActivity>(
+                        parameters = actionParametersOf(QuickAddTaskWidget.openNewTaskDialogKey to true),
+                    ),
+                ).padding(12.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Image(
             provider = ImageProvider(R.drawable.ic_add_task),
             contentDescription = label,
             colorFilter = ColorFilter.tint(GlanceTheme.colors.primary),
-            modifier = GlanceModifier.size(28.dp),
-        )
-        Text(
-            text = label,
-            style = TextStyle(color = GlanceTheme.colors.onBackground),
+            modifier = GlanceModifier.size(40.dp),
         )
     }
 }

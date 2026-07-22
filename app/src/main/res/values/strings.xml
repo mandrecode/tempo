@@ -617,5 +617,4 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Quick add task</string>
     <string name="widget_quick_add_task_description">Add a task to Tempo without opening the app</string>
-    <string name="widget_quick_add_task_title_hint">Task title</string>
 </resources>

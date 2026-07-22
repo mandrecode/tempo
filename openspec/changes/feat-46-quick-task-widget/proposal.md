@@ -4,26 +4,25 @@ Adding a task today requires opening Tempo, navigating to the task list, and tap
 
 ## What Changes
 
-- Add a new Android home-screen widget ("Quick Add Task") implemented with Jetpack Glance.
-- Tapping the widget opens a minimal quick-add surface (title input + optional category picker) rendered in a transparent trampoline activity, not the full app.
-- Saving calls the existing `CreateTaskUseCase` directly; on success the surface closes back to the home screen. No task list, checklist, or agenda view is rendered in the widget — quick-add only.
-- Widget visuals (background, text, icon tint) use Glance's `GlanceTheme`/color providers wired to Tempo's existing static light/dark Material color tokens, so the widget matches the app's light/dark theme. Android 12+ dynamic (wallpaper-based) color is intentionally not used for the widget — see design.md decision 4.
-- New Gradle dependency: `androidx.glance:glance-appwidget`.
-- New manifest entries: an `AppWidgetProvider` `<receiver>` plus `appwidget-provider` metadata (min size, resize mode, preview image).
+- Add a new Android home-screen widget ("Quick Add Task") implemented with Jetpack Glance: an icon-only tile with no label text, matching a launcher-icon-style widget rather than a labeled button.
+- Tapping the widget launches the app's `MainActivity`, navigates to the Tasks tab, and opens the same task-creation sheet already used by the in-app "+" button — no bespoke widget-only UI. This reuses the existing `PendingNotificationAction`-based mechanism the app already uses to open specific content after a notification-triggered launch (a new `PendingNotificationAction.OpenNewTaskDialog` case).
+- Widget visuals (background, icon tint) use Glance's `GlanceTheme`/color providers wired to Tempo's existing static light/dark Material color tokens, so the widget matches the app's light/dark theme. Android 12+ dynamic (wallpaper-based) color is intentionally not used for the widget — see design.md decision 4.
+- New Gradle dependency: `androidx.glance:glance-appwidget` and `androidx.glance:glance-material3`.
+- New manifest entry: an `AppWidgetProvider` `<receiver>` plus `appwidget-provider` metadata (min size, resize mode, preview image, distinct widget-picker label).
 - New "What's New" entry (per AGENTS.md checklist) announcing the widget once it ships.
 
 ## Capabilities
 
 ### New Capabilities
-- `quick-task-widget`: Home-screen Glance widget that opens a quick-add surface, creates a task via the existing task creation use case, and reflects Tempo's light/dark theme colors.
+- `quick-task-widget`: Home-screen Glance widget that opens the app's existing task-creation sheet and reflects Tempo's light/dark theme colors.
 
 ### Modified Capabilities
-(none — no existing capability's requirements change)
+(none — no existing capability's requirements change; the widget reuses the existing task-creation flow and notification-launch-action mechanism as-is)
 
 ## Impact
 
-- **Affected code**: new `features/widget/` (or similar) module tree — Glance `GlanceAppWidget` + `GlanceAppWidgetReceiver`, a trampoline `Activity` hosting the quick-add Compose/Glance UI, DI wiring for `CreateTaskUseCase` access from a non-Compose entry point.
-- **Manifest**: new `<receiver>` for the widget provider, new `<activity>` for the quick-add trampoline (`excludeFromRecents`, transparent theme), new `res/xml/quick_task_widget_info.xml`.
-- **Dependencies**: adds `androidx.glance:glance-appwidget` (and `androidx.glance:glance-material3` if used for color scheme bridging) to `gradle/libs.versions.toml` and `app/build.gradle.kts`.
+- **Affected code**: new `features/widget/` module tree — Glance `GlanceAppWidget` + `GlanceAppWidgetReceiver`, a `TempoGlanceColorScheme` bridge. `MainActivity.handleIntent()` gains a branch reading a widget-launch intent extra; `PendingNotificationAction` gains an `OpenNewTaskDialog` case; `TasksScreen` gains a branch in its existing pending-action `LaunchedEffect` to dispatch `ShowTaskDialog()`.
+- **Manifest**: new `<receiver>` for the widget provider (`android:label` set to the widget's own string, not the app label), new `res/xml/quick_task_widget_info.xml`. No new `<activity>` — the widget launches the existing `MainActivity`.
+- **Dependencies**: adds `androidx.glance:glance-appwidget` and `androidx.glance:glance-material3` to `gradle/libs.versions.toml` and `app/build.gradle.kts`.
 - **Design system**: no changes to `core/ui/theme` — the widget reads existing color tokens, it does not introduce new ones.
 - **What's New**: replaces `WhatsNewRegistry.latest` per AGENTS.md checklist item 5.

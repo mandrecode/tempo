@@ -1,49 +1,32 @@
 ## ADDED Requirements
 
 ### Requirement: Home-screen quick-add widget
-Tempo SHALL provide a home-screen App Widget ("Quick Add Task") that the user can place on their Android home screen. The widget SHALL display only a launch affordance (icon and label) and SHALL NOT render any task list, agenda, or completion state.
+Tempo SHALL provide a home-screen App Widget ("Quick Add Task") that the user can place on their Android home screen. The widget SHALL display only an icon, with no label text on the tile itself, and SHALL NOT render any task list, agenda, or completion state.
 
 #### Scenario: User adds the widget to the home screen
 - **WHEN** the user adds the "Quick Add Task" widget from the system widget picker
-- **THEN** the widget renders showing the Tempo icon and a "Quick add task" label, with no task data displayed
+- **THEN** the widget renders showing only the Tempo task icon, with no text and no task data displayed
+- **AND** the widget is identifiable by its own name (not the app's name) in the widget picker
 
-### Requirement: Tapping the widget opens a quick-add surface
-Tapping the widget SHALL launch a minimal quick-add surface, on top of the current context, without navigating into the full Tempo app.
+### Requirement: Tapping the widget opens the app's existing task-creation sheet
+Tapping the widget SHALL launch the app, navigate to the Tasks tab, and open the same task-creation sheet used by the in-app "add task" control — not a separate widget-only UI.
 
 #### Scenario: User taps the widget
 - **WHEN** the user taps the widget on the home screen
-- **THEN** a quick-add surface opens showing a title input field and a category selector
-- **AND** the rest of the device UI (home screen/current app) remains visible behind or is dismissed back to on cancel
+- **THEN** the app opens on the Tasks tab
+- **AND** the task-creation sheet is shown, pre-populated the same way it is when opened via the in-app "+" button (blank title, default category)
 
-### Requirement: Saving a task from the widget reuses task creation logic
-Saving from the quick-add surface SHALL create the task through the same task-creation logic used by the rest of the app (validation, sort order, reminder scheduling), with no parallel/duplicated persistence path.
-
-#### Scenario: User saves a valid task from the widget
-- **WHEN** the user enters a non-empty title (optionally selecting a category) and taps Save
-- **THEN** a new task is persisted with that title and category
-- **AND** the quick-add surface closes
-
-#### Scenario: User attempts to save an empty title
-- **WHEN** the user taps Save with an empty or whitespace-only title
-- **THEN** no task is created
-- **AND** the quick-add surface shows a validation error and remains open
-
-#### Scenario: User cancels the quick-add surface
-- **WHEN** the user dismisses the quick-add surface without saving
-- **THEN** no task is created
-- **AND** the surface closes
+#### Scenario: Saving a task from the widget-triggered sheet
+- **WHEN** the user enters a title and saves the task-creation sheet after tapping the widget
+- **THEN** the task is created through the app's existing task-creation logic, identically to saving the sheet when opened in-app
 
 ### Requirement: Widget appearance matches the app's light/dark theme
-The widget's chrome (background, icon tint, text color) SHALL visually match Tempo's current color scheme, switching automatically between light and dark variants along with the system theme, using the same color tokens as the rest of the app rather than independently defined colors.
+The widget's chrome (background, icon tint) SHALL visually match Tempo's current color scheme, switching automatically between light and dark variants along with the system theme, using the same color tokens as the rest of the app rather than independently defined colors.
 
 #### Scenario: Device is in light mode
 - **WHEN** the system is set to light theme
-- **THEN** the widget renders using Tempo's light color scheme tokens (background, primary, on-primary)
+- **THEN** the widget renders using Tempo's light color scheme tokens (background, primary icon tint)
 
 #### Scenario: Device is in dark mode
 - **WHEN** the system is set to dark theme
-- **THEN** the widget renders using Tempo's dark color scheme tokens (background, primary, on-primary)
-
-#### Scenario: Quick-add surface follows the same theme
-- **WHEN** the quick-add surface is shown, in either light or dark system theme
-- **THEN** it renders using the app's existing `TempoTheme` Compose theme, matching the in-app task creation UI's colors
+- **THEN** the widget renders using Tempo's dark color scheme tokens (background, primary icon tint)

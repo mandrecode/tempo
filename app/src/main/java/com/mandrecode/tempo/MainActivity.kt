@@ -34,6 +34,7 @@ import com.mandrecode.tempo.core.ui.navigation.TasksRoute
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
+import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
 import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
@@ -195,7 +196,14 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Handle explicit navigation requests
+        handleExplicitNavigationRequests(intent, handledRoutineNotificationOpen, handledTaskNotificationOpen)
+    }
+
+    private fun handleExplicitNavigationRequests(
+        intent: Intent,
+        handledRoutineNotificationOpen: Boolean,
+        handledTaskNotificationOpen: Boolean,
+    ) {
         if (
             !handledRoutineNotificationOpen &&
             intent.getBooleanExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES, false)
@@ -209,6 +217,12 @@ class MainActivity : ComponentActivity() {
         ) {
             tasksNavigationTrigger.longValue++
             intent.removeExtra(TaskReminderReceiver.EXTRA_OPEN_TASKS)
+        }
+
+        // Launched from the home-screen quick-add-task widget
+        if (intent.getBooleanExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG, false)) {
+            mainViewModel.setPendingNotificationAction(PendingNotificationAction.OpenNewTaskDialog)
+            tasksNavigationTrigger.longValue++
         }
     }
 
@@ -224,6 +238,7 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_HABIT_CHAIN_ID)
         removeExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES)
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
+        removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)
     }
 }
 

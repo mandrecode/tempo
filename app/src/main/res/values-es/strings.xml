@@ -621,5 +621,4 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Añadir tarea rápida</string>
     <string name="widget_quick_add_task_description">Añade una tarea a Tempo sin abrir la aplicación</string>
-    <string name="widget_quick_add_task_title_hint">Título de la tarea</string>
 </resources>

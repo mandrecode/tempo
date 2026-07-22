@@ -51,7 +51,6 @@ kover {
                     "com.mandrecode.tempo.MainActivity",
                     "com.mandrecode.tempo.TempoApp",
                     "com.mandrecode.tempo.infrastructure.reminders.receivers.*",
-                    "com.mandrecode.tempo.features.widget.presentation.QuickAddTaskActivity",
                     "com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget*",
                     "com.mandrecode.tempo.features.widget.presentation.TempoGlanceColorScheme*",
                     // Compose-generated classes & previews

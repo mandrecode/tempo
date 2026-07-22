@@ -85,9 +85,19 @@ fun TasksScreen(
     }
 
     LaunchedEffect(pendingNotificationAction) {
-        val action = pendingNotificationAction as? PendingNotificationAction.OpenTask ?: return@LaunchedEffect
-        viewModel.openTaskFromNotification(action.taskId, action.originalReminderDate)
-        currentOnConsumePendingNotificationAction()
+        when (val action = pendingNotificationAction) {
+            is PendingNotificationAction.OpenTask -> {
+                viewModel.openTaskFromNotification(action.taskId, action.originalReminderDate)
+                currentOnConsumePendingNotificationAction()
+            }
+
+            PendingNotificationAction.OpenNewTaskDialog -> {
+                viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+                currentOnConsumePendingNotificationAction()
+            }
+
+            else -> Unit
+        }
     }
 
     val lifecycleOwner = LocalLifecycleOwner.current

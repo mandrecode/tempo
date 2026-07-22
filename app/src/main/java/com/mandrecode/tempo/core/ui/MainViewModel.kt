@@ -102,6 +102,11 @@ class MainViewModel
                         savedStateHandle.remove<String>(KEY_PENDING_SCHEDULED_DATE)
                     }
                 }
+
+                // No payload to persist, and the window between a widget tap and this action
+                // being consumed is too short to be worth SavedStateHandle round-tripping — if
+                // missed (e.g. process death), the user just taps the in-app "+" button again.
+                PendingNotificationAction.OpenNewTaskDialog -> Unit
             }
             _pendingNotificationAction.value = action
         }
