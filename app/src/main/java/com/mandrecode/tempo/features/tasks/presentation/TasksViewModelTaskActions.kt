@@ -7,8 +7,9 @@ import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
-import com.mandrecode.tempo.core.domain.util.ValidationResult
+import com.mandrecode.tempo.core.domain.util.TitleDescriptionValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
+import com.mandrecode.tempo.core.ui.util.toUserFacingMessage
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
@@ -21,11 +22,24 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 
-internal fun Throwable.toUserFacingMessage(): String =
-    localizedMessage?.takeIf { it.isNotBlank() }
-        ?: message?.takeIf { it.isNotBlank() }
-        ?: javaClass.simpleName.takeIf { it.isNotBlank() }
-        ?: javaClass.name
+/** @return `true` if [result] is an error and the corresponding form error field was set. */
+private fun TasksViewModel.applyTaskFormValidationError(result: TitleDescriptionValidationResult): Boolean {
+    when (result) {
+        TitleDescriptionValidationResult.TitleEmpty ->
+            mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.task_title_required)) }
+
+        TitleDescriptionValidationResult.TitleTooLong ->
+            mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.error_task_title_too_long)) }
+
+        TitleDescriptionValidationResult.DescriptionTooLong ->
+            mutableUiState.update {
+                it.copy(taskForm = it.taskForm.copy(descriptionError = R.string.error_task_description_too_long))
+            }
+
+        TitleDescriptionValidationResult.Valid -> Unit
+    }
+    return result != TitleDescriptionValidationResult.Valid
+}
 
 internal fun TasksViewModel.createOrUpdateTask(
     title: String,
@@ -34,25 +48,8 @@ internal fun TasksViewModel.createOrUpdateTask(
     parentTaskId: Long? = null,
     autoSave: Boolean = false,
 ) {
-    when (ValidationUtils.validateTitle(title)) {
-        ValidationResult.Empty -> {
-            mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.task_title_required)) }
-            return
-        }
-
-        ValidationResult.TooLong -> {
-            mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.error_task_title_too_long)) }
-            return
-        }
-
-        // TooManyItems is never returned by validateTitle; listed here for exhaustive coverage.
-        ValidationResult.Valid, ValidationResult.TooManyItems -> Unit
-    }
-
-    if (ValidationUtils.validateDescription(description) is ValidationResult.TooLong) {
-        mutableUiState.update { it.copy(taskForm = it.taskForm.copy(descriptionError = R.string.error_task_description_too_long)) }
-        return
-    }
+    val validationResult = ValidationUtils.validateTitleAndDescription(title, description)
+    if (applyTaskFormValidationError(validationResult)) return
 
     val taskToEdit = mutableUiState.value.taskForm.editingTask
     val sanitized = sanitizePeriodicityFields()

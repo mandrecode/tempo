@@ -10,6 +10,7 @@ import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.util.ValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
+import com.mandrecode.tempo.core.ui.util.toUserFacingMessage
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -43,12 +44,6 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 private const val ROUTINES_VIEW_MODEL_TAG = "RoutinesViewModel"
-
-internal fun Throwable.toUserFacingMessage(): String =
-    localizedMessage?.takeIf { it.isNotBlank() }
-        ?: message?.takeIf { it.isNotBlank() }
-        ?: javaClass.simpleName.takeIf { it.isNotBlank() }
-        ?: javaClass.name
 
 private suspend fun RoutinesViewModel.showErrorSnackbar(
     @StringRes messageResId: Int,

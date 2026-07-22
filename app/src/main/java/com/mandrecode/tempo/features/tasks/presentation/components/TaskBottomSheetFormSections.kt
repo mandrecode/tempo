@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -30,7 +29,6 @@ import androidx.compose.material3.InputChipDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -53,6 +51,9 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
+import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
@@ -85,14 +86,14 @@ internal fun TaskBottomSheetBody(
             focusConfig = focusConfig,
         )
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         TaskCategorySection(
             state = state,
             onSelectCategory = actions.onSelectCategory,
         )
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         TaskPrioritySection(
             state = state,
@@ -100,7 +101,7 @@ internal fun TaskBottomSheetBody(
             onClearPriority = actions.onClearPriority,
         )
 
-        Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
         TaskReminderAndPeriodicitySection(
             state = state,
@@ -148,15 +149,7 @@ private fun TaskTitleSection(
                 )
             },
             textStyle = MaterialTheme.typography.inputTitle,
-            colors =
-                TextFieldDefaults.colors(
-                    focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                    focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                    errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                ),
+            colors = editorTransparentTextFieldColors(),
             modifier =
                 Modifier
                     .weight(1f)
@@ -200,21 +193,12 @@ private fun TaskDescriptionSection(
     onDescriptionChange: (TextFieldValue) -> Unit,
     focusConfig: TaskBottomSheetFocusConfig,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_short_text),
+        iconContentDescription = stringResource(R.string.description),
         verticalAlignment = Alignment.Top,
+        iconBoxModifier = Modifier.width(48.dp).padding(top = 16.dp),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp).padding(top = 16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_short_text),
-                contentDescription = stringResource(R.string.description),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         Column(
             modifier =
                 Modifier
@@ -253,15 +237,7 @@ private fun TaskDescriptionField(
         },
         textStyle = MaterialTheme.typography.bodyLarge,
         visualTransformation = linkVisualTransformation,
-        colors =
-            TextFieldDefaults.colors(
-                focusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-                focusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                unfocusedIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorIndicatorColor = androidx.compose.ui.graphics.Color.Transparent,
-                errorContainerColor = androidx.compose.ui.graphics.Color.Transparent,
-            ),
+        colors = editorTransparentTextFieldColors(),
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -290,21 +266,10 @@ private fun TaskCategorySection(
     val isAddingNewSubtask = state.task == null && state.formState.parentTaskId != null
     val categoryEnabled = !isAddingNewSubtask
 
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_category),
+        iconContentDescription = stringResource(R.string.category_label),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_category),
-                contentDescription = stringResource(R.string.category_label),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         LazyRow(
             contentPadding = PaddingValues(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -348,21 +313,10 @@ private fun TaskPrioritySection(
     onSetPriority: (Priority) -> Unit,
     onClearPriority: () -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_flag),
+        iconContentDescription = stringResource(R.string.sort_option_priority),
     ) {
-        Box(
-            modifier = Modifier.width(48.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_flag),
-                contentDescription = stringResource(R.string.sort_option_priority),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         LazyRow(
             contentPadding = PaddingValues(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -415,21 +369,10 @@ private fun TaskReminderAndPeriodicitySection(
 ) {
     Column {
         if (state.formattedReminder != null) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            EditorPropertyRow(
+                iconPainter = painterResource(R.drawable.ic_reminder),
+                iconContentDescription = stringResource(R.string.reminder_label),
             ) {
-                Box(
-                    modifier = Modifier.width(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_reminder),
-                        contentDescription = stringResource(R.string.reminder_label),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
                 InputChip(
                     selected = true,
                     onClick = actions.onSetReminderClicked,
@@ -470,7 +413,7 @@ private fun TaskReminderAndPeriodicitySection(
                 )
             }
 
-            Spacer(modifier = Modifier.height(PROPERTY_ROW_GAP))
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
             if ((state.task == null || state.task.parentTaskId == null) && state.formState.parentTaskId == null) {
                 TaskPeriodicitySection(
@@ -479,21 +422,10 @@ private fun TaskReminderAndPeriodicitySection(
                 )
             }
         } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+            EditorPropertyRow(
+                iconPainter = painterResource(R.drawable.ic_reminder),
+                iconContentDescription = stringResource(R.string.reminder_label),
             ) {
-                Box(
-                    modifier = Modifier.width(48.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_reminder),
-                        contentDescription = stringResource(R.string.reminder_label),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
-
                 ExpressiveChip(
                     label = stringResource(R.string.add_reminder),
                     isSelected = false,
@@ -518,30 +450,20 @@ private fun TaskPeriodicitySection(
     actions: TaskBottomSheetBodyActions,
 ) {
     val isPeriodicityReadOnly = state.task?.isCompleted == true
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_repeat),
+        iconContentDescription = stringResource(R.string.repeat),
+        iconBoxModifier =
+            Modifier
+                .width(48.dp)
+                .then(
+                    if (isPeriodicityReadOnly) {
+                        Modifier.alpha(0.5f)
+                    } else {
+                        Modifier
+                    },
+                ),
     ) {
-        Box(
-            modifier =
-                Modifier
-                    .width(48.dp)
-                    .then(
-                        if (isPeriodicityReadOnly) {
-                            Modifier.alpha(0.5f)
-                        } else {
-                            Modifier
-                        },
-                    ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_repeat),
-                contentDescription = stringResource(R.string.repeat),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-
         val periodicityListState = rememberLazyListState()
 
         LaunchedEffect(state.formState.periodicity) {
