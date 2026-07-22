@@ -120,6 +120,7 @@ class MainActivity : ComponentActivity() {
                             if (whatsNewEntry != null && !isOnboardingSectionActive) {
                                 WhatsNewBottomSheet(
                                     entry = whatsNewEntry,
+                                    versionName = state.whatsNewVersionName,
                                     onDismissRequest = mainViewModel::onWhatsNewDismissed,
                                 )
                             }

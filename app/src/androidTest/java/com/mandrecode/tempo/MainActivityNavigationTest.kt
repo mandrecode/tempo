@@ -128,6 +128,7 @@ class MainActivityNavigationTest {
             isRoutinesTabEnabled = true,
             isTasksTabEnabled = true,
             isOnboardingCompleted = true,
+            whatsNewVersionName = "1.4.0",
         )
 
     private companion object {

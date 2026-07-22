@@ -3,7 +3,7 @@ package com.mandrecode.tempo.core.data.preferences
 import kotlinx.coroutines.flow.StateFlow
 
 interface WhatsNewPreferencesRepository {
-    val lastSeenVersionCode: StateFlow<Int>
+    val lastSeenEntryId: StateFlow<String?>
 
-    fun setLastSeenVersionCode(versionCode: Int)
+    fun setLastSeenEntryId(id: String)
 }
