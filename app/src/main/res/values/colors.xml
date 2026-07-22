@@ -7,16 +7,4 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
-
-    <!-- Quick Add Task widget's "Tempo colors" palette, mirrored from TempoLight* in
-         core/ui/theme/Color.kt. Defined as real day/night-qualified resources (this file plus
-         values-night/colors.xml) rather than passed as resolved Color values, so the Glance
-         widget's colors switch automatically on a system light/dark change — see
-         TempoGlanceColorScheme.kt and design.md decision 4. -->
-    <color name="tempo_glance_primary">#006A60</color>
-    <color name="tempo_glance_on_primary">#FFFFFF</color>
-    <color name="tempo_glance_background">#F4FBF8</color>
-    <color name="tempo_glance_on_background">#161D1C</color>
-    <color name="tempo_glance_surface">#F4FBF8</color>
-    <color name="tempo_glance_on_surface">#161D1C</color>
 </resources>
