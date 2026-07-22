@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/mandrecode/tempo/compare/v1.3.0...v1.4.0) (2026-07-22)
+
+
+### Features
+
+* **#45:** show chain completion checkbox in habit bottom sheet ([#217](https://github.com/mandrecode/tempo/issues/217)) ([ffde589](https://github.com/mandrecode/tempo/commit/ffde589656556f3273fcbe5b399598f596a23d2f))
+
 ## [1.3.0](https://github.com/mandrecode/tempo/compare/v1.2.0...v1.3.0) (2026-07-22)
 
 
