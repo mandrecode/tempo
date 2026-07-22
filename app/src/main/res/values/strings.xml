@@ -615,6 +615,6 @@
     <string name="icon_picker_all_icons_title">All icons</string>
 
     <!-- QUICK ADD TASK WIDGET -->
-    <string name="widget_quick_add_task_label">Quick add task</string>
+    <string name="widget_quick_add_task_label">Quick Add Task</string>
     <string name="widget_quick_add_task_description">Add a task to Tempo in one tap from your home screen</string>
 </resources>
