@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.1](https://github.com/mandrecode/tempo/compare/v1.4.0...v1.4.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* **#220:** improve what's new generation to avoid manual version linking ([#221](https://github.com/mandrecode/tempo/issues/221)) ([20281c8](https://github.com/mandrecode/tempo/commit/20281c8e057ba8b19300191fae8ec5827a0ca43f))
+
 ## [1.4.0](https://github.com/mandrecode/tempo/compare/v1.3.0...v1.4.0) (2026-07-22)
 
 
