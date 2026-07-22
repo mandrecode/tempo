@@ -28,7 +28,7 @@
 
 ## 6. Verification
 
-- [ ] 6.1 Run `./gradlew ktlintFormat` then `./gradlew ktlintCheck`.
-- [ ] 6.2 Run `./gradlew :app:detekt` and confirm the detekt baseline count does not increase.
-- [ ] 6.3 Run `./gradlew testDebugUnitTest`.
-- [ ] 6.4 Run `openspec validate feat-46-quick-task-widget` and resolve any reported issues.
+- [x] 6.1 Run `./gradlew ktlintFormat` then `./gradlew ktlintCheck`. (Clean, re-verified after the redesign.)
+- [x] 6.2 Run `./gradlew :app:detekt` and confirm the detekt baseline count does not increase. (Clean; baseline still 188 < 189 ceiling.)
+- [x] 6.3 Run `./gradlew testDebugUnitTest`. (All pass, including `koverVerifyDebug`, `compileDebugAndroidTestKotlin`, `assembleDebug`, `lintDebug`, and the new `TasksScreenTest` case run on-device.)
+- [x] 6.4 Run `openspec validate feat-46-quick-task-widget` and resolve any reported issues. (Valid.)

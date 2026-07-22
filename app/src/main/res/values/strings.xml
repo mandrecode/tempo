@@ -509,7 +509,7 @@
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
     <string name="whats_new_title">Add tasks from your home screen</string>
-    <string name="whats_new_description">Place the new Quick Add Task widget on your home screen to jot down a task in one tap, no need to open the app.</string>
+    <string name="whats_new_description">Place the new Quick Add Task widget on your home screen to jump straight to adding a task in one tap.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -616,5 +616,5 @@
 
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Quick add task</string>
-    <string name="widget_quick_add_task_description">Add a task to Tempo without opening the app</string>
+    <string name="widget_quick_add_task_description">Add a task to Tempo in one tap from your home screen</string>
 </resources>

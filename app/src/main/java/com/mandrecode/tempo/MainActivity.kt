@@ -223,6 +223,7 @@ class MainActivity : ComponentActivity() {
         if (intent.getBooleanExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG, false)) {
             mainViewModel.setPendingNotificationAction(PendingNotificationAction.OpenNewTaskDialog)
             tasksNavigationTrigger.longValue++
+            intent.removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)
         }
     }
 

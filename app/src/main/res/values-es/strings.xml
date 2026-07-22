@@ -513,7 +513,7 @@
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
     <string name="whats_new_title">Añade tareas desde tu pantalla de inicio</string>
-    <string name="whats_new_description">Añade el nuevo widget de tarea rápida a tu pantalla de inicio para anotar una tarea con un toque, sin necesidad de abrir la aplicación.</string>
+    <string name="whats_new_description">Añade el nuevo widget de tarea rápida a tu pantalla de inicio para ir directo a añadir una tarea con un toque.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -620,5 +620,5 @@
 
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Añadir tarea rápida</string>
-    <string name="widget_quick_add_task_description">Añade una tarea a Tempo sin abrir la aplicación</string>
+    <string name="widget_quick_add_task_description">Añade una tarea a Tempo con un toque desde tu pantalla de inicio</string>
 </resources>

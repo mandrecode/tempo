@@ -1,6 +1,6 @@
 ## Why
 
-Adding a task today requires opening Tempo, navigating to the task list, and tapping the add-task control. For a fast capture action ("jot this down before I forget"), that's more friction than the action deserves. A home-screen widget lets the user go from "I need to remember this" to "saved" in one tap, without leaving their launcher. GitHub issue #46 ("feat: create quick task widget") requests exactly this.
+Adding a task today requires opening Tempo, navigating to the task list, and tapping the add-task control. For a fast capture action ("jot this down before I forget"), that's more friction than the action deserves. A home-screen widget lets the user jump straight from the launcher into the task-creation sheet in one tap, skipping the navigation. GitHub issue #46 ("feat: create quick task widget") requests exactly this.
 
 ## What Changes
 
