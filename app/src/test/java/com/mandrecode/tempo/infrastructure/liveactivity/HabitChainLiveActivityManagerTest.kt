@@ -3,6 +3,7 @@ package com.mandrecode.tempo.infrastructure.liveactivity
 import android.app.NotificationManager
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
@@ -26,6 +27,7 @@ class HabitChainLiveActivityManagerTest {
     private lateinit var context: Context
     private lateinit var notificationManager: NotificationManager
     private lateinit var notificationSyncManager: NotificationSyncManager
+    private lateinit var activeLiveActivityPreferences: ActiveLiveActivityPreferences
     private lateinit var manager: HabitChainLiveActivityManager
 
     // Fixed time: Sunday, June 15, 2025 12:00
@@ -40,11 +42,19 @@ class HabitChainLiveActivityManagerTest {
     fun setup() {
         notificationManager = mockk(relaxed = true)
         notificationSyncManager = mockk(relaxed = true)
+        activeLiveActivityPreferences = mockk(relaxed = true)
+        every { activeLiveActivityPreferences.getActiveChainIds() } returns emptySet()
         context = mockk(relaxed = true)
         every { context.getSystemService(any<String>()) } returns notificationManager
         mockkObject(NotificationChannelManager)
         every { NotificationChannelManager.ensureLiveActivityChannel(any(), any()) } just Runs
-        manager = HabitChainLiveActivityManager(context, notificationSyncManager, testClock)
+        manager =
+            HabitChainLiveActivityManager(
+                context,
+                notificationSyncManager,
+                activeLiveActivityPreferences,
+                testClock,
+            )
     }
 
     @After
@@ -256,5 +266,55 @@ class HabitChainLiveActivityManagerTest {
         // Live activity is NOT dismissed — the explicit notification action must be honored
         verify(exactly = 0) { notificationManager.cancel(RequestCodeGenerator.forLiveActivity(chainId)) }
         assertThat(manager.hasActiveLiveActivity(chainId)).isTrue()
+    }
+
+    // --- Persistence across process death ---
+
+    @Test
+    fun `constructor loads persisted active chain ids`() {
+        val persistedChainId = 42L
+        every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(persistedChainId)
+
+        val restoredManager =
+            HabitChainLiveActivityManager(
+                context,
+                notificationSyncManager,
+                activeLiveActivityPreferences,
+                testClock,
+            )
+
+        assertThat(restoredManager.hasActiveLiveActivity(persistedChainId)).isTrue()
+    }
+
+    @Test
+    fun `updateLiveActivity persists chain id when live activity starts`() {
+        val chainId = 5L
+        val chain = HabitChain(id = chainId, title = "Evening Routine")
+
+        runCatching {
+            manager.updateLiveActivity(chain, completedCount = 1, totalCount = 3)
+        }
+
+        verify { activeLiveActivityPreferences.addActiveChainId(chainId) }
+    }
+
+    @Test
+    fun `updateLiveActivity removes persisted chain id when chain completed from app`() {
+        val chainId = 1L
+        val chain = HabitChain(id = chainId, title = "Morning Routine")
+        val totalCount = 3
+
+        manager.updateLiveActivity(chain, completedCount = totalCount, totalCount = totalCount)
+
+        verify { activeLiveActivityPreferences.removeActiveChainId(chainId) }
+    }
+
+    @Test
+    fun `dismissLiveActivity removes persisted chain id`() {
+        val chainId = 9L
+
+        manager.dismissLiveActivity(chainId)
+
+        verify { activeLiveActivityPreferences.removeActiveChainId(chainId) }
     }
 }

@@ -1,5 +1,7 @@
 package com.mandrecode.tempo.core.di
 
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.CompletedTaskRetentionPreferencesImpl
@@ -42,4 +44,7 @@ abstract class PreferencesRepositoryModule {
 
     @Binds
     abstract fun bindCompletedTaskRetentionPreferences(impl: CompletedTaskRetentionPreferencesImpl): CompletedTaskRetentionPreferences
+
+    @Binds
+    abstract fun bindActiveLiveActivityPreferences(impl: ActiveLiveActivityPreferencesImpl): ActiveLiveActivityPreferences
 }

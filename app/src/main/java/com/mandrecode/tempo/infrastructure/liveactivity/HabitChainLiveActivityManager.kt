@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
@@ -33,6 +34,7 @@ class HabitChainLiveActivityManager
     constructor(
         @ApplicationContext private val context: Context,
         private val notificationSyncManager: NotificationSyncManager,
+        private val activeLiveActivityPreferences: ActiveLiveActivityPreferences,
         private val clock: Clock,
     ) {
         private val notificationManager =
@@ -41,6 +43,7 @@ class HabitChainLiveActivityManager
         private val activeChains =
             java.util.concurrent.ConcurrentHashMap
                 .newKeySet<Long>()
+                .apply { addAll(activeLiveActivityPreferences.getActiveChainIds()) }
 
         init {
             NotificationChannelManager.ensureLiveActivityChannel(context, notificationManager)
@@ -88,6 +91,7 @@ class HabitChainLiveActivityManager
                 dismissLiveActivity(chain.id)
             } else {
                 activeChains.add(chain.id)
+                activeLiveActivityPreferences.addActiveChainId(chain.id)
 
                 // The live activity supersedes the chain reminder notification — dismiss it
                 // regardless of whether the live activity was started from the notification
@@ -225,12 +229,14 @@ class HabitChainLiveActivityManager
 
                 if (allCompleted) {
                     activeChains.remove(chain.id)
+                    activeLiveActivityPreferences.removeActiveChainId(chain.id)
                 }
             }
         }
 
         fun dismissLiveActivity(chainId: Long) {
             activeChains.remove(chainId)
+            activeLiveActivityPreferences.removeActiveChainId(chainId)
             notificationManager.cancel(getNotificationId(chainId))
         }
 

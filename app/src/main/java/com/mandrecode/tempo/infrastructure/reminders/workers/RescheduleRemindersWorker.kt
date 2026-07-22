@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
@@ -33,6 +34,7 @@ class RescheduleRemindersWorker
         private val taskReminderScheduler: TaskReminderScheduler,
         private val habitReminderScheduler: HabitReminderScheduler,
         private val rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase,
+        private val activeLiveActivityPreferences: ActiveLiveActivityPreferences,
         private val clock: Clock,
     ) : CoroutineWorker(appContext, workerParams) {
         override suspend fun doWork(): Result =
@@ -41,6 +43,7 @@ class RescheduleRemindersWorker
                 rescheduleTasks(now)
                 rescheduleHabits(now)
                 rescheduleHabitChains(now)
+                resyncActiveLiveActivities()
                 Result.success()
             } catch (e: CancellationException) {
                 throw e
@@ -126,6 +129,12 @@ class RescheduleRemindersWorker
                 } else {
                     habitReminderScheduler.scheduleHabitChain(chain)
                 }
+            }
+        }
+
+        private suspend fun resyncActiveLiveActivities() {
+            activeLiveActivityPreferences.getActiveChainIds().forEach { chainId ->
+                habitRepository.refreshHabitChainLiveActivity(chainId)
             }
         }
     }
