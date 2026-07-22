@@ -31,7 +31,9 @@ import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import kotlinx.collections.immutable.toPersistentSet
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
 import org.junit.Assert.assertEquals
@@ -582,6 +584,7 @@ class HabitBottomSheetTest {
         chain: HabitChain = chainContainingHabit(),
         habits: List<Habit> = listOf(habitInChain()),
         onToggleHabitCompletion: ((Long, Boolean) -> Unit)? = null,
+        selectedDate: kotlinx.datetime.LocalDate = today(),
     ) {
         composeTestRule.setContent {
             TempoTheme {
@@ -591,7 +594,7 @@ class HabitBottomSheetTest {
                             editingHabitChain = chain,
                             selectedTab = HabitSheetTab.HABIT_CHAIN,
                         ),
-                    selectedDate = today(),
+                    selectedDate = selectedDate,
                     habits = habits,
                     habitChains = listOf(chain),
                     onSelectTab = {},
@@ -1208,6 +1211,124 @@ class HabitBottomSheetTest {
 
         // No editing chain → no checkbox in the row.
         composeTestRule.onNodeWithTag(CHAIN_HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertDoesNotExist()
+    }
+
+    // --- Tests for #45: chain completion checkbox next to the chain title ---
+
+    @Test
+    fun chainTitleCheckbox_displayed_whenEditingHabitChain() {
+        renderEditHabitChainSheet(onToggleHabitCompletion = { _, _ -> })
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertIsDisplayed()
+    }
+
+    @Test
+    fun chainTitleCheckbox_notDisplayed_whenCreatingNewChain() {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(selectedTab = HabitSheetTab.HABIT_CHAIN),
+                    selectedDate = today(),
+                    habits = listOf(habitInChain()),
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                    onToggleHabitCompletion = { _, _ -> },
+                )
+            }
+        }
+
+        // No editing chain → no checkbox next to the title.
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun chainTitleCheckbox_tapWhenIncomplete_completesAllMemberHabits() {
+        val chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L))
+        val toggled = mutableListOf<Pair<Long, Boolean>>()
+        renderEditHabitChainSheet(
+            chain = chain,
+            habits = listOf(habitInChain(), secondHabitInChain()),
+            onToggleHabitCompletion = { id, completed -> toggled.add(id to completed) },
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).performClick()
+
+        assertEquals(setOf(1L to true, 2L to true), toggled.toSet())
+    }
+
+    @Test
+    fun chainTitleCheckbox_tapWhenAllCompleted_uncompletesAllMemberHabits() {
+        val chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L))
+        val completedHabit1 = habitInChain().copy(completionHistory = today().toString())
+        val completedHabit2 = secondHabitInChain().copy(completionHistory = today().toString())
+        val toggled = mutableListOf<Pair<Long, Boolean>>()
+        renderEditHabitChainSheet(
+            chain = chain,
+            habits = listOf(completedHabit1, completedHabit2),
+            onToggleHabitCompletion = { id, completed -> toggled.add(id to completed) },
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).performClick()
+
+        assertEquals(setOf(1L to false, 2L to false), toggled.toSet())
+    }
+
+    @Test
+    fun chainTitleCheckbox_tapWhenPartiallyCompleted_onlyTogglesIncompleteHabits() {
+        val chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L))
+        val completedHabit1 = habitInChain().copy(completionHistory = today().toString())
+        val incompleteHabit2 = secondHabitInChain()
+        val toggled = mutableListOf<Pair<Long, Boolean>>()
+        renderEditHabitChainSheet(
+            chain = chain,
+            habits = listOf(completedHabit1, incompleteHabit2),
+            onToggleHabitCompletion = { id, completed -> toggled.add(id to completed) },
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).performClick()
+
+        // Habit 1 is already completed → must not be re-toggled; only habit 2 flips.
+        assertEquals(listOf(2L to true), toggled)
+    }
+
+    @Test
+    fun chainTitleCheckbox_disabled_whenChainHasNoHabits() {
+        val emptyChain = chainContainingHabit().copy(habitIds = emptyList())
+        renderEditHabitChainSheet(
+            chain = emptyChain,
+            habits = emptyList(),
+            onToggleHabitCompletion = { _, _ -> },
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertIsNotEnabled()
+    }
+
+    @Test
+    fun chainTitleCheckbox_disabled_whenSelectedDateOutsideToggleWindow() {
+        val chain = chainContainingHabit().copy(habitIds = listOf(1L, 2L))
+        var toggleInvoked = false
+        renderEditHabitChainSheet(
+            chain = chain,
+            habits = listOf(habitInChain(), secondHabitInChain()),
+            onToggleHabitCompletion = { _, _ -> toggleInvoked = true },
+            selectedDate = today().minus(DatePeriod(days = 5)),
+        )
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).assertIsNotEnabled()
+
+        composeTestRule.onNodeWithTag(HABIT_COMPLETION_CHECKBOX_TEST_TAG).performClick()
+        assertFalse(toggleInvoked)
     }
 
     // Regression test for #655: when the upstream habit updates after a toggle (i.e. the

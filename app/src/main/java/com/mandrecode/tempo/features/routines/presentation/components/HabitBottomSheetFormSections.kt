@@ -118,6 +118,7 @@ internal fun HabitBottomSheetBody(
             actions = actions,
             focusConfig = focusConfig,
             editingHabit = editingHabit,
+            editingHabitChain = editingHabitChain,
         )
 
         HabitDescriptionSection(
@@ -221,57 +222,102 @@ private fun HabitTitleSection(
     actions: HabitBottomSheetBodyActions,
     focusConfig: HabitBottomSheetFocusConfig,
     editingHabit: com.mandrecode.tempo.features.routines.domain.model.Habit?,
+    editingHabitChain: com.mandrecode.tempo.features.routines.domain.model.HabitChain?,
 ) {
     val onToggleHabitCompletion = actions.onToggleHabitCompletion
-    if (state.formState.selectedTab == HabitSheetTab.HABIT &&
-        editingHabit != null &&
-        onToggleHabitCompletion != null
-    ) {
-        val dateStr = remember(state.selectedDate) { state.selectedDate.toString() }
-        val isCompleted =
-            remember(editingHabit.completionHistory, dateStr) {
-                CompletionHistoryUtil.isDateInHistory(editingHabit.completionHistory, dateStr)
-            }
-        val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
-        val yesterday = today.minus(DatePeriod(days = 1))
-        val canToggle = state.selectedDate == today || state.selectedDate == yesterday
-        val resolvedColor =
-            remember(
-                state.formState.selectedColorKey,
-                editingHabit.colorKey,
-                state.colorScheme,
-                state.isDarkTheme,
-            ) {
-                val key = state.formState.selectedColorKey ?: editingHabit.colorKey
-                key?.let { resolveColor(it, state.colorScheme, state.isDarkTheme) }
-            }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            HabitCompletionCheckbox(
-                isCompleted = isCompleted,
-                onToggle = { onToggleHabitCompletion(editingHabit.id, !isCompleted) },
-                color = resolvedColor,
-                iconName = state.formState.selectedIcon ?: editingHabit.icon,
-                canToggle = canToggle,
-                isContainerCompleted = false,
+    when {
+        state.formState.selectedTab == HabitSheetTab.HABIT &&
+            editingHabit != null &&
+            onToggleHabitCompletion != null ->
+            HabitTitleCheckboxRow(
+                state = state,
+                actions = actions,
+                focusConfig = focusConfig,
+                editingHabit = editingHabit,
+                onToggleHabitCompletion = onToggleHabitCompletion,
             )
-            Spacer(modifier = Modifier.width(8.dp))
+
+        state.formState.selectedTab == HabitSheetTab.HABIT_CHAIN &&
+            editingHabitChain != null &&
+            onToggleHabitCompletion != null ->
+            HabitChainTitleCheckboxRow(
+                state = state,
+                actions = actions,
+                focusConfig = focusConfig,
+                editingHabitChain = editingHabitChain,
+                onToggleHabitCompletion = onToggleHabitCompletion,
+            )
+
+        else ->
             HabitTitleField(
                 state = state,
                 actions = actions,
                 focusConfig = focusConfig,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             )
+    }
+}
+
+@Composable
+private fun HabitTitleCheckboxRow(
+    state: HabitBottomSheetBodyState,
+    actions: HabitBottomSheetBodyActions,
+    focusConfig: HabitBottomSheetFocusConfig,
+    editingHabit: com.mandrecode.tempo.features.routines.domain.model.Habit,
+    onToggleHabitCompletion: (habitId: Long, isCompleted: Boolean) -> Unit,
+) {
+    val isCompleted =
+        remember(editingHabit.completionHistory, state.selectedDate) {
+            CompletionHistoryUtil.isDateInHistory(editingHabit.completionHistory, state.selectedDate.toString())
         }
-    } else {
+    val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+    val yesterday = today.minus(DatePeriod(days = 1))
+    HabitCheckboxTitleRow(
+        state = state,
+        actions = actions,
+        focusConfig = focusConfig,
+        isCompleted = isCompleted,
+        canToggle = state.selectedDate == today || state.selectedDate == yesterday,
+        iconName = state.formState.selectedIcon ?: editingHabit.icon,
+        colorKey = state.formState.selectedColorKey ?: editingHabit.colorKey,
+        onToggle = { onToggleHabitCompletion(editingHabit.id, !isCompleted) },
+    )
+}
+
+@Composable
+internal fun HabitCheckboxTitleRow(
+    state: HabitBottomSheetBodyState,
+    actions: HabitBottomSheetBodyActions,
+    focusConfig: HabitBottomSheetFocusConfig,
+    isCompleted: Boolean,
+    canToggle: Boolean,
+    iconName: String?,
+    colorKey: String?,
+    onToggle: () -> Unit,
+) {
+    val resolvedColor =
+        remember(colorKey, state.colorScheme, state.isDarkTheme) {
+            colorKey?.let { resolveColor(it, state.colorScheme, state.isDarkTheme) }
+        }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HabitCompletionCheckbox(
+            isCompleted = isCompleted,
+            onToggle = onToggle,
+            color = resolvedColor,
+            iconName = iconName,
+            canToggle = canToggle,
+            isContainerCompleted = false,
+        )
+        Spacer(modifier = Modifier.width(8.dp))
         HabitTitleField(
             state = state,
             actions = actions,
             focusConfig = focusConfig,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.weight(1f),
         )
     }
 }
