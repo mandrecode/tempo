@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
@@ -34,7 +35,7 @@ class TasksContentTest {
         }
 
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Loading tasks", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Loading tasks", substring = true).assertIsDisplayed()
     }
 
     @Test
