@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/mandrecode/tempo/compare/v1.4.1...v1.5.0) (2026-07-22)
+
+
+### Features
+
+* **#79:** use Material 3 Expressive loading shapes for first-load state ([#224](https://github.com/mandrecode/tempo/issues/224)) ([b1e5d25](https://github.com/mandrecode/tempo/commit/b1e5d2574f4500b1d2ae5c149ae05554966d2d45))
+
 ## [1.4.1](https://github.com/mandrecode/tempo/compare/v1.4.0...v1.4.1) (2026-07-22)
 
 
