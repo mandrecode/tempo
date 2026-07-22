@@ -13,8 +13,8 @@ sealed interface MainUiState {
         val isRoutinesTabEnabled: Boolean,
         val isTasksTabEnabled: Boolean,
         val isOnboardingCompleted: Boolean,
+        val whatsNewVersionName: String,
         // Null when there is no unseen feature to announce.
         val whatsNewEntry: WhatsNewEntry? = null,
-        val whatsNewVersionName: String = "",
     ) : MainUiState
 }
