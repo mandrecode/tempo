@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Static widget-picker preview mirroring QuickAddTaskWidgetContent's default (Tempo-brand-colors)
+     appearance: a rounded tile with the centered task icon. Glance 1.1.1 has no generated-preview
+     API (GlanceAppWidget.providePreview), so this can't reflect dynamic color or live theme state. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <solid android:color="@color/widget_preview_background" />
+            <corners android:radius="24dp" />
+        </shape>
+    </item>
+    <item
+        android:width="40dp"
+        android:height="40dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_add_task_widget_preview" />
+</layer-list>

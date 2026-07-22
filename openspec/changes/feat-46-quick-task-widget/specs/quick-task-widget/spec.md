@@ -20,13 +20,25 @@ Tapping the widget SHALL launch the app, navigate to the Tasks tab, and open the
 - **WHEN** the user enters a title and saves the task-creation sheet after tapping the widget
 - **THEN** the task is created through the app's existing task-creation logic, identically to saving the sheet when opened in-app
 
-### Requirement: Widget appearance matches the app's light/dark theme
-The widget's chrome (background, icon tint) SHALL visually match Tempo's current color scheme, switching automatically between light and dark variants along with the system theme, using the same color tokens as the rest of the app rather than independently defined colors.
+### Requirement: Widget appearance matches the app's theme preference, in both light and dark
+The widget's chrome (background, icon tint) SHALL follow the same theme choice the app itself uses — Tempo's static brand colors when the user has "use Tempo colors" enabled, or Android 12+ dynamic (wallpaper-based) colors otherwise on devices that support it — switching automatically between light and dark variants along with the system theme, using the same color tokens/logic as the rest of the app rather than independently defined colors.
 
-#### Scenario: Device is in light mode
-- **WHEN** the system is set to light theme
+#### Scenario: User has "use Tempo colors" enabled, light mode
+- **WHEN** the user has "use Tempo colors" enabled in Settings and the system is set to light theme
 - **THEN** the widget renders using Tempo's light color scheme tokens (background, primary icon tint)
 
-#### Scenario: Device is in dark mode
-- **WHEN** the system is set to dark theme
+#### Scenario: User has "use Tempo colors" enabled, dark mode
+- **WHEN** the user has "use Tempo colors" enabled in Settings and the system is set to dark theme
 - **THEN** the widget renders using Tempo's dark color scheme tokens (background, primary icon tint)
+
+#### Scenario: User has "use Tempo colors" disabled on a device that supports dynamic color
+- **WHEN** the user has "use Tempo colors" disabled in Settings and the device supports Android 12+ dynamic color
+- **THEN** the widget renders using the device's dynamic (wallpaper-based) color scheme, in light or dark to match the system theme
+
+#### Scenario: User has "use Tempo colors" disabled on a device that does not support dynamic color
+- **WHEN** the user has "use Tempo colors" disabled in Settings and the device does not support Android 12+ dynamic color
+- **THEN** the widget falls back to rendering with Tempo's static color scheme tokens rather than an unbranded default
+
+#### Scenario: User toggles "use Tempo colors" while the widget is already placed
+- **WHEN** the user changes the "use Tempo colors" setting while a widget instance is on the home screen
+- **THEN** the placed widget updates to reflect the new color scheme without requiring the user to remove and re-add it

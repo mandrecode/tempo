@@ -25,16 +25,35 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.first
 
 class QuickAddTaskWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Single
+
+    @EntryPoint
+    @InstallIn(SingletonComponent::class)
+    interface ThemePreferencesEntryPoint {
+        fun themePreferencesRepository(): ThemePreferencesRepository
+    }
 
     override suspend fun provideGlance(
         context: Context,
         id: GlanceId,
     ) {
+        val themePreferencesRepository =
+            EntryPointAccessors
+                .fromApplication(context, ThemePreferencesEntryPoint::class.java)
+                .themePreferencesRepository()
+        val useTempoColorsPreference = themePreferencesRepository.getUseTempoColors().first()
+        val colors = resolveGlanceColorProviders(context, useTempoColorsPreference)
+
         provideContent {
-            GlanceTheme(colors = TempoGlanceColorScheme) {
+            GlanceTheme(colors = colors) {
                 QuickAddTaskWidgetContent()
             }
         }

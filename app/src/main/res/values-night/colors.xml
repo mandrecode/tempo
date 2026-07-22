@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Static approximation of the placed widget's look for the widget-picker preview
+         (see TempoDarkBackground/TempoDarkPrimary in core/ui/theme/Color.kt). -->
+    <color name="widget_preview_background">#0E1513</color>
+    <color name="widget_preview_icon_tint">#82D5C8</color>
+</resources>

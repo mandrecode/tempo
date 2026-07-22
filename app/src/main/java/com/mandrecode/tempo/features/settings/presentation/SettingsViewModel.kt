@@ -1,5 +1,7 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -8,8 +10,10 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
+import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +34,7 @@ class SettingsViewModel
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
         private val backupDelegate: SettingsBackupDelegate,
+        @ApplicationContext private val appContext: Context,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
         val uiState: StateFlow<SettingsContract.UiState> = _uiState.asStateFlow()
@@ -107,6 +112,11 @@ class SettingsViewModel
 
                 is SettingsContract.UiEvent.TempoColorsToggled -> {
                     themePreferencesRepository.setUseTempoColors(event.enabled)
+                    // Refresh any placed widget instances immediately rather than waiting for
+                    // the next system-triggered update, since the widget has no periodic refresh.
+                    // Best-effort: a refresh failure (e.g. no widget instances placed) must never
+                    // crash this unrelated Settings toggle.
+                    viewModelScope.launch { runCatching { QuickAddTaskWidget().updateAll(appContext) } }
                 }
 
                 is SettingsContract.UiEvent.RoutinesTabToggled -> {

@@ -7,4 +7,10 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Static approximation of the placed widget's look for the widget-picker preview
+         (see TempoLightBackground/TempoLightPrimary in core/ui/theme/Color.kt). Static XML
+         drawables can't reflect the user's dynamic-color preference at preview time. -->
+    <color name="widget_preview_background">#F4FBF8</color>
+    <color name="widget_preview_icon_tint">#006A60</color>
 </resources>

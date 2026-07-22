@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import android.content.Context
 import android.net.Uri
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
@@ -49,6 +50,7 @@ class SettingsViewModelTest {
     private lateinit var importBackup: ImportBackupUseCase
     private lateinit var backupRepository: BackupRepository
     private lateinit var backupFileDataSource: BackupFileDataSource
+    private lateinit var appContext: Context
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -66,6 +68,7 @@ class SettingsViewModelTest {
         importBackup = mockk(relaxed = true)
         backupRepository = mockk(relaxed = true)
         backupFileDataSource = mockk(relaxed = true)
+        appContext = mockk(relaxed = true)
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
@@ -691,5 +694,6 @@ class SettingsViewModelTest {
             completedTaskRetentionPreferences,
             configureCompletedTaskRetention,
             SettingsBackupDelegate(exportBackup, importBackup, backupRepository, backupFileDataSource),
+            appContext,
         )
 }
