@@ -5,7 +5,8 @@ The Tasks and Routines (habits) list screens show a first-load state (`TempoLoad
 ## What Changes
 
 - Replace the `CircularProgressIndicator` inside the shared `TempoLoadingIndicator` composable (`app/src/main/java/com/mandrecode/tempo/core/ui/components/TempoLoadingIndicator.kt`) with Material 3's Expressive `LoadingIndicator` (indeterminate, morphing-shape variant), opting into `@ExperimentalMaterial3ExpressiveApi`.
-- No changes to the callers (`TasksContent`, `RoutinesContent`) or to the component's public signature (`message`, `modifier`) — this is a visual swap inside the shared component, so both first-load states pick it up automatically.
+- Enlarge the indicator (48dp → 96dp) and remove the visible loading message text, so the morphing shape is the sole, prominent visual on the first-load state. The `message` string is retained as an accessibility (`contentDescription`) label rather than dropped entirely.
+- No changes to the callers (`TasksContent`, `RoutinesContent`) or to the component's public signature (`message`, `modifier`) — this is a visual change inside the shared component, so both first-load states pick it up automatically.
 - Update/add `@Preview` composables under `src/debug/` if needed to reflect the new visual.
 
 ## Capabilities

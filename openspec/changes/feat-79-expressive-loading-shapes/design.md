@@ -6,7 +6,8 @@
 
 **Goals:**
 - Swap the spinner for Material 3 Expressive's indeterminate morphing-shape `LoadingIndicator` inside `TempoLoadingIndicator`, so both Tasks' and Routines' first-load states get it for free.
-- Keep the component's public API (`message`, `modifier`) and layout (icon above message, centered) unchanged.
+- Keep the component's public API (`message`, `modifier`) unchanged, even though `message` is no longer rendered as visible text (see below).
+- Make the shape itself the focal point of the first-load state: larger, with no supporting text underneath.
 
 **Non-Goals:**
 - No pull-to-refresh or in-list loading affordance changes — only the full-screen first-load state.
@@ -17,7 +18,8 @@
 
 - **Use the plain `LoadingIndicator(modifier, color, polygons)` overload, not `ContainedLoadingIndicator`.** The current spinner has no filled container background, just sits on the screen background — the uncontained variant matches that look most closely. `ContainedLoadingIndicator` adds a colored container shape that isn't present today and isn't requested by the issue.
 - **Use default `color` and `polygons`.** `LoadingIndicatorDefaults.indicatorColor` resolves to the theme's primary color, matching the existing `MaterialTheme.colorScheme.primary` used by the spinner. No custom shape sequence is warranted for a first pass.
-- **Size via `Modifier.size(48.dp)`**, matching the previous spinner's footprint, so the surrounding `Column`/`Spacer` layout needs no adjustment.
+- **Remove the message `Text` and enlarge the shape to `Modifier.size(96.dp)`** (2x the original 48dp spinner). Following user feedback during implementation, the loading message reads as redundant next to an already-prominent morphing shape on a full-screen state — the shape alone communicates "loading" clearly, and a larger indicator makes it the clear focal point rather than a small icon competing with text.
+- **Keep `message` as a required parameter, but attach it as `Modifier.semantics { contentDescription = message }`** on the indicator instead of dropping it, so screen readers still announce "Loading tasks…"/"Loading habits…" — matching the existing `contentDescription`-for-non-text-visuals pattern used elsewhere in `core/ui/components` (e.g. `HabitCompletionCheckbox`, `TaskCompletionCheckbox`).
 - **Opt in with `@OptIn(ExperimentalMaterial3ExpressiveApi::class)` on `TempoLoadingIndicator`**, following the existing precedent in `SettingsScreen.kt` rather than introducing a new suppression mechanism.
 
 ## Risks / Trade-offs
