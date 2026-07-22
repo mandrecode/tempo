@@ -1,10 +1,7 @@
 package com.mandrecode.tempo.core.ui.editor
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 
 /**
  * Tracks the last snapshot dispatched to autosave for an editor sheet, so both the
@@ -14,7 +11,7 @@ import androidx.compose.runtime.setValue
 internal class EditorAutosaveController<T>(
     initialSnapshot: T?,
 ) {
-    private var lastSavedSnapshot by mutableStateOf(initialSnapshot)
+    private var lastSavedSnapshot: T? = initialSnapshot
 
     /**
      * Invokes [onSave] with [snapshot] and records it as the new baseline if [snapshot] differs
