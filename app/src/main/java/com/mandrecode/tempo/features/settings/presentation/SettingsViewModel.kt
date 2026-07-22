@@ -1,5 +1,8 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import android.content.Context
+import android.util.Log
+import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -8,8 +11,11 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
+import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +25,8 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+private const val LOG_TAG = "SettingsViewModel"
 
 @HiltViewModel
 class SettingsViewModel
@@ -30,6 +38,7 @@ class SettingsViewModel
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
         private val backupDelegate: SettingsBackupDelegate,
+        @ApplicationContext private val appContext: Context,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
         val uiState: StateFlow<SettingsContract.UiState> = _uiState.asStateFlow()
@@ -107,6 +116,7 @@ class SettingsViewModel
 
                 is SettingsContract.UiEvent.TempoColorsToggled -> {
                     themePreferencesRepository.setUseTempoColors(event.enabled)
+                    refreshQuickAddTaskWidget()
                 }
 
                 is SettingsContract.UiEvent.RoutinesTabToggled -> {
@@ -145,6 +155,26 @@ class SettingsViewModel
                 is SettingsContract.UiEvent.ImportModeChosen,
                 is SettingsContract.UiEvent.BackupDialogDismissed,
                 -> backupDelegate.onEvent(event, backupHost)
+            }
+        }
+
+        // Refresh any placed widget instances immediately rather than waiting for the next
+        // system-triggered update, since the widget has no periodic refresh. Best-effort: a
+        // refresh failure (e.g. no widget instances placed) must never crash this unrelated
+        // Settings toggle, but cancellation must still propagate normally. The exception type
+        // from AppWidgetManager/Glance internals isn't a documented, narrow set, so this mirrors
+        // the same generic-catch pattern already used for other best-effort operations (see
+        // TasksViewModelTaskActions.addTask()).
+        @Suppress("TooGenericExceptionCaught")
+        private fun refreshQuickAddTaskWidget() {
+            viewModelScope.launch {
+                try {
+                    QuickAddTaskWidget().updateAll(appContext)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Log.e(LOG_TAG, "Unable to refresh Quick Add Task widget instances", e)
+                }
             }
         }
 

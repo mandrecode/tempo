@@ -512,8 +512,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Tus datos ya están cifrados</string>
-    <string name="whats_new_description">Tus tareas y hábitos se cifran en tu dispositivo, y las copias de seguridad que exportas se protegen con una contraseña que solo tú conoces.</string>
+    <string name="whats_new_title">Añade tareas desde tu pantalla de inicio</string>
+    <string name="whats_new_description">Añade el nuevo widget de tarea rápida a tu pantalla de inicio para ir directo a añadir una tarea con un toque.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -617,4 +617,8 @@
     <string name="icon_category_miscellaneous">Varios</string>
     <string name="icon_picker_browse_categories">Explorar todos los iconos por categoría</string>
     <string name="icon_picker_all_icons_title">Todos los iconos</string>
+
+    <!-- QUICK ADD TASK WIDGET -->
+    <string name="widget_quick_add_task_label">Añadir tarea rápida</string>
+    <string name="widget_quick_add_task_description">Añade una tarea a Tempo con un toque desde tu pantalla de inicio</string>
 </resources>

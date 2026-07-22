@@ -15,7 +15,7 @@ import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
 object WhatsNewRegistry {
     val latest: WhatsNewEntry =
         WhatsNewEntry(
-            id = "encryption-at-rest",
+            id = "quick-add-task-widget",
             titleRes = R.string.whats_new_title,
             descriptionRes = R.string.whats_new_description,
         )

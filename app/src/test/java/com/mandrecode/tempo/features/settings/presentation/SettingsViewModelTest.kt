@@ -1,6 +1,8 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import android.content.Context
 import android.net.Uri
+import android.util.Log
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -23,6 +25,8 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -49,11 +53,14 @@ class SettingsViewModelTest {
     private lateinit var importBackup: ImportBackupUseCase
     private lateinit var backupRepository: BackupRepository
     private lateinit var backupFileDataSource: BackupFileDataSource
+    private lateinit var appContext: Context
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        mockkStatic(Log::class)
+        every { Log.e(any(), any(), any()) } returns 0
         themePreferencesRepository = mockk(relaxed = true)
         navigationPreferencesRepository = mockk(relaxed = true)
         appVersionProvider =
@@ -66,6 +73,7 @@ class SettingsViewModelTest {
         importBackup = mockk(relaxed = true)
         backupRepository = mockk(relaxed = true)
         backupFileDataSource = mockk(relaxed = true)
+        appContext = mockk(relaxed = true)
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
@@ -81,6 +89,7 @@ class SettingsViewModelTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        unmockkStatic(Log::class)
     }
 
     @Test
@@ -691,5 +700,6 @@ class SettingsViewModelTest {
             completedTaskRetentionPreferences,
             configureCompletedTaskRetention,
             SettingsBackupDelegate(exportBackup, importBackup, backupRepository, backupFileDataSource),
+            appContext,
         )
 }

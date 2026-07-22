@@ -86,6 +86,10 @@ sealed interface PendingNotificationAction {
         val chainId: Long,
         val scheduledDate: LocalDate? = null,
     ) : PendingNotificationAction
+
+    // Not notification-triggered — set when MainActivity is launched from the home-screen
+    // quick-add-task widget, to open the same blank task creation sheet as the in-app "+" button.
+    data object OpenNewTaskDialog : PendingNotificationAction
 }
 
 const val ROUTINES_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES

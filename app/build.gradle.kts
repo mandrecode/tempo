@@ -51,6 +51,8 @@ kover {
                     "com.mandrecode.tempo.MainActivity",
                     "com.mandrecode.tempo.TempoApp",
                     "com.mandrecode.tempo.infrastructure.reminders.receivers.*",
+                    "com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget*",
+                    "com.mandrecode.tempo.features.widget.presentation.TempoGlanceColorScheme*",
                     // Compose-generated classes & previews
                     "*ComposableSingletons*",
                     "*Previews*",
@@ -248,6 +250,8 @@ dependencies {
     implementation(libs.android.hilt)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
 
     // Navigation 3 dependencies
     implementation(libs.androidx.navigation3.runtime)
