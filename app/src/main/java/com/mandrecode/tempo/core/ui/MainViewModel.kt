@@ -10,6 +10,7 @@ import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepository
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.features.whatsnew.presentation.WhatsNewRegistry
+import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,6 +31,7 @@ class MainViewModel
         themePreferencesRepository: ThemePreferencesRepository,
         onboardingPreferencesRepository: OnboardingPreferencesRepository,
         private val whatsNewPreferencesRepository: WhatsNewPreferencesRepository,
+        private val appVersionProvider: AppVersionProvider,
     ) : ViewModel() {
         private val _pendingNotificationAction = MutableStateFlow(readPendingNotificationAction())
         val pendingNotificationAction: StateFlow<PendingNotificationAction?> = _pendingNotificationAction.asStateFlow()
@@ -49,6 +51,7 @@ class MainViewModel
                     isRoutinesTabEnabled = isRoutinesTabEnabled,
                     isTasksTabEnabled = isTasksTabEnabled,
                     isOnboardingCompleted = false,
+                    whatsNewVersionName = appVersionProvider.getVersionInfo().versionName,
                 )
             }
 
@@ -56,14 +59,14 @@ class MainViewModel
             combine(
                 mainPreferences,
                 onboardingPreferencesRepository.isCompleted,
-                whatsNewPreferencesRepository.lastSeenVersionCode,
-            ) { state, isOnboardingCompleted, lastSeenVersionCode ->
+                whatsNewPreferencesRepository.lastSeenEntryId,
+            ) { state, isOnboardingCompleted, lastSeenEntryId ->
                 val latestWhatsNewEntry = WhatsNewRegistry.latest
                 state.copy(
                     isOnboardingCompleted = isOnboardingCompleted,
                     whatsNewEntry =
                         latestWhatsNewEntry.takeIf {
-                            isOnboardingCompleted && it.versionCode > lastSeenVersionCode
+                            isOnboardingCompleted && it.id != lastSeenEntryId
                         },
                 )
             }.stateIn(
@@ -73,7 +76,7 @@ class MainViewModel
             )
 
         fun onWhatsNewDismissed() {
-            whatsNewPreferencesRepository.setLastSeenVersionCode(WhatsNewRegistry.latest.versionCode)
+            whatsNewPreferencesRepository.setLastSeenEntryId(WhatsNewRegistry.latest.id)
         }
 
         fun setPendingNotificationAction(action: PendingNotificationAction) {

@@ -18,6 +18,7 @@ private fun WhatsNewBottomSheetPreview() {
     TempoTheme {
         WhatsNewBottomSheet(
             entry = WhatsNewRegistry.latest,
+            versionName = "1.4.0",
             onDismissRequest = {},
         )
     }

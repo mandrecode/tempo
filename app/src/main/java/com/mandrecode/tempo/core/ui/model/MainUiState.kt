@@ -15,5 +15,6 @@ sealed interface MainUiState {
         val isOnboardingCompleted: Boolean,
         // Null when there is no unseen feature to announce.
         val whatsNewEntry: WhatsNewEntry? = null,
+        val whatsNewVersionName: String = "",
     ) : MainUiState
 }

@@ -18,12 +18,12 @@ class WhatsNewPreferencesRepositoryTest {
     fun setup() {
         editor =
             mockk(relaxed = true) {
-                every { putInt(any(), any()) } returns this
+                every { putString(any(), any()) } returns this
                 every { commit() } returns true
             }
         preferences =
             mockk {
-                every { getInt(any(), any()) } returns 0
+                every { getString(any(), any()) } returns null
                 every { edit() } returns editor
             }
         val context =
@@ -34,26 +34,34 @@ class WhatsNewPreferencesRepositoryTest {
     }
 
     @Test
-    fun givenNoStoredValue_whenCreated_thenLastSeenVersionCodeIsZero() {
-        assertThat(repository.lastSeenVersionCode.value).isEqualTo(0)
+    fun givenNoStoredValue_whenCreated_thenLastSeenEntryIdIsNull() {
+        assertThat(repository.lastSeenEntryId.value).isNull()
     }
 
     @Test
-    fun givenLowerLastSeenVersionCode_whenSetToHigherVersionCode_thenStateAndPreferenceAreUpdated() {
-        repository.setLastSeenVersionCode(1_001_000)
+    fun givenNoStoredValue_whenSetToNewEntryId_thenStateAndPreferenceAreUpdated() {
+        repository.setLastSeenEntryId("encryption-at-rest")
 
-        assertThat(repository.lastSeenVersionCode.value).isEqualTo(1_001_000)
-        verify(exactly = 1) { editor.putInt("last_seen_version_code", 1_001_000) }
+        assertThat(repository.lastSeenEntryId.value).isEqualTo("encryption-at-rest")
+        verify(exactly = 1) { editor.putString("last_seen_entry_id", "encryption-at-rest") }
         verify(exactly = 1) { editor.commit() }
     }
 
     @Test
-    fun givenLastSeenVersionCode_whenSetToSameOrLowerVersionCode_thenWriteIsSkipped() {
-        repository.setLastSeenVersionCode(1_001_000)
-        repository.setLastSeenVersionCode(1_001_000)
-        repository.setLastSeenVersionCode(1_000_000)
+    fun givenLastSeenEntryId_whenSetToSameEntryId_thenWriteIsSkipped() {
+        repository.setLastSeenEntryId("encryption-at-rest")
+        repository.setLastSeenEntryId("encryption-at-rest")
 
-        assertThat(repository.lastSeenVersionCode.value).isEqualTo(1_001_000)
-        verify(exactly = 1) { editor.putInt("last_seen_version_code", 1_001_000) }
+        assertThat(repository.lastSeenEntryId.value).isEqualTo("encryption-at-rest")
+        verify(exactly = 1) { editor.putString("last_seen_entry_id", "encryption-at-rest") }
+    }
+
+    @Test
+    fun givenLastSeenEntryId_whenSetToDifferentEntryId_thenStateAndPreferenceAreUpdated() {
+        repository.setLastSeenEntryId("encryption-at-rest")
+        repository.setLastSeenEntryId("chain-completion-checkbox")
+
+        assertThat(repository.lastSeenEntryId.value).isEqualTo("chain-completion-checkbox")
+        verify(exactly = 1) { editor.putString("last_seen_entry_id", "chain-completion-checkbox") }
     }
 }

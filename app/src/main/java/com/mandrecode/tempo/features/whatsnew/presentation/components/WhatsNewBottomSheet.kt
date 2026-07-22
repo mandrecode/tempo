@@ -24,6 +24,7 @@ import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
 @Composable
 fun WhatsNewBottomSheet(
     entry: WhatsNewEntry,
+    versionName: String,
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -42,7 +43,7 @@ fun WhatsNewBottomSheet(
                 text =
                     stringResource(
                         R.string.whats_new_legend,
-                        entry.versionName,
+                        versionName,
                         stringResource(entry.titleRes),
                     ),
                 style = MaterialTheme.typography.sheetTitle,
