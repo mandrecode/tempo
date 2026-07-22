@@ -1,7 +1,7 @@
 package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
-import com.mandrecode.tempo.core.domain.util.ValidationResult
+import com.mandrecode.tempo.core.domain.util.TitleDescriptionValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
@@ -32,14 +32,14 @@ class CreateTaskUseCase
 
         suspend operator fun invoke(task: Task): Result {
             val trimmedTask = task.copy(title = task.title.trim(), description = task.description.trim())
-            when (ValidationUtils.validateTitle(trimmedTask.title)) {
-                ValidationResult.Empty -> return Result.ValidationError(ValidationErrorType.TITLE_EMPTY)
-                ValidationResult.TooLong -> return Result.ValidationError(ValidationErrorType.TITLE_TOO_LONG)
-                ValidationResult.Valid -> {}
-                else -> {}
-            }
-            if (ValidationUtils.validateDescription(trimmedTask.description) is ValidationResult.TooLong) {
-                return Result.ValidationError(ValidationErrorType.DESCRIPTION_TOO_LONG)
+            when (ValidationUtils.validateTitleAndDescription(trimmedTask.title, trimmedTask.description)) {
+                TitleDescriptionValidationResult.TitleEmpty ->
+                    return Result.ValidationError(ValidationErrorType.TITLE_EMPTY)
+                TitleDescriptionValidationResult.TitleTooLong ->
+                    return Result.ValidationError(ValidationErrorType.TITLE_TOO_LONG)
+                TitleDescriptionValidationResult.DescriptionTooLong ->
+                    return Result.ValidationError(ValidationErrorType.DESCRIPTION_TOO_LONG)
+                TitleDescriptionValidationResult.Valid -> {}
             }
 
             val adjustedTask = TaskReminderDateUtil.advanceReminderIfNeeded(trimmedTask)

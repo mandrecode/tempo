@@ -30,6 +30,10 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
+import com.mandrecode.tempo.core.ui.editor.EDITOR_AUTO_SAVE_DEBOUNCE_MS
+import com.mandrecode.tempo.core.ui.editor.EDITOR_MAX_TITLE_LENGTH
+import com.mandrecode.tempo.core.ui.editor.editorSaveableKey
+import com.mandrecode.tempo.core.ui.editor.rememberEditorAutosaveController
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.getMaterialYouColors
@@ -94,7 +98,7 @@ internal fun HabitBottomSheetContent(
         }
     val editorKey =
         remember(formState.editorSessionId, formState.selectedTab, editingTargetId) {
-            Triple(formState.editorSessionId, formState.selectedTab, editingTargetId)
+            editorSaveableKey(formState.editorSessionId, formState.selectedTab, editingTargetId)
         }
 
     var title by rememberSaveable(editorKey) {
@@ -405,14 +409,30 @@ internal fun HabitBottomSheetContent(
     val autoSaveHabitChainEnabled = isEditingHabitChain && onAutoSaveHabitChain != null
     val autoSaveEnabled = autoSaveHabitEnabled || autoSaveHabitChainEnabled
 
-    var lastDispatchedSnapshot by
-        remember(editorKey) {
-            mutableStateOf<Any?>(null)
+    val autosaveController =
+        rememberEditorAutosaveController(initialSnapshot = initialSnapshot, key = editorKey)
+    val isSnapshotSaveable: (Any) -> Boolean = { snapshot ->
+        when (snapshot) {
+            is HabitFormSnapshot -> snapshot.title.isNotBlank()
+            is ChainFormSnapshot -> snapshot.title.isNotBlank()
+            else -> false
         }
+    }
+    val dispatchAutosave: (Any) -> Unit = { snapshot ->
+        when (snapshot) {
+            is HabitFormSnapshot -> onAutoSaveHabit?.invoke(snapshot.title, snapshot.description)
+            is ChainFormSnapshot ->
+                onAutoSaveHabitChain?.invoke(
+                    snapshot.title,
+                    snapshot.description,
+                    snapshot.habitIds,
+                )
+        }
+    }
     DebouncedSnapshotEffect(
         enabled = autoSaveEnabled,
         key = editorKey,
-        debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
+        debounceMillis = EDITOR_AUTO_SAVE_DEBOUNCE_MS,
         snapshotProvider = {
             when (formState.selectedTab) {
                 HabitSheetTab.HABIT ->
@@ -439,24 +459,7 @@ internal fun HabitBottomSheetContent(
             }
         },
         onSnapshot = { snapshot ->
-            if (snapshot != initialSnapshot && lastDispatchedSnapshot != snapshot) {
-                when (snapshot) {
-                    is HabitFormSnapshot -> {
-                        if (snapshot.title.isBlank()) return@DebouncedSnapshotEffect
-                        onAutoSaveHabit?.invoke(snapshot.title, snapshot.description)
-                    }
-
-                    is ChainFormSnapshot -> {
-                        if (snapshot.title.isBlank()) return@DebouncedSnapshotEffect
-                        onAutoSaveHabitChain?.invoke(
-                            snapshot.title,
-                            snapshot.description,
-                            snapshot.habitIds,
-                        )
-                    }
-                }
-                lastDispatchedSnapshot = snapshot
-            }
+            autosaveController.trySave(snapshot, isSaveable = isSnapshotSaveable, onSave = dispatchAutosave)
         },
     )
 
@@ -486,20 +489,7 @@ internal fun HabitBottomSheetContent(
                     )
             }
         if (autoSaveEnabled && title.isNotBlank()) {
-            if (currentSnapshot != initialSnapshot && currentSnapshot != lastDispatchedSnapshot) {
-                when (currentSnapshot) {
-                    is HabitFormSnapshot ->
-                        onAutoSaveHabit?.invoke(currentSnapshot.title, currentSnapshot.description)
-
-                    is ChainFormSnapshot ->
-                        onAutoSaveHabitChain?.invoke(
-                            currentSnapshot.title,
-                            currentSnapshot.description,
-                            currentSnapshot.habitIds,
-                        )
-                }
-                lastDispatchedSnapshot = currentSnapshot
-            }
+            autosaveController.trySave(currentSnapshot, isSaveable = isSnapshotSaveable, onSave = dispatchAutosave)
         }
         onDismiss()
     }
@@ -545,9 +535,9 @@ internal fun HabitBottomSheetContent(
                         onTitleChanged = { newValue ->
                             if (newValue.contains("\n")) {
                                 focusManager.clearFocus()
-                            } else if (newValue.length > MAX_TITLE_LENGTH) {
-                                val overflow = newValue.substring(MAX_TITLE_LENGTH)
-                                title = newValue.substring(0, MAX_TITLE_LENGTH)
+                            } else if (newValue.length > EDITOR_MAX_TITLE_LENGTH) {
+                                val overflow = newValue.substring(EDITOR_MAX_TITLE_LENGTH)
+                                title = newValue.substring(0, EDITOR_MAX_TITLE_LENGTH)
                                 updateDescription(
                                     TextFieldValue(
                                         text = overflow + descriptionState.value.text,

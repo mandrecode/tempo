@@ -2,7 +2,6 @@ package com.mandrecode.tempo.features.tasks.presentation.components
 
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
@@ -12,12 +11,8 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.datetime.LocalDateTime
 
-internal const val MAX_TITLE_LENGTH = 65
 internal const val TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG = "task_bottom_sheet_title_field"
 internal const val TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG = "task_bottom_sheet_description_field"
-internal const val AUTO_SAVE_DEBOUNCE_MS = 350L
-internal val PROPERTY_ROW_GAP = 20.dp
-internal val DELETE_BUTTON_CORNER_RADIUS = 24.dp
 
 /**
  * Subset of [Task] fields the sheet treats as form input. Captured once when

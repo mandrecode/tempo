@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.core.domain.util.TitleDescriptionValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -60,14 +61,14 @@ class CreateOrUpdateHabitChainUseCase
         suspend operator fun invoke(params: Params): Result {
             val trimmedTitle = params.title.trim()
             val trimmedDescription = params.description.trim()
-            when (ValidationUtils.validateTitle(trimmedTitle)) {
-                ValidationResult.Empty -> return Result.ValidationError(ValidationErrorType.TITLE_EMPTY)
-                ValidationResult.TooLong -> return Result.ValidationError(ValidationErrorType.TITLE_TOO_LONG)
-                ValidationResult.Valid -> {}
-                else -> {}
-            }
-            if (ValidationUtils.validateDescription(trimmedDescription) is ValidationResult.TooLong) {
-                return Result.ValidationError(ValidationErrorType.DESCRIPTION_TOO_LONG)
+            when (ValidationUtils.validateTitleAndDescription(trimmedTitle, trimmedDescription)) {
+                TitleDescriptionValidationResult.TitleEmpty ->
+                    return Result.ValidationError(ValidationErrorType.TITLE_EMPTY)
+                TitleDescriptionValidationResult.TitleTooLong ->
+                    return Result.ValidationError(ValidationErrorType.TITLE_TOO_LONG)
+                TitleDescriptionValidationResult.DescriptionTooLong ->
+                    return Result.ValidationError(ValidationErrorType.DESCRIPTION_TOO_LONG)
+                TitleDescriptionValidationResult.Valid -> {}
             }
             if (ValidationUtils.validateHabitChainSize(params.habitIds.size) is ValidationResult.TooManyItems) {
                 return Result.ValidationError(ValidationErrorType.TOO_MANY_HABITS)

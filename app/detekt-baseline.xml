@@ -17,9 +17,7 @@
     <ID>CyclomaticComplexMethod:HandleReminderPermissions.kt:@Composable fun HandleReminderPermissions</ID>
     <ID>CyclomaticComplexMethod:RoutinesViewModel.kt:RoutinesViewModel$fun onEvent</ID>
     <ID>CyclomaticComplexMethod:RoutinesViewModelActions.kt:internal fun RoutinesViewModel.addHabit</ID>
-    <ID>CyclomaticComplexMethod:RoutinesViewModelActions.kt:internal fun RoutinesViewModel.proceedWithHabitChainCreation</ID>
     <ID>CyclomaticComplexMethod:RoutinesViewModelActions.kt:internal fun RoutinesViewModel.updateHabit</ID>
-    <ID>CyclomaticComplexMethod:SettingsContent.kt:@Composable fun SettingsContent</ID>
     <ID>CyclomaticComplexMethod:TaskBottomSheetContent.kt:@OptIn(ExperimentalMaterial3Api::class, FormatStringsInDatetimeFormats::class) @Composable internal fun TaskBottomSheetContent</ID>
     <ID>CyclomaticComplexMethod:TaskBottomSheetFormSections.kt:@Composable private fun TaskPeriodicitySection</ID>
     <ID>CyclomaticComplexMethod:TaskCard.kt:@Composable fun TaskItem</ID>
@@ -34,21 +32,14 @@
     <ID>LongMethod:CategoryChipRow.kt:@Composable private fun CategoryItem</ID>
     <ID>LongMethod:CategoryDialog.kt:@Composable fun CategoryDialog</ID>
     <ID>LongMethod:CategoryEditSheet.kt:@Composable fun CategoryEditSheet</ID>
-    <ID>LongMethod:ClearRemindersConfirmDialog.kt:@Composable fun ClearRemindersConfirmDialog</ID>
     <ID>LongMethod:ColorPicker.kt:@Composable private fun SegmentedColorCircle</ID>
     <ID>LongMethod:CreateOrUpdateHabitChainUseCase.kt:CreateOrUpdateHabitChainUseCase$@OptIn(ExperimentalTime::class) suspend operator fun invoke: Result</ID>
     <ID>LongMethod:DayOfWeekSelector.kt:@Composable fun DayOfWeekSelector</ID>
-    <ID>LongMethod:DeleteCategoryConfirmDialog.kt:@Composable fun DeleteCategoryDialog</ID>
     <ID>LongMethod:DeleteHabitChainConfirmDialog.kt:@Composable fun DeleteHabitChainConfirmDialog</ID>
-    <ID>LongMethod:DeleteHabitConfirmDialog.kt:@Composable fun DeleteHabitConfirmDialog</ID>
-    <ID>LongMethod:DeleteTaskConfirmDialog.kt:@Composable fun DeleteTaskConfirmDialog</ID>
-    <ID>LongMethod:EmptyHabitChainConfirmDialog.kt:@Composable fun EmptyHabitChainConfirmDialog</ID>
     <ID>LongMethod:ExpressiveChip.kt:@Composable fun ExpressiveChip</ID>
     <ID>LongMethod:HabitBottomSheetChainComponents.kt:@Composable private fun SelectedHabitItem</ID>
     <ID>LongMethod:HabitBottomSheetContent.kt:@OptIn( ExperimentalMaterial3Api::class, FormatStringsInDatetimeFormats::class, ) @Composable internal fun HabitBottomSheetContent</ID>
-    <ID>LongMethod:HabitBottomSheetFooterSection.kt:@Composable internal fun HabitBottomSheetFooter</ID>
     <ID>LongMethod:HabitBottomSheetFormSections.kt:@Composable internal fun HabitBottomSheetBody</ID>
-    <ID>LongMethod:HabitBottomSheetFormSections.kt:@Composable private fun HabitReminderSection</ID>
     <ID>LongMethod:HabitCards.kt:@Composable fun HabitCard</ID>
     <ID>LongMethod:HabitCards.kt:@Composable internal fun HabitItem</ID>
     <ID>LongMethod:HabitChainCard.kt:@Composable fun HabitChainCard</ID>
@@ -56,21 +47,15 @@
     <ID>LongMethod:HabitHistoryView.kt:@Composable fun HabitHistoryView</ID>
     <ID>LongMethod:HabitRepositoryImpl.kt:HabitRepositoryImpl$override suspend fun toggleHabitCompletion</ID>
     <ID>LongMethod:HandleReminderPermissions.kt:@Composable fun HandleReminderPermissions</ID>
-    <ID>LongMethod:IconPicker.kt:@Composable private fun ExpandButton</ID>
     <ID>LongMethod:IconPicker.kt:@Composable private fun IconOption</ID>
     <ID>LongMethod:IconPicker.kt:@OptIn(ExperimentalLayoutApi::class) @Composable fun IconPicker</ID>
     <ID>LongMethod:MainActivity.kt:MainActivity$override fun onCreate</ID>
-    <ID>LongMethod:Navigation.kt:@Composable fun TempoBottomNavigation</ID>
     <ID>LongMethod:PermissionRevokedDialog.kt:@Composable fun PermissionRevokedDialog</ID>
     <ID>LongMethod:RoutinesContent.kt:@Composable fun RoutinesContent</ID>
     <ID>LongMethod:RoutinesScreen.kt:@OptIn(ExperimentalMaterial3Api::class) @Composable fun RoutinesScreen</ID>
-    <ID>LongMethod:SettingsContent.kt:@Composable fun SettingsContent</ID>
-    <ID>LongMethod:SettingsContent.kt:@Composable private fun SettingsItem</ID>
     <ID>LongMethod:TaskBottomSheetContent.kt:@OptIn(ExperimentalMaterial3Api::class, FormatStringsInDatetimeFormats::class) @Composable internal fun TaskBottomSheetContent</ID>
-    <ID>LongMethod:TaskBottomSheetFooterSection.kt:@Composable internal fun TaskBottomSheetFooter</ID>
     <ID>LongMethod:TaskBottomSheetFormSections.kt:@Composable private fun TaskPeriodicitySection</ID>
     <ID>LongMethod:TaskBottomSheetFormSections.kt:@Composable private fun TaskReminderAndPeriodicitySection</ID>
-    <ID>LongMethod:TaskBottomSheetFormSections.kt:@Composable private fun TaskTitleSection</ID>
     <ID>LongMethod:TaskCard.kt:@Composable fun TaskItem</ID>
     <ID>LongMethod:TaskCardMetadata.kt:@Composable internal fun SubtaskItem</ID>
     <ID>LongMethod:TaskCardMetadata.kt:@Composable private fun SubtaskMetadataRow</ID>
@@ -82,10 +67,7 @@
     <ID>LongMethod:TasksViewModelTest.kt:TasksViewModelTest$@Test fun `activeTaskGroups buckets past dates into single Overdue group`</ID>
     <ID>LongMethod:TasksViewModelTest.kt:TasksViewModelTest$@Test fun `activeTaskGroups groups tasks by reminderDate when sorted by date`</ID>
     <ID>LongMethod:TasksViewModelTest.kt:TasksViewModelTest$@Test fun `completedTaskGroups groups tasks by completedAt date when sorted by date`</ID>
-    <ID>LongMethod:TasksViewModelTest.kt:TasksViewModelTest$@Test fun `completedTaskGroups groups tasks by priority when sorted by priority`</ID>
     <ID>LongMethod:TasksViewModelTest.kt:TasksViewModelTest$@Test fun `loadData filters and partitions tasks correctly`</ID>
-    <ID>LongMethod:TempoModalBottomSheet.kt:@Composable fun TempoModalBottomSheet</ID>
-    <ID>LongMethod:TempoModalTopSheet.kt:@Composable fun TempoModalTopSheet</ID>
     <ID>MagicNumber:CategoryChipRow.kt:0.5f</ID>
     <ID>MagicNumber:CategoryChipRow.kt:0.8f</ID>
     <ID>MagicNumber:ColorPalette.kt:ColorOption$3</ID>
@@ -102,7 +84,6 @@
     <ID>MagicNumber:HabitChainLiveActivityManager.kt:HabitChainLiveActivityManager$35</ID>
     <ID>MagicNumber:HabitChainLiveActivityManager.kt:HabitChainLiveActivityManager$36</ID>
     <ID>MagicNumber:HabitQuitCards.kt:50</ID>
-    <ID>MagicNumber:Navigation.kt:300</ID>
     <ID>MagicNumber:RescheduleRemindersWorker.kt:RescheduleRemindersWorker$3</ID>
     <ID>MagicNumber:TaskBottomSheetFormSections.kt:0.5f</ID>
     <ID>MagicNumber:TaskCard.kt:0.5f</ID>
@@ -120,21 +101,16 @@
     <ID>MaxLineLength:HabitReminderSchedulerImpl.kt:HabitReminderSchedulerImpl$?:</ID>
     <ID>MaxLineLength:HabitReminderSchedulerImpl.kt:HabitReminderSchedulerImpl$return@withContext ScheduleResult.PermissionError(context.getString(R.string.error_exact_alarm_permission))</ID>
     <ID>MaxLineLength:HabitRepositoryImpl.kt:HabitRepositoryImpl$override suspend fun getHabitsByIds: List&lt;Habit&gt;</ID>
-    <ID>MaxLineLength:IconPicker.kt:listOf(allIcons[selectedIndex]) + allIcons.filter { it.iconName != selectedIconName }.take(firstRowIconsCount - 1)</ID>
     <ID>MaxLineLength:PreferencesRepositoryModule.kt:PreferencesRepositoryModule$abstract</ID>
     <ID>MaxLineLength:RescheduleRemindersWorkerTest.kt:RescheduleRemindersWorkerTest$habitReminderScheduler.scheduleHabitChain(match { it.id == 1L &amp;&amp; it.periodicReminder!! &gt; pastChainTime })</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:internal</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:mutableUiState.update { it.copy(habitForm = it.habitForm.copy(descriptionError = R.string.error_habit_description_too_long)) }</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:mutableUiState.update { it.copy(habitForm = it.habitForm.copy(titleError = R.string.error_habit_title_too_long)) }</ID>
     <ID>MaxLineLength:RoutinesViewModelTest.kt:RoutinesViewModelTest$assertThat(viewModel.uiState.value.habitForm.descriptionError).isEqualTo(R.string.error_habit_description_too_long)</ID>
-    <ID>MaxLineLength:SettingsContent.kt:val languageName = currentLocale.getDisplayName(currentLocale).replaceFirstChar { it.titlecase(currentLocale) }</ID>
-    <ID>MaxLineLength:SettingsViewModelTest.kt:SettingsViewModelTest$viewModel = SettingsViewModel(themePreferencesRepository, navigationPreferencesRepository, appVersionProvider)</ID>
     <ID>MaxLineLength:TasksContent.kt:haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)</ID>
-    <ID>MaxLineLength:TasksScreen.kt:dismissPermissionRevokedDialog = { viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRevokedDialog) }</ID>
     <ID>MaxLineLength:TasksViewModelCategoryAndPermissionActions.kt:mutableUiState.update { it.copy(categoryForm = it.categoryForm.copy(nameError = R.string.msg_category_name_empty)) }</ID>
     <ID>MaxLineLength:TasksViewModelTaskActions.kt:mutableUiState.update { it.copy(taskForm = it.taskForm.copy(descriptionError = R.string.error_task_description_too_long)) }</ID>
     <ID>MaxLineLength:TasksViewModelTaskActions.kt:mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.error_task_title_too_long)) }</ID>
-    <ID>MaxLineLength:TempoIconTest.kt:TempoIconTest$assertThat(TempoIcon.suggestIcon("Beber agua", context)).isEqualTo(TempoIcon.COFFEE)</ID>
     <ID>MaxLineLength:ToggleHabitCompletionUseCase.kt:ToggleHabitCompletionUseCase$val advancedReminder = HabitReminderDateUtil.advanceReminderIfNeeded(restoredReminder, chain.repeatDays, now)</ID>
     <ID>MaxLineLength:UpdateHabitUseCase.kt:UpdateHabitUseCase$ValidationResult.Empty -&gt; return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_EMPTY)</ID>
     <ID>MaxLineLength:UpdateHabitUseCase.kt:UpdateHabitUseCase$ValidationResult.TooLong -&gt; return Result.ValidationError(CreateHabitUseCase.ValidationErrorType.TITLE_TOO_LONG)</ID>
@@ -154,18 +130,13 @@
     <ID>ReturnCount:RoutinesViewModelActions.kt:internal suspend fun RoutinesViewModel.addHabitToChain: Boolean</ID>
     <ID>ReturnCount:TaskReminderDateUtil.kt:TaskReminderDateUtil$fun advanceReminderIfNeeded: Task</ID>
     <ID>ReturnCount:TaskReminderDateUtil.kt:TaskReminderDateUtil$fun isPastReminderWithoutPeriodicity: Boolean</ID>
-    <ID>ReturnCount:TaskReminderSchedulerImpl.kt:TaskReminderSchedulerImpl$@OptIn(ExperimentalTime::class) override fun schedule: ScheduleResult</ID>
     <ID>ReturnCount:TasksViewModelTaskActions.kt:internal fun TasksViewModel.createOrUpdateTask</ID>
-    <ID>ReturnCount:ToggleTaskCompletionUseCase.kt:ToggleTaskCompletionUseCase$suspend operator fun invoke: Result</ID>
     <ID>ReturnCount:UpdateCategoryUseCase.kt:UpdateCategoryUseCase$suspend operator fun invoke: Result</ID>
     <ID>ReturnCount:UpdateHabitUseCase.kt:UpdateHabitUseCase$suspend operator fun invoke: Result</ID>
     <ID>ReturnCount:UpdateTaskUseCase.kt:UpdateTaskUseCase$suspend operator fun invoke: Result</ID>
     <ID>ReturnCount:ValidationUtils.kt:ValidationUtils$fun validateCategoryName: ValidationResult</ID>
     <ID>ReturnCount:ValidationUtils.kt:ValidationUtils$fun validateTitle: ValidationResult</ID>
     <ID>SwallowedException:RescheduleRemindersWorker.kt:RescheduleRemindersWorker$e: Exception</ID>
-    <ID>SwallowedException:RoutinesViewModelActions.kt:e: IOException</ID>
-    <ID>SwallowedException:RoutinesViewModelActions.kt:e: IllegalArgumentException</ID>
-    <ID>SwallowedException:RoutinesViewModelActions.kt:e: IllegalStateException</ID>
     <ID>SwallowedException:TasksViewModelTaskActions.kt:e: Exception</ID>
     <ID>SwallowedException:ThemePreferencesRepositoryImpl.kt:ThemePreferencesRepositoryImpl$e: IllegalArgumentException</ID>
     <ID>TooGenericExceptionCaught:RescheduleRemindersWorker.kt:RescheduleRemindersWorker$e: Exception</ID>
@@ -188,7 +159,6 @@
     <ID>UnusedParameter:HabitCards.kt:modifier: Modifier = Modifier</ID>
     <ID>UnusedParameter:HabitCards.kt:onDelete: () -&gt; Unit</ID>
     <ID>UnusedParameter:HabitChainCard.kt:modifier: Modifier = Modifier</ID>
-    <ID>UnusedParameter:Navigation.kt:modifier: Modifier = Modifier</ID>
     <ID>UnusedParameter:TempoTimePickerDialog.kt:modifier: Modifier = Modifier</ID>
   </CurrentIssues>
 </SmellBaseline>

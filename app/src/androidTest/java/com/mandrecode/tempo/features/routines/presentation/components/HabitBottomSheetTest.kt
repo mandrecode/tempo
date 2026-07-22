@@ -23,6 +23,7 @@ import androidx.compose.ui.test.performTextReplacement
 import androidx.test.platform.app.InstrumentationRegistry
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.HABIT_COMPLETION_CHECKBOX_TEST_TAG
+import com.mandrecode.tempo.core.ui.editor.EDITOR_AUTO_SAVE_DEBOUNCE_MS
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -375,7 +376,7 @@ class HabitBottomSheetTest {
         descriptionField.performTextReplacement("ab")
         descriptionField.performTextReplacement("abc")
 
-        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.mainClock.advanceTimeBy(EDITOR_AUTO_SAVE_DEBOUNCE_MS + 1)
         composeTestRule.runOnIdle { assertEquals(listOf("abc"), savedDescriptions) }
         composeTestRule.mainClock.autoAdvance = true
     }
@@ -419,14 +420,14 @@ class HabitBottomSheetTest {
                 )
             }
         }
-        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.mainClock.advanceTimeBy(EDITOR_AUTO_SAVE_DEBOUNCE_MS + 1)
         composeTestRule.runOnIdle {
             assertTrue(savedHabits.isEmpty())
             assertTrue(savedChains.isEmpty())
         }
 
         composeTestRule.runOnIdle { switchToChainTab() }
-        composeTestRule.mainClock.advanceTimeBy(AUTO_SAVE_DEBOUNCE_MS + 1)
+        composeTestRule.mainClock.advanceTimeBy(EDITOR_AUTO_SAVE_DEBOUNCE_MS + 1)
 
         composeTestRule.onNodeWithText(chain.title).assertIsDisplayed()
         composeTestRule.onNodeWithText(chain.description).assertIsDisplayed()

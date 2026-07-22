@@ -34,6 +34,10 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
+import com.mandrecode.tempo.core.ui.editor.EDITOR_AUTO_SAVE_DEBOUNCE_MS
+import com.mandrecode.tempo.core.ui.editor.EDITOR_MAX_TITLE_LENGTH
+import com.mandrecode.tempo.core.ui.editor.editorSaveableKey
+import com.mandrecode.tempo.core.ui.editor.rememberEditorAutosaveController
 import com.mandrecode.tempo.core.ui.util.DebouncedSnapshotEffect
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
 import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
@@ -80,7 +84,7 @@ internal fun TaskBottomSheetContent(
     val editingTargetId = task?.id
     val editorKey =
         remember(formState.editorSessionId, editingTargetId) {
-            formState.editorSessionId to editingTargetId
+            editorSaveableKey(formState.editorSessionId, editingTargetId)
         }
     var taskTitle by rememberSaveable(editorKey) { mutableStateOf(task?.title ?: "") }
     val initialDescription = remember(editorKey) { task?.description.orEmpty() }
@@ -222,7 +226,7 @@ internal fun TaskBottomSheetContent(
     }
 
     val taskSnapshot =
-        remember(task?.id) {
+        remember(editorKey) {
             task?.let {
                 TaskFormSnapshot(
                     title = it.title,
@@ -275,11 +279,15 @@ internal fun TaskBottomSheetContent(
     val autoSaveEnabled = isEditingTask && onAutoSave != null
     val isPriorityReadOnly = task?.isCompleted == true
 
-    var lastDispatchedSnapshot by remember(task?.id) { mutableStateOf<TaskFormSnapshot?>(null) }
+    val autosaveController =
+        rememberEditorAutosaveController(initialSnapshot = taskSnapshot, key = editorKey)
+    val dispatchAutosave: (TaskFormSnapshot) -> Unit = { snapshot ->
+        onAutoSave?.invoke(snapshot.title, snapshot.description, snapshot.categoryId)
+    }
     DebouncedSnapshotEffect(
         enabled = autoSaveEnabled,
-        key = editingTargetId,
-        debounceMillis = AUTO_SAVE_DEBOUNCE_MS,
+        key = editorKey,
+        debounceMillis = EDITOR_AUTO_SAVE_DEBOUNCE_MS,
         snapshotProvider = {
             TaskFormSnapshot(
                 title = taskTitle,
@@ -294,15 +302,11 @@ internal fun TaskBottomSheetContent(
             )
         },
         onSnapshot = { snapshot ->
-            val savedSnapshot = lastDispatchedSnapshot ?: taskSnapshot
-            if (snapshot != savedSnapshot && snapshot.title.isNotBlank()) {
-                onAutoSave?.invoke(
-                    snapshot.title,
-                    snapshot.description,
-                    snapshot.categoryId,
-                )
-                lastDispatchedSnapshot = snapshot
-            }
+            autosaveController.trySave(
+                snapshot,
+                isSaveable = { it.title.isNotBlank() },
+                onSave = dispatchAutosave,
+            )
         },
     )
 
@@ -320,15 +324,11 @@ internal fun TaskBottomSheetContent(
                 monthDayOption = formState.monthDayOption,
             )
         if (autoSaveEnabled && currentSnapshot.title.isNotBlank()) {
-            val savedSnapshot = lastDispatchedSnapshot ?: taskSnapshot
-            if (currentSnapshot != savedSnapshot) {
-                onAutoSave?.invoke(
-                    currentSnapshot.title,
-                    currentSnapshot.description,
-                    currentSnapshot.categoryId,
-                )
-                lastDispatchedSnapshot = currentSnapshot
-            }
+            autosaveController.trySave(
+                currentSnapshot,
+                isSaveable = { it.title.isNotBlank() },
+                onSave = dispatchAutosave,
+            )
         }
         onDismiss()
     }
@@ -371,9 +371,9 @@ internal fun TaskBottomSheetContent(
                         onTaskTitleChanged = { newValue ->
                             if (newValue.contains("\n")) {
                                 focusManager.clearFocus()
-                            } else if (newValue.length > MAX_TITLE_LENGTH) {
-                                val overflow = newValue.substring(MAX_TITLE_LENGTH)
-                                taskTitle = newValue.substring(0, MAX_TITLE_LENGTH)
+                            } else if (newValue.length > EDITOR_MAX_TITLE_LENGTH) {
+                                val overflow = newValue.substring(EDITOR_MAX_TITLE_LENGTH)
+                                taskTitle = newValue.substring(0, EDITOR_MAX_TITLE_LENGTH)
                                 updateDescription(
                                     TextFieldValue(
                                         text = overflow + descriptionState.value.text,

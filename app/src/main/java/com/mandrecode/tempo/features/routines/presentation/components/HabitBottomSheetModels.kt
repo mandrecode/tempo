@@ -3,7 +3,6 @@ package com.mandrecode.tempo.features.routines.presentation.components
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -12,12 +11,8 @@ import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import kotlinx.datetime.LocalDateTime
 
-internal const val MAX_TITLE_LENGTH = 65
 internal const val HABIT_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG =
     "habit_bottom_sheet_description_field"
-internal const val AUTO_SAVE_DEBOUNCE_MS = 350L
-internal val PROPERTY_ROW_GAP = 20.dp
-internal val DELETE_BUTTON_CORNER_RADIUS = 24.dp
 
 /**
  * Subset of [Habit] fields the sheet treats as form input. Excluding fields like

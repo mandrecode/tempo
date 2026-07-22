@@ -25,6 +25,29 @@ object ValidationUtils {
         return ValidationResult.Valid
     }
 
+    /**
+     * Combines [validateTitle] and [validateDescription] into the single outcome shared by the
+     * task, habit, and habit-chain create/update use cases, so each stops re-declaring the same
+     * title-then-description dispatch. Each use case maps [TitleDescriptionValidationResult]
+     * onto its own `ValidationErrorType` enum.
+     */
+    fun validateTitleAndDescription(
+        title: String,
+        description: String,
+        maxTitleLength: Int = MAX_TITLE_LENGTH,
+        maxDescriptionLength: Int = MAX_DESCRIPTION_LENGTH,
+    ): TitleDescriptionValidationResult =
+        when (validateTitle(title, maxTitleLength)) {
+            ValidationResult.Empty -> TitleDescriptionValidationResult.TitleEmpty
+            ValidationResult.TooLong -> TitleDescriptionValidationResult.TitleTooLong
+            else ->
+                if (validateDescription(description, maxDescriptionLength) is ValidationResult.TooLong) {
+                    TitleDescriptionValidationResult.DescriptionTooLong
+                } else {
+                    TitleDescriptionValidationResult.Valid
+                }
+        }
+
     fun validateCategoryName(
         name: String,
         maxLength: Int = MAX_CATEGORY_NAME_LENGTH,
@@ -67,4 +90,14 @@ sealed class ValidationResult {
     object TooLong : ValidationResult()
 
     object TooManyItems : ValidationResult()
+}
+
+sealed class TitleDescriptionValidationResult {
+    object Valid : TitleDescriptionValidationResult()
+
+    object TitleEmpty : TitleDescriptionValidationResult()
+
+    object TitleTooLong : TitleDescriptionValidationResult()
+
+    object DescriptionTooLong : TitleDescriptionValidationResult()
 }
