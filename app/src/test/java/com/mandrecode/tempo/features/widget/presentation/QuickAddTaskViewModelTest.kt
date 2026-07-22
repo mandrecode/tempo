@@ -16,6 +16,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -131,5 +132,32 @@ class QuickAddTaskViewModelTest {
             }
 
             coVerify(exactly = 0) { createTaskUseCase.invoke(any()) }
+        }
+
+    @Test
+    fun givenSaveInProgress_whenCancelClicked_thenNoCloseEffectUntilSaveResolves() =
+        runTest {
+            coEvery { createTaskUseCase.invoke(any()) } coAnswers {
+                delay(1_000)
+                CreateTaskUseCase.Result.Success(1L, ScheduleResult.Skipped)
+            }
+            val viewModel = createViewModel()
+            testDispatcher.scheduler.advanceUntilIdle()
+            viewModel.onEvent(QuickAddTaskContract.UiEvent.TitleChanged("Buy milk"))
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(QuickAddTaskContract.UiEvent.SaveClicked)
+                testDispatcher.scheduler.runCurrent()
+                assertThat(viewModel.uiState.value.isSaving).isTrue()
+
+                viewModel.onEvent(QuickAddTaskContract.UiEvent.CancelClicked)
+                testDispatcher.scheduler.runCurrent()
+                expectNoEvents()
+
+                testDispatcher.scheduler.advanceUntilIdle()
+                assertThat(awaitItem()).isEqualTo(QuickAddTaskContract.UiEffect.Close)
+            }
+
+            coVerify(exactly = 1) { createTaskUseCase.invoke(any()) }
         }
 }

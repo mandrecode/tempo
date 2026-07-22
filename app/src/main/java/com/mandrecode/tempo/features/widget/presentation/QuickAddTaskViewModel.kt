@@ -55,6 +55,7 @@ class QuickAddTaskViewModel
         }
 
         private fun cancel() {
+            if (mutableUiState.value.isSaving) return
             viewModelScope.launch { effectChannel.send(QuickAddTaskContract.UiEffect.Close) }
         }
 

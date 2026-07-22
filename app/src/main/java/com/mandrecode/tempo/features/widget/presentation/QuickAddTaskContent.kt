@@ -51,7 +51,9 @@ fun QuickAddTaskContent(
     }
 
     Dialog(
-        onDismissRequest = { onEvent(QuickAddTaskContract.UiEvent.CancelClicked) },
+        onDismissRequest = {
+            if (!uiState.isSaving) onEvent(QuickAddTaskContract.UiEvent.CancelClicked)
+        },
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Card(
@@ -146,6 +148,7 @@ private fun QuickAddTaskActions(
     ) {
         OutlinedButton(
             onClick = { onEvent(QuickAddTaskContract.UiEvent.CancelClicked) },
+            enabled = !isSaving,
             modifier = Modifier.height(48.dp),
         ) {
             Text(stringResource(R.string.cancel))

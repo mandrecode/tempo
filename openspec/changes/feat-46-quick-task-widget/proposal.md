@@ -7,7 +7,7 @@ Adding a task today requires opening Tempo, navigating to the task list, and tap
 - Add a new Android home-screen widget ("Quick Add Task") implemented with Jetpack Glance.
 - Tapping the widget opens a minimal quick-add surface (title input + optional category picker) rendered in a transparent trampoline activity, not the full app.
 - Saving calls the existing `CreateTaskUseCase` directly; on success the surface closes back to the home screen. No task list, checklist, or agenda view is rendered in the widget — quick-add only.
-- Widget visuals (background, text, icon tint) use Glance's `GlanceTheme`/color providers wired to Tempo's existing Material color tokens so the widget matches the app's light/dark theme and follows Android 12+ dynamic color when available.
+- Widget visuals (background, text, icon tint) use Glance's `GlanceTheme`/color providers wired to Tempo's existing static light/dark Material color tokens, so the widget matches the app's light/dark theme. Android 12+ dynamic (wallpaper-based) color is intentionally not used for the widget — see design.md decision 4.
 - New Gradle dependency: `androidx.glance:glance-appwidget`.
 - New manifest entries: an `AppWidgetProvider` `<receiver>` plus `appwidget-provider` metadata (min size, resize mode, preview image).
 - New "What's New" entry (per AGENTS.md checklist) announcing the widget once it ships.
