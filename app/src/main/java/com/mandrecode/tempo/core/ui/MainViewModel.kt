@@ -36,6 +36,8 @@ class MainViewModel
         private val _pendingNotificationAction = MutableStateFlow(readPendingNotificationAction())
         val pendingNotificationAction: StateFlow<PendingNotificationAction?> = _pendingNotificationAction.asStateFlow()
 
+        private val appVersionName = appVersionProvider.getVersionInfo().versionName
+
         private val mainPreferences =
             combine(
                 themePreferencesRepository.getThemeMode(),
@@ -51,7 +53,7 @@ class MainViewModel
                     isRoutinesTabEnabled = isRoutinesTabEnabled,
                     isTasksTabEnabled = isTasksTabEnabled,
                     isOnboardingCompleted = false,
-                    whatsNewVersionName = appVersionProvider.getVersionInfo().versionName,
+                    whatsNewVersionName = appVersionName,
                 )
             }
 
