@@ -2,6 +2,7 @@ package com.mandrecode.tempo.core.ui.navigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -151,46 +152,17 @@ fun TempoNavHost(
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
-    // Safe-drawing horizontal inset (e.g. a landscape display cutout) painted separately from
-    // TempoNavDisplay below, not as a shared background behind it: TempoNavDisplay crossfades
-    // Tasks/Routines by alpha-blending each scene, and MainActivity's root Surface is
-    // deliberately colorScheme.surface so that blend doesn't flash a tinted backdrop. Painting
-    // a colorScheme.background fill behind TempoNavDisplay itself would become the crossfade's
-    // blend target instead and reintroduce that flash — so only the margin strips get it here.
-    val layoutDirection = LocalLayoutDirection.current
-    val horizontalInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
-    val startInset = horizontalInsets.calculateStartPadding(layoutDirection)
-    val endInset = horizontalInsets.calculateEndPadding(layoutDirection)
+    // windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this
+    // horizontal inset as consumed for descendants, so NavDisplay/Scaffold don't apply the
+    // same safe-drawing inset a second time internally (a plain padding() modifier doesn't
+    // consume anything, which doubled this offset and visibly displaced the app-bar title).
+    val insetPaddingModifier =
+        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
 
     Box(
         modifier = modifier.fillMaxSize(),
     ) {
-        if (startInset > 0.dp) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxHeight()
-                        .width(startInset)
-                        .align(Alignment.CenterStart)
-                        .background(MaterialTheme.colorScheme.background),
-            )
-        }
-        if (endInset > 0.dp) {
-            Box(
-                modifier =
-                    Modifier
-                        .fillMaxHeight()
-                        .width(endInset)
-                        .align(Alignment.CenterEnd)
-                        .background(MaterialTheme.colorScheme.background),
-            )
-        }
-
-        // windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this
-        // horizontal inset as consumed for descendants, so NavDisplay/Scaffold don't apply the
-        // same safe-drawing inset a second time internally (a plain padding() modifier doesn't
-        // consume anything, which doubled this offset and visibly displaced the app-bar title).
-        val insetPaddingModifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+        HorizontalInsetMarginStrips()
 
         TempoNavDisplay(
             entries = activeEntries,
@@ -217,6 +189,43 @@ fun TempoNavHost(
             onNavigateToTopLevel = navigator::navigateToTopLevel,
             onOpenSettings = openSettings,
             onRouteChange = onRouteChange,
+        )
+    }
+}
+
+/**
+ * Tinted fill for the safe-drawing horizontal inset (e.g. a landscape display cutout), painted
+ * separately from TempoNavDisplay rather than shared with it as a background: TempoNavDisplay
+ * crossfades Tasks/Routines by alpha-blending each scene, and MainActivity's root Surface is
+ * deliberately colorScheme.surface so that blend doesn't flash a tinted backdrop. A
+ * colorScheme.background fill behind TempoNavDisplay itself would become the crossfade's blend
+ * target instead and reintroduce that flash — so only these margin strips get it.
+ */
+@Composable
+private fun BoxScope.HorizontalInsetMarginStrips() {
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+    val startInset = horizontalInsets.calculateStartPadding(layoutDirection)
+    val endInset = horizontalInsets.calculateEndPadding(layoutDirection)
+
+    if (startInset > 0.dp) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .width(startInset)
+                    .align(Alignment.CenterStart)
+                    .background(MaterialTheme.colorScheme.background),
+        )
+    }
+    if (endInset > 0.dp) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .width(endInset)
+                    .align(Alignment.CenterEnd)
+                    .background(MaterialTheme.colorScheme.background),
         )
     }
 }
