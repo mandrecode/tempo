@@ -118,7 +118,10 @@ fun TasksContent(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
+        // here too so the rounded content block's corner cutouts (see below) still resolve to
+        // the correct tinted color when this composable is previewed/tested standalone.
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         if (uiState.isLoading) {
             TempoLoadingIndicator(message = stringResource(R.string.loading_tasks))
@@ -151,14 +154,15 @@ fun TasksContent(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape =
-                                    RoundedCornerShape(
-                                        topStart = ContentBlockTopCornerRadius,
-                                        topEnd = ContentBlockTopCornerRadius,
-                                    ),
-                            ),
+                            // clip before background: background() alone doesn't clip children,
+                            // so list overscroll/ripple effects would otherwise draw past the
+                            // rounded top corners instead of respecting the seam.
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = ContentBlockTopCornerRadius,
+                                    topEnd = ContentBlockTopCornerRadius,
+                                ),
+                            ).background(MaterialTheme.colorScheme.surface),
                 ) {
                     if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
                         EmptyStateContent()

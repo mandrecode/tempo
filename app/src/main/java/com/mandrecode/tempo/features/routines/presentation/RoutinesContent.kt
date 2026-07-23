@@ -39,6 +39,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -95,7 +96,10 @@ fun RoutinesContent(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        // Matches the Scaffold containerColor this is normally hosted in (RoutinesScreen) —
+        // kept here too so the rounded content block's corner cutouts (see below) still resolve
+        // to the correct tinted color when this composable is previewed/tested standalone.
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         if (uiState.isLoading) {
             TempoLoadingIndicator(message = stringResource(R.string.loading_habits))
@@ -122,14 +126,15 @@ fun RoutinesContent(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
-                            .background(
-                                color = MaterialTheme.colorScheme.surface,
-                                shape =
-                                    RoundedCornerShape(
-                                        topStart = ContentBlockTopCornerRadius,
-                                        topEnd = ContentBlockTopCornerRadius,
-                                    ),
-                            ),
+                            // clip before background: background() alone doesn't clip children,
+                            // so list overscroll/ripple effects would otherwise draw past the
+                            // rounded top corners instead of respecting the seam.
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = ContentBlockTopCornerRadius,
+                                    topEnd = ContentBlockTopCornerRadius,
+                                ),
+                            ).background(MaterialTheme.colorScheme.surface),
                 ) {
                     val allBuildItems = scheduledItems + unscheduledItems
                     if (allBuildItems.isEmpty() && quitHabits.isEmpty()) {
