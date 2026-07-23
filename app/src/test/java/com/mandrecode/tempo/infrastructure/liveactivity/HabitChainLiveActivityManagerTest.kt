@@ -299,6 +299,19 @@ class HabitChainLiveActivityManagerTest {
     }
 
     @Test
+    fun `updateLiveActivity does not repersist chain id on subsequent progress updates`() {
+        val chainId = 6L
+        val chain = HabitChain(id = chainId, title = "Evening Routine")
+
+        runCatching {
+            manager.updateLiveActivity(chain, completedCount = 1, totalCount = 3)
+            manager.updateLiveActivity(chain, completedCount = 2, totalCount = 3)
+        }
+
+        verify(exactly = 1) { activeLiveActivityPreferences.addActiveChainId(chainId) }
+    }
+
+    @Test
     fun `updateLiveActivity removes persisted chain id when chain completed from app`() {
         val chainId = 1L
         val chain = HabitChain(id = chainId, title = "Morning Routine")

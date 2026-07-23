@@ -90,8 +90,9 @@ class HabitChainLiveActivityManager
             if (!NotificationChannelManager.canPostNotifications(context)) {
                 dismissLiveActivity(chain.id)
             } else {
-                activeChains.add(chain.id)
-                activeLiveActivityPreferences.addActiveChainId(chain.id)
+                if (activeChains.add(chain.id)) {
+                    activeLiveActivityPreferences.addActiveChainId(chain.id)
+                }
 
                 // The live activity supersedes the chain reminder notification — dismiss it
                 // regardless of whether the live activity was started from the notification
