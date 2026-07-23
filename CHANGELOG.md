@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.6.2](https://github.com/mandrecode/tempo/compare/v1.6.1...v1.6.2) (2026-07-23)
+
+
+### Bug Fixes
+
+* **#230:** bold linked category names in snackbars instead of quoting ([#241](https://github.com/mandrecode/tempo/issues/241)) ([d23a327](https://github.com/mandrecode/tempo/commit/d23a32706347d53a5b62d0bb4f62d17921a09115))
+* **#231:** widget always follows Android dynamic theme ([#240](https://github.com/mandrecode/tempo/issues/240)) ([50b6d18](https://github.com/mandrecode/tempo/commit/50b6d18852ffeca5b6a9f3655a5ed6e4ae89b2b3))
+* **#232:** align loading indicator higher on screen ([#237](https://github.com/mandrecode/tempo/issues/237)) ([80fed95](https://github.com/mandrecode/tempo/commit/80fed95371a5c8cfcae9a3c7f1adf5a7eb64063e))
+* **#233:** use container-background treatment for priority flag icons ([#239](https://github.com/mandrecode/tempo/issues/239)) ([9406906](https://github.com/mandrecode/tempo/commit/9406906796d43c6d18b97fbc4912815aaf1caddb))
+* **#234:** autoscroll category row to selected category on open ([#238](https://github.com/mandrecode/tempo/issues/238)) ([5bb4cb0](https://github.com/mandrecode/tempo/commit/5bb4cb0edf4833b76f22ba5d1cccd2dcecaca645))
+* bold linked task/category names in backup validation and conflict messages ([#244](https://github.com/mandrecode/tempo/issues/244)) ([fe78fdf](https://github.com/mandrecode/tempo/commit/fe78fdf16877c7293d120f08ac7d3166ab814713))
+
 ## [1.6.1](https://github.com/mandrecode/tempo/compare/v1.6.0...v1.6.1) (2026-07-23)
 
 
