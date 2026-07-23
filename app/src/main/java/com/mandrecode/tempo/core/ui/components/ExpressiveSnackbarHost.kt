@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.spacing
@@ -60,7 +61,9 @@ internal fun ExpressiveSnackbar(snackbarData: SnackbarData) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = snackbarData.visuals.message,
+                text =
+                    (snackbarData.visuals as? TempoSnackbarVisuals)?.annotatedMessage
+                        ?: AnnotatedString(snackbarData.visuals.message),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.weight(1f),

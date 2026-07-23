@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -29,6 +30,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -45,6 +51,7 @@ import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
+import com.mandrecode.tempo.core.ui.components.TempoSnackbarVisuals
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -119,19 +126,20 @@ fun TasksScreen(
         viewModel.uiEffect.collect { effect ->
             when (effect) {
                 is TasksContract.UiEffect.ShowSnackbar -> {
-                    @Suppress("LocalContextGetResourceValueCall")
-                    val message =
-                        if (effect.formatArgs.isNotEmpty()) {
-                            context.getString(effect.messageResId, *effect.formatArgs.toTypedArray())
-                        } else {
-                            context.getString(effect.messageResId)
-                        }
                     val actionLabel = effect.actionResId?.let(context::getString)
                     val result =
                         snackbarHostState.showSnackbar(
-                            message = message,
-                            actionLabel = actionLabel,
-                            duration = if (actionLabel == null) SnackbarDuration.Short else SnackbarDuration.Long,
+                            visuals =
+                                TempoSnackbarVisuals(
+                                    annotatedMessage = effect.toAnnotatedMessage(context),
+                                    actionLabel = actionLabel,
+                                    duration =
+                                        if (actionLabel == null) {
+                                            SnackbarDuration.Short
+                                        } else {
+                                            SnackbarDuration.Long
+                                        },
+                                ),
                         )
                     effect.deletionToken?.let { token ->
                         viewModel.onEvent(
@@ -399,6 +407,28 @@ fun TasksScreen(
             )
         }
     }
+}
+
+@Suppress("LocalContextGetResourceValueCall")
+private fun TasksContract.UiEffect.ShowSnackbar.toAnnotatedMessage(context: Context): AnnotatedString {
+    val segment = boldSegment
+    if (segment != null) {
+        return buildAnnotatedString {
+            append(context.getString(segment.prefixResId).trimEnd())
+            append(" ")
+            withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+                append(segment.word)
+            }
+            append(context.getString(segment.suffixResId))
+        }
+    }
+    val message =
+        if (formatArgs.isNotEmpty()) {
+            context.getString(requireNotNull(messageResId), *formatArgs.toTypedArray())
+        } else {
+            context.getString(requireNotNull(messageResId))
+        }
+    return AnnotatedString(message)
 }
 
 @Composable

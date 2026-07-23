@@ -53,12 +53,20 @@ internal fun TasksViewModel.addCategory(
 
                 is CreateCategoryUseCase.Result.AlreadyExists -> {
                     mutableUiState.update { it.copy(categoryForm = CategoryFormState()) }
-                    showSnackbar(R.string.msg_category_exists, listOf(result.name))
+                    showBoldSnackbar(
+                        R.string.msg_category_exists_prefix,
+                        result.name,
+                        R.string.msg_category_exists_suffix,
+                    )
                 }
 
                 is CreateCategoryUseCase.Result.Success -> {
                     mutableUiState.update { it.copy(categoryForm = CategoryFormState()) }
-                    showSnackbar(R.string.msg_category_added_success, listOf(result.name))
+                    showBoldSnackbar(
+                        R.string.msg_category_added_success_prefix,
+                        result.name,
+                        R.string.msg_category_added_success_suffix,
+                    )
                 }
             }
         } catch (e: CancellationException) {
@@ -90,7 +98,11 @@ internal fun TasksViewModel.updateCategory(category: Category) {
 
                 is UpdateCategoryUseCase.Result.AlreadyExists -> {
                     mutableUiState.update { it.copy(categoryForm = CategoryFormState()) }
-                    showSnackbar(R.string.msg_category_exists, listOf(result.name))
+                    showBoldSnackbar(
+                        R.string.msg_category_exists_prefix,
+                        result.name,
+                        R.string.msg_category_exists_suffix,
+                    )
                 }
 
                 is UpdateCategoryUseCase.Result.Success -> {
@@ -185,9 +197,10 @@ internal fun TasksViewModel.deleteCategory(category: Category) {
                                 selectedCategoryIdBeforeDeletion = selectedCategoryIdBeforeDeletion,
                             ),
                         )
-                    showSnackbar(
-                        messageResId = R.string.msg_category_deleted_success,
-                        formatArgs = listOf(category.name),
+                    showBoldSnackbar(
+                        prefixResId = R.string.msg_category_deleted_success_prefix,
+                        word = category.name,
+                        suffixResId = R.string.msg_category_deleted_success_suffix,
                         actionResId = R.string.undo,
                         deletionToken = token,
                     )
