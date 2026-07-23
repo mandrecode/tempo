@@ -256,6 +256,9 @@ object TasksContract {
                 require((messageResId != null) != (boldSegment != null)) {
                     "ShowSnackbar requires exactly one of messageResId or boldSegment"
                 }
+                require(boldSegment == null || formatArgs.isEmpty()) {
+                    "ShowSnackbar.formatArgs is ignored when boldSegment is set and must be empty"
+                }
             }
         }
     }
