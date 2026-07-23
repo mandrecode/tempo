@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,6 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
@@ -133,17 +139,46 @@ private fun ImportFailedDialog(
 }
 
 @Composable
-private fun ValidationIssue.label(): String =
-    stringResource(
-        when (kind) {
-            ValidationIssueKind.DUPLICATE_ID -> R.string.backup_issue_duplicate_id
-            ValidationIssueKind.UNKNOWN_CATEGORY_REFERENCE -> R.string.backup_issue_unknown_category
-            ValidationIssueKind.UNKNOWN_PARENT_TASK_REFERENCE -> R.string.backup_issue_unknown_parent_task
-            ValidationIssueKind.UNKNOWN_CHAIN_REFERENCE -> R.string.backup_issue_unknown_chain
-            ValidationIssueKind.UNKNOWN_HABIT_REFERENCE -> R.string.backup_issue_unknown_habit
-        },
-        detail,
-    )
+private fun ValidationIssue.label(): AnnotatedString =
+    when (kind) {
+        ValidationIssueKind.DUPLICATE_ID ->
+            AnnotatedString(stringResource(R.string.backup_issue_duplicate_id, detail))
+
+        ValidationIssueKind.UNKNOWN_CATEGORY_REFERENCE ->
+            boldNameMessage(
+                prefixResId = R.string.backup_issue_unknown_category_prefix,
+                name = detail,
+                suffixResId = R.string.backup_issue_unknown_category_suffix,
+            )
+
+        ValidationIssueKind.UNKNOWN_PARENT_TASK_REFERENCE ->
+            boldNameMessage(
+                prefixResId = R.string.backup_issue_unknown_parent_task_prefix,
+                name = detail,
+                suffixResId = R.string.backup_issue_unknown_parent_task_suffix,
+            )
+
+        ValidationIssueKind.UNKNOWN_CHAIN_REFERENCE ->
+            AnnotatedString(stringResource(R.string.backup_issue_unknown_chain, detail))
+
+        ValidationIssueKind.UNKNOWN_HABIT_REFERENCE ->
+            AnnotatedString(stringResource(R.string.backup_issue_unknown_habit, detail))
+    }
+
+@Composable
+private fun boldNameMessage(
+    @StringRes prefixResId: Int,
+    name: String,
+    @StringRes suffixResId: Int,
+): AnnotatedString =
+    buildAnnotatedString {
+        append(stringResource(prefixResId))
+        append(" ")
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+            append(name)
+        }
+        append(stringResource(suffixResId))
+    }
 
 @Composable
 private fun BackupProgressDialog() {
@@ -186,7 +221,7 @@ private fun SettingsContract.ImportError.message(): String =
     }
 
 @Composable
-private fun ImportConflict.label(): String {
+private fun ImportConflict.label(): AnnotatedString {
     val kindLabel =
         stringResource(
             when (kind) {
@@ -203,5 +238,12 @@ private fun ImportConflict.label(): String {
                 ConflictReason.PARENT_CONFLICTED -> R.string.backup_conflict_reason_parent
             },
         )
-    return stringResource(R.string.backup_conflict_entry, kindLabel, displayName, reasonLabel)
+    return buildAnnotatedString {
+        append(kindLabel)
+        append(" ")
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
+            append(displayName)
+        }
+        append(stringResource(R.string.backup_conflict_entry_suffix, reasonLabel))
+    }
 }

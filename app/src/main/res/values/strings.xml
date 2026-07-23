@@ -456,7 +456,7 @@
     <string name="backup_import_summary_imported">Imported: %1$d</string>
     <string name="backup_import_summary_skipped">Skipped duplicates: %1$d</string>
     <string name="backup_import_summary_conflicts">Conflicts: %1$d</string>
-    <string name="backup_conflict_entry">%1$s "%2$s" — %3$s</string>
+    <string name="backup_conflict_entry_suffix">\u0020— %1$s</string>
     <string name="backup_conflict_reason_content">kept your version</string>
     <string name="backup_conflict_reason_parent">skipped with its parent</string>
     <string name="backup_entity_category">Category</string>
@@ -470,8 +470,10 @@
     <string name="backup_import_error_read">The file could not be read.</string>
     <string name="backup_import_error_unexpected">The import failed unexpectedly. Your data was not changed.</string>
     <string name="backup_issue_duplicate_id">Duplicate record id: %1$s</string>
-    <string name="backup_issue_unknown_category">Task "%1$s" references a missing category</string>
-    <string name="backup_issue_unknown_parent_task">Task "%1$s" references a missing parent task</string>
+    <string name="backup_issue_unknown_category_prefix">Task</string>
+    <string name="backup_issue_unknown_category_suffix">\u0020references a missing category</string>
+    <string name="backup_issue_unknown_parent_task_prefix">Task</string>
+    <string name="backup_issue_unknown_parent_task_suffix">\u0020references a missing parent task</string>
     <string name="backup_issue_unknown_chain">A chain membership references missing chain %1$s</string>
     <string name="backup_issue_unknown_habit">A chain membership references missing habit %1$s</string>
     <string name="backup_export_passphrase_title">Set a passphrase</string>
