@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +79,7 @@ private const val ACTIVE_GROUP_FALLBACK_RANK = 3
 private const val COMPLETED_GROUP_DATED_RANK = 0
 private const val COMPLETED_GROUP_NO_DATE_RANK = 1
 private const val COMPLETED_GROUP_FALLBACK_RANK = 2
+private val ContentBlockTopCornerRadius = 28.dp
 
 @Composable
 fun TasksContent(
@@ -116,7 +118,10 @@ fun TasksContent(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
+        // here too so the rounded content block's corner cutouts (see below) still resolve to
+        // the correct tinted color when this composable is previewed/tested standalone.
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         if (uiState.isLoading) {
             TempoLoadingIndicator(message = stringResource(R.string.loading_tasks))
@@ -144,14 +149,20 @@ fun TasksContent(
                     },
                 )
 
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                )
-
                 Box(
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            // clip before background: background() alone doesn't clip children,
+                            // so list overscroll/ripple effects would otherwise draw past the
+                            // rounded top corners instead of respecting the seam.
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = ContentBlockTopCornerRadius,
+                                    topEnd = ContentBlockTopCornerRadius,
+                                ),
+                            ).background(MaterialTheme.colorScheme.surface),
                 ) {
                     if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
                         EmptyStateContent()
@@ -398,6 +409,7 @@ fun TasksContent(
                                         onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
                                         showDivider = showDivider,
                                         firstGroupLabel = firstGroupLabel,
+                                        isFirstVisibleItem = !hasActiveTasks,
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
@@ -492,6 +504,9 @@ internal fun CompletedTasksSeparator(
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
     firstGroupLabel: String? = null,
+    // Whether this separator is the first *visible* content in the list — the LazyColumn always
+    // has a leading zero-height scroll_anchor item ahead of it, so this isn't about list index.
+    isFirstVisibleItem: Boolean = false,
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -502,7 +517,7 @@ internal fun CompletedTasksSeparator(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(top = 28.dp, bottom = 12.dp),
+                .padding(top = if (isFirstVisibleItem) 0.dp else 28.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(

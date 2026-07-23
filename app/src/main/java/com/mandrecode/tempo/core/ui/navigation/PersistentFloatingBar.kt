@@ -70,6 +70,7 @@ internal fun PersistentFloatingBar(
     onNavigateToTopLevel: (NavKey) -> Unit,
     onOpenSettings: () -> Unit,
     onRouteChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
@@ -95,7 +96,7 @@ internal fun PersistentFloatingBar(
     }
 
     Box(
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         contentAlignment =
             if (isRailLayout) {
                 Alignment.TopStart

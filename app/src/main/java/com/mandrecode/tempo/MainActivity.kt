@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
 
             when (val state = uiState) {
                 is MainUiState.Loading -> {
-                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.background
+                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.surface
                     // directly — without it this resolves to Compose's unthemed default M3
                     // baseline scheme (a plain lavender-tinted background), not this app's actual
                     // colors, producing a visible flash to the correct theme once
@@ -110,7 +110,7 @@ class MainActivity : ComponentActivity() {
                     TempoTheme(useTempoColors = true) {
                         Surface(
                             modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.surface,
                         ) {}
                     }
                 }
@@ -128,9 +128,15 @@ class MainActivity : ComponentActivity() {
                             },
                         useTempoColors = state.useTempoColors,
                     ) {
+                        // colorScheme.surface, not .background: Tasks/Routines' NavDisplay
+                        // crossfade layers both scenes' alpha over this Surface, so whatever
+                        // shows through briefly during the fade should match the larger of the
+                        // two blocks in their two-block layout (the white/near-black content
+                        // area) rather than the tinted top strip, or that content area flashes
+                        // tinted for a frame on every tab switch.
                         Surface(
                             modifier = Modifier.fillMaxSize(),
-                            color = MaterialTheme.colorScheme.background,
+                            color = MaterialTheme.colorScheme.surface,
                         ) {
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,

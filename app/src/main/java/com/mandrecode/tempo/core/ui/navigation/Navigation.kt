@@ -1,9 +1,15 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -21,8 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -143,26 +152,35 @@ fun TempoNavHost(
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
+    // windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this
+    // horizontal inset as consumed for descendants, so NavDisplay/Scaffold don't apply the
+    // same safe-drawing inset a second time internally (a plain padding() modifier doesn't
+    // consume anything, which doubled this offset and visibly displaced the app-bar title).
+    val insetPaddingModifier =
+        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+
     Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+        modifier = modifier.fillMaxSize(),
     ) {
+        HorizontalInsetMarginStrips()
+
         TempoNavDisplay(
             entries = activeEntries,
             navigator = navigator,
             editorSceneStrategy = editorSceneStrategy,
+            modifier = insetPaddingModifier,
         )
 
         SettingsSlideOverlay(
             visible = navigator.currentRoute == SettingsRoute,
             onDismiss = { navigator.pop() },
+            modifier = insetPaddingModifier,
         ) {
             SettingsDestination(navigator = navigator)
         }
 
         PersistentFloatingBar(
+            modifier = insetPaddingModifier,
             currentRoute = navigator.currentRoute,
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
@@ -175,15 +193,53 @@ fun TempoNavHost(
     }
 }
 
+/**
+ * Tinted fill for the safe-drawing horizontal inset (e.g. a landscape display cutout), painted
+ * separately from TempoNavDisplay rather than shared with it as a background: TempoNavDisplay
+ * crossfades Tasks/Routines by alpha-blending each scene, and MainActivity's root Surface is
+ * deliberately colorScheme.surface so that blend doesn't flash a tinted backdrop. A
+ * colorScheme.background fill behind TempoNavDisplay itself would become the crossfade's blend
+ * target instead and reintroduce that flash — so only these margin strips get it.
+ */
+@Composable
+private fun BoxScope.HorizontalInsetMarginStrips() {
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+    val startInset = horizontalInsets.calculateStartPadding(layoutDirection)
+    val endInset = horizontalInsets.calculateEndPadding(layoutDirection)
+
+    if (startInset > 0.dp) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .width(startInset)
+                    .align(Alignment.CenterStart)
+                    .background(MaterialTheme.colorScheme.background),
+        )
+    }
+    if (endInset > 0.dp) {
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxHeight()
+                    .width(endInset)
+                    .align(Alignment.CenterEnd)
+                    .background(MaterialTheme.colorScheme.background),
+        )
+    }
+}
+
 @Composable
 private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
     editorSceneStrategy: SceneStrategy<NavKey>,
+    modifier: Modifier = Modifier,
 ) {
     NavDisplay(
         entries = entries,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         onBack = { navigator.pop() },
         sceneStrategies = listOf(editorSceneStrategy),
         transitionSpec = { navigationTransition(initialScene = initialState, targetScene = targetState) },

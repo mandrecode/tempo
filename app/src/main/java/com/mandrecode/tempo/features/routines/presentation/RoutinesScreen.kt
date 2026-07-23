@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.routines.presentation
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -173,7 +174,19 @@ fun RoutinesScreen(
     val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.habitForm.isVisible)
 
     Row(modifier = modifier.fillMaxSize()) {
-        Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+        Box(
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxHeight()
+                    // Explicit fill, not left to the root Surface behind it: on rail/expanded
+                    // layouts adaptiveScreenContentLayout insets the Scaffold below to clear the
+                    // floating rail, exposing this Box's own background in that gutter. It must
+                    // match the Scaffold's top-block color, not whatever the root happens to be
+                    // (root is deliberately colorScheme.surface — see MainActivity — to avoid a
+                    // different flash on the Tasks/Routines tab-switch crossfade).
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
             Scaffold(
                 modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
                 containerColor = MaterialTheme.colorScheme.background,

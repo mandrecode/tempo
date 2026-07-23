@@ -517,8 +517,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Añade tareas desde tu pantalla de inicio</string>
-    <string name="whats_new_description">Añade el nuevo widget de tarea rápida a tu pantalla de inicio para ir directo a añadir una tarea con un toque.</string>
+    <string name="whats_new_title">Un vistazo más claro para Tareas y Rutinas</string>
+    <string name="whats_new_description">Tus categorías y filtros ahora tienen su propio espacio arriba, para que tareas y hábitos sean más fáciles de ver debajo.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>

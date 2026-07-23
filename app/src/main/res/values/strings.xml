@@ -513,8 +513,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add tasks from your home screen</string>
-    <string name="whats_new_description">Place the new Quick Add Task widget on your home screen to jump straight to adding a task in one tap.</string>
+    <string name="whats_new_title">A fresh look for Tasks &amp; Routines</string>
+    <string name="whats_new_description">Your categories and filters now sit in their own space at the top, so your tasks and habits are easier to scan below.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
