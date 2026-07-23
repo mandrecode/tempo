@@ -93,15 +93,26 @@ class MainActivity : ComponentActivity() {
 
             when (val state = uiState) {
                 is MainUiState.Loading -> {
-                    // Keep splash screen or show a blank loading surface
-                    // Since we use installSplashScreen(), the system splash stays until the first frame is drawn.
-                    // If we render nothing or a Box, it might flash white.
-                    // Ideally we use keepOnScreenCondition in installSplashScreen, but simpler here:
-                    // Render a dummy surface matching the background.
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {}
+                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.background
+                    // directly — without it this resolves to Compose's unthemed default M3
+                    // baseline scheme (a plain lavender-tinted background), not this app's actual
+                    // colors, producing a visible flash to the correct theme once
+                    // MainUiState.Success arrives. The splash-hold above makes this frame visible
+                    // more often: it releases as soon as the database is ready, independently of
+                    // whether this Loading state has resolved, so this is no longer guaranteed to
+                    // be as short-lived as it was before that change.
+                    //
+                    // useTempoColors = true matches ThemePreferencesRepositoryImpl's actual
+                    // stored default (getCurrentUseTempoColors() falls back to true, not
+                    // TempoTheme's own false default) — keep these in sync if that default ever
+                    // changes. darkTheme is left at TempoTheme's own isSystemInDarkTheme()
+                    // default, matching ThemeMode.SYSTEM, the stored theme mode default.
+                    TempoTheme(useTempoColors = true) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {}
+                    }
                 }
 
                 is MainUiState.Success -> {
