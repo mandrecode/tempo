@@ -22,7 +22,9 @@ import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.core.data.local.security.DatabaseEncryptionMigrator
+import com.mandrecode.tempo.core.data.local.security.DbKdfIterMarker
 import com.mandrecode.tempo.core.data.local.security.DbPassphraseProvider
+import com.mandrecode.tempo.core.data.local.security.SqlCipherKdfIter
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
@@ -241,6 +243,11 @@ abstract class TempoDatabase : RoomDatabase() {
                 INSTANCE ?: run {
                     val appContext = context.applicationContext
                     val passphrase = passphraseProvider.getOrCreatePassphrase()
+                    // Guarantees that by the time Room opens this file below, it is already
+                    // keyed at SqlCipherKdfIter.CURRENT — either because it didn't exist yet
+                    // (fresh install, created below at CURRENT via the SupportOpenHelperFactory
+                    // hook) or because it's been re-keyed from SqlCipherKdfIter.LEGACY. Room can
+                    // therefore always open with CURRENT, unconditionally, below.
                     migrator.migrateIfNeeded(DATABASE_NAME, passphrase)
                     val instance =
                         Room
@@ -248,8 +255,13 @@ abstract class TempoDatabase : RoomDatabase() {
                                 appContext,
                                 TempoDatabase::class.java,
                                 DATABASE_NAME,
-                            ).openHelperFactory(SupportOpenHelperFactory(passphrase))
-                            .addMigrations(*MIGRATIONS)
+                            ).openHelperFactory(
+                                SupportOpenHelperFactory(
+                                    passphrase,
+                                    SqlCipherKdfIter.hookFor(SqlCipherKdfIter.CURRENT),
+                                    false,
+                                ),
+                            ).addMigrations(*MIGRATIONS)
                             .addCallback(inboxCallback(appContext))
                             .fallbackToDestructiveMigration(false)
                             .build()
@@ -261,11 +273,19 @@ abstract class TempoDatabase : RoomDatabase() {
         /**
          * Seeds the default Inbox category on fresh installs. After creation, the
          * category name is user-owned data and must not be rewritten on database open.
+         *
+         * `onCreate` only fires when Room itself creates the underlying file (i.e. a genuine
+         * fresh install with no prior database) — the migrator's export/re-key paths always
+         * hand Room an already-populated file, which Room treats as existing (`onOpen`, not
+         * `onCreate`). So this is also the one place a freshly-created database's
+         * [SqlCipherKdfIter] marker needs to be recorded: [DatabaseEncryptionMigrator] only ever
+         * sees this file on its *next* launch, once it already exists.
          */
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
         internal fun inboxCallback(context: Context) =
             object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
+                    DbKdfIterMarker.write(context, SqlCipherKdfIter.CURRENT)
                     val localizedName = context.getString(R.string.category_inbox)
                     val values =
                         ContentValues().apply {

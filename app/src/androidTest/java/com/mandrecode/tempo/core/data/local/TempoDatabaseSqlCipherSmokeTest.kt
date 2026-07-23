@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.CategoryEntity
+import com.mandrecode.tempo.core.data.local.security.SqlCipherKdfIter
 import kotlinx.coroutines.test.runTest
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import org.junit.After
@@ -37,8 +38,13 @@ class TempoDatabaseSqlCipherSmokeTest {
             val db =
                 Room
                     .databaseBuilder(context, TempoDatabase::class.java, dbName)
-                    .openHelperFactory(SupportOpenHelperFactory(passphrase))
-                    .addMigrations(*TempoDatabase.MIGRATIONS)
+                    .openHelperFactory(
+                        SupportOpenHelperFactory(
+                            passphrase,
+                            SqlCipherKdfIter.hookFor(SqlCipherKdfIter.CURRENT),
+                            false,
+                        ),
+                    ).addMigrations(*TempoDatabase.MIGRATIONS)
                     .build()
             database = db
 

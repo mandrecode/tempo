@@ -2,6 +2,7 @@ package com.mandrecode.tempo
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
+import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
@@ -52,6 +54,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var themePreferencesRepository: ThemePreferencesRepository
 
+    @Inject
+    lateinit var databaseWarmupSignal: DatabaseWarmupSignal
+
     private val mainViewModel: MainViewModel by viewModels()
 
     // Triggers for navigation
@@ -59,8 +64,23 @@ class MainActivity : ComponentActivity() {
     private val tasksNavigationTrigger = mutableLongStateOf(0L)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Hold the system splash screen — which users already expect to sit on briefly — until
+        // the encrypted database has finished its startup warm-up (see TempoApp.onCreate), or
+        // MAX_SPLASH_HOLD_MS elapses, whichever comes first. Without this, the splash dismisses
+        // on first frame (near-instant, since MainUiState.Loading only depends on DataStore
+        // preferences, not the database) and the SQLCipher key-derivation delay instead shows up
+        // moments later as the in-app loading indicator on whichever screen needs DAO data first
+        // — a much more jarring place for a startup cost to become visible. The bound keeps a
+        // slow device or a failed warm-up (see DatabaseWarmupSignal) from holding the splash
+        // indefinitely.
+        val splashStartElapsedMs = SystemClock.elapsedRealtime()
+        splashScreen.setKeepOnScreenCondition {
+            !databaseWarmupSignal.isReady.value &&
+                SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
+        }
 
         // Establish edge-to-edge before first composition so the app draws behind the system bars
         // from the first frame. TempoTheme's SideEffect re-applies the theme-aware transparent
@@ -247,6 +267,10 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES)
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
         removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)
+    }
+
+    private companion object {
+        const val MAX_SPLASH_HOLD_MS = 1_500L
     }
 }
 
