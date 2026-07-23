@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -44,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -344,7 +346,11 @@ internal fun EmptyDayMessage(
 
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        contentAlignment =
+            BiasAlignment(
+                horizontalBias = 0f,
+                verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
+            ),
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,

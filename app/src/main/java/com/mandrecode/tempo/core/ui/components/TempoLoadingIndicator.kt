@@ -7,16 +7,18 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 
 /**
- * Full-size centered loading state shared by the tasks and routines list screens: a Material 3
- * Expressive loading indicator. `message` should already be the resolved, screen-specific string
- * (e.g. "Loading tasks…", "Loading habits…") and is exposed only as an accessibility label.
+ * Full-size loading state shared by the tasks and routines list screens, biased slightly above
+ * center: a Material 3 Expressive loading indicator. `message` should already be the resolved,
+ * screen-specific string (e.g. "Loading tasks…", "Loading habits…") and is exposed only as an
+ * accessibility label.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -26,7 +28,11 @@ fun TempoLoadingIndicator(
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        contentAlignment =
+            BiasAlignment(
+                horizontalBias = 0f,
+                verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
+            ),
     ) {
         LoadingIndicator(
             modifier =

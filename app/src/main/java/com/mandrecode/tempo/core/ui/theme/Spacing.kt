@@ -45,4 +45,10 @@ object TempoSpacing {
 
     // Bottom navigation height
     val bottomNavHeight = 80.dp
+
+    /**
+     * Vertical bias for full-size centered content (loading indicators, empty states) so it sits
+     * above dead-center rather than directly under the visual midpoint of typical nav chrome.
+     */
+    const val CENTERED_CONTENT_VERTICAL_BIAS = -0.4f
 }
