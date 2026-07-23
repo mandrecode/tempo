@@ -4,6 +4,7 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -257,6 +258,7 @@ private fun BoxScope.TempoModalSheetSurface(
         modifier =
             Modifier
                 .then(state.sizeModifier())
+                .animateContentSize(animationSpec = tween(TempoMotionTokens.DURATION_SHORT_MILLIS))
                 .onSizeChanged { size ->
                     state.isExpandedToStatusBar.value =
                         !state.direction.isHorizontal &&
