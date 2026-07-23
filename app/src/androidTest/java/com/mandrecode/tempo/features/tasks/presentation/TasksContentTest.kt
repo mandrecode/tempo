@@ -1,5 +1,8 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,6 +17,7 @@ import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 
@@ -277,5 +281,78 @@ class TasksContentTest {
         composeTestRule.onNodeWithText("Completed", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("A → Z").assertIsDisplayed()
         composeTestRule.onNodeWithText("Alpha task").assertIsDisplayed()
+    }
+
+    // Regression test for the isFirstVisibleItem fix: CompletedTasksSeparator used to keep its
+    // 28dp top padding even when it was the only thing in the list (a category with no active
+    // tasks), sitting noticeably lower than the top-of-list gap every other first item gets.
+    @Test
+    fun completedSection_asOnlyContent_hasSameTopInsetAsFirstActiveTask() {
+        val completedTask =
+            Task(
+                id = 1,
+                title = "Done task",
+                description = "",
+                isCompleted = true,
+                categoryId = DEFAULT_INBOX_CATEGORY.id,
+                sortOrder = 0,
+            )
+        val completedOnlyState =
+            TasksContract.UiState(
+                isLoading = false,
+                tasks = persistentListOf(completedTask),
+                completedTaskGroups =
+                    persistentMapOf(
+                        CompletedGroupKey.Flat to persistentListOf(completedTask),
+                    ),
+                categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+                showCompletedTasks = true,
+                sortOption = SortOption.MANUAL,
+            )
+
+        val activeTask =
+            Task(
+                id = 2,
+                title = "Active task",
+                description = "",
+                categoryId = DEFAULT_INBOX_CATEGORY.id,
+                sortOrder = 0,
+            )
+        val activeOnlyState =
+            TasksContract.UiState(
+                isLoading = false,
+                tasks = persistentListOf(activeTask),
+                activeTasks =
+                    persistentMapOf(
+                        ActiveGroupKey.Flat to persistentListOf(activeTask),
+                    ),
+                categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+                sortOption = SortOption.MANUAL,
+            )
+
+        // A single setContent with mutable state (rather than two setContent calls) — the test
+        // rule's underlying Activity only accepts one setContent call per test.
+        var uiState by mutableStateOf(completedOnlyState)
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(uiState = uiState, onEvent = {})
+            }
+        }
+        composeTestRule.waitForIdle()
+        val completedSeparatorTop =
+            composeTestRule
+                .onNodeWithText("Completed", substring = true)
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+
+        uiState = activeOnlyState
+        composeTestRule.waitForIdle()
+        val activeTaskTop =
+            composeTestRule
+                .onNodeWithText("Active task")
+                .fetchSemanticsNode()
+                .boundsInRoot.top
+
+        assertEquals(activeTaskTop, completedSeparatorTop, 1f)
     }
 }
