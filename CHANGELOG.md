@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/mandrecode/tempo/compare/v1.6.2...v1.7.0) (2026-07-23)
+
+
+### Features
+
+* **#245:** two-block layout for Tasks and Routines ([#246](https://github.com/mandrecode/tempo/issues/246)) ([4d9b09a](https://github.com/mandrecode/tempo/commit/4d9b09abf76adb0fcd4b54506733d70c0d3f5ae8))
+
 ## [1.6.2](https://github.com/mandrecode/tempo/compare/v1.6.1...v1.6.2) (2026-07-23)
 
 
