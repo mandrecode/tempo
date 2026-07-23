@@ -346,7 +346,7 @@ internal fun MetadataRow(
             if (task.priority != null) {
                 add(
                     MetadataItem("priority") {
-                        PriorityFlagIcon(priority = task.priority, badgeSize = 24.dp, iconSize = 14.dp)
+                        PriorityFlagIcon(priority = task.priority, badgeSize = 18.dp, iconSize = 12.dp)
                     },
                 )
             }
