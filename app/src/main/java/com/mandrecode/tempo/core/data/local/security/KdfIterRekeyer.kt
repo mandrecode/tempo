@@ -134,7 +134,9 @@ internal class KdfIterRekeyer(
     fun recoverFromInterruption(dbFile: File) {
         val backupFile = rekeyBackupFileFor(dbFile)
         if (!dbFile.exists() && backupFile.exists()) {
-            backupFile.renameTo(dbFile)
+            check(backupFile.renameTo(dbFile)) {
+                "Failed to restore the pre-rekey backup after an interrupted swap"
+            }
         } else if (backupFile.exists()) {
             SqlCipherFileSwap.deleteBackupAndSidecars(dbFile, backupFile)
         }
