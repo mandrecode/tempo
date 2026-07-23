@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -46,11 +47,14 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.theme.metadataLabel
 import com.mandrecode.tempo.core.ui.theme.subtaskTitle
 import com.mandrecode.tempo.core.ui.util.color
+import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime
@@ -207,12 +211,7 @@ private fun SubtaskMetadataRow(subtask: Task) {
         }
 
         if (subtask.priority != null) {
-            Icon(
-                painter = painterResource(R.drawable.ic_flag),
-                contentDescription = stringResource(R.string.priority_label),
-                tint = subtask.priority.color,
-                modifier = Modifier.size(14.dp),
-            )
+            PriorityFlagIcon(priority = subtask.priority, badgeSize = 20.dp, iconSize = 12.dp)
         }
 
         Box(modifier = Modifier.heightIn(min = 20.dp), contentAlignment = Alignment.CenterStart) {
@@ -307,6 +306,29 @@ private fun SubtaskMetadataRow(subtask: Task) {
 }
 
 @Composable
+private fun PriorityFlagIcon(
+    priority: Priority,
+    badgeSize: Dp,
+    iconSize: Dp,
+) {
+    Box(
+        modifier =
+            Modifier
+                .size(badgeSize)
+                .clip(CircleShape)
+                .background(priority.containerColor),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_flag),
+            contentDescription = stringResource(R.string.priority_label),
+            tint = priority.color,
+            modifier = Modifier.size(iconSize),
+        )
+    }
+}
+
+@Composable
 internal fun MetadataRow(
     task: Task,
     subtasks: List<Task>,
@@ -324,12 +346,7 @@ internal fun MetadataRow(
             if (task.priority != null) {
                 add(
                     MetadataItem("priority") {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_flag),
-                            contentDescription = stringResource(R.string.priority_label),
-                            tint = task.priority.color,
-                            modifier = Modifier.size(16.dp),
-                        )
+                        PriorityFlagIcon(priority = task.priority, badgeSize = 18.dp, iconSize = 12.dp)
                     },
                 )
             }
