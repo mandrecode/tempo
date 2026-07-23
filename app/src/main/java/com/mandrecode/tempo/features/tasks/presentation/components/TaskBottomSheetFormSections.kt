@@ -323,7 +323,7 @@ private fun rememberAutoScrollToSelectedCategory(
 ): LazyListState {
     val listState = rememberLazyListState()
 
-    LaunchedEffect(selectedCategoryId) {
+    LaunchedEffect(selectedCategoryId, categories) {
         val index = categories.indexOfFirst { it.id == selectedCategoryId }
         if (index < 0) return@LaunchedEffect
 
