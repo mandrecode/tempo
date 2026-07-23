@@ -26,7 +26,7 @@ fun TempoLoadingIndicator(
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment(horizontalBias = 0f, verticalBias = -0.4f),
     ) {
         LoadingIndicator(
             modifier =
