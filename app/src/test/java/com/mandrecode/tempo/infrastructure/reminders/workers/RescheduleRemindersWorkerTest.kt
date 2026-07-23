@@ -371,7 +371,7 @@ class RescheduleRemindersWorkerTest {
         }
 
     @Test
-    fun `doWork resyncs live activity for each persisted active chain`() =
+    fun `doWork resyncs live activity for each persisted active chain that still exists`() =
         runTest {
             val systemZone = TimeZone.currentSystemDefault()
             val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
@@ -381,12 +381,37 @@ class RescheduleRemindersWorkerTest {
             coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
             coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
             every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(1L, 2L)
+            val chain1 = HabitChain(id = 1L, title = "Chain 1")
+            val chain2 = HabitChain(id = 2L, title = "Chain 2")
+            coEvery { habitChainRepository.getHabitChainById(1L) } returns chain1
+            coEvery { habitChainRepository.getHabitChainById(2L) } returns chain2
 
             val result = worker.doWork()
 
             assertTrue(result is ListenableWorker.Result.Success)
-            coVerify { habitRepository.refreshHabitChainLiveActivity(1L) }
-            coVerify { habitRepository.refreshHabitChainLiveActivity(2L) }
+            coVerify { habitRepository.refreshHabitChainLiveActivity(chain1) }
+            coVerify { habitRepository.refreshHabitChainLiveActivity(chain2) }
+            coVerify(exactly = 0) { activeLiveActivityPreferences.removeActiveChainId(any()) }
+        }
+
+    @Test
+    fun `doWork removes persisted chain id when the chain no longer exists`() =
+        runTest {
+            val systemZone = TimeZone.currentSystemDefault()
+            val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
+            coEvery { clock.now() } returns nowTime.toInstant(systemZone)
+
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
+            coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
+            every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(1L)
+            coEvery { habitChainRepository.getHabitChainById(1L) } returns null
+
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+            coVerify { activeLiveActivityPreferences.removeActiveChainId(1L) }
+            coVerify(exactly = 0) { habitRepository.refreshHabitChainLiveActivity(any<HabitChain>()) }
         }
 
     @Test
@@ -403,6 +428,7 @@ class RescheduleRemindersWorkerTest {
             val result = worker.doWork()
 
             assertTrue(result is ListenableWorker.Result.Success)
-            coVerify(exactly = 0) { habitRepository.refreshHabitChainLiveActivity(any<Long>()) }
+            coVerify(exactly = 0) { habitChainRepository.getHabitChainById(any()) }
+            coVerify(exactly = 0) { habitRepository.refreshHabitChainLiveActivity(any<HabitChain>()) }
         }
 }

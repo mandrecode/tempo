@@ -134,7 +134,12 @@ class RescheduleRemindersWorker
 
         private suspend fun resyncActiveLiveActivities() {
             activeLiveActivityPreferences.getActiveChainIds().forEach { chainId ->
-                habitRepository.refreshHabitChainLiveActivity(chainId)
+                val chain = habitChainRepository.getHabitChainById(chainId)
+                if (chain == null) {
+                    activeLiveActivityPreferences.removeActiveChainId(chainId)
+                } else {
+                    habitRepository.refreshHabitChainLiveActivity(chain)
+                }
             }
         }
     }

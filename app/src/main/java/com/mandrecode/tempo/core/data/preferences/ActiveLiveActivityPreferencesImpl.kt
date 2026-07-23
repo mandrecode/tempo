@@ -26,11 +26,13 @@ class ActiveLiveActivityPreferencesImpl
                 .mapNotNull { it.toLongOrNull() }
                 .toSet()
 
+        @Synchronized
         override fun addActiveChainId(chainId: Long) {
             val updated = getActiveChainIds() + chainId
             prefs.edit { putStringSet(KEY_ACTIVE_CHAIN_IDS, updated.map { it.toString() }.toSet()) }
         }
 
+        @Synchronized
         override fun removeActiveChainId(chainId: Long) {
             val updated = getActiveChainIds() - chainId
             prefs.edit { putStringSet(KEY_ACTIVE_CHAIN_IDS, updated.map { it.toString() }.toSet()) }

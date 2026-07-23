@@ -13,6 +13,7 @@ object ReminderRefreshScheduler {
     private const val PERIODIC_WORK_NAME = "RescheduleRemindersWorker"
     private const val IMMEDIATE_WORK_NAME = "ImmediateRescheduleRemindersWorker"
     private var enqueuedInProcess = false
+    private var immediateEnqueuedInProcess = false
 
     @Synchronized
     fun enqueuePeriodicRefresh(context: Context) {
@@ -38,8 +39,14 @@ object ReminderRefreshScheduler {
      * Re-arms reminders immediately rather than waiting for the next periodic refresh.
      * Covers reopening the app after a force-stop, which clears scheduled alarms and
      * prevents boot/background triggers from reaching the app until it is explicitly launched.
+     * Guarded to run once per process: [ExistingWorkPolicy.KEEP] only dedupes while the
+     * one-off run is still pending/in-progress, so without this guard every activity
+     * recreation (rotation, foreground/background cycles) would enqueue another full reschedule.
      */
+    @Synchronized
     fun enqueueImmediateRefresh(context: Context) {
+        if (immediateEnqueuedInProcess) return
+
         val workRequest = OneTimeWorkRequestBuilder<RescheduleRemindersWorker>().build()
 
         WorkManager
@@ -49,5 +56,6 @@ object ReminderRefreshScheduler {
                 ExistingWorkPolicy.KEEP,
                 workRequest,
             )
+        immediateEnqueuedInProcess = true
     }
 }
