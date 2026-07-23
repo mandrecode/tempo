@@ -5,6 +5,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -22,8 +26,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
@@ -144,32 +151,64 @@ fun TempoNavHost(
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
 
+    // Safe-drawing horizontal inset (e.g. a landscape display cutout) painted separately from
+    // TempoNavDisplay below, not as a shared background behind it: TempoNavDisplay crossfades
+    // Tasks/Routines by alpha-blending each scene, and MainActivity's root Surface is
+    // deliberately colorScheme.surface so that blend doesn't flash a tinted backdrop. Painting
+    // a colorScheme.background fill behind TempoNavDisplay itself would become the crossfade's
+    // blend target instead and reintroduce that flash — so only the margin strips get it here.
+    val layoutDirection = LocalLayoutDirection.current
+    val horizontalInsets = WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).asPaddingValues()
+    val startInset = horizontalInsets.calculateStartPadding(layoutDirection)
+    val endInset = horizontalInsets.calculateEndPadding(layoutDirection)
+
     Box(
-        modifier =
-            modifier
-                .fillMaxSize()
-                // Explicit fill: this Box's own bounds include the safe-drawing inset margin
-                // (e.g. a landscape display cutout) and the space the floating rail sits in,
-                // neither of which TempoNavDisplay/PersistentFloatingBar paint themselves —
-                // left unset, that margin falls through to MainActivity's root Surface
-                // (colorScheme.surface), mismatching the top block's tinted color.
-                .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
+        modifier = modifier.fillMaxSize(),
     ) {
+        if (startInset > 0.dp) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(startInset)
+                        .align(Alignment.CenterStart)
+                        .background(MaterialTheme.colorScheme.background),
+            )
+        }
+        if (endInset > 0.dp) {
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxHeight()
+                        .width(endInset)
+                        .align(Alignment.CenterEnd)
+                        .background(MaterialTheme.colorScheme.background),
+            )
+        }
+
+        // windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this
+        // horizontal inset as consumed for descendants, so NavDisplay/Scaffold don't apply the
+        // same safe-drawing inset a second time internally (a plain padding() modifier doesn't
+        // consume anything, which doubled this offset and visibly displaced the app-bar title).
+        val insetPaddingModifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+
         TempoNavDisplay(
             entries = activeEntries,
             navigator = navigator,
             editorSceneStrategy = editorSceneStrategy,
+            modifier = insetPaddingModifier,
         )
 
         SettingsSlideOverlay(
             visible = navigator.currentRoute == SettingsRoute,
             onDismiss = { navigator.pop() },
+            modifier = insetPaddingModifier,
         ) {
             SettingsDestination(navigator = navigator)
         }
 
         PersistentFloatingBar(
+            modifier = insetPaddingModifier,
             currentRoute = navigator.currentRoute,
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
@@ -187,10 +226,11 @@ private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
     editorSceneStrategy: SceneStrategy<NavKey>,
+    modifier: Modifier = Modifier,
 ) {
     NavDisplay(
         entries = entries,
-        modifier = Modifier.fillMaxSize(),
+        modifier = modifier.fillMaxSize(),
         onBack = { navigator.pop() },
         sceneStrategies = listOf(editorSceneStrategy),
         transitionSpec = { navigationTransition(initialScene = initialState, targetScene = targetState) },
