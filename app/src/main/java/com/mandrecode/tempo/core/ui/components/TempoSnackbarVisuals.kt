@@ -8,7 +8,7 @@ import androidx.compose.ui.text.AnnotatedString
 /**
  * One linked entity name (e.g. a category name) to render bold within a snackbar message,
  * composed as [prefixResId] text + bold [word] + [suffixResId] text — the snackbar analogue of
- * the prefix/suffix pattern [com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryConfirmDialog]
+ * the prefix/suffix pattern [com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog]
  * already uses for a `Text` composable.
  */
 data class SnackbarBoldSegment(
