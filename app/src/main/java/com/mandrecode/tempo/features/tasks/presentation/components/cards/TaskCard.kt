@@ -120,9 +120,9 @@ fun TaskItem(
 
     val baseCardColor =
         if (task.isCompleted) {
-            MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.4f)
+            MaterialTheme.colorScheme.background.copy(alpha = 0.4f)
         } else {
-            MaterialTheme.colorScheme.surfaceContainer
+            MaterialTheme.colorScheme.background
         }
     val cardColor by animateColorAsState(
         targetValue = selectedContainerColor(baseCardColor, isSelected),

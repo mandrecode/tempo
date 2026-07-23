@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
@@ -78,6 +79,7 @@ private const val ACTIVE_GROUP_FALLBACK_RANK = 3
 private const val COMPLETED_GROUP_DATED_RANK = 0
 private const val COMPLETED_GROUP_NO_DATE_RANK = 1
 private const val COMPLETED_GROUP_FALLBACK_RANK = 2
+private val ContentBlockTopCornerRadius = 28.dp
 
 @Composable
 fun TasksContent(
@@ -144,14 +146,19 @@ fun TasksContent(
                     },
                 )
 
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                )
-
                 Box(
-                    modifier = Modifier.weight(1f),
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape =
+                                    RoundedCornerShape(
+                                        topStart = ContentBlockTopCornerRadius,
+                                        topEnd = ContentBlockTopCornerRadius,
+                                    ),
+                            ),
                 ) {
                     if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
                         EmptyStateContent()
@@ -398,6 +405,7 @@ fun TasksContent(
                                         onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
                                         showDivider = showDivider,
                                         firstGroupLabel = firstGroupLabel,
+                                        isFirstItem = !hasActiveTasks,
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
@@ -492,6 +500,7 @@ internal fun CompletedTasksSeparator(
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
     firstGroupLabel: String? = null,
+    isFirstItem: Boolean = false,
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -502,7 +511,7 @@ internal fun CompletedTasksSeparator(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(top = 28.dp, bottom = 12.dp),
+                .padding(top = if (isFirstItem) 0.dp else 28.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(

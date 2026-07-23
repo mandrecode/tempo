@@ -205,7 +205,7 @@ private fun rememberQuitHabitCardColors(
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
                 resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.surfaceContainer
+                    ?: MaterialTheme.colorScheme.background
             },
         animationSpec = tween(300),
         label = "quit_card_color",

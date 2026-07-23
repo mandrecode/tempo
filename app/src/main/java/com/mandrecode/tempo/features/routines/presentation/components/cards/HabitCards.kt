@@ -412,7 +412,7 @@ fun HabitCard(
             resolvedHabitColor ?: MaterialTheme.colorScheme.primary
         } else {
             resolvedHabitColor?.copy(alpha = 0.15f)
-                ?: MaterialTheme.colorScheme.surfaceContainer
+                ?: MaterialTheme.colorScheme.background
         }
     val containerColor by animateColorAsState(
         targetValue = selectedContainerColor(baseContainerColor, isSelected),

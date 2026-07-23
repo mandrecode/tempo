@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -61,6 +62,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
+private val ContentBlockTopCornerRadius = 28.dp
+
 /**
  * [showAddHabitButton] makes this composable self-sufficient in isolation (used directly by
  * `RoutinesContentTest.showsAddHabitFab` under `src/androidTest`, and by previews). In the real
@@ -107,93 +110,98 @@ fun RoutinesContent(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-                DayFilterRow(
-                    selectedDate = uiState.selectedDate,
-                    onSelectDate = { onEvent(RoutinesContract.UiEvent.SelectDate(it)) },
-                )
-
-                HorizontalDivider(
-                    modifier = Modifier.fillMaxWidth(),
-                    thickness = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                )
-
-                val allBuildItems = scheduledItems + unscheduledItems
-                if (allBuildItems.isEmpty() && quitHabits.isEmpty()) {
-                    EmptyDayMessage(
+                Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                    DayFilterRow(
                         selectedDate = uiState.selectedDate,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .weight(1f),
+                        onSelectDate = { onEvent(RoutinesContract.UiEvent.SelectDate(it)) },
                     )
-                } else {
-                    val showTimeline = scheduledItems.isNotEmpty()
-                    val habitsById =
-                        remember(uiState.habits) {
-                            uiState.habits.associateBy { it.id }
-                        }
+                }
 
-                    LazyColumn(
-                        state = listState,
-                        modifier =
-                            Modifier
-                                .fillMaxSize()
-                                .weight(1f),
-                        contentPadding =
-                            PaddingValues(
-                                start = 16.dp,
-                                end = 16.dp,
-                                top = 8.dp,
-                                bottom = listBottomPadding,
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            .background(
+                                color = MaterialTheme.colorScheme.surface,
+                                shape =
+                                    RoundedCornerShape(
+                                        topStart = ContentBlockTopCornerRadius,
+                                        topEnd = ContentBlockTopCornerRadius,
+                                    ),
                             ),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        items(
-                            items = scheduledItems,
-                            key = {
-                                it.chainId?.let { id -> "c$id" }
-                                    ?: it.habitId?.let { id -> "h$id" } ?: 0L
-                            },
-                        ) { item ->
-                            TimelineItemCard(
-                                item = item,
-                                uiState = uiState,
-                                habitsById = habitsById,
-                                onEvent = onEvent,
-                                showTimeline = showTimeline,
-                                selectedHabitId = selectedHabitId,
-                                selectedHabitChainId = selectedHabitChainId,
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-
-                        items(
-                            items = unscheduledItems,
-                            key = {
-                                it.chainId?.let { id -> "uc$id" }
-                                    ?: it.habitId?.let { id -> "uh$id" } ?: 0L
-                            },
-                        ) { item ->
-                            TimelineItemCard(
-                                item = item,
-                                uiState = uiState,
-                                habitsById = habitsById,
-                                onEvent = onEvent,
-                                showTimeline = false,
-                                selectedHabitId = selectedHabitId,
-                                selectedHabitChainId = selectedHabitChainId,
-                                modifier = Modifier.animateItem(),
-                            )
-                        }
-
-                        quitHabitsSection(
-                            quitHabits = quitHabits,
-                            hasItemsAbove = allBuildItems.isNotEmpty(),
+                ) {
+                    val allBuildItems = scheduledItems + unscheduledItems
+                    if (allBuildItems.isEmpty() && quitHabits.isEmpty()) {
+                        EmptyDayMessage(
                             selectedDate = uiState.selectedDate,
-                            onEvent = onEvent,
-                            selectedHabitId = selectedHabitId,
+                            modifier = Modifier.fillMaxSize(),
                         )
+                    } else {
+                        val showTimeline = scheduledItems.isNotEmpty()
+                        val habitsById =
+                            remember(uiState.habits) {
+                                uiState.habits.associateBy { it.id }
+                            }
+
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding =
+                                PaddingValues(
+                                    start = 16.dp,
+                                    end = 16.dp,
+                                    top = 16.dp,
+                                    bottom = listBottomPadding,
+                                ),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            items(
+                                items = scheduledItems,
+                                key = {
+                                    it.chainId?.let { id -> "c$id" }
+                                        ?: it.habitId?.let { id -> "h$id" } ?: 0L
+                                },
+                            ) { item ->
+                                TimelineItemCard(
+                                    item = item,
+                                    uiState = uiState,
+                                    habitsById = habitsById,
+                                    onEvent = onEvent,
+                                    showTimeline = showTimeline,
+                                    selectedHabitId = selectedHabitId,
+                                    selectedHabitChainId = selectedHabitChainId,
+                                    modifier = Modifier.animateItem(),
+                                )
+                            }
+
+                            items(
+                                items = unscheduledItems,
+                                key = {
+                                    it.chainId?.let { id -> "uc$id" }
+                                        ?: it.habitId?.let { id -> "uh$id" } ?: 0L
+                                },
+                            ) { item ->
+                                TimelineItemCard(
+                                    item = item,
+                                    uiState = uiState,
+                                    habitsById = habitsById,
+                                    onEvent = onEvent,
+                                    showTimeline = false,
+                                    selectedHabitId = selectedHabitId,
+                                    selectedHabitChainId = selectedHabitChainId,
+                                    modifier = Modifier.animateItem(),
+                                )
+                            }
+
+                            quitHabitsSection(
+                                quitHabits = quitHabits,
+                                hasItemsAbove = allBuildItems.isNotEmpty(),
+                                selectedDate = uiState.selectedDate,
+                                onEvent = onEvent,
+                                selectedHabitId = selectedHabitId,
+                            )
+                        }
                     }
                 }
             }
