@@ -32,6 +32,15 @@ val Priority.color: Color
     @ReadOnlyComposable
     get() = priorityColor(this, LocalIsDarkTheme.current)
 
+/**
+ * Low-alpha background for priority chips/icons, paired with [color] as the content color —
+ * same treatment as the priority selection bottom sheet, for contrast against flat tinted icons.
+ */
+val Priority.containerColor: Color
+    @Composable
+    @ReadOnlyComposable
+    get() = color.copy(alpha = 0.2f)
+
 /** Pure lookup so priority color resolution is unit-testable without a composition. */
 internal fun priorityColor(
     priority: Priority,
