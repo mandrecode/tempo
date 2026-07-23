@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.6.1](https://github.com/mandrecode/tempo/compare/v1.6.0...v1.6.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* **#222:** cut encrypted-DB cold-start latency and hide it behind splash ([#228](https://github.com/mandrecode/tempo/issues/228)) ([0cdab35](https://github.com/mandrecode/tempo/commit/0cdab351bdd76039604bf709224801ec81d218ae))
+* **#74:** recover task/habit/chain reminders and live activities after force-close, update, or reboot ([#227](https://github.com/mandrecode/tempo/issues/227)) ([e2b675a](https://github.com/mandrecode/tempo/commit/e2b675a2ccdf92c74939a3983965423d0a528314))
+
 ## [1.6.0](https://github.com/mandrecode/tempo/compare/v1.5.0...v1.6.0) (2026-07-22)
 
 
