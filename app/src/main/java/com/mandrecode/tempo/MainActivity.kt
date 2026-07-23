@@ -22,6 +22,7 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -42,6 +43,8 @@ import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderRece
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.TaskReminderReceiver
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
@@ -63,23 +66,44 @@ class MainActivity : ComponentActivity() {
     private val routinesNavigationTrigger = mutableLongStateOf(0L)
     private val tasksNavigationTrigger = mutableLongStateOf(0L)
 
+    // Read and written only on the main thread: written from the lifecycleScope collector in
+    // onCreate below, read synchronously from the splash screen library's keepOnScreenCondition
+    // poll — both always run on the main thread, so a plain field is safe without Compose State
+    // or synchronization.
+    private var isMainUiStateReady = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
 
         // Hold the system splash screen — which users already expect to sit on briefly — until
-        // the encrypted database has finished its startup warm-up (see TempoApp.onCreate), or
-        // MAX_SPLASH_HOLD_MS elapses, whichever comes first. Without this, the splash dismisses
-        // on first frame (near-instant, since MainUiState.Loading only depends on DataStore
-        // preferences, not the database) and the SQLCipher key-derivation delay instead shows up
-        // moments later as the in-app loading indicator on whichever screen needs DAO data first
-        // — a much more jarring place for a startup cost to become visible. The bound keeps a
-        // slow device or a failed warm-up (see DatabaseWarmupSignal) from holding the splash
+        // BOTH the encrypted database has finished its startup warm-up (see TempoApp.onCreate)
+        // AND MainUiState has resolved past Loading, or MAX_SPLASH_HOLD_MS elapses, whichever
+        // comes first. Gating on the database alone isn't enough: MainUiState.Loading depends on
+        // DataStore preferences, not the database, so the two can finish in either order — with
+        // this PR's kdf_iter reduction, the database is now often ready *before* preferences are,
+        // so gating on it alone let the splash release straight into the still-blank Loading
+        // placeholder, visible as a flash before the real content one frame later. Gating on both
+        // means the splash releases directly into real, navigable content. The bound keeps a slow
+        // device or a failed warm-up (see DatabaseWarmupSignal) from holding the splash
         // indefinitely.
         val splashStartElapsedMs = SystemClock.elapsedRealtime()
         splashScreen.setKeepOnScreenCondition {
-            !databaseWarmupSignal.isReady.value &&
+            !(databaseWarmupSignal.isReady.value && isMainUiStateReady) &&
                 SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
+        }
+
+        // Deliberately NOT a LaunchedEffect inside setContent below: Compose's LaunchedEffect is
+        // dispatched off the same Choreographer frame clock that drives drawing, and
+        // keepOnScreenCondition returning true suppresses this window's draws — tying the
+        // condition's own release signal to something gated by suppressed draws risked a
+        // self-delaying loop (observed empirically: total launch time roughly doubled versus
+        // gating on the database alone, far more than the hold's own measured duration could
+        // account for). Collecting the StateFlow directly via lifecycleScope runs on its own
+        // coroutine dispatch, independent of whether this window is currently drawing.
+        lifecycleScope.launch {
+            mainViewModel.uiState.first { it is MainUiState.Success }
+            isMainUiStateReady = true
         }
 
         // Establish edge-to-edge before first composition so the app draws behind the system bars
@@ -96,11 +120,11 @@ class MainActivity : ComponentActivity() {
                     // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.background
                     // directly — without it this resolves to Compose's unthemed default M3
                     // baseline scheme (a plain lavender-tinted background), not this app's actual
-                    // colors, producing a visible flash to the correct theme once
-                    // MainUiState.Success arrives. The splash-hold above makes this frame visible
-                    // more often: it releases as soon as the database is ready, independently of
-                    // whether this Loading state has resolved, so this is no longer guaranteed to
-                    // be as short-lived as it was before that change.
+                    // colors, producing a visible flash to the correct theme if this frame is ever
+                    // drawn. The splash-hold above now waits for MainUiState.Success too, so this
+                    // branch should rarely if ever actually reach the screen — this is a defensive
+                    // fallback for the remaining edge cases (MAX_SPLASH_HOLD_MS elapsing first on
+                    // a slow device, or a configuration change re-triggering Loading).
                     //
                     // useTempoColors = true matches ThemePreferencesRepositoryImpl's actual
                     // stored default (getCurrentUseTempoColors() falls back to true, not
