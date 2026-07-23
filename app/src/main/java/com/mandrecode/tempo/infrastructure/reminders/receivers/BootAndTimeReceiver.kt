@@ -18,11 +18,7 @@ class BootAndTimeReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        if (
-            intent.action == Intent.ACTION_BOOT_COMPLETED ||
-            intent.action == Intent.ACTION_TIMEZONE_CHANGED ||
-            intent.action == Intent.ACTION_TIME_CHANGED
-        ) {
+        if (shouldRescheduleReminders(intent.action)) {
             val workRequest =
                 OneTimeWorkRequestBuilder<RescheduleRemindersWorker>()
                     .setBackoffCriteria(
@@ -36,5 +32,13 @@ class BootAndTimeReceiver : BroadcastReceiver() {
                 workRequest,
             )
         }
+    }
+
+    companion object {
+        fun shouldRescheduleReminders(action: String?): Boolean =
+            action == Intent.ACTION_BOOT_COMPLETED ||
+                action == Intent.ACTION_TIMEZONE_CHANGED ||
+                action == Intent.ACTION_TIME_CHANGED ||
+                action == Intent.ACTION_MY_PACKAGE_REPLACED
     }
 }

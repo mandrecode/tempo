@@ -3,6 +3,7 @@ package com.mandrecode.tempo.infrastructure.reminders.workers
 import android.content.Context
 import androidx.work.ListenableWorker
 import androidx.work.WorkerParameters
+import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
@@ -17,6 +18,7 @@ import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderSchedule
 import com.mandrecode.tempo.features.tasks.domain.usecase.RollOverduePeriodicTaskUseCase
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
@@ -35,6 +37,7 @@ class RescheduleRemindersWorkerTest {
     private lateinit var taskReminderScheduler: TaskReminderScheduler
     private lateinit var habitReminderScheduler: HabitReminderScheduler
     private lateinit var rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase
+    private lateinit var activeLiveActivityPreferences: ActiveLiveActivityPreferences
     private lateinit var worker: RescheduleRemindersWorker
     private lateinit var clock: Clock
 
@@ -49,7 +52,10 @@ class RescheduleRemindersWorkerTest {
         taskReminderScheduler = mockk(relaxed = true)
         habitReminderScheduler = mockk(relaxed = true)
         rollOverduePeriodicTaskUseCase = mockk(relaxed = true)
+        activeLiveActivityPreferences = mockk(relaxed = true)
         clock = mockk(relaxed = true)
+
+        every { activeLiveActivityPreferences.getActiveChainIds() } returns emptySet()
 
         worker =
             RescheduleRemindersWorker(
@@ -61,6 +67,7 @@ class RescheduleRemindersWorkerTest {
                 taskReminderScheduler,
                 habitReminderScheduler,
                 rollOverduePeriodicTaskUseCase,
+                activeLiveActivityPreferences,
                 clock,
             )
     }
@@ -361,5 +368,41 @@ class RescheduleRemindersWorkerTest {
             coVerify { taskReminderScheduler.cancel(refreshedTask) }
             coVerify(exactly = 0) { taskRepository.updateTaskReminderDate(any(), any()) }
             coVerify(exactly = 0) { taskReminderScheduler.schedule(any()) }
+        }
+
+    @Test
+    fun `doWork resyncs live activity for each persisted active chain`() =
+        runTest {
+            val systemZone = TimeZone.currentSystemDefault()
+            val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
+            coEvery { clock.now() } returns nowTime.toInstant(systemZone)
+
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
+            coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
+            every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(1L, 2L)
+
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+            coVerify { habitRepository.refreshHabitChainLiveActivity(1L) }
+            coVerify { habitRepository.refreshHabitChainLiveActivity(2L) }
+        }
+
+    @Test
+    fun `doWork does not resync live activities when none are persisted as active`() =
+        runTest {
+            val systemZone = TimeZone.currentSystemDefault()
+            val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
+            coEvery { clock.now() } returns nowTime.toInstant(systemZone)
+
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
+            coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
+
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+            coVerify(exactly = 0) { habitRepository.refreshHabitChainLiveActivity(any<Long>()) }
         }
 }

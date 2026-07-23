@@ -133,6 +133,7 @@ class MainActivity : ComponentActivity() {
             LaunchedEffect(Unit) {
                 withFrameNanos { }
                 ReminderRefreshScheduler.enqueuePeriodicRefresh(applicationContext)
+                ReminderRefreshScheduler.enqueueImmediateRefresh(applicationContext)
             }
         }
 
