@@ -13,7 +13,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
-/** Vertical bias biasing [TempoLoadingIndicator] upward instead of dead-centering it. */
+/** Vertical bias pulling [TempoLoadingIndicator] upward instead of dead-centering it. */
 private const val LOADING_INDICATOR_VERTICAL_BIAS = -0.4f
 
 /**
@@ -30,7 +30,11 @@ fun TempoLoadingIndicator(
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = LOADING_INDICATOR_VERTICAL_BIAS),
+        contentAlignment =
+            BiasAlignment(
+                horizontalBias = 0f,
+                verticalBias = LOADING_INDICATOR_VERTICAL_BIAS,
+            ),
     ) {
         LoadingIndicator(
             modifier =
