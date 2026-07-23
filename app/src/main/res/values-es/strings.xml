@@ -460,7 +460,7 @@
     <string name="backup_import_summary_imported">Importados: %1$d</string>
     <string name="backup_import_summary_skipped">Duplicados omitidos: %1$d</string>
     <string name="backup_import_summary_conflicts">Conflictos: %1$d</string>
-    <string name="backup_conflict_entry">%1$s "%2$s" — %3$s</string>
+    <string name="backup_conflict_entry_suffix">\u0020— %1$s</string>
     <string name="backup_conflict_reason_content">se mantuvo tu versión</string>
     <string name="backup_conflict_reason_parent">omitido junto con su elemento superior</string>
     <string name="backup_entity_category">Categoría</string>
@@ -474,8 +474,10 @@
     <string name="backup_import_error_read">No se pudo leer el archivo.</string>
     <string name="backup_import_error_unexpected">La importación falló de forma inesperada. Tus datos no se han modificado.</string>
     <string name="backup_issue_duplicate_id">Identificador de registro duplicado: %1$s</string>
-    <string name="backup_issue_unknown_category">La tarea "%1$s" hace referencia a una categoría inexistente</string>
-    <string name="backup_issue_unknown_parent_task">La tarea "%1$s" hace referencia a una tarea superior inexistente</string>
+    <string name="backup_issue_unknown_category_prefix">La tarea</string>
+    <string name="backup_issue_unknown_category_suffix">\u0020hace referencia a una categoría inexistente</string>
+    <string name="backup_issue_unknown_parent_task_prefix">La tarea</string>
+    <string name="backup_issue_unknown_parent_task_suffix">\u0020hace referencia a una tarea superior inexistente</string>
     <string name="backup_issue_unknown_chain">Una pertenencia a cadena hace referencia a la cadena inexistente %1$s</string>
     <string name="backup_issue_unknown_habit">Una pertenencia a cadena hace referencia al hábito inexistente %1$s</string>
     <string name="backup_export_passphrase_title">Establece una contraseña</string>
