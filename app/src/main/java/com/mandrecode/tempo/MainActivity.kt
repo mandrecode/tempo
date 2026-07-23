@@ -2,6 +2,7 @@ package com.mandrecode.tempo
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.SystemClock
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
+import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
@@ -52,6 +54,9 @@ class MainActivity : ComponentActivity() {
     @Inject
     lateinit var themePreferencesRepository: ThemePreferencesRepository
 
+    @Inject
+    lateinit var databaseWarmupSignal: DatabaseWarmupSignal
+
     private val mainViewModel: MainViewModel by viewModels()
 
     // Triggers for navigation
@@ -59,8 +64,23 @@ class MainActivity : ComponentActivity() {
     private val tasksNavigationTrigger = mutableLongStateOf(0L)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Hold the system splash screen — which users already expect to sit on briefly — until
+        // the encrypted database has finished its startup warm-up (see TempoApp.onCreate), or
+        // MAX_SPLASH_HOLD_MS elapses, whichever comes first. Without this, the splash dismisses
+        // on first frame (near-instant, since MainUiState.Loading only depends on DataStore
+        // preferences, not the database) and the SQLCipher key-derivation delay instead shows up
+        // moments later as the in-app loading indicator on whichever screen needs DAO data first
+        // — a much more jarring place for a startup cost to become visible. The bound keeps a
+        // slow device or a failed warm-up (see DatabaseWarmupSignal) from holding the splash
+        // indefinitely.
+        val splashStartElapsedMs = SystemClock.elapsedRealtime()
+        splashScreen.setKeepOnScreenCondition {
+            !databaseWarmupSignal.isReady.value &&
+                SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
+        }
 
         // Establish edge-to-edge before first composition so the app draws behind the system bars
         // from the first frame. TempoTheme's SideEffect re-applies the theme-aware transparent
@@ -73,15 +93,26 @@ class MainActivity : ComponentActivity() {
 
             when (val state = uiState) {
                 is MainUiState.Loading -> {
-                    // Keep splash screen or show a blank loading surface
-                    // Since we use installSplashScreen(), the system splash stays until the first frame is drawn.
-                    // If we render nothing or a Box, it might flash white.
-                    // Ideally we use keepOnScreenCondition in installSplashScreen, but simpler here:
-                    // Render a dummy surface matching the background.
-                    Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {}
+                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.background
+                    // directly — without it this resolves to Compose's unthemed default M3
+                    // baseline scheme (a plain lavender-tinted background), not this app's actual
+                    // colors, producing a visible flash to the correct theme once
+                    // MainUiState.Success arrives. The splash-hold above makes this frame visible
+                    // more often: it releases as soon as the database is ready, independently of
+                    // whether this Loading state has resolved, so this is no longer guaranteed to
+                    // be as short-lived as it was before that change.
+                    //
+                    // useTempoColors = true matches ThemePreferencesRepositoryImpl's actual
+                    // stored default (getCurrentUseTempoColors() falls back to true, not
+                    // TempoTheme's own false default) — keep these in sync if that default ever
+                    // changes. darkTheme is left at TempoTheme's own isSystemInDarkTheme()
+                    // default, matching ThemeMode.SYSTEM, the stored theme mode default.
+                    TempoTheme(useTempoColors = true) {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {}
+                    }
                 }
 
                 is MainUiState.Success -> {
@@ -248,6 +279,10 @@ class MainActivity : ComponentActivity() {
         removeExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES)
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
         removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)
+    }
+
+    private companion object {
+        const val MAX_SPLASH_HOLD_MS = 1_500L
     }
 }
 

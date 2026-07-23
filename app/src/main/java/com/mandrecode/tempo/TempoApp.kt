@@ -6,6 +6,7 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.mandrecode.tempo.core.data.local.TempoDatabase
+import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CancellationException
@@ -25,6 +26,9 @@ class TempoApp :
 
     @Inject
     lateinit var tempoDatabaseLazy: Lazy<TempoDatabase>
+
+    @Inject
+    lateinit var databaseWarmupSignal: DatabaseWarmupSignal
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -57,6 +61,10 @@ class TempoApp :
                 throw e
             } catch (_: Exception) {
                 // Intentionally ignored — see comment above.
+            } finally {
+                // Runs on success, failure, and cancellation alike: MainActivity's splash-screen
+                // hold only cares that the warm-up attempt has concluded, not how.
+                databaseWarmupSignal.markReady()
             }
         }
     }

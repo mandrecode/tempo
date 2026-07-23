@@ -12,7 +12,8 @@ The database passphrase is not a human password — it's 32 random bytes generat
 install. It is still passed to SQLCipher as a bound byte[] parameter (never as the `x'<hex>'`
 raw-key literal), so SQLCipher runs it through its own internal PBKDF2 derivation just like any
 other passphrase; see [Migrating existing installs](#migrating-existing-installs) below for why
-that distinction matters.
+that distinction matters, and [Startup performance: kdf_iter](#startup-performance-kdf_iter) for
+why that derivation isn't run at SQLCipher's default cost.
 
 1. On first run, `KeystoreDbPassphraseProvider` (`core/data/local/security/`) generates an
    AES-256 key in the Android Keystore (alias `tempo_db_passphrase_key`, `AndroidKeyStore`
@@ -80,6 +81,14 @@ step 4, the next launch detects an orphaned `.plaintext.bak` file with no file a
 path, restores it, and retries. This logic lives at the top of
 `DatabaseEncryptionMigrator.migrateIfNeeded()`.
 
+> **Fixed bug (found while building the kdf_iter work below):** step 1's magic-header constant
+> was `"SQLite format 3 ".toByteArray(...)` — ending in a *space* (`0x20`), not the real SQLite
+> header's terminating NUL byte (`0x00`) — since this feature's original PR. `isPlaintextSqlite()`
+> therefore always returned `false`, so this entire migration path had never actually run for any
+> upgrading install; pre-encryption databases stayed silently plaintext. Caught by an instrumented
+> test that seeds a real plaintext file and asserts the migration ran, which failed even before any
+> `kdf_iter` change was involved. Fixed by correcting the literal's trailing byte.
+
 Migration runs on `Dispatchers.IO`, never the main thread. There is no dedicated "migrating…" UI
 for this — see `TempoDatabase.kt`/`core/di/DatabaseModule.kt` for how it's sequenced before the
 Room builder runs, and `MainActivity.kt`'s existing loading state for how the app already handles
@@ -88,3 +97,70 @@ brief startup delays.
 Encryption does not change the Room schema (entities, columns, indices, or `@Database(version = ...)`)
 — only how the file is stored on disk — so no schema migration or `app/schemas/` regeneration is
 needed alongside this change.
+
+## Startup performance: kdf_iter
+
+SQLCipher derives the actual encryption key from the passphrase via PBKDF2, controlled by the
+`kdf_iter` pragma. This isn't a one-time cost paid at first-encryption — it's paid again on
+**every single database open**, i.e. on every cold start. SQLCipher 4's compiled-in default is
+256,000 PBKDF2-HMAC-SHA512 iterations, which exists to slow down brute-forcing a *guessable*
+human password. Tempo's passphrase (see [Key lifecycle](#key-lifecycle)) is not that — it's 32
+bytes from `SecureRandom()`, already wrapped by a hardware-backed Keystore key — so that stretching
+buys no real security margin here, only latency. Measured directly with
+`net.zetetic:sqlcipher-android` 4.17.0 on this repo's dev emulator (x86_64; a real device's
+numbers will differ, but the scaling is what matters), open time scales almost linearly with
+`kdf_iter`:
+
+| kdf_iter | ~open time |
+|---|---|
+| 256,000 (SQLCipher default) | ~406ms |
+| 64,000 | ~103ms |
+| 16,000 (Tempo's `SqlCipherKdfIter.CURRENT`) | ~26ms |
+| 4,000 | ~7.5ms |
+
+`SqlCipherKdfIter.CURRENT = 16_000` was chosen as a deliberately conservative cut — 1/16th of the
+default, not zero — trading a 16x reduction in per-launch cost for keeping a substantial,
+non-trivial PBKDF2 pass as defense-in-depth, rather than dropping to SQLCipher's raw-key literal
+(which skips PBKDF2 entirely). `SqlCipherKdfIter.LEGACY = 256_000` documents the value every
+Tempo install created before this change used, un-overridden.
+
+SQLCipher does not self-describe `kdf_iter` inside the file — whichever value keyed a database
+must be supplied identically on every later open, or the derived key is silently wrong. That
+means lowering the constant can't just apply going forward: every install that already has a
+database keyed at `LEGACY` needs it re-derived once, in place, before it can be opened at
+`CURRENT`. `KdfIterRekeyer` (`core/data/local/security/`), driven from the same
+`DatabaseEncryptionMigrator.migrateIfNeeded()` entry point as the plaintext migration above,
+handles this:
+
+1. `DbKdfIterMarker` records which `kdf_iter` the on-disk file is currently keyed with, so this
+   check is a cheap SharedPreferences read on the steady-state path (already re-keyed, or a fresh
+   install created directly at `CURRENT` — see `TempoDatabase`'s `inboxCallback`) instead of an
+   extra database open on every single launch. An absent marker is always safe — it falls through
+   to actually probing the file below. A marker that already says `CURRENT` is trusted outright,
+   by design, with no re-verification (re-verifying on every read would reintroduce the very
+   per-launch open this marker exists to avoid). That's safe under normal operation because every
+   writer of this marker only ever writes it immediately after verifying the file at that exact
+   moment; it could only go stale in the "says `CURRENT` but isn't" direction via out-of-band
+   tampering with the database file afterwards, bypassing every one of this app's own write paths
+   (and Android's own backup mechanisms already exclude this file — see
+   [Unrecoverable key failure](#unrecoverable-key-failure) above). If that ever happened, the
+   subsequent Room open at `CURRENT` would fail loudly there rather than silently using a wrong
+   key.
+2. If the marker is missing, probe whether the file already opens at `CURRENT` (common case: an
+   install that predates the marker itself, or a restored/partial backup) — if so, just persist
+   the marker.
+3. Otherwise probe whether it opens at `LEGACY`. If neither `CURRENT` nor `LEGACY` opens it (wrong
+   passphrase, corruption, or anything else), leave the file alone — `TempoDatabase.getDatabase()`'s
+   normal Room open surfaces the real failure rather than this logic guessing and potentially
+   masking it.
+4. If it opens at `LEGACY`, re-key via the same `sqlcipher_export()` mechanism the plaintext
+   migration uses (`ATTACH ... KEY ?`, `PRAGMA <schema>.kdf_iter = CURRENT`,
+   `SELECT sqlcipher_export(...)`), verify the result opens at `CURRENT`, then swap it into place
+   with the same crash-safe rename sequence as the plaintext migration (own suffixes,
+   `.kdf_rekey.new` / `.kdf_rekey.bak`, so the two conversions' recovery logic can never collide).
+
+`MainActivity` additionally holds the system splash screen on-screen (via
+`SplashScreen.setKeepOnScreenCondition`, capped at 1.5s) until `TempoApp`'s startup database
+warm-up finishes, so whatever `kdf_iter` cost remains is more likely to land behind a screen users
+already expect to sit on briefly, rather than surfacing as the in-app loading indicator on
+whichever screen needs data first.

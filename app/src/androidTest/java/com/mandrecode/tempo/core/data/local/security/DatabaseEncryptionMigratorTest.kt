@@ -38,6 +38,9 @@ class DatabaseEncryptionMigratorTest {
         backupFile().delete()
         File(dbFile().parentFile, "${dbFile().name}-wal").delete()
         File(dbFile().parentFile, "${dbFile().name}-shm").delete()
+        // DbKdfIterMarker isn't scoped per database name — clear it so another test class's
+        // marker for a different dbName can't leak in here (see its own doc).
+        DbKdfIterMarker.clear(context)
     }
 
     /** A genuine plaintext SQLite file, created via the plain Android framework SQLite API. */
@@ -57,7 +60,9 @@ class DatabaseEncryptionMigratorTest {
                 passphrase,
                 null,
                 CipherSQLiteDatabase.OPEN_READONLY,
-                null,
+                // migrateIfNeeded's plaintext->encrypted path now writes at SqlCipherKdfIter
+                // .CURRENT, not SQLCipher's compiled-in default — must match on read.
+                SqlCipherKdfIter.hookFor(SqlCipherKdfIter.CURRENT),
             )
         try {
             val cursor = db.rawQuery("SELECT a, b FROM t1", null)
