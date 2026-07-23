@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -60,6 +61,7 @@ import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
 import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.titleResId
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 
@@ -270,7 +272,14 @@ private fun TaskCategorySection(
         iconPainter = painterResource(R.drawable.ic_category),
         iconContentDescription = stringResource(R.string.category_label),
     ) {
+        val categoryListState =
+            rememberAutoScrollToSelectedCategory(
+                categories = state.categories,
+                selectedCategoryId = state.selectedCategoryId,
+            )
+
         LazyRow(
+            state = categoryListState,
             contentPadding = PaddingValues(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.weight(1f),
@@ -305,6 +314,38 @@ private fun TaskCategorySection(
             }
         }
     }
+}
+
+@Composable
+private fun rememberAutoScrollToSelectedCategory(
+    categories: List<Category>,
+    selectedCategoryId: Long,
+): LazyListState {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(selectedCategoryId) {
+        val index = categories.indexOfFirst { it.id == selectedCategoryId }
+        if (index < 0) return@LaunchedEffect
+
+        val isFullyVisible =
+            snapshotFlow {
+                val info = listState.layoutInfo
+                if (info.visibleItemsInfo.isEmpty()) {
+                    null
+                } else {
+                    val item = info.visibleItemsInfo.firstOrNull { it.index == index }
+                    item != null &&
+                        item.offset >= info.viewportStartOffset &&
+                        (item.offset + item.size) <= info.viewportEndOffset
+                }
+            }.filterNotNull().first()
+
+        if (!isFullyVisible) {
+            listState.animateScrollToItem(index)
+        }
+    }
+
+    return listState
 }
 
 @Composable
