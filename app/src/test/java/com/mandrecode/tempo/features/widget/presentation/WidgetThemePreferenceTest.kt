@@ -5,18 +5,12 @@ import org.junit.Test
 
 class WidgetThemePreferenceTest {
     @Test
-    fun givenUseTempoColorsEnabled_thenStaticTempoColorsAreUsedRegardlessOfDynamicSupport() {
-        assertThat(shouldUseTempoStaticColors(useTempoColorsPreference = true, dynamicColorSupported = true)).isTrue()
-        assertThat(shouldUseTempoStaticColors(useTempoColorsPreference = true, dynamicColorSupported = false)).isTrue()
+    fun givenDynamicColorSupported_thenDynamicColorsAreUsed() {
+        assertThat(shouldUseTempoStaticColors(dynamicColorSupported = true)).isFalse()
     }
 
     @Test
-    fun givenUseTempoColorsDisabledAndDynamicSupported_thenDynamicColorsAreUsed() {
-        assertThat(shouldUseTempoStaticColors(useTempoColorsPreference = false, dynamicColorSupported = true)).isFalse()
-    }
-
-    @Test
-    fun givenUseTempoColorsDisabledAndDynamicUnsupported_thenStaticTempoColorsAreUsedAsFallback() {
-        assertThat(shouldUseTempoStaticColors(useTempoColorsPreference = false, dynamicColorSupported = false)).isTrue()
+    fun givenDynamicColorUnsupported_thenStaticTempoColorsAreUsedAsFallback() {
+        assertThat(shouldUseTempoStaticColors(dynamicColorSupported = false)).isTrue()
     }
 }

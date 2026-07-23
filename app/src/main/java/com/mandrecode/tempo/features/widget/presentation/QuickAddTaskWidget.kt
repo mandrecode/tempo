@@ -25,35 +25,17 @@ import androidx.glance.layout.padding
 import androidx.glance.layout.size
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.util.supportsDynamicColor
-import dagger.hilt.EntryPoint
-import dagger.hilt.InstallIn
-import dagger.hilt.android.EntryPointAccessors
-import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
 
 class QuickAddTaskWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Single
-
-    @EntryPoint
-    @InstallIn(SingletonComponent::class)
-    interface ThemePreferencesEntryPoint {
-        fun themePreferencesRepository(): ThemePreferencesRepository
-    }
 
     override suspend fun provideGlance(
         context: Context,
         id: GlanceId,
     ) {
-        val themePreferencesRepository =
-            EntryPointAccessors
-                .fromApplication(context, ThemePreferencesEntryPoint::class.java)
-                .themePreferencesRepository()
-        val useTempoColorsPreference = themePreferencesRepository.getUseTempoColors().first()
-
         provideContent {
-            QuickAddTaskWidgetContent(useTempoColorsPreference)
+            QuickAddTaskWidgetContent()
         }
     }
 
@@ -66,13 +48,13 @@ class QuickAddTaskWidget : GlanceAppWidget() {
 }
 
 @Composable
-private fun QuickAddTaskWidgetContent(useTempoColorsPreference: Boolean) {
+private fun QuickAddTaskWidgetContent() {
     // GlanceTheme.colors (Glance's own default, read here rather than passed implicitly) is
     // itself built from day/night- and dynamic-color-aware Android resources, so it needs no
     // resolving on our side — unlike TempoGlanceColorScheme.kt's static bridge, it already
     // switches automatically on a system light/dark or wallpaper change.
     val colors =
-        if (shouldUseTempoStaticColors(useTempoColorsPreference, supportsDynamicColor)) {
+        if (shouldUseTempoStaticColors(supportsDynamicColor)) {
             TempoGlanceColorScheme
         } else {
             GlanceTheme.colors
