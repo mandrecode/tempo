@@ -409,7 +409,7 @@ fun TasksContent(
                                         onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
                                         showDivider = showDivider,
                                         firstGroupLabel = firstGroupLabel,
-                                        isFirstItem = !hasActiveTasks,
+                                        isFirstVisibleItem = !hasActiveTasks,
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
@@ -504,7 +504,9 @@ internal fun CompletedTasksSeparator(
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
     firstGroupLabel: String? = null,
-    isFirstItem: Boolean = false,
+    // Whether this separator is the first *visible* content in the list — the LazyColumn always
+    // has a leading zero-height scroll_anchor item ahead of it, so this isn't about list index.
+    isFirstVisibleItem: Boolean = false,
 ) {
     val rotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
@@ -515,7 +517,7 @@ internal fun CompletedTasksSeparator(
         modifier =
             modifier
                 .fillMaxWidth()
-                .padding(top = if (isFirstItem) 0.dp else 28.dp, bottom = 12.dp),
+                .padding(top = if (isFirstVisibleItem) 0.dp else 28.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Surface(

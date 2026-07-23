@@ -93,7 +93,7 @@ class MainActivity : ComponentActivity() {
 
             when (val state = uiState) {
                 is MainUiState.Loading -> {
-                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.background
+                    // Must be wrapped in TempoTheme, not just MaterialTheme.colorScheme.surface
                     // directly — without it this resolves to Compose's unthemed default M3
                     // baseline scheme (a plain lavender-tinted background), not this app's actual
                     // colors, producing a visible flash to the correct theme once
