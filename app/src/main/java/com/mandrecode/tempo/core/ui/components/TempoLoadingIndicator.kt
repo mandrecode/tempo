@@ -13,10 +13,14 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 
+/** Vertical bias biasing [TempoLoadingIndicator] upward instead of dead-centering it. */
+private const val LOADING_INDICATOR_VERTICAL_BIAS = -0.4f
+
 /**
- * Full-size centered loading state shared by the tasks and routines list screens: a Material 3
- * Expressive loading indicator. `message` should already be the resolved, screen-specific string
- * (e.g. "Loading tasks…", "Loading habits…") and is exposed only as an accessibility label.
+ * Full-size loading state shared by the tasks and routines list screens, biased slightly above
+ * center: a Material 3 Expressive loading indicator. `message` should already be the resolved,
+ * screen-specific string (e.g. "Loading tasks…", "Loading habits…") and is exposed only as an
+ * accessibility label.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -26,7 +30,7 @@ fun TempoLoadingIndicator(
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = -0.4f),
+        contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = LOADING_INDICATOR_VERTICAL_BIAS),
     ) {
         LoadingIndicator(
             modifier =
