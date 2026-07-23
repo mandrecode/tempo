@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -147,6 +148,12 @@ fun TempoNavHost(
         modifier =
             modifier
                 .fillMaxSize()
+                // Explicit fill: this Box's own bounds include the safe-drawing inset margin
+                // (e.g. a landscape display cutout) and the space the floating rail sits in,
+                // neither of which TempoNavDisplay/PersistentFloatingBar paint themselves —
+                // left unset, that margin falls through to MainActivity's root Surface
+                // (colorScheme.surface), mismatching the top block's tinted color.
+                .background(MaterialTheme.colorScheme.background)
                 .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
     ) {
         TempoNavDisplay(
