@@ -25,9 +25,13 @@ internal object SqlCipherFileSwap {
         original: File,
         backup: File,
     ) {
-        backup.delete()
+        // Sidecars first, backup last: if the process dies between these deletes, the backup
+        // file still exists on the next launch, so recoverFromInterruption's "backup exists"
+        // branch re-runs this same (idempotent) cleanup instead of leaving orphaned sidecars
+        // under the live database's name with nothing left to signal that cleanup is incomplete.
         File(backup.parentFile, "${original.name}-wal").delete()
         File(backup.parentFile, "${original.name}-shm").delete()
+        backup.delete()
     }
 
     fun verifyEncrypted(

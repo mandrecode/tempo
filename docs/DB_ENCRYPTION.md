@@ -135,9 +135,17 @@ handles this:
 1. `DbKdfIterMarker` records which `kdf_iter` the on-disk file is currently keyed with, so this
    check is a cheap SharedPreferences read on the steady-state path (already re-keyed, or a fresh
    install created directly at `CURRENT` — see `TempoDatabase`'s `inboxCallback`) instead of an
-   extra database open on every single launch. It's a performance hint only, never a source of
-   truth: an absent or stale marker can't cause a wrong key to be used, only one extra (cheap,
-   at `CURRENT`) verification open.
+   extra database open on every single launch. An absent marker is always safe — it falls through
+   to actually probing the file below. A marker that already says `CURRENT` is trusted outright,
+   by design, with no re-verification (re-verifying on every read would reintroduce the very
+   per-launch open this marker exists to avoid). That's safe under normal operation because every
+   writer of this marker only ever writes it immediately after verifying the file at that exact
+   moment; it could only go stale in the "says `CURRENT` but isn't" direction via out-of-band
+   tampering with the database file afterwards, bypassing every one of this app's own write paths
+   (and Android's own backup mechanisms already exclude this file — see
+   [Unrecoverable key failure](#unrecoverable-key-failure) above). If that ever happened, the
+   subsequent Room open at `CURRENT` would fail loudly there rather than silently using a wrong
+   key.
 2. If the marker is missing, probe whether the file already opens at `CURRENT` (common case: an
    install that predates the marker itself, or a restored/partial backup) — if so, just persist
    the marker.

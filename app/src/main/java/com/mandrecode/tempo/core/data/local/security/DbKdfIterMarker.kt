@@ -5,12 +5,21 @@ import androidx.annotation.VisibleForTesting
 
 /**
  * Tracks which [SqlCipherKdfIter] value the *on-disk* database is currently keyed with, so
- * [DatabaseEncryptionMigrator] doesn't have to re-verify that on every single launch. This is a
- * performance hint, not a source of truth: an absent or stale marker never causes data loss or a
- * wrong key to be used — [DatabaseEncryptionMigrator] always falls back to actually opening the
- * file to confirm before trusting or updating it. Not secret, so a plain (unencrypted)
- * `SharedPreferences` file is fine — unlike [KeystoreDbPassphraseProvider]'s blob, kdf_iter isn't
- * sensitive on its own.
+ * [KdfIterRekeyer] doesn't have to re-verify that on every single launch. An absent marker is
+ * always safe: [KdfIterRekeyer.rekeyIfNeeded] falls back to actually opening the file to confirm
+ * before trusting or updating it. A marker that says [SqlCipherKdfIter.CURRENT], however, *is*
+ * trusted outright — that's the whole point, since re-verifying on every read would reintroduce
+ * the per-launch open this marker exists to avoid. This is safe under normal operation because
+ * every writer of this marker ([TempoDatabase]'s `inboxCallback`, [DatabaseEncryptionMigrator],
+ * and [KdfIterRekeyer] itself) only ever writes it immediately after actually verifying the file
+ * at that exact moment — the only way it could go stale in the "says CURRENT but isn't" direction
+ * is out-of-band tampering with the database file *after* that write, bypassing every one of this
+ * app's own write paths (Android's own backup mechanisms already exclude this file — see
+ * docs/DB_ENCRYPTION.md). If that ever happened, the subsequent Room open at `CURRENT` would fail
+ * loudly there rather than silently using a wrong key.
+ *
+ * Not secret, so a plain (unencrypted) `SharedPreferences` file is fine — unlike
+ * [KeystoreDbPassphraseProvider]'s blob, kdf_iter isn't sensitive on its own.
  *
  * Not scoped per database name/path — fine in production, where Tempo only ever has the one
  * `tempo_database` file, but instrumented tests exercising multiple differently-named database

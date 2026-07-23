@@ -25,9 +25,10 @@ internal class KdfIterRekeyer(
     private val context: Context,
 ) {
     /**
-     * [DbKdfIterMarker] is a performance hint, not a source of truth: an absent or stale marker
-     * never causes a wrong key to be used here, only an extra (cheap, at
-     * [SqlCipherKdfIter.CURRENT]) verification open — see [DbKdfIterMarker]'s own doc.
+     * An absent [DbKdfIterMarker] is always safe — falls through to actually probing the file at
+     * [SqlCipherKdfIter.CURRENT] then [SqlCipherKdfIter.LEGACY]. A marker that already says
+     * `CURRENT` is trusted outright with no re-verification, by design: see [DbKdfIterMarker]'s
+     * own doc for why that's safe under normal operation and what "stale" would actually require.
      */
     fun rekeyIfNeeded(
         dbFile: File,
