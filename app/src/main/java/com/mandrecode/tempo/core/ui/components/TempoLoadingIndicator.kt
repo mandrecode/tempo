@@ -12,9 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-
-/** Vertical bias pulling [TempoLoadingIndicator] upward instead of dead-centering it. */
-private const val LOADING_INDICATOR_VERTICAL_BIAS = -0.4f
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 
 /**
  * Full-size loading state shared by the tasks and routines list screens, biased slightly above
@@ -33,7 +31,7 @@ fun TempoLoadingIndicator(
         contentAlignment =
             BiasAlignment(
                 horizontalBias = 0f,
-                verticalBias = LOADING_INDICATOR_VERTICAL_BIAS,
+                verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
             ),
     ) {
         LoadingIndicator(
