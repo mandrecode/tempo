@@ -7,7 +7,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -26,7 +26,7 @@ fun TempoLoadingIndicator(
 ) {
     Box(
         modifier = modifier,
-        contentAlignment = Alignment(horizontalBias = 0f, verticalBias = -0.4f),
+        contentAlignment = BiasAlignment(horizontalBias = 0f, verticalBias = -0.4f),
     ) {
         LoadingIndicator(
             modifier =
