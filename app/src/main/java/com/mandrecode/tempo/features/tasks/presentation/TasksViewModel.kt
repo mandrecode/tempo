@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.di.DefaultDispatcher
+import com.mandrecode.tempo.core.ui.components.SnackbarBoldSegment
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
@@ -96,6 +97,22 @@ class TasksViewModel
                 TasksContract.UiEffect.ShowSnackbar(
                     messageResId = messageResId,
                     formatArgs = formatArgs,
+                    actionResId = actionResId,
+                    deletionToken = deletionToken,
+                ),
+            )
+        }
+
+        internal suspend fun showBoldSnackbar(
+            @StringRes prefixResId: Int,
+            word: String,
+            @StringRes suffixResId: Int,
+            @StringRes actionResId: Int? = null,
+            deletionToken: Long? = null,
+        ) {
+            _uiEffect.send(
+                TasksContract.UiEffect.ShowSnackbar(
+                    boldSegment = SnackbarBoldSegment(prefixResId, word, suffixResId),
                     actionResId = actionResId,
                     deletionToken = deletionToken,
                 ),

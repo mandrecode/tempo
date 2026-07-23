@@ -59,12 +59,22 @@ internal fun ExpressiveSnackbar(snackbarData: SnackbarData) {
             horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.default),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = snackbarData.visuals.message,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f),
-            )
+            val annotatedMessage = (snackbarData.visuals as? TempoSnackbarVisuals)?.annotatedMessage
+            if (annotatedMessage != null) {
+                Text(
+                    text = annotatedMessage,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+            } else {
+                Text(
+                    text = snackbarData.visuals.message,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             snackbarData.visuals.actionLabel?.let { actionLabel ->
                 ExpressiveSnackbarAction(
                     actionLabel = actionLabel,

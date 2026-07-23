@@ -5,6 +5,7 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.components.SnackbarBoldSegment
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
@@ -245,10 +246,20 @@ object TasksContract {
      */
     sealed interface UiEffect {
         data class ShowSnackbar(
-            @StringRes val messageResId: Int,
+            @StringRes val messageResId: Int? = null,
             val formatArgs: List<Any> = emptyList(),
+            val boldSegment: SnackbarBoldSegment? = null,
             @StringRes val actionResId: Int? = null,
             val deletionToken: Long? = null,
-        ) : UiEffect
+        ) : UiEffect {
+            init {
+                require((messageResId != null) != (boldSegment != null)) {
+                    "ShowSnackbar requires exactly one of messageResId or boldSegment"
+                }
+                require(boldSegment == null || formatArgs.isEmpty()) {
+                    "ShowSnackbar.formatArgs is ignored when boldSegment is set and must be empty"
+                }
+            }
+        }
     }
 }
