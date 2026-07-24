@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.8.0](https://github.com/mandrecode/tempo/compare/v1.7.0...v1.8.0) (2026-07-24)
+
+
+### Features
+
+* **#247:** expressive polish — variable font, wavy separators, adaptive layout fixes ([#251](https://github.com/mandrecode/tempo/issues/251)) ([5b5e6bb](https://github.com/mandrecode/tempo/commit/5b5e6bb7c08259c6021aac6fe40516939fde64e1))
+
 ## [1.7.0](https://github.com/mandrecode/tempo/compare/v1.6.2...v1.7.0) (2026-07-23)
 
 
