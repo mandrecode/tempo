@@ -29,8 +29,12 @@ fun WavyDivider(
     wavelength: Dp = WAVE_WAVELENGTH,
     amplitude: Dp = WAVE_AMPLITUDE,
 ) {
-    Canvas(modifier = modifier.height(amplitude * 2)) {
-        val halfWavelengthPx = wavelength.toPx() / 2f
+    // The stroke extends thickness/2 beyond the path's crest/trough, so the canvas needs that
+    // much extra height on top of the amplitude or Compose clips the wave's peaks.
+    Canvas(modifier = modifier.height(amplitude * 2 + thickness)) {
+        // Guards against a caller-supplied wavelength resolving to ~0px, which would leave
+        // nextX == x below and spin the while loop forever.
+        val halfWavelengthPx = (wavelength.toPx() / 2f).coerceAtLeast(1f)
         val amplitudePx = amplitude.toPx()
         val midY = size.height / 2f
 
