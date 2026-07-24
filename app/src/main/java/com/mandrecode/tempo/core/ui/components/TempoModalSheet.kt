@@ -176,30 +176,37 @@ internal fun TempoDockedSheet(
         onDismiss = requestDismiss,
     )
 
-    Surface(
-        modifier =
-            modifier
-                .fillMaxSize()
-                .semantics {
-                    dismiss {
-                        requestDismiss()
-                        true
-                    }
-                },
-        shape = MaterialTheme.shapes.extraLarge,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = SHEET_SHADOW_ELEVATION,
-    ) {
-        Column(
+    // statusBarsPadding sits on this outer Box, not the Surface below, so the card's rounded
+    // shape and color start at the same height as the main list's content block instead of
+    // painting behind the status bar — the two panes would otherwise look vertically staggered
+    // side by side. color matches colorScheme.surface (not surfaceContainerHigh, unlike the
+    // modal bottom sheet) so the docked pane reads as a continuation of that same content plane
+    // rather than an elevated overlay floating beside it.
+    Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
+        Surface(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .statusBarsPadding()
-                    .navigationBarsPadding()
-                    .imePadding(),
+                    .semantics {
+                        dismiss {
+                            requestDismiss()
+                            true
+                        }
+                    },
+            shape = MaterialTheme.shapes.extraLarge,
+            color = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            shadowElevation = SHEET_SHADOW_ELEVATION,
         ) {
-            content(requestDismiss)
+            Column(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .imePadding(),
+            ) {
+                content(requestDismiss)
+            }
         }
     }
 }
