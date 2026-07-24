@@ -4,22 +4,54 @@ import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.mandrecode.tempo.R
 
-// Google Sans Flex – bundled static fonts (24 pt optical size).
+// Google Sans Flex — one variable font file (axes: wght, opsz, wdth, slnt, GRAD, ROND) standing
+// in for what used to be 9 separate pre-instanced static files. opsz is pinned to match those
+// static files' own frozen optical size, so swapping to this doesn't shift text rendering.
+// ROND is maxed out app-wide for a consistently rounder, friendlier letterform.
+private const val GOOGLE_SANS_OPTICAL_SIZE = 24f
+private const val GOOGLE_SANS_ROUNDNESS = 100f
+private const val GOOGLE_SANS_WIDTH_NORMAL = 100f
+private const val GOOGLE_SANS_TITLE_WIDTH = 120f
+
+private fun googleSansFont(
+    weight: FontWeight,
+    width: Float = GOOGLE_SANS_WIDTH_NORMAL,
+): Font =
+    Font(
+        R.font.google_sans_flex_variable,
+        weight = weight,
+        variationSettings =
+            FontVariation.Settings(
+                FontVariation.weight(weight.weight),
+                FontVariation.width(width),
+                FontVariation.Setting("opsz", GOOGLE_SANS_OPTICAL_SIZE),
+                FontVariation.Setting("ROND", GOOGLE_SANS_ROUNDNESS),
+            ),
+    )
+
 private val GoogleSansFontFamily =
     FontFamily(
-        Font(R.font.google_sans_flex_thin, weight = FontWeight.Thin),
-        Font(R.font.google_sans_flex_extralight, weight = FontWeight.ExtraLight),
-        Font(R.font.google_sans_flex_light, weight = FontWeight.Light),
-        Font(R.font.google_sans_flex_regular, weight = FontWeight.Normal),
-        Font(R.font.google_sans_flex_medium, weight = FontWeight.Medium),
-        Font(R.font.google_sans_flex_semibold, weight = FontWeight.SemiBold),
-        Font(R.font.google_sans_flex_bold, weight = FontWeight.Bold),
-        Font(R.font.google_sans_flex_extrabold, weight = FontWeight.ExtraBold),
-        Font(R.font.google_sans_flex_black, weight = FontWeight.Black),
+        googleSansFont(FontWeight.Thin),
+        googleSansFont(FontWeight.ExtraLight),
+        googleSansFont(FontWeight.Light),
+        googleSansFont(FontWeight.Normal),
+        googleSansFont(FontWeight.Medium),
+        googleSansFont(FontWeight.SemiBold),
+        googleSansFont(FontWeight.Bold),
+        googleSansFont(FontWeight.ExtraBold),
+        googleSansFont(FontWeight.Black),
+    )
+
+// Same variable file, widened (wdth axis) for a bolder, more expressive app-bar title. Only the
+// weight actually used (Black) is declared; add more entries here if another style adopts this.
+private val GoogleSansFlexExpressiveFontFamily =
+    FontFamily(
+        googleSansFont(FontWeight.Black, width = GOOGLE_SANS_TITLE_WIDTH),
     )
 
 /**
@@ -155,7 +187,12 @@ val Typography =
 
 /** Top-level screen title in the app bar. */
 val Typography.topBarTitle: TextStyle
-    get() = headlineMedium.copy(fontWeight = FontWeight.Bold)
+    get() =
+        headlineMedium.copy(
+            fontFamily = GoogleSansFlexExpressiveFontFamily,
+            fontWeight = FontWeight.Black,
+            letterSpacing = (-0.25).sp,
+        )
 
 /** Title text field in bottom sheets (task/habit creation). */
 val Typography.inputTitle: TextStyle
