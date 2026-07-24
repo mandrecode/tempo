@@ -38,16 +38,22 @@ fun WavyDivider(
         val amplitudePx = amplitude.toPx()
         val midY = size.height / 2f
 
+        // StrokeCap.Round extends thickness/2 past each path endpoint in the direction of
+        // travel — for a horizontal path starting at x=0 and ending at size.width, that pushes
+        // the caps past the canvas bounds. Inset the drawn path by that much on both sides.
+        val inset = (thickness.toPx() / 2f).coerceAtMost(size.width / 2f)
+        val waveWidth = size.width - inset * 2f
+
         val path =
             Path().apply {
-                moveTo(0f, midY)
+                moveTo(inset, midY)
                 var x = 0f
                 var crestUp = true
-                while (x < size.width) {
-                    val nextX = (x + halfWavelengthPx).coerceAtMost(size.width)
-                    val controlX = (x + nextX) / 2f
+                while (x < waveWidth) {
+                    val nextX = (x + halfWavelengthPx).coerceAtMost(waveWidth)
+                    val controlX = inset + (x + nextX) / 2f
                     val controlY = if (crestUp) midY - amplitudePx else midY + amplitudePx
-                    quadraticTo(controlX, controlY, nextX, midY)
+                    quadraticTo(controlX, controlY, inset + nextX, midY)
                     x = nextX
                     crestUp = !crestUp
                 }
