@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.theme
 
+import android.os.Build
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -34,25 +35,38 @@ private fun googleSansFont(
             ),
     )
 
+// FontVariation requires API 26 (Typeface.Builder#setFontVariationSettings) — below that, Android
+// silently ignores variationSettings, so every googleSansFont() entry would render as the same
+// undialed default instance despite declaring different weights. Rather than have all nine "weights"
+// look identical, pre-O devices get a single undialed face and lean on Compose's default font
+// synthesis (FontSynthesis.All) to fake bold where a heavier weight is requested.
+private val supportsFontVariation = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+
 private val GoogleSansFontFamily =
-    FontFamily(
-        googleSansFont(FontWeight.Thin),
-        googleSansFont(FontWeight.ExtraLight),
-        googleSansFont(FontWeight.Light),
-        googleSansFont(FontWeight.Normal),
-        googleSansFont(FontWeight.Medium),
-        googleSansFont(FontWeight.SemiBold),
-        googleSansFont(FontWeight.Bold),
-        googleSansFont(FontWeight.ExtraBold),
-        googleSansFont(FontWeight.Black),
-    )
+    if (supportsFontVariation) {
+        FontFamily(
+            googleSansFont(FontWeight.Thin),
+            googleSansFont(FontWeight.ExtraLight),
+            googleSansFont(FontWeight.Light),
+            googleSansFont(FontWeight.Normal),
+            googleSansFont(FontWeight.Medium),
+            googleSansFont(FontWeight.SemiBold),
+            googleSansFont(FontWeight.Bold),
+            googleSansFont(FontWeight.ExtraBold),
+            googleSansFont(FontWeight.Black),
+        )
+    } else {
+        FontFamily(Font(R.font.google_sans_flex_variable))
+    }
 
 // Same variable file, widened (wdth axis) for a bolder, more expressive app-bar title. Only the
 // weight actually used (Black) is declared; add more entries here if another style adopts this.
 private val GoogleSansFlexExpressiveFontFamily =
-    FontFamily(
-        googleSansFont(FontWeight.Black, width = GOOGLE_SANS_TITLE_WIDTH),
-    )
+    if (supportsFontVariation) {
+        FontFamily(googleSansFont(FontWeight.Black, width = GOOGLE_SANS_TITLE_WIDTH))
+    } else {
+        FontFamily(Font(R.font.google_sans_flex_variable))
+    }
 
 /**
  * Material 3 typography scale with Google Sans Flex.
