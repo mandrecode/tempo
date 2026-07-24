@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -51,6 +50,7 @@ import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
+import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
@@ -552,11 +552,7 @@ internal fun CompletedTasksSeparator(
             }
         }
         if (showDivider) {
-            HorizontalDivider(
-                modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-                thickness = 2.dp,
-            )
+            WavyDivider(modifier = Modifier.weight(1f))
             if (isExpanded && firstGroupLabel != null) {
                 Text(
                     text = firstGroupLabel,
@@ -583,11 +579,7 @@ internal fun CompletedGroupHeader(
                 .padding(top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-            thickness = 2.dp,
-        )
+        WavyDivider(modifier = Modifier.weight(1f))
         Text(
             text = label,
             style = MaterialTheme.typography.groupLabel,
@@ -712,11 +704,7 @@ internal fun ActiveGroupHeader(
                 .padding(top = if (isFirst) 0.dp else 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        HorizontalDivider(
-            modifier = Modifier.weight(1f),
-            color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
-            thickness = 2.dp,
-        )
+        WavyDivider(modifier = Modifier.weight(1f))
         Text(
             text = label,
             style = MaterialTheme.typography.groupLabel,
