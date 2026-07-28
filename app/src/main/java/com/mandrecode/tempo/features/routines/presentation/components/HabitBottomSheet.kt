@@ -4,6 +4,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -35,6 +36,8 @@ fun HabitBottomSheet(
     onConfirmHabit: (title: String, description: String) -> Unit,
     onConfirmHabitChain: (title: String, description: String, habitIds: List<Long>) -> Unit,
     modifier: Modifier = Modifier,
+    vacationPeriods: List<VacationPeriod> = emptyList(),
+    isVacationModeActive: Boolean = false,
     onAutoSaveHabit: ((title: String, description: String) -> Unit)? = null,
     onAutoSaveHabitChain: ((title: String, description: String, habitIds: List<Long>) -> Unit)? = null,
     onDeleteHabit: (() -> Unit)? = null,
@@ -62,6 +65,8 @@ fun HabitBottomSheet(
         onConfirmHabit = onConfirmHabit,
         onConfirmHabitChain = onConfirmHabitChain,
         modifier = modifier,
+        vacationPeriods = vacationPeriods,
+        isVacationModeActive = isVacationModeActive,
         onAutoSaveHabit = onAutoSaveHabit,
         onAutoSaveHabitChain = onAutoSaveHabitChain,
         onDeleteHabit = onDeleteHabit,

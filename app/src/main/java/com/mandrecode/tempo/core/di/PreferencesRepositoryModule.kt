@@ -14,8 +14,10 @@ import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesReposito
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepositoryImpl
+import com.mandrecode.tempo.core.data.preferences.VacationModePreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepositoryImpl
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import dagger.Binds
@@ -52,4 +54,7 @@ abstract class PreferencesRepositoryModule {
 
     @Binds
     abstract fun bindMissedReminderPreferences(impl: MissedReminderPreferencesImpl): MissedReminderPreferences
+
+    @Binds
+    abstract fun bindVacationModeRepository(impl: VacationModePreferencesImpl): VacationModeRepository
 }

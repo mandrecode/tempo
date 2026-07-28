@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.util.ValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
@@ -39,6 +40,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import java.io.IOException
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -62,6 +64,25 @@ private fun logRecoverableFailure(
 private fun markChainLinkFailed(throwable: Throwable): Boolean {
     logRecoverableFailure("Unable to link habit to chain", throwable)
     return true
+}
+
+/**
+ * Keeps the vacation periods in UI state so the history dots and streak labels can be rendered
+ * from state alone — no composable ever reaches for the repository itself. [isVacationModeActive]
+ * is derived here too, for the paused badge on the Routines title.
+ */
+internal fun RoutinesViewModel.observeVacationPeriods() {
+    viewModelScope.launch {
+        vacationModeRepository.periods.collect { periods ->
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            mutableUiState.update {
+                it.copy(
+                    vacationPeriods = periods.toPersistentList(),
+                    isVacationModeActive = VacationPeriod.activeOn(periods, today) != null,
+                )
+            }
+        }
+    }
 }
 
 internal fun RoutinesViewModel.loadData() {

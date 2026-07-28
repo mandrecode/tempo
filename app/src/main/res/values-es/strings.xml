@@ -105,6 +105,7 @@
     <string name="habit_history_dot_completed">%1$s, completado</string>
     <string name="habit_history_dot_missed">%1$s, no completado</string>
     <string name="habit_history_dot_unscheduled">%1$s, no programado</string>
+    <string name="habit_history_dot_paused">%1$s, en pausa</string>
     <string name="habit_icon_label">Elegir icono</string>
 
     <!-- HABIT TYPES -->
@@ -428,6 +429,13 @@
     <string name="settings_reminders">Recordatorios</string>
     <string name="settings_repeat_missed_reminders">Repetir los perdidos</string>
     <string name="settings_missed_reminders_time">Volver a avisarme a las</string>
+    <string name="settings_vacation_mode">Modo vacaciones</string>
+    <string name="vacation_mode_active">Modo vacaciones activo: hábitos en pausa</string>
+    <string name="vacation_mode_notice">El modo vacaciones está activo: los recordatorios no sonarán y los días que te saltes no romperán tu racha.</string>
+    <string name="settings_vacation_mode_pause_habits">Pausar hábitos</string>
+    <string name="settings_vacation_mode_until">Hasta</string>
+    <string name="settings_vacation_mode_no_end_date">Sin fecha de fin</string>
+    <string name="settings_vacation_mode_clear_end_date">Borrar fecha de fin</string>
     <string name="settings_completed_tasks">Tareas completadas</string>
     <string name="settings_auto_remove_completed_tasks">Eliminar automáticamente</string>
     <string name="settings_remove_completed_after">Eliminar después de</string>
@@ -520,8 +528,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Asómate al motor</string>
-    <string name="whats_new_description">Tempo se desarrolla en abierto. Ajustes ya incluye un enlace a Código fuente que te lleva directo al repositorio.</string>
+    <string name="whats_new_title">Tómate un descanso sin perder tu racha</string>
+    <string name="whats_new_description">Activa el modo vacaciones en Ajustes y tus hábitos se pausan: los días que te saltes no rompen la racha y no llegan recordatorios. Desactívalo — o pon una fecha de fin — y todo sigue donde lo dejaste.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>

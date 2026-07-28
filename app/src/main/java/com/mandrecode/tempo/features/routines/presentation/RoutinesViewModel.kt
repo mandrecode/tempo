@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.routines.presentation
 
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.usecase.ClearAllHabitRemindersUseCase
@@ -39,6 +40,7 @@ class RoutinesViewModel
         internal val permissionChecker: PermissionChecker,
         internal val restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase,
         internal val restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase,
+        internal val vacationModeRepository: VacationModeRepository,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(RoutinesContract.UiState())
         internal val mutableUiState: MutableStateFlow<RoutinesContract.UiState>
@@ -53,6 +55,7 @@ class RoutinesViewModel
 
         init {
             loadData()
+            observeVacationPeriods()
         }
 
         fun onEvent(event: RoutinesContract.UiEvent) {

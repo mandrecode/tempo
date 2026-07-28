@@ -168,6 +168,11 @@ internal fun HabitBottomSheetBody(
                 HabitSheetTab.HABIT -> !state.isHabitInChain
                 HabitSheetTab.HABIT_CHAIN -> true
             }
+        val showHistory =
+            when (state.formState.selectedTab) {
+                HabitSheetTab.HABIT -> editingHabit != null
+                HabitSheetTab.HABIT_CHAIN -> editingHabitChain != null
+            }
 
         if (showReminderUI) {
             HabitReminderSection(
@@ -185,6 +190,7 @@ internal fun HabitBottomSheetBody(
                 createdDate = editingHabit.createdDate.date,
                 repeatDays = editingHabit.repeatDays,
                 habitType = state.formState.selectedHabitType,
+                vacationPeriods = state.vacationPeriods,
             )
 
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
@@ -196,7 +202,16 @@ internal fun HabitBottomSheetBody(
                 createdDate = editingHabitChain.createdDate.date,
                 repeatDays = editingHabitChain.repeatDays,
                 habitType = null,
+                vacationPeriods = state.vacationPeriods,
             )
+
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+        }
+
+        // Closes out the form: by this point the reminder row and the history dots have both
+        // been seen, so the note explains what the pause does to them without interrupting them.
+        if (state.isVacationModeActive && (showReminderUI || showHistory)) {
+            VacationModeNotice()
 
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
@@ -600,6 +615,7 @@ private fun HabitHistorySection(
     createdDate: kotlinx.datetime.LocalDate,
     repeatDays: Set<com.mandrecode.tempo.core.domain.model.DayOfWeek>?,
     habitType: HabitType?,
+    vacationPeriods: List<com.mandrecode.tempo.core.domain.model.VacationPeriod>,
 ) {
     EditorPropertyRow(
         iconPainter = painterResource(R.drawable.ic_calendar),
@@ -614,6 +630,7 @@ private fun HabitHistorySection(
                 modifier = Modifier.fillMaxWidth(),
                 repeatDays = repeatDays,
                 habitType = habitType ?: HabitType.BUILD,
+                vacationPeriods = vacationPeriods,
             )
         }
     }

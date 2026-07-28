@@ -17,6 +17,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import kotlinx.datetime.DatePeriod
@@ -390,6 +391,65 @@ private fun HabitHistoryView_FullCapacityAfterToggle() {
         completionHistory = buildFullWindowHistoryWithToday(),
         createdDate = PREVIEW_FULL_WINDOW_CREATED_DATE,
     )
+}
+
+// endregion
+
+// region Vacation mode (#16)
+
+private val PREVIEW_VACATION =
+    listOf(VacationPeriod(LocalDate(2026, 3, 16), LocalDate(2026, 3, 22)))
+
+/**
+ * A week of vacation with nothing recorded during it: the paused dots read as a deliberate
+ * gap and the streak label carries on from before the pause.
+ */
+@Preview(name = "Light – Paused Week", showBackground = true, device = "id:pixel_9")
+@Preview(
+    name = "Dark – Paused Week",
+    showBackground = true,
+    device = "id:pixel_9",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun HabitHistoryView_VacationGap() {
+    TempoTheme {
+        HabitHistoryView(
+            completionHistory =
+                "2026-03-11,2026-03-12,2026-03-13,2026-03-14,2026-03-15," +
+                    "2026-03-23,2026-03-24,2026-03-25,2026-03-26",
+            createdDate = PREVIEW_FULL_WINDOW_CREATED_DATE,
+            modifier = Modifier.fillMaxWidth(),
+            today = PREVIEW_TODAY,
+            vacationPeriods = PREVIEW_VACATION,
+        )
+    }
+}
+
+/**
+ * The same window with the habit kept up on two of the paused days: those still render as
+ * completed, because a completion recorded while away counts toward the streak.
+ */
+@Preview(name = "Light – Paused With Completions", showBackground = true, device = "id:pixel_9")
+@Preview(
+    name = "Dark – Paused With Completions",
+    showBackground = true,
+    device = "id:pixel_9",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun HabitHistoryView_VacationWithCompletions() {
+    TempoTheme {
+        HabitHistoryView(
+            completionHistory =
+                "2026-03-11,2026-03-12,2026-03-13,2026-03-14,2026-03-15," +
+                    "2026-03-18,2026-03-19,2026-03-23,2026-03-24,2026-03-25,2026-03-26",
+            createdDate = PREVIEW_FULL_WINDOW_CREATED_DATE,
+            modifier = Modifier.fillMaxWidth(),
+            today = PREVIEW_TODAY,
+            vacationPeriods = PREVIEW_VACATION,
+        )
+    }
 }
 
 // endregion

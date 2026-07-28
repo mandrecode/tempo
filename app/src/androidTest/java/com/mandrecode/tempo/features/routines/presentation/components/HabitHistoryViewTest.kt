@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -21,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.presentation.components.sections.HABIT_HISTORY_DOT_ROW_TEST_TAG
 import com.mandrecode.tempo.features.routines.presentation.components.sections.HABIT_HISTORY_STREAK_PILL_TEST_TAG
@@ -308,5 +310,92 @@ class HabitHistoryViewTest {
 
         assertThat(dotRowWidth).isGreaterThan(0f)
         assertThat(streakPillWidth).isLessThan(historySlotWidth * 0.8f)
+    }
+
+    @Test
+    fun marksPausedDays_whenWindowSpansVacationPeriod() {
+        // Completed 02-18..02-20, paused 02-21..02-23, completed again today (02-24).
+        val history = "2026-02-18,2026-02-19,2026-02-20,2026-02-24"
+        val createdDate = LocalDate(2026, 2, 18)
+        val vacationPeriods =
+            listOf(VacationPeriod(LocalDate(2026, 2, 21), LocalDate(2026, 2, 23)))
+
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitHistoryView(
+                    completionHistory = history,
+                    createdDate = createdDate,
+                    today = fixedToday,
+                    vacationPeriods = vacationPeriods,
+                )
+            }
+        }
+
+        val pausedDots =
+            composeTestRule
+                .onAllNodes(
+                    SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+                ).fetchSemanticsNodes()
+                .count { node ->
+                    node.config
+                        .getOrNull(SemanticsProperties.ContentDescription)
+                        .orEmpty()
+                        .any { it.endsWith("paused") }
+                }
+
+        assertThat(pausedDots).isEqualTo(3)
+    }
+
+    @Test
+    fun keepsStreakAcrossPausedDays() {
+        val history = "2026-02-18,2026-02-19,2026-02-20,2026-02-24"
+        val createdDate = LocalDate(2026, 2, 18)
+        val vacationPeriods =
+            listOf(VacationPeriod(LocalDate(2026, 2, 21), LocalDate(2026, 2, 23)))
+
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitHistoryView(
+                    completionHistory = history,
+                    createdDate = createdDate,
+                    today = fixedToday,
+                    vacationPeriods = vacationPeriods,
+                )
+            }
+        }
+
+        // Three days before the pause plus today; the paused days neither count nor break it.
+        composeTestRule.onNodeWithText("4 day streak", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun marksCompletedDaysInsideVacationAsCompleted() {
+        val history = "2026-02-22,2026-02-23,2026-02-24"
+        val createdDate = LocalDate(2026, 2, 22)
+        val vacationPeriods =
+            listOf(VacationPeriod(LocalDate(2026, 2, 21), LocalDate(2026, 2, 23)))
+
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitHistoryView(
+                    completionHistory = history,
+                    createdDate = createdDate,
+                    today = fixedToday,
+                    vacationPeriods = vacationPeriods,
+                )
+            }
+        }
+
+        val descriptions =
+            composeTestRule
+                .onAllNodes(
+                    SemanticsMatcher.keyIsDefined(SemanticsProperties.ContentDescription),
+                ).fetchSemanticsNodes()
+                .flatMap { node ->
+                    node.config.getOrNull(SemanticsProperties.ContentDescription).orEmpty()
+                }
+
+        assertThat(descriptions.none { it.endsWith("paused") }).isTrue()
+        composeTestRule.onNodeWithText("3 day streak", substring = true).assertIsDisplayed()
     }
 }

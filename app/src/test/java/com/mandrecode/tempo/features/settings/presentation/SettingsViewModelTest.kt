@@ -10,6 +10,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportOutcome
 import com.mandrecode.tempo.features.backup.domain.model.ImportSummary
@@ -60,6 +61,7 @@ class SettingsViewModelTest {
     private lateinit var backupRepository: BackupRepository
     private lateinit var backupFileDataSource: BackupFileDataSource
     private lateinit var appContext: Context
+    private lateinit var vacationModeRepository: VacationModeRepository
     private val testDispatcher = StandardTestDispatcher()
 
     @Before
@@ -82,6 +84,10 @@ class SettingsViewModelTest {
         backupRepository = mockk(relaxed = true)
         backupFileDataSource = mockk(relaxed = true)
         appContext = mockk(relaxed = true)
+        vacationModeRepository =
+            mockk(relaxed = true) {
+                every { periods } returns MutableStateFlow(emptyList())
+            }
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
@@ -754,6 +760,7 @@ class SettingsViewModelTest {
             missedReminderPreferences,
             missedReminderScheduler,
             SettingsBackupDelegate(exportBackup, importBackup, backupRepository, backupFileDataSource),
+            vacationModeRepository,
             appContext,
         )
 }

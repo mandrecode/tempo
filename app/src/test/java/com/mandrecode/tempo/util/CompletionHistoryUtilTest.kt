@@ -2,6 +2,7 @@ package com.mandrecode.tempo.util
 
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -367,6 +368,134 @@ class CompletionHistoryUtilTest {
         val history = "$yesterday,$today"
         val result = CompletionHistoryUtil.getCurrentStreak(history, today, repeatDays = emptySet())
         assertThat(result).isEqualTo(2)
+    }
+
+    // endregion
+
+    // region vacation mode
+
+    @Test
+    fun `isPausedOn only matches dates inside a period`() {
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 10), LocalDate(2026, 3, 14)))
+
+        assertThat(CompletionHistoryUtil.isPausedOn(LocalDate(2026, 3, 12), periods)).isTrue()
+        assertThat(CompletionHistoryUtil.isPausedOn(LocalDate(2026, 3, 15), periods)).isFalse()
+        assertThat(CompletionHistoryUtil.isPausedOn(LocalDate(2026, 3, 12), emptyList())).isFalse()
+    }
+
+    @Test
+    fun `isRequiredOn is false for paused and for unscheduled days`() {
+        val monday = LocalDate(2026, 3, 9)
+        val tuesday = LocalDate(2026, 3, 10)
+        val mondaysOnly = setOf(DayOfWeek.MONDAY)
+        val periods = listOf(VacationPeriod(monday, monday))
+
+        // Scheduled but paused.
+        assertThat(CompletionHistoryUtil.isRequiredOn(monday, mondaysOnly, periods)).isFalse()
+        // Not scheduled.
+        assertThat(CompletionHistoryUtil.isRequiredOn(tuesday, mondaysOnly, emptyList())).isFalse()
+        // Scheduled and not paused.
+        assertThat(CompletionHistoryUtil.isRequiredOn(monday, mondaysOnly, emptyList())).isTrue()
+    }
+
+    @Test
+    fun `getCurrentStreak resumes across a week away`() {
+        // Completed daily 2026-03-01..2026-03-05, paused 03-06..03-12, completed again on 03-13.
+        val history =
+            (1..5).joinToString(",") { LocalDate(2026, 3, it).toString() } + ",2026-03-13"
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 6), LocalDate(2026, 3, 12)))
+
+        val result =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 13),
+                vacationPeriods = periods,
+            )
+
+        // Five days before the pause plus the first day back; the seven paused days are skipped.
+        assertThat(result).isEqualTo(6)
+    }
+
+    @Test
+    fun `getCurrentStreak reads unchanged during an active pause`() {
+        val history = (1..5).joinToString(",") { LocalDate(2026, 3, it).toString() }
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 6)))
+
+        val result =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 9),
+                vacationPeriods = periods,
+            )
+
+        assertThat(result).isEqualTo(5)
+    }
+
+    @Test
+    fun `getCurrentStreak counts a completion recorded while paused`() {
+        val history = "2026-03-01,2026-03-02,2026-03-03"
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 2)))
+
+        val result =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 3),
+                vacationPeriods = periods,
+            )
+
+        // 03-02 and 03-03 are paused but were completed, so they still count.
+        assertThat(result).isEqualTo(3)
+    }
+
+    @Test
+    fun `getCurrentStreak still breaks on a missed day after the pause`() {
+        // Paused 03-06..03-08, back on 03-09 but 03-10 was missed.
+        val history = "2026-03-04,2026-03-05,2026-03-09"
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 6), LocalDate(2026, 3, 8)))
+
+        val result =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 11),
+                vacationPeriods = periods,
+            )
+
+        assertThat(result).isEqualTo(0)
+    }
+
+    @Test
+    fun `getCurrentStreak skips paused days that are also unplanned`() {
+        // Mondays-only habit: 2026-03-02, 03-09, 03-16 are Mondays.
+        val history = "2026-03-02,2026-03-16"
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 7), LocalDate(2026, 3, 12)))
+
+        val result =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 16),
+                repeatDays = setOf(DayOfWeek.MONDAY),
+                vacationPeriods = periods,
+            )
+
+        // The only planned day inside the pause (03-09) is skipped, so 03-02 still counts.
+        assertThat(result).isEqualTo(2)
+    }
+
+    @Test
+    fun `getCurrentStreak without vacation periods is unchanged`() {
+        val history = "2026-03-01,2026-03-02"
+
+        val withDefault =
+            CompletionHistoryUtil.getCurrentStreak(history, LocalDate(2026, 3, 2))
+        val withEmptyPeriods =
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 2),
+                vacationPeriods = emptyList(),
+            )
+
+        assertThat(withDefault).isEqualTo(2)
+        assertThat(withEmptyPeriods).isEqualTo(2)
     }
 
     // endregion

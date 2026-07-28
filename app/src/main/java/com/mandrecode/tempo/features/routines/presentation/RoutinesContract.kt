@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.routines.presentation
 
 import androidx.annotation.StringRes
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -43,6 +44,8 @@ object RoutinesContract {
         val habitsWithRemindersToBeCleared: ImmutableList<Habit> = persistentListOf(),
         val pendingHabitChainData: PendingHabitChainData? = null,
         val expandedChainIds: PersistentSet<Long> = persistentSetOf(),
+        val vacationPeriods: ImmutableList<VacationPeriod> = persistentListOf(),
+        val isVacationModeActive: Boolean = false,
         val selectedDate: LocalDate =
             Clock.System
                 .now()

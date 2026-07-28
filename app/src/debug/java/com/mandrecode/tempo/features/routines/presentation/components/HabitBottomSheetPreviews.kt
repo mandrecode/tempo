@@ -37,6 +37,7 @@ private fun PreviewSheet(
     habits: List<Habit> = sampleBuildHabits(),
     habitChains: List<HabitChain> = emptyList(),
     onToggleHabitCompletion: ((habitId: Long, isCompleted: Boolean) -> Unit)? = null,
+    isVacationModeActive: Boolean = false,
 ) {
     TempoTheme {
         HabitBottomSheet(
@@ -58,6 +59,7 @@ private fun PreviewSheet(
             onConfirmHabitChain = { _, _, _ -> },
             onSetRepeatDays = {},
             onToggleHabitCompletion = onToggleHabitCompletion,
+            isVacationModeActive = isVacationModeActive,
         )
     }
 }
@@ -336,6 +338,29 @@ private fun HabitBottomSheetEditChainPreview() {
             ),
         habits = habits,
         habitChains = listOf(chainEntity),
+    )
+}
+
+// endregion
+
+// region Vacation mode (#16)
+
+@Preview(name = "Light", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun HabitBottomSheetVacationModePreview() {
+    val habit = sampleBuildHabits().first()
+
+    PreviewSheet(
+        formState =
+            RoutinesContract.HabitFormState(
+                isVisible = true,
+                editingHabit = habit,
+                selectedColorKey = habit.colorKey,
+                selectedIcon = habit.icon,
+                reminderDate = habit.reminderDate,
+            ),
+        isVacationModeActive = true,
     )
 }
 

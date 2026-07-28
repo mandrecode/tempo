@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.backup.domain.model
 
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
@@ -34,6 +35,7 @@ data class BackupSettings(
     val defaultTab: BackupDefaultTab,
     val autoRemoveCompletedTasks: Boolean,
     val completedTaskRetentionDays: Int,
+    val vacationPeriods: List<VacationPeriod> = emptyList(),
 )
 
 enum class BackupDefaultTab {
