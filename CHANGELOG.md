@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.0](https://github.com/mandrecode/tempo/compare/v1.9.0...v1.10.0) (2026-07-28)
+
+
+### Features
+
+* **#182:** add settings entry that opens the Tempo repository ([#262](https://github.com/mandrecode/tempo/issues/262)) ([349d4be](https://github.com/mandrecode/tempo/commit/349d4be00dc2145325b2c0751ed68151ce538af1))
+
 ## [1.9.0](https://github.com/mandrecode/tempo/compare/v1.8.0...v1.9.0) (2026-07-28)
 
 
