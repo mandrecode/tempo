@@ -9,7 +9,8 @@ import kotlinx.datetime.plus
  *
  * [endInclusive] is `null` for the open-ended period the user creates by switching vacation
  * mode on without picking an end date — it stays active until they switch it off, at which
- * point it is closed with that day as its last paused day.
+ * point it is closed on the day *before* that one, so the Settings switch (which reads "is
+ * today paused") turns off immediately rather than springing back on.
  *
  * Periods are kept for good, not just while they are active: streaks are derived by walking
  * backwards over `completionHistory`, so a trip taken last month must still resolve as paused

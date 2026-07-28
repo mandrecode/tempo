@@ -174,14 +174,6 @@ internal fun HabitBottomSheetBody(
                 HabitSheetTab.HABIT_CHAIN -> editingHabitChain != null
             }
 
-        // Sits directly above the two rows a pause changes the meaning of, so the reminder time
-        // and the history gaps are read in the right light.
-        if (state.isVacationModeActive && (showReminderUI || showHistory)) {
-            VacationModeNotice()
-
-            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
-        }
-
         if (showReminderUI) {
             HabitReminderSection(
                 formattedReminder = state.formattedReminder,
@@ -212,6 +204,14 @@ internal fun HabitBottomSheetBody(
                 habitType = null,
                 vacationPeriods = state.vacationPeriods,
             )
+
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+        }
+
+        // Closes out the form: by this point the reminder row and the history dots have both
+        // been seen, so the note explains what the pause does to them without interrupting them.
+        if (state.isVacationModeActive && (showReminderUI || showHistory)) {
+            VacationModeNotice()
 
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
         }
