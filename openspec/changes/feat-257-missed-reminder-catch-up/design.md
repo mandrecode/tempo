@@ -33,7 +33,7 @@ The catch-up is a single exact alarm (`setExactAndAllowWhileIdle`, `RTC_WAKEUP`)
 
 ### D2: Fixed request code for the catch-up alarm
 
-`RequestCodeGenerator` partitions Int request codes by entity type (tasks 0–999,999, habits, chains, live activity). The catch-up alarm gets a new dedicated constant in the next free range (`4 * RANGE_SIZE`), exposed as `RequestCodeGenerator.forMissedReminderCatchUp()`. Reusing a task code would let a task alarm cancel the catch-up.
+`RequestCodeGenerator` partitions Int request codes by entity type (tasks 0–999,999, habits, chains, live activity). The catch-up alarm gets a new dedicated constant in the next free range (`5 * RANGE_SIZE`, after the live-activity dismissal range added on `main`), exposed as `RequestCodeGenerator.forMissedReminderCatchUp()`. Reusing a task code would let a task alarm cancel the catch-up.
 
 ### D3: Extract the notification builder into `TaskReminderNotifier`
 

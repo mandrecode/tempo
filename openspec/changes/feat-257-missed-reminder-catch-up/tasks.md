@@ -17,7 +17,7 @@
 
 ## 4. Catch-up scheduling and delivery
 
-- [x] 4.1 Add `forMissedReminderCatchUp()` to `RequestCodeGenerator` using the next free range (`4 * RANGE_SIZE`), documented in the class KDoc partition table
+- [x] 4.1 Add `forMissedReminderCatchUp()` to `RequestCodeGenerator` using the next free range (`5 * RANGE_SIZE`), documented in the class KDoc partition table
 - [x] 4.2 Add `MissedReminderAlarmScheduler` interface + `AndroidMissedReminderAlarmScheduler` in `infrastructure/reminders/scheduler/` exposing `canScheduleExactAlarms()`, `scheduleCatchUp(triggerAtMillis)` (exact when permitted, `setAndAllowWhileIdle` otherwise), and `cancelCatchUp()`
 - [x] 4.3 Add `MissedReminderSchedulerImpl` in `infrastructure/reminders/`: cancel when disabled, otherwise arm the next occurrence of `catchUpTime` (today if strictly after `now`, else tomorrow) via `TimeZone.currentSystemDefault()`; idempotent across repeated calls
 - [x] 4.4 Add `MissedReminderCatchUpRunner` (the sweep: enabled check, notify every task from `GetOverdueIncompleteTasksUseCase` with a single injected-`Clock` `now`, re-arm via `MissedReminderScheduler.sync()` in a `finally`) plus a thin `MissedReminderCatchUpReceiver` that calls it inside `goAsync()` — the split keeps the sweep unit-testable without Robolectric

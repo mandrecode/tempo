@@ -54,7 +54,7 @@ class RequestCodeGeneratorTest {
 
     @Test
     fun `forMissedReminderCatchUp sits above every entity range`() {
-        assertThat(RequestCodeGenerator.forMissedReminderCatchUp()).isEqualTo(4_000_000)
+        assertThat(RequestCodeGenerator.forMissedReminderCatchUp()).isEqualTo(5_000_000)
     }
 
     @Test
@@ -73,6 +73,7 @@ class RequestCodeGeneratorTest {
             assertThat(RequestCodeGenerator.forHabit(id)).isNotEqualTo(catchUp)
             assertThat(RequestCodeGenerator.forHabitChain(id)).isNotEqualTo(catchUp)
             assertThat(RequestCodeGenerator.forLiveActivity(id)).isNotEqualTo(catchUp)
+            assertThat(RequestCodeGenerator.forLiveActivityDismiss(id)).isNotEqualTo(catchUp)
         }
     }
 
