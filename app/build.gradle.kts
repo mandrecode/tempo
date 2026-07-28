@@ -37,6 +37,7 @@ kover {
                     "com.mandrecode.tempo.features.*.presentation.*Contract*",
                     "com.mandrecode.tempo.features.*.presentation.*Components*",
                     "com.mandrecode.tempo.features.settings.presentation.CompletedTaskRetentionSection*",
+                    "com.mandrecode.tempo.features.settings.presentation.RemindersSection*",
                     "com.mandrecode.tempo.features.settings.presentation.BackupSection*",
                     "com.mandrecode.tempo.features.settings.presentation.ImportModeDialog*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",
@@ -68,6 +69,9 @@ kover {
                     // Android-dependent classes (require Context/SDK, not unit-testable)
                     "com.mandrecode.tempo.infrastructure.permissions.*",
                     "com.mandrecode.tempo.infrastructure.reminders.scheduler.android.*",
+                    // Notification builder: NotificationManager/PendingIntent only, was previously
+                    // inlined in the (excluded) TaskReminderReceiver.
+                    "com.mandrecode.tempo.infrastructure.notifications.TaskReminderNotifier*",
                     "com.mandrecode.tempo.core.ui.util.AnimationUtils*",
                     "com.mandrecode.tempo.core.ui.util.FrozenState*",
                     "com.mandrecode.tempo.util.AppVersionProviderImpl",

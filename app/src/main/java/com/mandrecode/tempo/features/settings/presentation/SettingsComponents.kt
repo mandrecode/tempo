@@ -135,7 +135,7 @@ internal fun SettingsSwitchItem(
     }
 }
 
-private val SettingsItemPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
+internal val SettingsItemPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
 internal val SettingsSectionContentPadding = PaddingValues(horizontal = 12.dp, vertical = 16.dp)
 
 @Composable
@@ -161,7 +161,7 @@ internal fun ColorDot(
 }
 
 @Composable
-private fun SettingsIcon(icon: Int) {
+internal fun SettingsIcon(icon: Int) {
     Box(
         modifier = Modifier.size(44.dp),
         contentAlignment = Alignment.Center,

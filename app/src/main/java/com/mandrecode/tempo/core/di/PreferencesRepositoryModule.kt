@@ -5,6 +5,7 @@ import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferencesI
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.AppPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.CompletedTaskRetentionPreferencesImpl
+import com.mandrecode.tempo.core.data.preferences.MissedReminderPreferencesImpl
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
@@ -16,6 +17,7 @@ import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepositoryImpl
 import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -47,4 +49,7 @@ abstract class PreferencesRepositoryModule {
 
     @Binds
     abstract fun bindActiveLiveActivityPreferences(impl: ActiveLiveActivityPreferencesImpl): ActiveLiveActivityPreferences
+
+    @Binds
+    abstract fun bindMissedReminderPreferences(impl: MissedReminderPreferencesImpl): MissedReminderPreferences
 }

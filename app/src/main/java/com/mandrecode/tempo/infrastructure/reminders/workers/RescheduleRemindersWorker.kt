@@ -11,12 +11,15 @@ import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderSche
 import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.RollOverduePeriodicTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.util.TaskReminderDateUtil
+import com.mandrecode.tempo.infrastructure.liveactivity.HabitChainLiveActivityManager
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -35,6 +38,8 @@ class RescheduleRemindersWorker
         private val habitReminderScheduler: HabitReminderScheduler,
         private val rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase,
         private val activeLiveActivityPreferences: ActiveLiveActivityPreferences,
+        private val habitChainLiveActivityManager: HabitChainLiveActivityManager,
+        private val missedReminderScheduler: MissedReminderScheduler,
         private val clock: Clock,
     ) : CoroutineWorker(appContext, workerParams) {
         override suspend fun doWork(): Result =
@@ -43,7 +48,10 @@ class RescheduleRemindersWorker
                 rescheduleTasks(now)
                 rescheduleHabits(now)
                 rescheduleHabitChains(now)
-                resyncActiveLiveActivities()
+                resyncActiveLiveActivities(now.date)
+                // This worker runs at startup, on boot, on time/timezone change, on package
+                // replacement, and every 24h — the same events that drop the catch-up alarm.
+                missedReminderScheduler.sync()
                 Result.success()
             } catch (e: CancellationException) {
                 throw e
@@ -132,9 +140,18 @@ class RescheduleRemindersWorker
             }
         }
 
-        private suspend fun resyncActiveLiveActivities() {
-            activeLiveActivityPreferences.getActiveChainIds().forEach { chainId ->
-                habitRepository.refreshHabitChainLiveActivity(chainId)
+        /**
+         * Rebuilds live activities that were active when the app stopped. Only today's records are
+         * still meaningful — a record left over from a previous day would otherwise be rebuilt
+         * against today's unrelated progress, so it is cleared instead.
+         */
+        private suspend fun resyncActiveLiveActivities(today: LocalDate) {
+            activeLiveActivityPreferences.getActiveChains().forEach { (chainId, date) ->
+                if (date == today) {
+                    habitRepository.refreshHabitChainLiveActivity(chainId, date)
+                } else {
+                    habitChainLiveActivityManager.dismissLiveActivity(chainId)
+                }
             }
         }
     }

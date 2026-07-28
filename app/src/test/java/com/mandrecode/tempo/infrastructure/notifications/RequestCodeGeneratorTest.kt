@@ -53,6 +53,31 @@ class RequestCodeGeneratorTest {
     }
 
     @Test
+    fun `forMissedReminderCatchUp sits above every entity range`() {
+        assertThat(RequestCodeGenerator.forMissedReminderCatchUp()).isEqualTo(5_000_000)
+    }
+
+    @Test
+    fun `forMissedReminderCatchUp is stable so re-arming replaces the pending alarm`() {
+        assertThat(RequestCodeGenerator.forMissedReminderCatchUp())
+            .isEqualTo(RequestCodeGenerator.forMissedReminderCatchUp())
+    }
+
+    @Test
+    fun `no entity ID can collide with the catch-up code`() {
+        val catchUp = RequestCodeGenerator.forMissedReminderCatchUp()
+        val ids = listOf(0L, 1L, 42L, 999_999L, 1_000_000L, Int.MAX_VALUE.toLong(), Long.MAX_VALUE)
+
+        ids.forEach { id ->
+            assertThat(RequestCodeGenerator.forTask(id)).isNotEqualTo(catchUp)
+            assertThat(RequestCodeGenerator.forHabit(id)).isNotEqualTo(catchUp)
+            assertThat(RequestCodeGenerator.forHabitChain(id)).isNotEqualTo(catchUp)
+            assertThat(RequestCodeGenerator.forLiveActivity(id)).isNotEqualTo(catchUp)
+            assertThat(RequestCodeGenerator.forLiveActivityDismiss(id)).isNotEqualTo(catchUp)
+        }
+    }
+
+    @Test
     fun `large Long IDs do not overflow`() {
         val largeId = Long.MAX_VALUE
         val code = RequestCodeGenerator.forTask(largeId)
