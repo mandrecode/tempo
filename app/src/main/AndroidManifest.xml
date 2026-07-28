@@ -62,6 +62,10 @@
             android:name=".infrastructure.reminders.receivers.CompleteHabitReceiver"
             android:exported="false"
             android:enabled="true" />
+        <receiver
+            android:name=".infrastructure.reminders.receivers.MissedReminderCatchUpReceiver"
+            android:exported="false"
+            android:enabled="true" />
 
         <receiver
             android:name=".infrastructure.reminders.receivers.BootAndTimeReceiver"

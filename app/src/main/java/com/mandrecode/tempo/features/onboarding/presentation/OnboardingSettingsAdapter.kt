@@ -23,6 +23,8 @@ internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.Ui
 
         is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled,
         is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged,
+        is SettingsContract.UiEvent.MissedReminderCatchUpToggled,
+        is SettingsContract.UiEvent.MissedReminderCatchUpTimeChanged,
         is SettingsContract.UiEvent.ExportClicked,
         is SettingsContract.UiEvent.ExportPassphraseConfirmed,
         is SettingsContract.UiEvent.ExportDestinationPicked,

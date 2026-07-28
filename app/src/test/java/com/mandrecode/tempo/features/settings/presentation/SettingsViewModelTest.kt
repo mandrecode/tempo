@@ -17,6 +17,8 @@ import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
 import com.mandrecode.tempo.features.backup.domain.usecase.ExportBackupUseCase
 import com.mandrecode.tempo.features.backup.domain.usecase.ImportBackupUseCase
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
+import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.infrastructure.backup.BackupFileDataSource
 import com.mandrecode.tempo.util.AppVersionInfo
@@ -28,6 +30,7 @@ import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import io.mockk.verify
+import io.mockk.verifyOrder
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,6 +40,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.LocalTime
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -49,6 +53,8 @@ class SettingsViewModelTest {
     private lateinit var appVersionProvider: AppVersionProvider
     private lateinit var completedTaskRetentionPreferences: CompletedTaskRetentionPreferences
     private lateinit var configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase
+    private lateinit var missedReminderPreferences: MissedReminderPreferences
+    private lateinit var missedReminderScheduler: MissedReminderScheduler
     private lateinit var exportBackup: ExportBackupUseCase
     private lateinit var importBackup: ImportBackupUseCase
     private lateinit var backupRepository: BackupRepository
@@ -69,6 +75,8 @@ class SettingsViewModelTest {
             }
         completedTaskRetentionPreferences = mockk(relaxed = true)
         configureCompletedTaskRetention = mockk(relaxed = true)
+        missedReminderPreferences = mockk(relaxed = true)
+        missedReminderScheduler = mockk(relaxed = true)
         exportBackup = mockk(relaxed = true)
         importBackup = mockk(relaxed = true)
         backupRepository = mockk(relaxed = true)
@@ -82,6 +90,8 @@ class SettingsViewModelTest {
         coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
         every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(false)
         every { completedTaskRetentionPreferences.retentionDays } returns MutableStateFlow(30)
+        every { missedReminderPreferences.isEnabled } returns MutableStateFlow(true)
+        every { missedReminderPreferences.catchUpTime } returns MutableStateFlow(LocalTime(hour = 9, minute = 0))
 
         viewModel = createViewModel()
     }
@@ -276,6 +286,48 @@ class SettingsViewModelTest {
 
             verify { configureCompletedTaskRetention(false, 44) }
             assertThat(viewModel.uiState.value.completedTaskRetentionDays).isEqualTo(45)
+        }
+
+    @Test
+    fun `missed reminder preferences update settings state`() =
+        runTest {
+            every { missedReminderPreferences.isEnabled } returns MutableStateFlow(false)
+            every { missedReminderPreferences.catchUpTime } returns MutableStateFlow(LocalTime(hour = 7, minute = 30))
+            viewModel = createViewModel()
+
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.missedReminderCatchUpEnabled).isFalse()
+            assertThat(viewModel.uiState.value.missedReminderCatchUpTime)
+                .isEqualTo(LocalTime(hour = 7, minute = 30))
+        }
+
+    @Test
+    fun `catch-up toggle persists the preference and re-arms the catch-up`() =
+        runTest {
+            advanceUntilIdle()
+
+            viewModel.onEvent(SettingsContract.UiEvent.MissedReminderCatchUpToggled(false))
+
+            verifyOrder {
+                missedReminderPreferences.setEnabled(false)
+                missedReminderScheduler.sync()
+            }
+        }
+
+    @Test
+    fun `catch-up time change persists the preference and re-arms the catch-up`() =
+        runTest {
+            advanceUntilIdle()
+
+            viewModel.onEvent(
+                SettingsContract.UiEvent.MissedReminderCatchUpTimeChanged(LocalTime(hour = 6, minute = 45)),
+            )
+
+            verifyOrder {
+                missedReminderPreferences.setCatchUpTime(LocalTime(hour = 6, minute = 45))
+                missedReminderScheduler.sync()
+            }
         }
 
     @Test
@@ -699,6 +751,8 @@ class SettingsViewModelTest {
             appVersionProvider,
             completedTaskRetentionPreferences,
             configureCompletedTaskRetention,
+            missedReminderPreferences,
+            missedReminderScheduler,
             SettingsBackupDelegate(exportBackup, importBackup, backupRepository, backupFileDataSource),
             appContext,
         )

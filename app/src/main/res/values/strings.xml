@@ -421,6 +421,10 @@
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_subtitle">Notification Settings</string>
     <string name="settings_notifications_description">Manage permissions and alerts</string>
+    <string name="settings_reminders">Reminders</string>
+    <string name="settings_repeat_missed_reminders">Repeat missed reminders</string>
+    <string name="settings_missed_reminders_time">Remind me again at</string>
+    <string name="settings_missed_reminders_time_description">%1$s, every day until the task is done</string>
     <string name="settings_completed_tasks">Completed tasks</string>
     <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
     <string name="settings_remove_completed_after">Remove after</string>
@@ -513,8 +517,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">A fresh look for Tasks &amp; Routines</string>
-    <string name="whats_new_description">Your categories and filters now sit in their own space at the top, so your tasks and habits are easier to scan below.</string>
+    <string name="whats_new_title">Missed a reminder? You\'ll hear about it</string>
+    <string name="whats_new_description">Reminders you never saw come back every morning at 9:00 until the task is done. Change the time — or turn it off — in Settings.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
