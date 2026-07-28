@@ -233,6 +233,12 @@ done
 adb -s emulator-5554 emu kill
 
 # --- Android XR ---
+# Do NOT launch this one with `-gpu host`. It renders icon glyphs as garbage
+# noise (nav rail, Settings rows, even the window-chrome close button) and can
+# produce an entirely blank frame — while text still renders fine, so the
+# result looks plausible enough to miss. Use the default GPU mode below. It is
+# slower: expect one locale to take longer than a 10-minute timeout, so run
+# each theme separately if you're driving this from a script with a deadline.
 android emulator start XR_Headset
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
