@@ -229,6 +229,31 @@ class SettingsContentTest {
     }
 
     @Test
+    fun displaysSourceCodeEntryInAboutSection() {
+        val sourceCodeText = localizedString(R.string.source_code)
+        val sourceCodeDescription = localizedString(R.string.source_code_description)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                SettingsContent(
+                    uiState = SettingsContract.UiState(appVersion = "1.0.0"),
+                    onEvent = {},
+                    onOnboardingClick = {},
+                )
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule
+            .onNodeWithText(sourceCodeText, ignoreCase = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithText(sourceCodeDescription, ignoreCase = true)
+            .assertIsDisplayed()
+    }
+
+    @Test
     fun retentionControlsAreHiddenWhenAutomaticRemovalIsDisabled() {
         val removeAfterText = localizedString(R.string.settings_remove_completed_after)
 

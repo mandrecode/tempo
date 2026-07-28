@@ -520,12 +520,14 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">¿Se te pasó un recordatorio? Te avisamos</string>
-    <string name="whats_new_description">Los recordatorios que no viste vuelven cada mañana a las 9:00 hasta que completes la tarea. Cambia la hora — o desactívalo — en Ajustes.</string>
+    <string name="whats_new_title">Asómate al motor</string>
+    <string name="whats_new_description">Tempo se desarrolla en abierto. Ajustes ya incluye un enlace a Código fuente que te lleva directo al repositorio.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
     <string name="send_feedback_description">Comparte tus opiniones con nosotros</string>
+    <string name="source_code">Código fuente</string>
+    <string name="source_code_description">Explora el repositorio de Tempo en GitHub</string>
     <string name="version_format">Versión %1$s</string>
     <string name="no_browser_app">No se encontró ningún navegador</string>
 
