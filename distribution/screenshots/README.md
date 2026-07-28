@@ -21,11 +21,11 @@ distribution/screenshots/
 ## Prerequisites
 
 - `android` CLI, `adb`, `avdmanager` (Android SDK)
-- Host `sqlite3` (macOS ships one at `/usr/bin/sqlite3`)
-- `python3`; for XR captures only, [Pillow](https://pypi.org/project/Pillow/)
-  (`pip install Pillow`, ideally in a venv — `python3 -m venv /tmp/venv &&
-  /tmp/venv/bin/pip install Pillow` — since some systems block system-wide
-  `pip install`)
+- `python3` with [cryptography](https://pypi.org/project/cryptography/) (used to
+  encrypt the seed backup); for XR captures also
+  [Pillow](https://pypi.org/project/Pillow/). Install into a venv if the system
+  blocks a global `pip install` — `python3 -m venv /tmp/venv &&
+  /tmp/venv/bin/pip install cryptography Pillow`
 - A debug build: `./gradlew assembleDebug`
 
 **Before building, temporarily drop the "(Debug)" suffix.** Desktop and
@@ -46,27 +46,48 @@ label either way.
 # normal debug builds still show "(Debug)" as usual.
 ```
 
+## How seeding works (and why it's not SQL any more)
+
+Until GitHub issue #212 the pipeline seeded data by pulling the app's
+`databases/tempo_database`, applying INSERT statements with the **host's**
+`sqlite3`, and pushing the file back. That is no longer possible: the Room DB
+is now SQLCipher-encrypted at rest, and its passphrase is generated and
+Keystore-wrapped on-device (`KeystoreDbPassphraseProvider`), so it never
+leaves the app process. A pulled DB file is opaque ciphertext.
+
+The **backup export/import** feature is the way in. Its `.tempo` files are
+encrypted with a *separate*, caller-chosen passphrase (PBKDF2WithHmacSHA256 +
+AES-256-GCM, specified in [`docs/BACKUP_FORMAT.md`](../../docs/BACKUP_FORMAT.md)),
+unrelated to the DB's own key — so a script can build a backup file and let the
+app import it exactly as a user would, writing through the app's own encrypted
+DB layer.
+
 ## The pipeline
 
-Three scripts, composed by a fourth:
+Four scripts, composed by a fifth:
 
-- **`scripts/generate-seed-sql.py --locale en|es`** — prints INSERT
-  statements for a curated demo dataset (12 tasks across 4 categories with
-  a mix of priorities/due dates/completion states, 4 habits split
-  Build/Quit, one 3-member habit chain), with category names, task
-  titles/descriptions, and habit titles translated per locale. Every date
-  is computed relative to `--today` (defaults to the real current date),
-  so re-running later doesn't produce stale "Today" tasks or broken
-  streaks.
+- **`scripts/generate-seed-backup.py --locale en|es --theme light|dark
+  --passphrase P -o FILE`** — writes an encrypted `.tempo` backup containing a
+  curated demo dataset (12 tasks across 4 categories with a mix of
+  priorities/due dates/completion states, 7 habits split Build/Quit, one
+  3-member habit chain), with category names, task titles/descriptions, and
+  habit titles translated per locale. Every date is computed relative to
+  `--today` (defaults to the real current date), so re-running later doesn't
+  produce stale "Today" tasks or broken streaks. It also emits a `settings`
+  block carrying `--theme`, since Replace-mode imports apply that section and
+  would otherwise overwrite the theme seeded into `theme_prefs.xml`.
+- **`scripts/import-seed-backup.py <serial> <file-name> <passphrase> <en|es>`**
+  — drives the real UI to import that file: Settings → Import data → system
+  file picker (searched by name) → passphrase dialog → Merge/Replace
+  (Replace) → success dialog. Retries the whole flow up to 3 times, since
+  driving real UI is inherently flaky and Replace-mode import is idempotent.
 - **`scripts/seed-screenshot-data.sh <serial> [light|dark] [en|es]`** —
   wipes the target device's app data, grants the notification/exact-alarm
   permissions the app would otherwise prompt for (screenshot capture
   skips onboarding), sets the theme, sets the **app's per-app language**
-  (see below) to match, and applies the generated SQL. Applies SQL via
-  the **host's own `sqlite3`** (pull DB → checkpoint WAL → apply SQL →
-  push back) rather than a device-side `sqlite3` binary, since not every
-  system image ships one (the `medium_tablet` Google Play tablet image
-  doesn't).
+  (see below) to match, marks the current what's-new entry as seen so its
+  bottom sheet doesn't cover the first screenshot, then generates and
+  imports the backup via the two scripts above.
 - **`scripts/capture-screenshot-set.py <serial> <out-dir> <prefix> <en|es>`**
   — navigates the seeded app (Routines/Today → Tasks/Work-category →
   Tasks/Shopping-category → Settings) and screenshots each via
@@ -94,14 +115,19 @@ pipeline handles both:
    locale — simpler and doesn't require a reboot. Verify with
    `adb shell cmd locale get-app-locales <pkg> --user 0`.
 2. **The seeded demo content** (category names, task/habit titles) —
-   plain data inserted by `generate-seed-sql.py --locale`, translated by
+   plain data written by `generate-seed-backup.py --locale`, translated by
    hand in that script's `LOCALES` dict. Add a new locale by adding an
    entry there (matching the app's actual `res/xml/locales_config.xml`
-   support) and to `NAV` in `capture-screenshot-set.py` with the
-   corresponding translated nav-rail strings (look them up in
-   `app/src/main/res/values-<locale>/strings.xml` — e.g. `routines`,
-   `tasks`, `settings` — don't guess; a mismatched string means
-   `capture-screenshot-set.py` can't find the element to tap).
+   support), plus entries in `NAV` in `capture-screenshot-set.py` and
+   `STRINGS` in `import-seed-backup.py` with the corresponding translated
+   strings (look them up in `app/src/main/res/values-<locale>/strings.xml` —
+   e.g. `routines`, `tasks`, `settings`, `backup_import_title` — don't
+   guess; a mismatched string means the script can't find the element to
+   tap).
+
+   Note that the **system file picker** follows the emulator's *system*
+   locale, not the app's per-app one, so `import-seed-backup.py` addresses
+   its elements by resource id rather than by label.
 
 ## Devices
 
@@ -190,9 +216,13 @@ adb -s emulator-5554 emu kill
 android emulator start large_desktop
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
-# First launch after boot may land in a small floating window rather
-# than maximized — force-stop and relaunch once if so; a fresh launch
-# on a rebooted AVD reliably starts full-screen.
+# The app may launch into a small floating window rather than maximized.
+# Force-stopping and relaunching does NOT reliably fix it — the desktop
+# shell remembers the window size. Launch the app, tap the maximize button
+# in its window chrome (the middle of the three controls, top right), and
+# verify with a screencap before capturing. That state then survives the
+# `pm clear` + relaunch cycles the seeding does, so it only needs doing once.
+adb -s emulator-5554 shell am start -n com.mandrecode.tempo.debug/com.mandrecode.tempo.MainActivity
 for LOCALE in en es; do
   bash scripts/generate-screenshot-set.sh emulator-5554 distribution/screenshots/desktop desktop "$LOCALE"
 done
@@ -220,7 +250,7 @@ ends up running at once — `emulator-5554` is simply the first slot, not
 guaranteed.
 
 Then curate: review the resulting 8 images per form factor per locale,
-replace sample data as needed by editing `generate-seed-sql.py`, and pick
+replace sample data as needed by editing `generate-seed-backup.py`, and pick
 the best up to 8 per Play Console's per-listing limit (currently
 splitting evenly between light and dark).
 

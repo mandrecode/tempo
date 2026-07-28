@@ -1,7 +1,15 @@
 #!/usr/bin/env bash
 # Seeds a debug build with curated demo data for Google Play Store
-# screenshots (GitHub issue #169). Wipes existing app data on the target
-# device/emulator, so only run against a disposable AVD.
+# screenshots (GitHub issues #169, #252). Wipes existing app data on the
+# target device/emulator, so only run against a disposable AVD.
+#
+# Seeds through the app's own encrypted-backup import flow. The earlier
+# approach — pull databases/tempo_database, edit it with the host's sqlite3,
+# push it back — stopped working when GitHub issue #212 made the Room DB
+# SQLCipher-encrypted at rest: the pulled file is now ciphertext, and its
+# passphrase never leaves the app's Android Keystore. Backup exports are
+# encrypted with a *separate*, caller-chosen passphrase (docs/BACKUP_FORMAT.md),
+# so we can build a backup file here and import it as a user would.
 #
 # Usage: scripts/seed-screenshot-data.sh <device-serial> [light|dark] [en|es]
 set -euo pipefail
@@ -12,10 +20,16 @@ LOCALE="${3:-en}"
 PKG="com.mandrecode.tempo.debug"
 ACTIVITY="com.mandrecode.tempo.MainActivity"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-LOCAL_SQL="$(mktemp)"
-LOCAL_DB="$(mktemp)"
-trap 'rm -f "$LOCAL_SQL" "$LOCAL_DB" "${LOCAL_DB}-wal" "${LOCAL_DB}-shm"' EXIT
+# Only ever encrypts a throwaway demo dataset on a disposable AVD; it is not a
+# credential and deliberately doesn't need to be secret.
+SEED_PASSPHRASE="tempo-screenshot-seed"
+SEED_FILE_NAME="tempo_seed.json"
+DEVICE_SEED_PATH="/sdcard/Download/${SEED_FILE_NAME}"
+
+LOCAL_BACKUP="$(mktemp --suffix=.json)"
+trap 'rm -f "$LOCAL_BACKUP"' EXIT
 
 case "$THEME" in
   light) THEME_MODE="LIGHT" ;;
@@ -32,12 +46,17 @@ adb -s "$SERIAL" shell svc power stayon true >/dev/null
 adb -s "$SERIAL" shell locksettings set-disabled true >/dev/null 2>&1 || true
 adb -s "$SERIAL" shell input keyevent KEYCODE_WAKEUP >/dev/null
 
-# Generate the seed SQL relative to the *device's* current date, not the
+# Generate the seed data relative to the *device's* current date, not the
 # host's — they can differ (timezone, clock drift, CI runner vs emulator),
 # which would otherwise shift what counts as "Today" and desync habit
 # streaks from what the app itself considers current.
 DEVICE_TODAY="$(adb -s "$SERIAL" shell date +%Y-%m-%d | tr -d '\r\n')"
-python3 "${SCRIPT_DIR}/generate-seed-sql.py" --locale "$LOCALE" --today "$DEVICE_TODAY" > "$LOCAL_SQL"
+python3 "${SCRIPT_DIR}/generate-seed-backup.py" \
+  --locale "$LOCALE" \
+  --theme "$THEME" \
+  --today "$DEVICE_TODAY" \
+  --passphrase "$SEED_PASSPHRASE" \
+  -o "$LOCAL_BACKUP" >/dev/null
 
 adb -s "$SERIAL" shell am force-stop "$PKG" >/dev/null
 adb -s "$SERIAL" shell pm clear "$PKG" >/dev/null
@@ -50,7 +69,7 @@ adb -s "$SERIAL" shell appops set "$PKG" SCHEDULE_EXACT_ALARM allow >/dev/null 2
 # Set the app's per-app language (Android 13+ LocaleManager) so its own UI
 # strings (nav labels, Settings, "Today", etc.) render in $LOCALE. This is
 # separate from the seeded content's language, controlled above via
-# generate-seed-sql.py --locale. The app declares support for en-US/es-ES
+# generate-seed-backup.py --locale. The app declares support for en-US/es-ES
 # in res/xml/locales_config.xml.
 adb -s "$SERIAL" shell cmd locale set-app-locales "$PKG" --user 0 --locales "$LOCALE" >/dev/null
 
@@ -90,30 +109,30 @@ adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/theme_prefs.xml\"
 </map>
 EOF
 
-# Apply the seed SQL with the host's own sqlite3 rather than depending on a
-# device-side sqlite3 binary, which not every system image ships (e.g. the
-# medium_tablet Google Play tablet image). Pull the DB, checkpoint any WAL
-# into it, apply the SQL locally, then push the single resulting file back.
-adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database > "$LOCAL_DB"
-adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-wal 2>/dev/null \
-  && adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database-wal > "${LOCAL_DB}-wal" || true
-adb -s "$SERIAL" shell run-as "$PKG" test -f databases/tempo_database-shm 2>/dev/null \
-  && adb -s "$SERIAL" exec-out run-as "$PKG" cat databases/tempo_database-shm > "${LOCAL_DB}-shm" || true
+# Mark the current what's-new entry as already seen, or its bottom sheet opens
+# over the first screenshot (MainViewModel shows it whenever onboarding is
+# complete and the stored id differs from WhatsNewRegistry.latest, which is
+# every fresh install). Read the id from the registry rather than hardcoding
+# it, so shipping a new entry doesn't silently break the pipeline.
+WHATS_NEW_ID="$(grep -oP '(?<=id = ")[^"]+' \
+  "${REPO_ROOT}/app/src/main/java/com/mandrecode/tempo/features/whatsnew/presentation/WhatsNewRegistry.kt")"
+if [ -z "$WHATS_NEW_ID" ]; then
+  echo "Could not read WhatsNewRegistry.latest's id — the what's-new sheet would cover the first screenshot." >&2
+  exit 1
+fi
+adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/whats_new_preferences.xml\"" <<EOF
+<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
+<map>
+    <string name="last_seen_entry_id">${WHATS_NEW_ID}</string>
+</map>
+EOF
 
-# Checkpoint before *and* after loading the SQL: the leading checkpoint
-# starts from a clean slate, but the inserts from `.read` land in a fresh
-# WAL file of their own — checkpointing again afterwards, in the same
-# connection, is what actually merges them into the main db file before
-# it's safe to delete the WAL/SHM siblings below.
-sqlite3 "$LOCAL_DB" \
-  "PRAGMA wal_checkpoint(TRUNCATE);" \
-  ".read ${LOCAL_SQL}" \
-  "PRAGMA wal_checkpoint(TRUNCATE);"
-rm -f "${LOCAL_DB}-wal" "${LOCAL_DB}-shm"
+adb -s "$SERIAL" push "$LOCAL_BACKUP" "$DEVICE_SEED_PATH" >/dev/null
+python3 "${SCRIPT_DIR}/import-seed-backup.py" \
+  "$SERIAL" "$SEED_FILE_NAME" "$SEED_PASSPHRASE" "$LOCALE"
+adb -s "$SERIAL" shell rm -f "$DEVICE_SEED_PATH" >/dev/null
 
-cat "$LOCAL_DB" | adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > databases/tempo_database\""
-adb -s "$SERIAL" shell run-as "$PKG" rm -f databases/tempo_database-wal databases/tempo_database-shm
-
+adb -s "$SERIAL" shell am force-stop "$PKG" >/dev/null
 adb -s "$SERIAL" shell am start -n "${PKG}/${ACTIVITY}" >/dev/null
 sleep 3
 
