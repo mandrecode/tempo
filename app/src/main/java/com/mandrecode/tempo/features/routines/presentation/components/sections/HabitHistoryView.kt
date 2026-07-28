@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.PastelGreenDark
 import com.mandrecode.tempo.core.ui.theme.PastelGreenLight
@@ -61,6 +62,7 @@ import kotlin.time.Clock
 
 private val DotSize = 10.dp
 private val DotSpacing = 3.dp
+private const val PAUSED_DOT_ALPHA = 0.3f
 internal const val HABIT_HISTORY_ELLIPSIS_TEST_TAG = "habit_history_ellipsis"
 internal const val HABIT_HISTORY_DOT_ROW_TEST_TAG = "habit_history_dot_row"
 internal const val HABIT_HISTORY_STREAK_PILL_TEST_TAG = "habit_history_streak_pill"
@@ -94,6 +96,7 @@ fun HabitHistoryView(
     repeatDays: Set<DayOfWeek>? = null,
     habitType: HabitType = HabitType.BUILD,
     today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+    vacationPeriods: List<VacationPeriod> = emptyList(),
 ) {
     // Parse completion history (format: "2024-01-01,2024-01-03,...")
     val completedDates =
@@ -140,8 +143,8 @@ fun HabitHistoryView(
         }
 
     val streak =
-        remember(completionHistory, repeatDays, today) {
-            CompletionHistoryUtil.getCurrentStreak(completionHistory, today, repeatDays)
+        remember(completionHistory, repeatDays, today, vacationPeriods) {
+            CompletionHistoryUtil.getCurrentStreak(completionHistory, today, repeatDays, vacationPeriods)
         }
 
     val streakLabelUiModel =
@@ -152,6 +155,7 @@ fun HabitHistoryView(
             habitType = habitType,
             today = today,
             repeatDays = repeatDays,
+            vacationPeriods = vacationPeriods,
         )
 
     Row(
@@ -197,12 +201,19 @@ fun HabitHistoryView(
                     val isScheduled = CompletionHistoryUtil.isScheduledOn(date, repeatDays)
                     val isCompleted = isScheduled && date in completedDates
                     val isBeforeCreation = date < effectiveCreatedDate
+                    // A completion recorded while paused still reads as completed, matching the
+                    // streak rule that credits it.
+                    val isPaused =
+                        isScheduled &&
+                            !isCompleted &&
+                            CompletionHistoryUtil.isPausedOn(date, vacationPeriods)
 
                     HabitDot(
                         date = date,
                         isCompleted = isCompleted,
                         isBeforeCreation = isBeforeCreation,
                         isScheduled = isScheduled,
+                        isPaused = isPaused,
                     )
                 }
             }
@@ -226,6 +237,7 @@ private fun rememberStreakLabelUiModel(
     habitType: HabitType,
     today: LocalDate,
     repeatDays: Set<DayOfWeek>?,
+    vacationPeriods: List<VacationPeriod>,
 ): StreakLabelUiModel {
     val noStreakText =
         if (daysToShow <= 1) {
@@ -240,7 +252,7 @@ private fun rememberStreakLabelUiModel(
             noStreakText
         }
     val toggledStreak =
-        remember(completionHistory, today, repeatDays) {
+        remember(completionHistory, today, repeatDays, vacationPeriods) {
             val isTodayCompleted = CompletionHistoryUtil.isDateInHistory(completionHistory, today.toString())
             val toggledHistory =
                 CompletionHistoryUtil.updateCompletionHistoryForDate(
@@ -252,6 +264,7 @@ private fun rememberStreakLabelUiModel(
                 completionHistory = toggledHistory,
                 today = today,
                 repeatDays = repeatDays,
+                vacationPeriods = vacationPeriods,
             )
         }
     val toggledStreakText =
@@ -410,6 +423,7 @@ private fun HabitDot(
     isCompleted: Boolean,
     isBeforeCreation: Boolean,
     isScheduled: Boolean,
+    isPaused: Boolean = false,
 ) {
     val primaryColor = MaterialTheme.colorScheme.primary
     val outlineColor = MaterialTheme.colorScheme.outlineVariant
@@ -422,15 +436,20 @@ private fun HabitDot(
             when {
                 !isScheduled -> outlineColor.copy(alpha = 0.35f)
                 isCompleted -> primaryColor
+                // Paused days sit between "done" and "missed": a faded fill of the completed
+                // color, so the gap next to an unchanged streak label reads as intentional.
+                isPaused -> primaryColor.copy(alpha = PAUSED_DOT_ALPHA)
                 else -> Color.Transparent
             },
         animationSpec = tween(durationMillis = 220),
         label = "habitDotBackground",
     )
+    // Only an in-range scheduled day that is neither done nor paused shows as an empty ring.
+    val isMissed = isScheduled && !isCompleted && !isPaused
     // Border fades out as the fill comes in (only relevant for in-range, scheduled dots).
     val borderWidth by animateDpAsState(
         targetValue =
-            if (!isBeforeCreation && !isCompleted && isScheduled) {
+            if (isMissed && !isBeforeCreation) {
                 1.5.dp
             } else {
                 0.dp
@@ -449,6 +468,7 @@ private fun HabitDot(
         when {
             !isScheduled -> stringResource(R.string.habit_history_dot_unscheduled, dateString)
             isCompleted -> stringResource(R.string.habit_history_dot_completed, dateString)
+            isPaused -> stringResource(R.string.habit_history_dot_paused, dateString)
             else -> stringResource(R.string.habit_history_dot_missed, dateString)
         }
 

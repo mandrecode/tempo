@@ -35,6 +35,17 @@ data class SettingsBackupDto(
     val defaultTab: String = "ROUTINES",
     val autoRemoveCompletedTasks: Boolean = false,
     val completedTaskRetentionDays: Int = 30,
+    val vacationPeriods: List<VacationPeriodBackupDto> = emptyList(),
+)
+
+/**
+ * One vacation-mode pause. [end] is absent for the open-ended period the user is currently in;
+ * both dates are ISO-8601 local dates.
+ */
+@Serializable
+data class VacationPeriodBackupDto(
+    val start: String,
+    val end: String? = null,
 )
 
 /** Minimal projection used to read [BackupFileDto.schemaVersion] before full decoding. */

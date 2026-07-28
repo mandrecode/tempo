@@ -102,6 +102,7 @@
     <string name="habit_history_dot_completed">%1$s, completed</string>
     <string name="habit_history_dot_missed">%1$s, missed</string>
     <string name="habit_history_dot_unscheduled">%1$s, not scheduled</string>
+    <string name="habit_history_dot_paused">%1$s, paused</string>
     <string name="ellipsis" translatable="false">…</string>
     <string name="habit_icon_label">Choose Icon</string>
 
@@ -424,6 +425,13 @@
     <string name="settings_reminders">Reminders</string>
     <string name="settings_repeat_missed_reminders">Repeat missed reminders</string>
     <string name="settings_missed_reminders_time">Remind me again at</string>
+    <string name="settings_vacation_mode">Vacation mode</string>
+    <string name="vacation_mode_active">Vacation mode on — habits paused</string>
+    <string name="vacation_mode_notice">Vacation mode is on: reminders stay silent, and days you skip won\'t break your streak.</string>
+    <string name="settings_vacation_mode_pause_habits">Pause habits</string>
+    <string name="settings_vacation_mode_until">Until</string>
+    <string name="settings_vacation_mode_no_end_date">No end date</string>
+    <string name="settings_vacation_mode_clear_end_date">Clear end date</string>
     <string name="settings_completed_tasks">Completed tasks</string>
     <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
     <string name="settings_remove_completed_after">Remove after</string>
@@ -516,8 +524,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Peek under the hood</string>
-    <string name="whats_new_description">Tempo is built in the open. Settings now has a Source Code link that takes you straight to the repository.</string>
+    <string name="whats_new_title">Take a break without losing your streak</string>
+    <string name="whats_new_description">Turn on vacation mode in Settings and your habits pause: the days you skip don\'t break a streak and no reminders arrive. Turn it off — or set an end date — and everything picks up where it left off.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

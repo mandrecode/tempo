@@ -51,6 +51,7 @@ import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingContract
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
+import com.mandrecode.tempo.features.routines.presentation.components.VacationModeTitleBadge
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
 import kotlinx.datetime.LocalDate
@@ -352,10 +353,16 @@ private fun RoutinesDestination(
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     RoutinesScreen(
         isSingleTabMode = isSingleTabMode,
-        topBar = {
+        topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
                 title = stringResource(R.string.routines),
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
+                titleBadge =
+                    if (isVacationModeActive) {
+                        { VacationModeTitleBadge() }
+                    } else {
+                        null
+                    },
             )
         },
         // Always true: routines and tasks share one add action via the app's PersistentFloatingBar
@@ -403,6 +410,7 @@ private fun TasksDestination(
 private fun RouteTopBarOrStatusInset(
     title: String,
     onOpenSettings: () -> Unit,
+    titleBadge: @Composable (() -> Unit)? = null,
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
     if (isExpandedFloatingRailLayout()) {
@@ -412,6 +420,7 @@ private fun RouteTopBarOrStatusInset(
             title = title,
             onOpenSettings = onOpenSettings,
             showSettingsAction = !isRailLayout,
+            titleBadge = titleBadge,
         )
     }
 }
@@ -421,6 +430,7 @@ private fun RouteTopBar(
     title: String,
     onOpenSettings: () -> Unit,
     showSettingsAction: Boolean,
+    titleBadge: @Composable (() -> Unit)? = null,
 ) {
     val horizontalPadding = MaterialTheme.spacing.large
     val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
@@ -429,6 +439,7 @@ private fun RouteTopBar(
     TempoTopBar(
         title = title,
         titleModifier = Modifier.padding(start = titleStartPadding),
+        titleBadge = titleBadge,
         actions = {
             if (showSettingsAction) {
                 SettingsButton(onClick = onOpenSettings)

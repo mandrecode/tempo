@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.util
 
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -114,6 +115,28 @@ object CompletionHistoryUtil {
     }
 
     /**
+     * Returns whether [date] falls inside one of the user's [vacationPeriods] (vacation mode).
+     */
+    fun isPausedOn(
+        date: LocalDate,
+        vacationPeriods: List<VacationPeriod>,
+    ): Boolean = vacationPeriods.any { it.covers(date) }
+
+    /**
+     * Returns whether the habit actually has to be done on [date] for the streak to survive:
+     * the day is scheduled by [repeatDays] **and** not paused by vacation mode.
+     *
+     * This is the single "is this day in scope" rule shared by the history dots in
+     * `HabitHistoryView` and the streak math in [getCurrentStreak], so the dots and the streak
+     * label can never disagree about which days counted.
+     */
+    fun isRequiredOn(
+        date: LocalDate,
+        repeatDays: Set<DayOfWeek>?,
+        vacationPeriods: List<VacationPeriod>,
+    ): Boolean = isScheduledOn(date, repeatDays) && !isPausedOn(date, vacationPeriods)
+
+    /**
      * Gets the current streak of consecutive planned days completed up to today.
      *
      * When [repeatDays] is provided (non-null and non-empty), only planned days are
@@ -123,15 +146,21 @@ object CompletionHistoryUtil {
      *
      * When [repeatDays] is `null` or empty every day is treated as planned (daily habit).
      *
+     * Days covered by [vacationPeriods] are *optional* rather than out of scope: missing one
+     * never breaks the streak, but a completion recorded on one still counts, so keeping a habit
+     * up while away is credited instead of ignored.
+     *
      * @param completionHistory Comma-separated ISO-8601 date strings.
      * @param today The reference date (defaults to the system's current date).
      * @param repeatDays The set of days the habit is planned for, or `null`/empty for daily.
+     * @param vacationPeriods The stored vacation-mode periods; empty means nothing is paused.
      * @return Number of consecutive planned days completed.
      */
     fun getCurrentStreak(
         completionHistory: String,
         today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
         repeatDays: Set<DayOfWeek>? = null,
+        vacationPeriods: List<VacationPeriod> = emptyList(),
     ): Int {
         if (completionHistory.isBlank()) return 0
 
@@ -162,7 +191,7 @@ object CompletionHistoryUtil {
                 checkDate = LocalDate.fromEpochDays(checkDate.toEpochDays() - 1)
                 completedIndex++
             } else if (date < checkDate) {
-                if (!isScheduledOn(checkDate, repeatDays)) {
+                if (!isRequiredOn(checkDate, repeatDays, vacationPeriods)) {
                     checkDate = LocalDate.fromEpochDays(checkDate.toEpochDays() - 1)
                 } else {
                     break

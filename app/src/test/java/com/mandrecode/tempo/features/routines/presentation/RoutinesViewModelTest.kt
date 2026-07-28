@@ -5,6 +5,8 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.RestoreResult
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitDeletionSnapshot
@@ -28,6 +30,7 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -41,6 +44,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.todayIn
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -61,6 +65,7 @@ class RoutinesViewModelTest {
     private lateinit var permissionChecker: PermissionChecker
     private lateinit var restoreDeletedHabitUseCase: RestoreDeletedHabitUseCase
     private lateinit var restoreDeletedHabitChainUseCase: RestoreDeletedHabitChainUseCase
+    private lateinit var vacationModeRepository: VacationModeRepository
     private val testDispatcher = StandardTestDispatcher()
 
     private val createdDate = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
@@ -80,6 +85,10 @@ class RoutinesViewModelTest {
         permissionChecker = mockk(relaxed = true)
         restoreDeletedHabitUseCase = mockk(relaxed = true)
         restoreDeletedHabitChainUseCase = mockk(relaxed = true)
+        vacationModeRepository =
+            mockk(relaxed = true) {
+                every { periods } returns MutableStateFlow(emptyList())
+            }
 
         coEvery { habitRepository.getAllHabits() } returns flowOf(emptyList())
         coEvery { habitChainRepository.getAllHabitChains() } returns flowOf(emptyList())
@@ -91,6 +100,33 @@ class RoutinesViewModelTest {
     fun tearDown() {
         Dispatchers.resetMain()
     }
+
+    @Test
+    fun `vacation periods reach ui state and mark the mode active`() =
+        runTest {
+            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            val periods = MutableStateFlow(listOf(VacationPeriod(today)))
+            every { vacationModeRepository.periods } returns periods
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.vacationPeriods).containsExactly(VacationPeriod(today))
+            assertThat(viewModel.uiState.value.isVacationModeActive).isTrue()
+        }
+
+    @Test
+    fun `a period that ended before today does not mark the mode active`() =
+        runTest {
+            val periods =
+                MutableStateFlow(
+                    listOf(VacationPeriod(LocalDate(2020, 1, 1), LocalDate(2020, 1, 10))),
+                )
+            every { vacationModeRepository.periods } returns periods
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isVacationModeActive).isFalse()
+        }
 
     private fun createViewModel() =
         RoutinesViewModel(
@@ -106,6 +142,7 @@ class RoutinesViewModelTest {
             permissionChecker,
             restoreDeletedHabitUseCase,
             restoreDeletedHabitChainUseCase,
+            vacationModeRepository,
         )
 
     // --- Loading ---

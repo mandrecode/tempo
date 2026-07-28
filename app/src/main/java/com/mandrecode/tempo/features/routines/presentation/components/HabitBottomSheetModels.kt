@@ -4,6 +4,7 @@ import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.text.input.TextFieldValue
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -58,6 +59,8 @@ internal data class HabitBottomSheetBodyState(
     val autoSaveEnabled: Boolean,
     val colorScheme: ColorScheme,
     val isDarkTheme: Boolean,
+    val vacationPeriods: List<VacationPeriod> = emptyList(),
+    val isVacationModeActive: Boolean = false,
 )
 
 internal data class HabitBottomSheetBodyActions(

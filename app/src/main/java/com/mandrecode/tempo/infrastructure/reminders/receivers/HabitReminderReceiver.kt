@@ -10,6 +10,8 @@ import androidx.core.app.NotificationCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.di.IoDispatcher
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -43,6 +45,9 @@ class HabitReminderReceiver : BroadcastReceiver() {
     lateinit var habitReminderScheduler: HabitReminderScheduler
 
     @Inject
+    lateinit var vacationModeRepository: VacationModeRepository
+
+    @Inject
     @IoDispatcher
     lateinit var ioDispatcher: CoroutineDispatcher
 
@@ -68,7 +73,7 @@ class HabitReminderReceiver : BroadcastReceiver() {
                                     habit.reminderDate?.date
                                         ?: Clock.System.todayIn(TimeZone.currentSystemDefault()),
                                 )
-                            if (shouldShowHabitReminder(habit, scheduledDate)) {
+                            if (shouldShowHabitReminder(habit, scheduledDate, vacationModeRepository.periods.value)) {
                                 showHabitNotification(
                                     context,
                                     habit.id,
@@ -105,7 +110,7 @@ class HabitReminderReceiver : BroadcastReceiver() {
                 fallbackDate,
             )
         val chainHabits = getChainHabits(habitChain.habitIds)
-        if (shouldShowHabitChainReminder(chainHabits, scheduledDate)) {
+        if (shouldShowHabitChainReminder(chainHabits, scheduledDate, vacationModeRepository.periods.value)) {
             showHabitChainNotification(
                 context,
                 habitChain.id,
@@ -125,6 +130,13 @@ class HabitReminderReceiver : BroadcastReceiver() {
             habitRepository.getHabitsByIds(habitIds)
         }
 
+    /**
+     * Always runs, including while vacation mode is paused: a pause suppresses the *notification*
+     * and never touches the alarm chain. Cancelling alarms instead would put the app on the hook
+     * for restoring them — across process death, a reboot rebuilding alarms through
+     * `RescheduleRemindersWorker`, and an exact-alarm permission that may have been revoked in the
+     * meantime. Letting the chain keep advancing means reminders simply resume on their own.
+     */
     private suspend fun rescheduleHabit(habit: Habit) {
         val nextReminderDate =
             HabitReminderDateUtil.advanceReminderIfNeeded(
@@ -304,16 +316,21 @@ class HabitReminderReceiver : BroadcastReceiver() {
         internal fun shouldShowHabitReminder(
             habit: Habit,
             scheduledDate: LocalDate,
-        ): Boolean = !CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+            vacationPeriods: List<VacationPeriod> = emptyList(),
+        ): Boolean =
+            !CompletionHistoryUtil.isPausedOn(scheduledDate, vacationPeriods) &&
+                !CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
 
         @VisibleForTesting
         internal fun shouldShowHabitChainReminder(
             habits: List<Habit>,
             scheduledDate: LocalDate,
+            vacationPeriods: List<VacationPeriod> = emptyList(),
         ): Boolean =
-            habits.none { habit ->
-                CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
-            }
+            !CompletionHistoryUtil.isPausedOn(scheduledDate, vacationPeriods) &&
+                habits.none { habit ->
+                    CompletionHistoryUtil.isDateInHistory(habit.completionHistory, scheduledDate.toString())
+                }
 
         @VisibleForTesting
         internal fun resolveScheduledDate(

@@ -6,6 +6,8 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
@@ -15,6 +17,7 @@ import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import org.junit.Before
 import org.junit.Test
 
@@ -22,6 +25,8 @@ class BackupSettingsDataSourceTest {
     private lateinit var themePreferences: ThemePreferencesRepository
     private lateinit var navigationPreferences: NavigationPreferencesRepository
     private lateinit var retentionPreferences: CompletedTaskRetentionPreferences
+    private lateinit var vacationModeRepository: VacationModeRepository
+    private lateinit var storedVacationPeriods: MutableStateFlow<List<VacationPeriod>>
     private lateinit var dataSource: BackupSettingsDataSource
 
     @Before
@@ -29,8 +34,18 @@ class BackupSettingsDataSourceTest {
         themePreferences = mockk(relaxed = true)
         navigationPreferences = mockk(relaxed = true)
         retentionPreferences = mockk(relaxed = true)
+        storedVacationPeriods = MutableStateFlow(emptyList())
+        vacationModeRepository =
+            mockk(relaxed = true) {
+                every { periods } returns storedVacationPeriods
+            }
         dataSource =
-            BackupSettingsDataSource(themePreferences, navigationPreferences, retentionPreferences)
+            BackupSettingsDataSource(
+                themePreferences,
+                navigationPreferences,
+                retentionPreferences,
+                vacationModeRepository,
+            )
     }
 
     @Test
@@ -43,6 +58,7 @@ class BackupSettingsDataSourceTest {
             every { navigationPreferences.getDefaultTab() } returns flowOf(DEFAULT_TAB_TASKS)
             every { retentionPreferences.isEnabled } returns MutableStateFlow(true)
             every { retentionPreferences.retentionDays } returns MutableStateFlow(90)
+            storedVacationPeriods.value = listOf(VACATION)
 
             val snapshot = dataSource.snapshot()
 
@@ -55,6 +71,7 @@ class BackupSettingsDataSourceTest {
                     defaultTab = BackupDefaultTab.TASKS,
                     autoRemoveCompletedTasks = true,
                     completedTaskRetentionDays = 90,
+                    vacationPeriods = listOf(VACATION),
                 ),
             )
         }
@@ -84,6 +101,7 @@ class BackupSettingsDataSourceTest {
                 defaultTab = BackupDefaultTab.TASKS,
                 autoRemoveCompletedTasks = true,
                 completedTaskRetentionDays = 90,
+                vacationPeriods = listOf(VACATION),
             ),
         )
 
@@ -94,6 +112,14 @@ class BackupSettingsDataSourceTest {
         verify { navigationPreferences.setDefaultTab(DEFAULT_TAB_TASKS) }
         verify { retentionPreferences.setEnabled(true) }
         verify { retentionPreferences.setRetentionDays(90) }
+        verify { vacationModeRepository.replaceAll(listOf(VACATION)) }
+    }
+
+    @Test
+    fun `apply restores an empty period list for files predating vacation mode`() {
+        dataSource.apply(settings())
+
+        verify { vacationModeRepository.replaceAll(emptyList()) }
     }
 
     @Test
@@ -140,4 +166,8 @@ class BackupSettingsDataSourceTest {
         autoRemoveCompletedTasks = false,
         completedTaskRetentionDays = completedTaskRetentionDays,
     )
+
+    private companion object {
+        val VACATION = VacationPeriod(LocalDate(2026, 3, 1), LocalDate(2026, 3, 8))
+    }
 }
