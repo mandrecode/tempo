@@ -426,9 +426,8 @@
     <string name="settings_notifications_subtitle">Ajustes de notificaciones</string>
     <string name="settings_notifications_description">Gestionar permisos y alertas</string>
     <string name="settings_reminders">Recordatorios</string>
-    <string name="settings_repeat_missed_reminders">Repetir recordatorios perdidos</string>
+    <string name="settings_repeat_missed_reminders">Repetir los perdidos</string>
     <string name="settings_missed_reminders_time">Volver a avisarme a las</string>
-    <string name="settings_missed_reminders_time_description">%1$s, cada día hasta completar la tarea</string>
     <string name="settings_completed_tasks">Tareas completadas</string>
     <string name="settings_auto_remove_completed_tasks">Eliminar automáticamente</string>
     <string name="settings_remove_completed_after">Eliminar después de</string>

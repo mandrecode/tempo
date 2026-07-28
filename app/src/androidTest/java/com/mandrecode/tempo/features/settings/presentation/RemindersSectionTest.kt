@@ -11,6 +11,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalTime
 import org.junit.Rule
 import org.junit.Test
@@ -28,6 +29,43 @@ class RemindersSectionTest {
         setContent(SettingsContract.UiState(missedReminderCatchUpEnabled = true))
 
         composeTestRule.onNodeWithText(timeLabel).assertIsDisplayed()
+    }
+
+    @Test
+    fun showsTheCatchUpTimeAsAClockValue() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val nineAm = LocalTime(hour = 9, minute = 0)
+
+        setContent(
+            SettingsContract.UiState(
+                missedReminderCatchUpEnabled = true,
+                missedReminderCatchUpTime = nineAm,
+            ),
+        )
+
+        composeTestRule
+            .onNodeWithText(DateTimeFormatter.formatTimeOfDay(nineAm, context))
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun tappingTheTimeValueOpensThePicker() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val nineAm = LocalTime(hour = 9, minute = 0)
+        val confirmLabel = localizedString(R.string.ok)
+
+        setContent(
+            SettingsContract.UiState(
+                missedReminderCatchUpEnabled = true,
+                missedReminderCatchUpTime = nineAm,
+            ),
+        )
+
+        composeTestRule
+            .onNodeWithText(DateTimeFormatter.formatTimeOfDay(nineAm, context))
+            .performClick()
+
+        composeTestRule.onNodeWithText(confirmLabel).assertIsDisplayed()
     }
 
     @Test

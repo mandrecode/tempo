@@ -424,7 +424,6 @@
     <string name="settings_reminders">Reminders</string>
     <string name="settings_repeat_missed_reminders">Repeat missed reminders</string>
     <string name="settings_missed_reminders_time">Remind me again at</string>
-    <string name="settings_missed_reminders_time_description">%1$s, every day until the task is done</string>
     <string name="settings_completed_tasks">Completed tasks</string>
     <string name="settings_auto_remove_completed_tasks">Remove automatically</string>
     <string name="settings_remove_completed_after">Remove after</string>
