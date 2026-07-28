@@ -54,7 +54,7 @@ internal fun VacationModeSection(
     SettingsSection(title = stringResource(R.string.settings_vacation_mode)) {
         Column {
             SettingsSwitchItem(
-                icon = R.drawable.ic_flight,
+                icon = R.drawable.ic_beach_access,
                 title = stringResource(R.string.settings_vacation_mode_pause_habits),
                 checked = uiState.vacationModeActive,
                 onCheckedChange = {
