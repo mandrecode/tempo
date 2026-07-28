@@ -15,6 +15,7 @@ import io.mockk.mockk
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verify
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -31,6 +32,7 @@ class HabitChainLiveActivityManagerTest {
     private lateinit var manager: HabitChainLiveActivityManager
 
     // Fixed time: Sunday, June 15, 2025 12:00
+    private val today = LocalDate(2025, 6, 15)
     private val testClock: Clock =
         object : Clock {
             override fun now() =
@@ -43,7 +45,7 @@ class HabitChainLiveActivityManagerTest {
         notificationManager = mockk(relaxed = true)
         notificationSyncManager = mockk(relaxed = true)
         activeLiveActivityPreferences = mockk(relaxed = true)
-        every { activeLiveActivityPreferences.getActiveChainIds() } returns emptySet()
+        every { activeLiveActivityPreferences.getActiveChains() } returns emptyMap()
         context = mockk(relaxed = true)
         every { context.getSystemService(any<String>()) } returns notificationManager
         mockkObject(NotificationChannelManager)
@@ -271,9 +273,10 @@ class HabitChainLiveActivityManagerTest {
     // --- Persistence across process death ---
 
     @Test
-    fun `constructor loads persisted active chain ids`() {
+    fun `constructor loads persisted active chains`() {
         val persistedChainId = 42L
-        every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(persistedChainId)
+        every { activeLiveActivityPreferences.getActiveChains() } returns
+            mapOf(persistedChainId to today)
 
         val restoredManager =
             HabitChainLiveActivityManager(
@@ -287,7 +290,7 @@ class HabitChainLiveActivityManagerTest {
     }
 
     @Test
-    fun `updateLiveActivity persists chain id when live activity starts`() {
+    fun `updateLiveActivity persists chain id with today when no scheduled date is given`() {
         val chainId = 5L
         val chain = HabitChain(id = chainId, title = "Evening Routine")
 
@@ -295,7 +298,26 @@ class HabitChainLiveActivityManagerTest {
             manager.updateLiveActivity(chain, completedCount = 1, totalCount = 3)
         }
 
-        verify { activeLiveActivityPreferences.addActiveChainId(chainId) }
+        verify { activeLiveActivityPreferences.setActiveChain(chainId, today) }
+    }
+
+    @Test
+    fun `updateLiveActivity persists the scheduled date the progress belongs to`() {
+        val chainId = 7L
+        val chain = HabitChain(id = chainId, title = "Evening Routine")
+        val yesterday = LocalDate(2025, 6, 14)
+
+        runCatching {
+            manager.updateLiveActivity(
+                chain,
+                completedCount = 1,
+                totalCount = 3,
+                fromNotification = true,
+                scheduledDate = yesterday,
+            )
+        }
+
+        verify { activeLiveActivityPreferences.setActiveChain(chainId, yesterday) }
     }
 
     @Test
@@ -303,12 +325,41 @@ class HabitChainLiveActivityManagerTest {
         val chainId = 6L
         val chain = HabitChain(id = chainId, title = "Evening Routine")
 
+        // Each call needs its own runCatching: NotificationCompat.Builder.build() throws
+        // without Robolectric, and a shared block would skip every call after the first.
+        runCatching { manager.updateLiveActivity(chain, completedCount = 1, totalCount = 3) }
+        runCatching { manager.updateLiveActivity(chain, completedCount = 2, totalCount = 3) }
+
+        verify(exactly = 1) { activeLiveActivityPreferences.setActiveChain(chainId, any()) }
+    }
+
+    @Test
+    fun `updateLiveActivity repersists chain id when the scheduled date changes`() {
+        val chainId = 8L
+        val chain = HabitChain(id = chainId, title = "Evening Routine")
+        val yesterday = LocalDate(2025, 6, 14)
+
         runCatching {
-            manager.updateLiveActivity(chain, completedCount = 1, totalCount = 3)
-            manager.updateLiveActivity(chain, completedCount = 2, totalCount = 3)
+            manager.updateLiveActivity(
+                chain,
+                completedCount = 1,
+                totalCount = 3,
+                fromNotification = true,
+                scheduledDate = yesterday,
+            )
+        }
+        runCatching {
+            manager.updateLiveActivity(
+                chain,
+                completedCount = 1,
+                totalCount = 3,
+                fromNotification = true,
+                scheduledDate = today,
+            )
         }
 
-        verify(exactly = 1) { activeLiveActivityPreferences.addActiveChainId(chainId) }
+        verify(exactly = 1) { activeLiveActivityPreferences.setActiveChain(chainId, yesterday) }
+        verify(exactly = 1) { activeLiveActivityPreferences.setActiveChain(chainId, today) }
     }
 
     @Test

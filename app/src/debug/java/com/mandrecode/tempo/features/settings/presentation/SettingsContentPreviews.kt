@@ -13,6 +13,7 @@ import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import kotlinx.datetime.LocalTime
 
 // region SettingsContent Previews
 
@@ -119,6 +120,37 @@ private fun ColorDotTempoPreview() {
             ColorDot(color = TempoDarkPrimary)
             ColorDot(color = Color.White)
         }
+    }
+}
+
+@Preview(name = "Reminders - catch-up on", showBackground = true, device = "id:pixel_9")
+@Composable
+private fun RemindersSectionEnabledPreview() {
+    TempoTheme {
+        RemindersSection(
+            uiState =
+                SettingsContract.UiState(
+                    missedReminderCatchUpEnabled = true,
+                    missedReminderCatchUpTime = LocalTime(hour = 9, minute = 0),
+                ),
+            onEvent = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Reminders - catch-up off",
+    showBackground = true,
+    device = "id:pixel_9",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Composable
+private fun RemindersSectionDisabledPreview() {
+    TempoTheme {
+        RemindersSection(
+            uiState = SettingsContract.UiState(missedReminderCatchUpEnabled = false),
+            onEvent = {},
+        )
     }
 }
 

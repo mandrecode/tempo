@@ -10,6 +10,8 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
+import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.ConfigureCompletedTaskRetentionUseCase
 import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.util.AppVersionProvider
@@ -24,9 +26,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalTime
 import javax.inject.Inject
 
 private const val LOG_TAG = "SettingsViewModel"
+
+/** Snapshot of the task-related preference stores, combined into one emission. */
+private data class TaskPreferences(
+    val retentionEnabled: Boolean,
+    val retentionDays: Int,
+    val catchUpEnabled: Boolean,
+    val catchUpTime: LocalTime,
+)
 
 @HiltViewModel
 class SettingsViewModel
@@ -37,6 +48,8 @@ class SettingsViewModel
         private val appVersionProvider: AppVersionProvider,
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
+        private val missedReminderPreferences: MissedReminderPreferences,
+        private val missedReminderScheduler: MissedReminderScheduler,
         private val backupDelegate: SettingsBackupDelegate,
         @ApplicationContext private val appContext: Context,
     ) : ViewModel() {
@@ -58,7 +71,7 @@ class SettingsViewModel
             observeTempoColors()
             loadVersionInfo()
             observeTabPreferences()
-            observeCompletedTaskRetention()
+            observeTaskPreferences()
         }
 
         private fun observeThemeMode() {
@@ -145,6 +158,16 @@ class SettingsViewModel
                     )
                 }
 
+                is SettingsContract.UiEvent.MissedReminderCatchUpToggled -> {
+                    missedReminderPreferences.setEnabled(event.enabled)
+                    missedReminderScheduler.sync()
+                }
+
+                is SettingsContract.UiEvent.MissedReminderCatchUpTimeChanged -> {
+                    missedReminderPreferences.setCatchUpTime(event.time)
+                    missedReminderScheduler.sync()
+                }
+
                 is SettingsContract.UiEvent.ExportClicked,
                 is SettingsContract.UiEvent.ExportPassphraseConfirmed,
                 is SettingsContract.UiEvent.ExportDestinationPicked,
@@ -178,21 +201,30 @@ class SettingsViewModel
             }
         }
 
-        private fun observeCompletedTaskRetention() {
+        /**
+         * Mirrors the task-related preference stores (completed-task retention, missed-reminder
+         * catch-up) into state.
+         */
+        private fun observeTaskPreferences() {
             viewModelScope.launch {
                 combine(
                     completedTaskRetentionPreferences.isEnabled,
                     completedTaskRetentionPreferences.retentionDays,
-                ) { enabled, days -> enabled to days }
-                    .collect { (enabled, days) ->
-                        _uiState.update {
-                            it.copy(
-                                autoRemoveCompletedTasksEnabled = enabled,
-                                completedTaskRetentionDays =
-                                    CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
-                            )
-                        }
+                    missedReminderPreferences.isEnabled,
+                    missedReminderPreferences.catchUpTime,
+                ) { retentionEnabled, retentionDays, catchUpEnabled, catchUpTime ->
+                    TaskPreferences(retentionEnabled, retentionDays, catchUpEnabled, catchUpTime)
+                }.collect { preferences ->
+                    _uiState.update {
+                        it.copy(
+                            autoRemoveCompletedTasksEnabled = preferences.retentionEnabled,
+                            completedTaskRetentionDays =
+                                CompletedTaskRetentionPreferences.normalizeRetentionDays(preferences.retentionDays),
+                            missedReminderCatchUpEnabled = preferences.catchUpEnabled,
+                            missedReminderCatchUpTime = preferences.catchUpTime,
+                        )
                     }
+                }
             }
         }
 

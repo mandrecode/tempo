@@ -63,6 +63,7 @@ fun SettingsContent(
     ) {
         ThemeSection(uiState = uiState, onEvent = onEvent)
         ColorSchemeSection(uiState = uiState, onEvent = onEvent)
+        RemindersSection(uiState = uiState, onEvent = onEvent)
         CompletedTaskRetentionSection(uiState = uiState, onEvent = onEvent)
         TabsAndNavigationSection(uiState = uiState, onEvent = onEvent)
         DefaultTabSection(uiState = uiState, onEvent = onEvent)

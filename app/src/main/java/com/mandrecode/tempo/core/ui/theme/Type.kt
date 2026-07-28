@@ -260,6 +260,13 @@ val Typography.sheetTitle: TextStyle
 val Typography.badgeCount: TextStyle
     get() = labelSmall.copy(fontWeight = FontWeight.ExtraBold, fontSize = 10.sp)
 
+/**
+ * Clock-face time value shown as a settings row's editable value (e.g. the missed-reminder
+ * catch-up time). Tabular figures keep the chip from resizing as the digits change.
+ */
+val Typography.settingsTimeValue: TextStyle
+    get() = headlineSmall.copy(fontWeight = FontWeight.Medium, fontFeatureSettings = "tnum")
+
 /** Category chip selected label. */
 val Typography.categoryChipSelected: TextStyle
     get() = titleMedium.copy(fontWeight = FontWeight.Bold, letterSpacing = 0.2.sp)

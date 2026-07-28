@@ -7,8 +7,10 @@ import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
+import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.LocalTime
 
 /**
  * Contract for Settings screen following MVI pattern.
@@ -32,6 +34,8 @@ object SettingsContract {
         val defaultTab: DefaultTab = DefaultTab.ROUTINES,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
+        val missedReminderCatchUpEnabled: Boolean = MissedReminderPreferences.DEFAULT_ENABLED,
+        val missedReminderCatchUpTime: LocalTime = MissedReminderPreferences.DEFAULT_CATCH_UP_TIME,
         val backupInProgress: Boolean = false,
         val backupDialog: BackupDialog? = null,
     )
@@ -109,6 +113,14 @@ object SettingsContract {
 
         data class CompletedTaskRetentionDaysChanged(
             val days: Int,
+        ) : UiEvent
+
+        data class MissedReminderCatchUpToggled(
+            val enabled: Boolean,
+        ) : UiEvent
+
+        data class MissedReminderCatchUpTimeChanged(
+            val time: LocalTime,
         ) : UiEvent
 
         data object ExportClicked : UiEvent
