@@ -166,7 +166,7 @@ private fun rememberQuitHabitCardState(
     val canToggle = selectedDate == today || selectedDate == yesterday
 
     val streak =
-        remember(habit.completionHistory, today, vacationPeriods) {
+        remember(habit.completionHistory, habit.repeatDays, today, vacationPeriods) {
             CompletionHistoryUtil.getCurrentStreak(
                 completionHistory = habit.completionHistory,
                 today = today,
