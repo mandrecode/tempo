@@ -17,10 +17,17 @@ from pathlib import Path
 PKG = "com.mandrecode.tempo.debug"
 ACTIVITY = "com.mandrecode.tempo.MainActivity"
 
+# Extra pause between the last tap and `adb screencap`. The per-tap settle above
+# is enough for the app to update its own view tree (which `android layout` reads),
+# but on XR the screenshot comes from the compositor's render of the floating
+# panel, which lags behind — without this the capture reliably grabs the *previous*
+# screen, silently producing a set where every image is one navigation step stale.
+CAPTURE_SETTLE_SECONDS = 3.0
+
 # Nav-rail labels (Routines/Tasks/Settings) come from the app's own string
 # resources, localized by the per-app locale set in seed-screenshot-data.sh.
 # The "work"/"shopping" category chip labels are seeded data (see
-# generate-seed-sql.py) and must match exactly what was inserted there.
+# generate-seed-backup.py) and must match exactly what was inserted there.
 NAV = {
     "en": {"routines": "Routines", "tasks": "Tasks", "settings": "Settings", "work": "Work", "shopping": "Shopping"},
     "es": {"routines": "Rutinas", "tasks": "Tareas", "settings": "Ajustes", "work": "Trabajo", "shopping": "Compras"},
@@ -90,6 +97,7 @@ def tap(serial, desc=None, text=None, settle=1.0):
 
 
 def screencap(serial, out_path: Path):
+    time.sleep(CAPTURE_SETTLE_SECONDS)
     adb(serial, "shell", "screencap", "-p", "/sdcard/_shot.png")
     adb(serial, "pull", "/sdcard/_shot.png", str(out_path))
     adb(serial, "shell", "rm", "-f", "/sdcard/_shot.png")
