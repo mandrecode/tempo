@@ -82,6 +82,7 @@ internal fun HabitBottomSheetContent(
     onConfirmHabitChain: (title: String, description: String, habitIds: List<Long>) -> Unit,
     modifier: Modifier = Modifier,
     vacationPeriods: List<VacationPeriod> = emptyList(),
+    isVacationModeActive: Boolean = false,
     onAutoSaveHabit: ((title: String, description: String) -> Unit)? = null,
     onAutoSaveHabitChain: ((title: String, description: String, habitIds: List<Long>) -> Unit)? = null,
     onDeleteHabit: (() -> Unit)? = null,
@@ -530,6 +531,7 @@ internal fun HabitBottomSheetContent(
                         colorScheme = colorScheme,
                         isDarkTheme = isDarkTheme,
                         vacationPeriods = vacationPeriods,
+                        isVacationModeActive = isVacationModeActive,
                     ),
                 actions =
                     HabitBottomSheetBodyActions(

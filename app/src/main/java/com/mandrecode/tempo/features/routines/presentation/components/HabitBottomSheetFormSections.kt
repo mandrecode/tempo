@@ -168,6 +168,19 @@ internal fun HabitBottomSheetBody(
                 HabitSheetTab.HABIT -> !state.isHabitInChain
                 HabitSheetTab.HABIT_CHAIN -> true
             }
+        val showHistory =
+            when (state.formState.selectedTab) {
+                HabitSheetTab.HABIT -> editingHabit != null
+                HabitSheetTab.HABIT_CHAIN -> editingHabitChain != null
+            }
+
+        // Sits directly above the two rows a pause changes the meaning of, so the reminder time
+        // and the history gaps are read in the right light.
+        if (state.isVacationModeActive && (showReminderUI || showHistory)) {
+            VacationModeNotice()
+
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+        }
 
         if (showReminderUI) {
             HabitReminderSection(

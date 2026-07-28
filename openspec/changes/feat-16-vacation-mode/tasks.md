@@ -43,7 +43,8 @@
 - [x] 10.1 Add the `ic_beach_access` palm drawable and a `vacation_mode_active` content-description string in `values/` and `values-es/`
 - [x] 10.2 Give `TempoTopBar` an optional `titleBadge` slot rendered next to the title
 - [x] 10.3 Derive `isVacationModeActive` in `RoutinesViewModel` and hand it to the Routines top-bar slot, so navigation never reaches for the repository
-- [x] 10.4 Unit-test the derived flag (active period vs a period that already ended) and instrument-test the `TempoTopBar` badge slot
+- [x] 10.4 Add a `VacationModeNotice` above the reminder/history rows of the habit editor spelling out that reminders stay silent and skipped days won't break the streak, with a preview and instrumented coverage for both states
+- [x] 10.5 Unit-test the derived flag (active period vs a period that already ended) and instrument-test the `TempoTopBar` badge slot
 
 ## 7. Backup
 

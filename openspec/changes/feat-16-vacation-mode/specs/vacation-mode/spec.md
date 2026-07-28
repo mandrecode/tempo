@@ -49,6 +49,14 @@ The system SHALL mark the Routines title with a vacation badge while a vacation 
 - **WHEN** the user opens the Routines screen while no stored period covers today
 - **THEN** the title is rendered exactly as before, with no badge
 
+#### Scenario: Habit editor explains the pause
+- **WHEN** the user opens a habit or chain editor while vacation mode is active
+- **THEN** a notice directly above the reminder and history rows states that reminders stay silent and that skipped days will not break the streak
+
+#### Scenario: No notice when not paused
+- **WHEN** the user opens a habit or chain editor while no stored period covers today
+- **THEN** the editor shows no vacation notice
+
 #### Scenario: Badge follows the switch
 - **WHEN** the user turns vacation mode off in Settings and returns to Routines
 - **THEN** the badge is gone, without the screen having to be recreated

@@ -294,6 +294,7 @@ private fun HabitEditor(
         habits = uiState.habits,
         habitChains = uiState.habitChains,
         vacationPeriods = uiState.vacationPeriods,
+        isVacationModeActive = uiState.isVacationModeActive,
         onSelectTab = { onEvent(RoutinesContract.UiEvent.SetSelectedTab(it)) },
         onSetHabitType = { onEvent(RoutinesContract.UiEvent.SetHabitType(it)) },
         onSetReminder = { year, month, day, hour, minute ->

@@ -114,6 +114,63 @@ class HabitBottomSheetTest {
     }
 
     @Test
+    fun showsVacationNotice_whenVacationModeIsActive() {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(editingHabit = habitInChain()),
+                    selectedDate = today(),
+                    habits = listOf(habitInChain()),
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                    isVacationModeActive = true,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(VACATION_MODE_NOTICE_TEST_TAG, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun hidesVacationNotice_whenVacationModeIsOff() {
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitBottomSheet(
+                    formState = defaultFormState().copy(editingHabit = habitInChain()),
+                    selectedDate = today(),
+                    habits = listOf(habitInChain()),
+                    habitChains = emptyList(),
+                    onSelectTab = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetColorKey = {},
+                    onClearColor = {},
+                    onSetIcon = {},
+                    onClearIcon = {},
+                    onDismiss = {},
+                    onClearErrors = {},
+                    onConfirmHabit = { _, _ -> },
+                    onConfirmHabitChain = { _, _, _ -> },
+                    onSetHabitType = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithTag(VACATION_MODE_NOTICE_TEST_TAG, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
     fun displaysHabitTab() {
         composeTestRule.setContent {
             TempoTheme {

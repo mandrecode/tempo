@@ -431,6 +431,7 @@
     <string name="settings_missed_reminders_time">Volver a avisarme a las</string>
     <string name="settings_vacation_mode">Modo vacaciones</string>
     <string name="vacation_mode_active">Modo vacaciones activo: hábitos en pausa</string>
+    <string name="vacation_mode_notice">El modo vacaciones está activo: los recordatorios no sonarán y los días que te saltes no romperán tu racha.</string>
     <string name="settings_vacation_mode_pause_habits">Pausar hábitos</string>
     <string name="settings_vacation_mode_until">Hasta</string>
     <string name="settings_vacation_mode_no_end_date">Sin fecha de fin</string>

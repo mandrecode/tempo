@@ -60,6 +60,7 @@ internal data class HabitBottomSheetBodyState(
     val colorScheme: ColorScheme,
     val isDarkTheme: Boolean,
     val vacationPeriods: List<VacationPeriod> = emptyList(),
+    val isVacationModeActive: Boolean = false,
 )
 
 internal data class HabitBottomSheetBodyActions(
