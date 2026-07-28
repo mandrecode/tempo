@@ -100,10 +100,17 @@ The seeded Inbox category exports with `id = -1` and `isDefault = true`.
 
 App configuration snapshot: `themeMode` (`LIGHT | DARK | SYSTEM`), `useTempoColors`,
 `routinesTabEnabled`, `tasksTabEnabled`, `defaultTab` (`ROUTINES | TASKS`),
-`autoRemoveCompletedTasks`, `completedTaskRetentionDays`. Applied **only by Replace
-imports** (a full restore); Merge never changes local configuration. On apply, app
-invariants are re-established: at least one tab stays enabled, the default tab must be
-an enabled tab, and retention days snap to the nearest supported value.
+`autoRemoveCompletedTasks`, `completedTaskRetentionDays`, `vacationPeriods` (default `[]`).
+Applied **only by Replace imports** (a full restore); Merge never changes local
+configuration. On apply, app invariants are re-established: at least one tab stays enabled,
+the default tab must be an enabled tab, and retention days snap to the nearest supported
+value.
+
+`vacationPeriods` is an array of vacation-mode pauses, each `{ "start": "2026-03-01",
+"end": "2026-03-08" }` with ISO-8601 **local dates** (not date-times); `end` is absent or
+`null` for a pause that is still open-ended. On apply the list is normalized — unreadable
+entries are dropped, inverted ranges discarded, and overlapping or adjacent ranges merged —
+so a hand-edited file cannot install a contradictory pause history.
 
 ## Import behavior
 

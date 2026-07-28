@@ -64,6 +64,18 @@ private fun markChainLinkFailed(throwable: Throwable): Boolean {
     return true
 }
 
+/**
+ * Keeps the vacation periods in UI state so the history dots and streak labels can be rendered
+ * from state alone — no composable ever reaches for the repository itself.
+ */
+internal fun RoutinesViewModel.observeVacationPeriods() {
+    viewModelScope.launch {
+        vacationModeRepository.periods.collect { periods ->
+            mutableUiState.update { it.copy(vacationPeriods = periods.toPersistentList()) }
+        }
+    }
+}
+
 internal fun RoutinesViewModel.loadData() {
     viewModelScope.launch {
         combine(

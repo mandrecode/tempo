@@ -185,6 +185,7 @@ internal fun HabitBottomSheetBody(
                 createdDate = editingHabit.createdDate.date,
                 repeatDays = editingHabit.repeatDays,
                 habitType = state.formState.selectedHabitType,
+                vacationPeriods = state.vacationPeriods,
             )
 
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
@@ -196,6 +197,7 @@ internal fun HabitBottomSheetBody(
                 createdDate = editingHabitChain.createdDate.date,
                 repeatDays = editingHabitChain.repeatDays,
                 habitType = null,
+                vacationPeriods = state.vacationPeriods,
             )
 
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
@@ -600,6 +602,7 @@ private fun HabitHistorySection(
     createdDate: kotlinx.datetime.LocalDate,
     repeatDays: Set<com.mandrecode.tempo.core.domain.model.DayOfWeek>?,
     habitType: HabitType?,
+    vacationPeriods: List<com.mandrecode.tempo.core.domain.model.VacationPeriod>,
 ) {
     EditorPropertyRow(
         iconPainter = painterResource(R.drawable.ic_calendar),
@@ -614,6 +617,7 @@ private fun HabitHistorySection(
                 modifier = Modifier.fillMaxWidth(),
                 repeatDays = repeatDays,
                 habitType = habitType ?: HabitType.BUILD,
+                vacationPeriods = vacationPeriods,
             )
         }
     }

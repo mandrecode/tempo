@@ -44,6 +44,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
@@ -204,6 +205,7 @@ fun RoutinesContent(
                                 hasItemsAbove = allBuildItems.isNotEmpty(),
                                 selectedDate = uiState.selectedDate,
                                 onEvent = onEvent,
+                                vacationPeriods = uiState.vacationPeriods,
                                 selectedHabitId = selectedHabitId,
                             )
                         }
@@ -391,6 +393,7 @@ private fun LazyListScope.quitHabitsSection(
     hasItemsAbove: Boolean,
     selectedDate: LocalDate,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
+    vacationPeriods: List<VacationPeriod>,
     selectedHabitId: Long? = null,
 ) {
     if (quitHabits.isEmpty()) return
@@ -412,6 +415,7 @@ private fun LazyListScope.quitHabitsSection(
         QuitHabitCard(
             habit = habit,
             selectedDate = selectedDate,
+            vacationPeriods = vacationPeriods,
             onEdit = { onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet(habit)) },
             isSelected = habit.id == selectedHabitId,
             onToggle = { habitId, isCompleted ->

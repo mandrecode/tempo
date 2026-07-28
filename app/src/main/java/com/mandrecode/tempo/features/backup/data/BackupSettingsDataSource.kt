@@ -4,6 +4,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
@@ -21,6 +22,7 @@ class BackupSettingsDataSource
         private val themePreferences: ThemePreferencesRepository,
         private val navigationPreferences: NavigationPreferencesRepository,
         private val retentionPreferences: CompletedTaskRetentionPreferences,
+        private val vacationModeRepository: VacationModeRepository,
     ) {
         suspend fun snapshot(): BackupSettings =
             BackupSettings(
@@ -35,6 +37,7 @@ class BackupSettingsDataSource
                     },
                 autoRemoveCompletedTasks = retentionPreferences.isEnabled.value,
                 completedTaskRetentionDays = retentionPreferences.retentionDays.value,
+                vacationPeriods = vacationModeRepository.periods.value,
             )
 
         /**
@@ -63,5 +66,6 @@ class BackupSettingsDataSource
                     settings.completedTaskRetentionDays,
                 ),
             )
+            vacationModeRepository.replaceAll(settings.vacationPeriods)
         }
     }

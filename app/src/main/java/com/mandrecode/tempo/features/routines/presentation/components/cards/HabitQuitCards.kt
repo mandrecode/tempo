@@ -24,6 +24,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
@@ -45,8 +46,14 @@ fun QuitHabitCard(
     modifier: Modifier = Modifier,
     onToggle: ((Long, Boolean) -> Unit)? = null,
     isSelected: Boolean = false,
+    vacationPeriods: List<VacationPeriod> = emptyList(),
 ) {
-    val state = rememberQuitHabitCardState(habit = habit, selectedDate = selectedDate)
+    val state =
+        rememberQuitHabitCardState(
+            habit = habit,
+            selectedDate = selectedDate,
+            vacationPeriods = vacationPeriods,
+        )
     val selectionColors =
         rememberQuitHabitSelectionColors(
             selected = isSelected,
@@ -144,6 +151,7 @@ private data class QuitHabitCardColors(
 private fun rememberQuitHabitCardState(
     habit: Habit,
     selectedDate: LocalDate,
+    vacationPeriods: List<VacationPeriod>,
 ): QuitHabitCardState {
     val dateStr = selectedDate.toString()
     val isCompleted =
@@ -158,8 +166,13 @@ private fun rememberQuitHabitCardState(
     val canToggle = selectedDate == today || selectedDate == yesterday
 
     val streak =
-        remember(habit.completionHistory) {
-            CompletionHistoryUtil.getCurrentStreak(habit.completionHistory)
+        remember(habit.completionHistory, today, vacationPeriods) {
+            CompletionHistoryUtil.getCurrentStreak(
+                completionHistory = habit.completionHistory,
+                today = today,
+                repeatDays = habit.repeatDays,
+                vacationPeriods = vacationPeriods,
+            )
         }
 
     val cardCornerRadius by animateDpAsState(

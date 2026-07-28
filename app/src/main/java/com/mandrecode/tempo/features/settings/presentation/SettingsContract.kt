@@ -10,6 +10,7 @@ import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetent
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
 /**
@@ -36,6 +37,9 @@ object SettingsContract {
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
         val missedReminderCatchUpEnabled: Boolean = MissedReminderPreferences.DEFAULT_ENABLED,
         val missedReminderCatchUpTime: LocalTime = MissedReminderPreferences.DEFAULT_CATCH_UP_TIME,
+        val vacationModeActive: Boolean = false,
+        val vacationStartDate: LocalDate? = null,
+        val vacationEndDate: LocalDate? = null,
         val backupInProgress: Boolean = false,
         val backupDialog: BackupDialog? = null,
     )
@@ -121,6 +125,15 @@ object SettingsContract {
 
         data class MissedReminderCatchUpTimeChanged(
             val time: LocalTime,
+        ) : UiEvent
+
+        data class VacationModeToggled(
+            val enabled: Boolean,
+        ) : UiEvent
+
+        /** `null` clears the planned end, leaving the pause open-ended. */
+        data class VacationEndDateChanged(
+            val endInclusive: LocalDate?,
         ) : UiEvent
 
         data object ExportClicked : UiEvent

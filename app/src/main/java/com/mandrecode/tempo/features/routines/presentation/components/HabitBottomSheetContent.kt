@@ -27,6 +27,7 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoTimePickerDialog
@@ -80,6 +81,7 @@ internal fun HabitBottomSheetContent(
     onConfirmHabit: (title: String, description: String) -> Unit,
     onConfirmHabitChain: (title: String, description: String, habitIds: List<Long>) -> Unit,
     modifier: Modifier = Modifier,
+    vacationPeriods: List<VacationPeriod> = emptyList(),
     onAutoSaveHabit: ((title: String, description: String) -> Unit)? = null,
     onAutoSaveHabitChain: ((title: String, description: String, habitIds: List<Long>) -> Unit)? = null,
     onDeleteHabit: (() -> Unit)? = null,
@@ -527,6 +529,7 @@ internal fun HabitBottomSheetContent(
                         autoSaveEnabled = autoSaveEnabled,
                         colorScheme = colorScheme,
                         isDarkTheme = isDarkTheme,
+                        vacationPeriods = vacationPeriods,
                     ),
                 actions =
                     HabitBottomSheetBodyActions(

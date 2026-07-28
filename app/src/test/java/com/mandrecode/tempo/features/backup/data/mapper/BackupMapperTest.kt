@@ -6,7 +6,10 @@ import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.features.backup.data.model.SettingsBackupDto
 import com.mandrecode.tempo.features.backup.data.model.TaskBackupDto
+import com.mandrecode.tempo.features.backup.data.model.VacationPeriodBackupDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
 import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
@@ -16,6 +19,7 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -99,6 +103,11 @@ class BackupMapperTest {
             defaultTab = BackupDefaultTab.ROUTINES,
             autoRemoveCompletedTasks = true,
             completedTaskRetentionDays = 90,
+            vacationPeriods =
+                listOf(
+                    VacationPeriod(LocalDate(2026, 3, 1), LocalDate(2026, 3, 8)),
+                    VacationPeriod(LocalDate(2026, 7, 14)),
+                ),
         )
 
     @Test
@@ -126,6 +135,39 @@ class BackupMapperTest {
                 .toDomain()
 
         assertThat(roundTripped).isEqualTo(data)
+    }
+
+    @Test
+    fun `settings without vacation periods decode to an empty list`() {
+        val dto =
+            SettingsBackupDto(
+                themeMode = "SYSTEM",
+                defaultTab = "ROUTINES",
+            )
+
+        assertThat(dto.toDomain().vacationPeriods).isEmpty()
+    }
+
+    @Test
+    fun `hand-edited vacation periods are normalized on decode`() {
+        val dto =
+            SettingsBackupDto(
+                themeMode = "SYSTEM",
+                defaultTab = "ROUTINES",
+                vacationPeriods =
+                    listOf(
+                        // Overlapping with the next one, unsorted, plus an inverted and an
+                        // unparsable entry that must both be dropped.
+                        VacationPeriodBackupDto(start = "2026-03-05", end = "2026-03-20"),
+                        VacationPeriodBackupDto(start = "2026-03-01", end = "2026-03-10"),
+                        VacationPeriodBackupDto(start = "2026-05-10", end = "2026-05-01"),
+                        VacationPeriodBackupDto(start = "not-a-date"),
+                        VacationPeriodBackupDto(start = "2026-06-01", end = "nonsense"),
+                    ),
+            )
+
+        assertThat(dto.toDomain().vacationPeriods)
+            .containsExactly(VacationPeriod(LocalDate(2026, 3, 1), LocalDate(2026, 3, 20)))
     }
 
     @Test

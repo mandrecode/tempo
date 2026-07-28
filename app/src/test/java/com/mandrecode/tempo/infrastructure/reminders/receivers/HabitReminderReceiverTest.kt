@@ -3,6 +3,7 @@ package com.mandrecode.tempo.infrastructure.reminders.receivers
 import android.content.Context
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
@@ -71,6 +72,55 @@ class HabitReminderReceiverTest {
             )
 
         val result = HabitReminderReceiver.shouldShowHabitReminder(habit, delayedOccurrenceDate)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitReminder returns false when the scheduled date is paused`() {
+        val scheduledDate = LocalDateTime(2030, 1, 5, 8, 0).date
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 5, 8, 0),
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                completionHistory = "",
+            )
+        val vacation = listOf(VacationPeriod(LocalDate(2030, 1, 1), LocalDate(2030, 1, 10)))
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit, scheduledDate, vacation)
+
+        assertThat(result).isFalse()
+    }
+
+    @Test
+    fun `shouldShowHabitReminder returns true for a date outside every vacation period`() {
+        val scheduledDate = LocalDateTime(2030, 1, 11, 8, 0).date
+        val habit =
+            Habit(
+                id = 1L,
+                title = "Walk",
+                description = "",
+                reminderDate = LocalDateTime(2030, 1, 11, 8, 0),
+                createdDate = LocalDateTime(2024, 1, 1, 0, 0),
+                completionHistory = "",
+            )
+        val vacation = listOf(VacationPeriod(LocalDate(2030, 1, 1), LocalDate(2030, 1, 10)))
+
+        val result = HabitReminderReceiver.shouldShowHabitReminder(habit, scheduledDate, vacation)
+
+        assertThat(result).isTrue()
+    }
+
+    @Test
+    fun `shouldShowHabitChainReminder returns false when the scheduled date is paused`() {
+        val scheduledDate = LocalDateTime(2030, 1, 5, 8, 0).date
+        val habits = listOf(habit(id = 1L, completionHistory = ""))
+        val vacation = listOf(VacationPeriod(LocalDate(2030, 1, 1)))
+
+        val result = HabitReminderReceiver.shouldShowHabitChainReminder(habits, scheduledDate, vacation)
 
         assertThat(result).isFalse()
     }
