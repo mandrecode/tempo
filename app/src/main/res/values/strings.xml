@@ -516,12 +516,14 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Missed a reminder? You\'ll hear about it</string>
-    <string name="whats_new_description">Reminders you never saw come back every morning at 9:00 until the task is done. Change the time — or turn it off — in Settings.</string>
+    <string name="whats_new_title">Peek under the hood</string>
+    <string name="whats_new_description">Tempo is built in the open. Settings now has a Source Code link that takes you straight to the repository.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
     <string name="send_feedback_description">Share your thoughts with us</string>
+    <string name="source_code">Source Code</string>
+    <string name="source_code_description">Browse the Tempo repository on GitHub</string>
     <string name="version_format">Version %1$s</string>
     <string name="no_browser_app">No browser app found</string>
 

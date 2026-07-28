@@ -151,6 +151,7 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
             "\"https://docs.google.com/forms/d/e/1FAIpQLSciCv8egchpVXvw9e9jfOVLj1YFrktpULWyOM-Cmq1JW9g24A/viewform?usp=pp_url\"",
         )
         buildConfigField("String", "FEEDBACK_VERSION_ENTRY", "\"entry.863266237\"")
+        buildConfigField("String", "SOURCE_CODE_URL", "\"https://github.com/mandrecode/tempo\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }

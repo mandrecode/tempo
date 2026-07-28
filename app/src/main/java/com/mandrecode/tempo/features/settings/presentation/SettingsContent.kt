@@ -327,6 +327,14 @@ private fun AboutSection(
                     trailingIcon = R.drawable.ic_chevron_right,
                     onClick = { openFeedback(context, appVersion) },
                 )
+                SettingsItemDivider()
+                SettingsItem(
+                    icon = R.drawable.ic_code,
+                    title = stringResource(R.string.source_code),
+                    subtitle = stringResource(R.string.source_code_description),
+                    trailingIcon = R.drawable.ic_chevron_right,
+                    onClick = { openSourceCode(context) },
+                )
             }
         }
         if (appVersion.isNotEmpty()) {
