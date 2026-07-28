@@ -45,6 +45,7 @@ object RoutinesContract {
         val pendingHabitChainData: PendingHabitChainData? = null,
         val expandedChainIds: PersistentSet<Long> = persistentSetOf(),
         val vacationPeriods: ImmutableList<VacationPeriod> = persistentListOf(),
+        val isVacationModeActive: Boolean = false,
         val selectedDate: LocalDate =
             Clock.System
                 .now()

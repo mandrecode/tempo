@@ -426,6 +426,7 @@
     <string name="settings_repeat_missed_reminders">Repeat missed reminders</string>
     <string name="settings_missed_reminders_time">Remind me again at</string>
     <string name="settings_vacation_mode">Vacation mode</string>
+    <string name="vacation_mode_active">Vacation mode on — habits paused</string>
     <string name="settings_vacation_mode_pause_habits">Pause habits</string>
     <string name="settings_vacation_mode_until">Until</string>
     <string name="settings_vacation_mode_no_end_date">No end date</string>

@@ -70,7 +70,7 @@ fun RoutinesScreen(
     viewModel: RoutinesViewModel = viewModel(),
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
-    topBar: @Composable () -> Unit = {},
+    topBar: @Composable (isVacationModeActive: Boolean) -> Unit = {},
     showAddHabitRailButton: Boolean = false,
     onFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit = {},
     onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
@@ -191,7 +191,7 @@ fun RoutinesScreen(
                 modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
                 containerColor = MaterialTheme.colorScheme.background,
                 contentWindowInsets = WindowInsets(0),
-                topBar = topBar,
+                topBar = { topBar(uiState.isVacationModeActive) },
             ) { innerPadding ->
                 Box(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                     RoutinesContent(

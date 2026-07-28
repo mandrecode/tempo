@@ -38,6 +38,13 @@
 - [x] 6.3 Wire the section into `SettingsContent` and add the strings to `values/strings.xml` **and** `values-es/strings.xml` in the same change
 - [x] 6.4 Unit-test `SettingsViewModel`: toggling on/off, setting and clearing the end date, rejecting an end date before the start, and the switch reading off once a planned end date has passed
 
+## 10. Routines title badge
+
+- [x] 10.1 Add the `ic_beach_access` palm drawable and a `vacation_mode_active` content-description string in `values/` and `values-es/`
+- [x] 10.2 Give `TempoTopBar` an optional `titleBadge` slot rendered next to the title
+- [x] 10.3 Derive `isVacationModeActive` in `RoutinesViewModel` and hand it to the Routines top-bar slot, so navigation never reaches for the repository
+- [x] 10.4 Unit-test the derived flag (active period vs a period that already ended) and instrument-test the `TempoTopBar` badge slot
+
 ## 7. Backup
 
 - [x] 7.1 Add `VacationPeriodBackupDto(start, end?)` and `vacationPeriods: List<VacationPeriodBackupDto> = emptyList()` to `SettingsBackupDto`, keeping `schemaVersion` at 1 per the additive-field rule

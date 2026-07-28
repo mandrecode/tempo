@@ -38,6 +38,21 @@ The system SHALL allow the user to give the active vacation period a planned end
 - **WHEN** the user clears a previously chosen end date
 - **THEN** the active period becomes open-ended again and stays active until the user turns vacation mode off
 
+### Requirement: An active pause is visible on the Routines screen
+The system SHALL mark the Routines title with a vacation badge while a vacation period covers the current date, so the pause is discoverable without opening Settings.
+
+#### Scenario: Badge shown while paused
+- **WHEN** the user opens the Routines screen while vacation mode is active
+- **THEN** a palm badge is shown next to the "Routines" title, labelled for screen readers as vacation mode being on
+
+#### Scenario: No badge when not paused
+- **WHEN** the user opens the Routines screen while no stored period covers today
+- **THEN** the title is rendered exactly as before, with no badge
+
+#### Scenario: Badge follows the switch
+- **WHEN** the user turns vacation mode off in Settings and returns to Routines
+- **THEN** the badge is gone, without the screen having to be recreated
+
 ### Requirement: Past vacation periods are retained
 The system SHALL persist completed vacation periods, not only the active one, so that any later computation over historical dates resolves the same paused days.
 
