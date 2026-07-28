@@ -81,7 +81,7 @@ class VacationPeriodTest {
     }
 
     @Test
-    fun `normalize keeps a contained range inside its enclosing range`() {
+    fun `normalize absorbs a range fully contained in another`() {
         val outer = VacationPeriod(LocalDate(2026, 3, 1), LocalDate(2026, 3, 20))
         val inner = VacationPeriod(LocalDate(2026, 3, 5), LocalDate(2026, 3, 8))
 

@@ -4,7 +4,7 @@ Tracks [#16](https://github.com/mandrecode/tempo/issues/16) — users who travel
 
 ## What Changes
 
-- Add a **vacation mode**: an app-level pause the user turns on in Settings, with a start date (the day it is turned on) and an optional end date. Turning it off ends the pause on the current day.
+- Add a **vacation mode**: an app-level pause the user turns on in Settings, with a start date (the day it is turned on) and an optional end date. Turning it off ends the pause on the day before the current one, so the switch reads as off immediately; a pause started and stopped the same day leaves nothing behind.
 - Persist **past vacation periods**, not just the active one, so historical streak math stays stable forever — a streak computed today over last month's trip must still skip those days next year.
 - **Freeze streaks across paused days**: a planned day inside a vacation period never breaks the current streak. A completion recorded on a paused day still counts, so a user who keeps a habit going while away is credited rather than penalized.
 - **Suppress habit and habit-chain reminder notifications** on paused days. Alarms keep rescheduling themselves as they do today, so reminders resume automatically after the pause without any restore step, reboot handling, or exact-alarm re-prompt.
@@ -28,7 +28,7 @@ Non-goals (deliberately out of scope for this change):
 
 ## Impact
 
-- **Domain** (`features/routines/domain/`): new `VacationPeriod` model and `VacationModeRepository` interface (pure Kotlin, `kotlinx-datetime`).
+- **Domain** (`core/domain/`): new `VacationPeriod` model and `VacationModeRepository` interface (pure Kotlin, `kotlinx-datetime`), in `core` because routines, settings, backup, and infrastructure all read them.
 - **Streak math** (`util/CompletionHistoryUtil.kt`): `getCurrentStreak` takes the active/past vacation periods; new paused-day predicate shared with the history view.
 - **Data** (`core/data/preferences/`): `SharedPreferences`-backed implementation and a `@Binds` entry in `core/di/PreferencesRepositoryModule.kt`. No Room entity, no migration, no schema regeneration.
 - **Infrastructure** (`infrastructure/reminders/receivers/HabitReminderReceiver.kt`): reminder and chain-reminder delivery becomes conditional on the day not being paused; rescheduling is untouched.
