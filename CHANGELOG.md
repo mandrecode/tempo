@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.9.0](https://github.com/mandrecode/tempo/compare/v1.8.0...v1.9.0) (2026-07-28)
+
+
+### Features
+
+* **#257:** remind missed task reminders daily at a configurable time ([#259](https://github.com/mandrecode/tempo/issues/259)) ([e4b5713](https://github.com/mandrecode/tempo/commit/e4b5713c7a12fe1e7344ebea92c1d2e0d004aba6))
+
+
+### Bug Fixes
+
+* **#254:** stop re-posting dismissed and stale chain live activities ([#258](https://github.com/mandrecode/tempo/issues/258)) ([0ad81b9](https://github.com/mandrecode/tempo/commit/0ad81b9f3ae1b15e9364cb463b5ea6a4e58c30c9))
+
 ## [1.8.0](https://github.com/mandrecode/tempo/compare/v1.7.0...v1.8.0) (2026-07-24)
 
 
