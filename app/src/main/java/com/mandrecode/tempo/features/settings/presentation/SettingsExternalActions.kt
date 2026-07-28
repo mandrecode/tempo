@@ -83,11 +83,31 @@ internal fun openFeedback(
 ) {
     val url =
         "${BuildConfig.FEEDBACK_FORM_URL}&${BuildConfig.FEEDBACK_VERSION_ENTRY}=${Uri.encode(version)}"
+    openExternalLink(context, url, failureLogMessage = "Unable to open feedback form")
+}
+
+internal fun openSourceCode(context: Context) {
+    openExternalLink(
+        context,
+        BuildConfig.SOURCE_CODE_URL,
+        failureLogMessage = "Unable to open source code repository",
+    )
+}
+
+/**
+ * Opens [url] in whichever app handles it, falling back to the shared "no browser" toast when the
+ * device has no handler for it.
+ */
+private fun openExternalLink(
+    context: Context,
+    url: String,
+    failureLogMessage: String,
+) {
     val intent = Intent(Intent.ACTION_VIEW, url.toUri())
     try {
         context.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
-        Log.e(LOG_TAG, "Unable to open feedback form", e)
+        Log.e(LOG_TAG, failureLogMessage, e)
         Toast
             .makeText(
                 context,
