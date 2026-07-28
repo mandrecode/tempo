@@ -106,6 +106,16 @@ class ActiveLiveActivityPreferencesTest {
     }
 
     @Test
+    fun `getActiveChains keeps the latest date when a chain has duplicate entries`() {
+        // getStringSet guarantees no iteration order, so a duplicate must not let a stale
+        // date decide whether recovery rebuilds or dismisses the live activity.
+        every { mockPrefs.getStringSet(any(), any()) } returns
+            setOf("1|2025-06-13", "1|2025-06-15", "1|2025-06-14")
+
+        assertThat(repository.getActiveChains()).containsExactly(1L, date)
+    }
+
+    @Test
     fun `getActiveChains drops entries with an unparseable date`() {
         every { mockPrefs.getStringSet(any(), any()) } returns setOf("1|not-a-date")
 

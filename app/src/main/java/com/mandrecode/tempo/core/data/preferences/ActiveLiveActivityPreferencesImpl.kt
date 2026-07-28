@@ -20,12 +20,19 @@ class ActiveLiveActivityPreferencesImpl
                 Context.MODE_PRIVATE,
             )
 
+        /**
+         * Writes always go through a map, so one entry per chain is the norm. Should duplicates
+         * ever appear anyway, keep the latest date: `getStringSet` guarantees no iteration order,
+         * so picking arbitrarily would let a stale date decide whether recovery rebuilds or
+         * dismisses a live activity.
+         */
         override fun getActiveChains(): Map<Long, LocalDate> =
             prefs
                 .getStringSet(KEY_ACTIVE_CHAIN_IDS, emptySet())
                 .orEmpty()
                 .mapNotNull { it.toRecord() }
-                .toMap()
+                .groupBy({ (chainId, _) -> chainId }, { (_, date) -> date })
+                .mapValues { (_, dates) -> dates.max() }
 
         override fun getActiveChainIds(): Set<Long> = getActiveChains().keys
 
