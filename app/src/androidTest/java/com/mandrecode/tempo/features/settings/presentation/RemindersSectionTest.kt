@@ -115,7 +115,7 @@ class RemindersSectionTest {
     }
 
     @Test
-    fun tappingTheTimeRowOpensThePicker() {
+    fun tappingTheRowLabelDoesNotOpenThePicker() {
         val timeLabel = localizedString(R.string.settings_missed_reminders_time)
         val confirmLabel = localizedString(R.string.ok)
 
@@ -128,12 +128,14 @@ class RemindersSectionTest {
 
         composeTestRule.onNodeWithText(timeLabel).performClick()
 
-        composeTestRule.onNodeWithText(confirmLabel).assertIsDisplayed()
+        // Only the clock-face value is a control; the rest of the row is inert.
+        composeTestRule.onNodeWithText(confirmLabel).assertDoesNotExist()
     }
 
     @Test
     fun confirmingThePickerEmitsTheChosenTime() {
-        val timeLabel = localizedString(R.string.settings_missed_reminders_time)
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val nineAm = LocalTime(hour = 9, minute = 0)
         val confirmLabel = localizedString(R.string.ok)
         var chosenTime: LocalTime? = null
 
@@ -141,7 +143,7 @@ class RemindersSectionTest {
             uiState =
                 SettingsContract.UiState(
                     missedReminderCatchUpEnabled = true,
-                    missedReminderCatchUpTime = LocalTime(hour = 9, minute = 0),
+                    missedReminderCatchUpTime = nineAm,
                 ),
             onEvent = { event ->
                 if (event is SettingsContract.UiEvent.MissedReminderCatchUpTimeChanged) {
@@ -150,7 +152,7 @@ class RemindersSectionTest {
             },
         )
 
-        composeTestRule.onNodeWithText(timeLabel).performClick()
+        composeTestRule.onNodeWithText(DateTimeFormatter.formatTimeOfDay(nineAm, context)).performClick()
         composeTestRule.onNodeWithText(confirmLabel).performClick()
 
         // Confirming without touching the dial keeps the current time.

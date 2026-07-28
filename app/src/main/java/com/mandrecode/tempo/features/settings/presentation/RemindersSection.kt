@@ -5,7 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -84,8 +83,8 @@ internal fun RemindersSection(
 }
 
 /**
- * Single-line row whose value *is* the control: the time reads as a clock face and opens the
- * picker, so no chevron or restating subtitle is needed.
+ * Single-line row whose value *is* the control: only the clock-face time is clickable, so the
+ * rest of the row stays inert and no chevron or restating subtitle is needed.
  */
 @Composable
 private fun CatchUpTimeItem(
@@ -98,7 +97,6 @@ private fun CatchUpTimeItem(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
                 .padding(SettingsItemPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -112,6 +110,7 @@ private fun CatchUpTimeItem(
         )
         Spacer(modifier = Modifier.width(12.dp))
         Surface(
+            onClick = onClick,
             shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
