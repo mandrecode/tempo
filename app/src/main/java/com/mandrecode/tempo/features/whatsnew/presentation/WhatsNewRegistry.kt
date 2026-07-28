@@ -15,7 +15,7 @@ import com.mandrecode.tempo.features.whatsnew.presentation.model.WhatsNewEntry
 object WhatsNewRegistry {
     val latest: WhatsNewEntry =
         WhatsNewEntry(
-            id = "two-block-layout",
+            id = "missed-reminder-catch-up",
             titleRes = R.string.whats_new_title,
             descriptionRes = R.string.whats_new_description,
         )

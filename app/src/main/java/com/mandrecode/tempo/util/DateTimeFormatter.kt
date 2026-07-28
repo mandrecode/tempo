@@ -5,6 +5,7 @@ import android.text.format.DateFormat.is24HourFormat
 import com.mandrecode.tempo.R
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.number
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -84,6 +85,22 @@ object DateTimeFormatter {
                 basePattern.replace(" yyyy", "")
             }
 
+        return SimpleDateFormat(pattern, Locale.getDefault()).format(calendar.time)
+    }
+
+    /**
+     * Time of day in the user's locale, honouring their 12h/24h system preference.
+     */
+    fun formatTimeOfDay(
+        time: LocalTime,
+        context: Context,
+    ): String {
+        val calendar =
+            Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, time.hour)
+                set(Calendar.MINUTE, time.minute)
+            }
+        val pattern = if (is24HourFormat(context)) "HH:mm" else "h:mm a"
         return SimpleDateFormat(pattern, Locale.getDefault()).format(calendar.time)
     }
 

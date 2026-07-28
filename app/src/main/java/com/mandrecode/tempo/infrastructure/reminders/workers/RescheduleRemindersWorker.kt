@@ -11,6 +11,7 @@ import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderSche
 import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.RollOverduePeriodicTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.util.TaskReminderDateUtil
@@ -38,6 +39,7 @@ class RescheduleRemindersWorker
         private val rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase,
         private val activeLiveActivityPreferences: ActiveLiveActivityPreferences,
         private val habitChainLiveActivityManager: HabitChainLiveActivityManager,
+        private val missedReminderScheduler: MissedReminderScheduler,
         private val clock: Clock,
     ) : CoroutineWorker(appContext, workerParams) {
         override suspend fun doWork(): Result =
@@ -47,6 +49,9 @@ class RescheduleRemindersWorker
                 rescheduleHabits(now)
                 rescheduleHabitChains(now)
                 resyncActiveLiveActivities(now.date)
+                // This worker runs at startup, on boot, on time/timezone change, on package
+                // replacement, and every 24h — the same events that drop the catch-up alarm.
+                missedReminderScheduler.sync()
                 Result.success()
             } catch (e: CancellationException) {
                 throw e

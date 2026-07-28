@@ -4,20 +4,12 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.work.WorkManager
 import com.mandrecode.tempo.features.backup.domain.scheduler.BackupReminderScheduler
-import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.CompletedTaskCleanupScheduler
-import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.infrastructure.backup.BackupReminderSchedulerImpl
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManagerImpl
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
 import com.mandrecode.tempo.infrastructure.permissions.PermissionCheckerImpl
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.HabitAlarmScheduler
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.HabitReminderSchedulerImpl
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.TaskAlarmScheduler
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.TaskReminderSchedulerImpl
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.android.AndroidHabitAlarmScheduler
-import com.mandrecode.tempo.infrastructure.reminders.scheduler.android.AndroidTaskAlarmScheduler
 import com.mandrecode.tempo.infrastructure.tasks.CompletedTaskCleanupSchedulerImpl
 import com.mandrecode.tempo.util.AppVersionProvider
 import com.mandrecode.tempo.util.AppVersionProviderImpl
@@ -41,34 +33,6 @@ object InfrastructureModule {
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         return NotificationSyncManagerImpl(notificationManager)
     }
-
-    @Provides
-    @Singleton
-    fun provideTaskReminderScheduler(
-        @ApplicationContext context: Context,
-        notificationSyncManager: NotificationSyncManager,
-        taskAlarmScheduler: TaskAlarmScheduler,
-    ): TaskReminderScheduler = TaskReminderSchedulerImpl(context, notificationSyncManager, taskAlarmScheduler)
-
-    @Provides
-    @Singleton
-    fun provideHabitReminderScheduler(
-        @ApplicationContext context: Context,
-        notificationSyncManager: NotificationSyncManager,
-        habitAlarmScheduler: HabitAlarmScheduler,
-    ): HabitReminderScheduler = HabitReminderSchedulerImpl(context, notificationSyncManager, habitAlarmScheduler)
-
-    @Provides
-    @Singleton
-    fun provideTaskAlarmScheduler(
-        @ApplicationContext context: Context,
-    ): TaskAlarmScheduler = AndroidTaskAlarmScheduler(context)
-
-    @Provides
-    @Singleton
-    fun provideHabitAlarmScheduler(
-        @ApplicationContext context: Context,
-    ): HabitAlarmScheduler = AndroidHabitAlarmScheduler(context)
 
     @Provides
     @Singleton

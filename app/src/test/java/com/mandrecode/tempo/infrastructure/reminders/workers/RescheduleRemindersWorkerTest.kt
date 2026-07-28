@@ -14,6 +14,7 @@ import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.RollOverduePeriodicTaskUseCase
 import com.mandrecode.tempo.infrastructure.liveactivity.HabitChainLiveActivityManager
@@ -41,6 +42,7 @@ class RescheduleRemindersWorkerTest {
     private lateinit var rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase
     private lateinit var activeLiveActivityPreferences: ActiveLiveActivityPreferences
     private lateinit var habitChainLiveActivityManager: HabitChainLiveActivityManager
+    private lateinit var missedReminderScheduler: MissedReminderScheduler
     private lateinit var worker: RescheduleRemindersWorker
     private lateinit var clock: Clock
 
@@ -57,6 +59,7 @@ class RescheduleRemindersWorkerTest {
         rollOverduePeriodicTaskUseCase = mockk(relaxed = true)
         activeLiveActivityPreferences = mockk(relaxed = true)
         habitChainLiveActivityManager = mockk(relaxed = true)
+        missedReminderScheduler = mockk(relaxed = true)
         clock = mockk(relaxed = true)
 
         every { activeLiveActivityPreferences.getActiveChains() } returns emptyMap()
@@ -73,6 +76,7 @@ class RescheduleRemindersWorkerTest {
                 rollOverduePeriodicTaskUseCase,
                 activeLiveActivityPreferences,
                 habitChainLiveActivityManager,
+                missedReminderScheduler,
                 clock,
             )
     }

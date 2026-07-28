@@ -11,6 +11,14 @@ interface TaskAlarmScheduler {
     fun cancelTaskReminder(taskId: Long)
 }
 
+interface MissedReminderAlarmScheduler {
+    fun canScheduleExactAlarms(): Boolean
+
+    fun scheduleCatchUp(triggerAtMillis: Long)
+
+    fun cancelCatchUp()
+}
+
 interface HabitAlarmScheduler {
     fun canScheduleExactAlarms(): Boolean
 
