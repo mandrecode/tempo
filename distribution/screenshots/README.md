@@ -55,20 +55,24 @@ is now SQLCipher-encrypted at rest, and its passphrase is generated and
 Keystore-wrapped on-device (`KeystoreDbPassphraseProvider`), so it never
 leaves the app process. A pulled DB file is opaque ciphertext.
 
-The **backup export/import** feature is the way in. Its `.tempo` files are
-encrypted with a *separate*, caller-chosen passphrase (PBKDF2WithHmacSHA256 +
-AES-256-GCM, specified in [`docs/BACKUP_FORMAT.md`](../../docs/BACKUP_FORMAT.md)),
-unrelated to the DB's own key — so a script can build a backup file and let the
-app import it exactly as a user would, writing through the app's own encrypted
-DB layer.
+The **backup export/import** feature is the way in. Its files are encrypted with
+a *separate*, caller-chosen passphrase (PBKDF2WithHmacSHA256 + AES-256-GCM,
+specified in [`docs/BACKUP_FORMAT.md`](../../docs/BACKUP_FORMAT.md)), unrelated
+to the DB's own key — so a script can build a backup file and let the app import
+it exactly as a user would, writing through the app's own encrypted DB layer.
+
+Note the seed file is named **`.json`, not `.tempo`**, even though `.tempo` is
+what the app suggests when *exporting*. The import picker is launched with the
+`application/json` MIME filter, so a `.tempo` file is not selectable in
+DocumentsUI and the pipeline would stall waiting for a file it can never tap.
 
 ## The pipeline
 
 Four scripts, composed by a fifth:
 
 - **`scripts/generate-seed-backup.py --locale en|es --theme light|dark
-  --passphrase P -o FILE`** — writes an encrypted `.tempo` backup containing a
-  curated demo dataset (12 tasks across 4 categories with a mix of
+  --passphrase P -o FILE`** — writes an encrypted backup (as `.json`, see above)
+  containing a curated demo dataset (12 tasks across 4 categories with a mix of
   priorities/due dates/completion states, 7 habits split Build/Quit, one
   3-member habit chain), with category names, task titles/descriptions, and
   habit titles translated per locale. Every date is computed relative to

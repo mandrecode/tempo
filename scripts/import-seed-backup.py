@@ -2,6 +2,10 @@
 """Drives the app's Settings -> Import data flow to load a seed backup file
 (GitHub issue #252). Not part of the CI/app build.
 
+The file must be named `.json`, not `.tempo`: the app launches its import picker
+with the `application/json` MIME filter, so DocumentsUI won't offer a `.tempo`
+file and the search step below would never find it.
+
 Why UI automation rather than writing the database directly: since GitHub
 issue #212 the Room DB is SQLCipher-encrypted at rest with a passphrase held
 only in the app's Android Keystore, so the old approach of pulling
@@ -67,6 +71,10 @@ PICKER_ITEM_TITLE_ID = "title"
 PICKER_CONFIRM_ID = "action_menu_select"
 
 
+class MissingAndroidCli(RuntimeError):
+    """Not a transient UI hiccup — retrying the import can't conjure the CLI."""
+
+
 def adb(serial, *args, check=True):
     return subprocess.run(["adb", "-s", serial, *args], capture_output=True, text=True, check=check)
 
@@ -77,11 +85,18 @@ def dump_layout(serial, retries=8, delay=1.5):
     try:
         last_err = None
         for _ in range(retries):
-            result = subprocess.run(
-                ["android", "layout", "--device", serial, "-o", path],
-                capture_output=True,
-                text=True,
-            )
+            try:
+                result = subprocess.run(
+                    ["android", "layout", "--device", serial, "-o", path],
+                    capture_output=True,
+                    text=True,
+                )
+            except FileNotFoundError as e:
+                raise MissingAndroidCli(
+                    "The `android` CLI was not found on PATH. It's required to inspect the "
+                    "app's UI tree for navigation — install the Android SDK's `android` CLI "
+                    "(see AGENTS.md's android-cli conventions) and try again.",
+                ) from e
             try:
                 with open(path) as f:
                     return json.load(f)
@@ -244,6 +259,8 @@ def main():
             run_import(serial, file_name, passphrase, s)
             print(f"Imported {file_name} on {serial} ({locale}).")
             return
+        except MissingAndroidCli:
+            raise
         except RuntimeError as e:
             if attempt == attempts:
                 raise

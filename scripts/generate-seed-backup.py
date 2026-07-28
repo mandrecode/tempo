@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generates an encrypted .tempo backup file holding a curated demo dataset
+"""Generates an encrypted backup file holding a curated demo dataset
 (GitHub issues #169, #252), for seeding Play Store screenshots via the app's
 own Import flow.
 
@@ -41,6 +41,8 @@ KEY_LENGTH_BYTES = 32
 
 LOCALES = {
     "en": {
+        # Must match R.string.category_inbox for this locale — see build_plaintext.
+        "inbox": "Inbox",
         "categories": ["Work", "Shopping", "Health", "Personal"],
         "tasks": [
             ("Finish Q3 budget report", "Compile numbers from finance and send to leadership by Friday."),
@@ -64,6 +66,7 @@ LOCALES = {
         "chain_description": "Meditate, stretch, and journal before starting the day.",
     },
     "es": {
+        "inbox": "Tareas",
         "categories": ["Trabajo", "Compras", "Salud", "Personal"],
         "tasks": [
             ("Terminar el informe de presupuesto del Q3",
@@ -138,12 +141,17 @@ def build_plaintext(today, locale, theme):
     habit_titles = content["habits"]
 
     categories = [
-        # Mirrors TempoDatabase.inboxCallback's literal fresh-install seed row (id -1,
-        # name always "Inbox" regardless of locale) — Replace-mode import validates
-        # referential integrity within the file itself, so the -1 category referenced
-        # by task 12 below must be present here even though a real fresh install would
-        # already have it.
-        {"id": -1, "name": "Inbox", "color": None, "icon": "inbox", "isDefault": True, "sortOrder": -1},
+        # Mirrors the default category TempoDatabase.inboxCallback seeds on a fresh
+        # install. It has to be in the file: Replace-mode import validates referential
+        # integrity against the payload alone, and task 12 below references id -1.
+        #
+        # Because the file carries id -1, BackupRepositoryImpl.ensureDefaultCategory
+        # leaves this row alone rather than inserting its own — so the name here is
+        # what ends up on screen, and a hardcoded "Inbox" would put an English chip in
+        # the Spanish screenshots. Keep LOCALES[...]["inbox"] in sync with
+        # R.string.category_inbox in the matching values-<locale>/strings.xml.
+        {"id": -1, "name": content["inbox"], "color": None, "icon": "inbox",
+         "isDefault": True, "sortOrder": -1},
         {"id": 1, "name": work, "color": "color_m3_blue", "icon": "work", "isDefault": False, "sortOrder": 0},
         {"id": 2, "name": shopping, "color": "color_m3_orange", "icon": "shopping_cart", "isDefault": False, "sortOrder": 1},
         {"id": 3, "name": health, "color": "color_m3_red", "icon": "health", "isDefault": False, "sortOrder": 2},

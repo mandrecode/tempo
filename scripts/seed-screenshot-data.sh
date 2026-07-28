@@ -28,7 +28,9 @@ SEED_PASSPHRASE="tempo-screenshot-seed"
 SEED_FILE_NAME="tempo_seed.json"
 DEVICE_SEED_PATH="/sdcard/Download/${SEED_FILE_NAME}"
 
-LOCAL_BACKUP="$(mktemp --suffix=.json)"
+# Plain `mktemp` (no --suffix, which is GNU-only) — the local name is never used
+# for anything; the file is pushed to the device as $SEED_FILE_NAME regardless.
+LOCAL_BACKUP="$(mktemp)"
 trap 'rm -f "$LOCAL_BACKUP"' EXIT
 
 case "$THEME" in
@@ -114,8 +116,10 @@ EOF
 # complete and the stored id differs from WhatsNewRegistry.latest, which is
 # every fresh install). Read the id from the registry rather than hardcoding
 # it, so shipping a new entry doesn't silently break the pipeline.
-WHATS_NEW_ID="$(grep -oP '(?<=id = ")[^"]+' \
-  "${REPO_ROOT}/app/src/main/java/com/mandrecode/tempo/features/whatsnew/presentation/WhatsNewRegistry.kt")"
+# `sed` rather than `grep -oP`, which is GNU-only and absent on macOS.
+WHATS_NEW_ID="$(sed -n 's/.*id = "\([^"]*\)".*/\1/p' \
+  "${REPO_ROOT}/app/src/main/java/com/mandrecode/tempo/features/whatsnew/presentation/WhatsNewRegistry.kt" \
+  | head -1)"
 if [ -z "$WHATS_NEW_ID" ]; then
   echo "Could not read WhatsNewRegistry.latest's id — the what's-new sheet would cover the first screenshot." >&2
   exit 1
