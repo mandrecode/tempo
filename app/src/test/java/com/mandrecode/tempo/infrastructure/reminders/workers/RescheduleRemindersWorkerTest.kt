@@ -16,12 +16,14 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.RollOverduePeriodicTaskUseCase
+import com.mandrecode.tempo.infrastructure.liveactivity.HabitChainLiveActivityManager
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -38,6 +40,7 @@ class RescheduleRemindersWorkerTest {
     private lateinit var habitReminderScheduler: HabitReminderScheduler
     private lateinit var rollOverduePeriodicTaskUseCase: RollOverduePeriodicTaskUseCase
     private lateinit var activeLiveActivityPreferences: ActiveLiveActivityPreferences
+    private lateinit var habitChainLiveActivityManager: HabitChainLiveActivityManager
     private lateinit var worker: RescheduleRemindersWorker
     private lateinit var clock: Clock
 
@@ -53,9 +56,10 @@ class RescheduleRemindersWorkerTest {
         habitReminderScheduler = mockk(relaxed = true)
         rollOverduePeriodicTaskUseCase = mockk(relaxed = true)
         activeLiveActivityPreferences = mockk(relaxed = true)
+        habitChainLiveActivityManager = mockk(relaxed = true)
         clock = mockk(relaxed = true)
 
-        every { activeLiveActivityPreferences.getActiveChainIds() } returns emptySet()
+        every { activeLiveActivityPreferences.getActiveChains() } returns emptyMap()
 
         worker =
             RescheduleRemindersWorker(
@@ -68,6 +72,7 @@ class RescheduleRemindersWorkerTest {
                 habitReminderScheduler,
                 rollOverduePeriodicTaskUseCase,
                 activeLiveActivityPreferences,
+                habitChainLiveActivityManager,
                 clock,
             )
     }
@@ -371,8 +376,31 @@ class RescheduleRemindersWorkerTest {
         }
 
     @Test
-    fun `doWork resyncs live activity for each persisted active chain`() =
+    fun `doWork resyncs live activity for each active chain recorded for today`() =
         runTest {
+            val systemZone = TimeZone.currentSystemDefault()
+            val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
+            val today = nowTime.date
+            coEvery { clock.now() } returns nowTime.toInstant(systemZone)
+
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
+            coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
+            every { activeLiveActivityPreferences.getActiveChains() } returns
+                mapOf(1L to today, 2L to today)
+
+            val result = worker.doWork()
+
+            assertTrue(result is ListenableWorker.Result.Success)
+            coVerify { habitRepository.refreshHabitChainLiveActivity(1L, today) }
+            coVerify { habitRepository.refreshHabitChainLiveActivity(2L, today) }
+        }
+
+    @Test
+    fun `doWork dismisses instead of rebuilding an active chain recorded for a previous day`() =
+        runTest {
+            // Regression test for #254: a leftover record from an earlier day must not be
+            // rebuilt against today's unrelated progress on every app open.
             val systemZone = TimeZone.currentSystemDefault()
             val nowTime = LocalDateTime(2020, 1, 3, 12, 0)
             coEvery { clock.now() } returns nowTime.toInstant(systemZone)
@@ -380,13 +408,16 @@ class RescheduleRemindersWorkerTest {
             coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
             coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
             coEvery { habitChainRepository.getHabitChainsWithReminders() } returns emptyList()
-            every { activeLiveActivityPreferences.getActiveChainIds() } returns setOf(1L, 2L)
+            every { activeLiveActivityPreferences.getActiveChains() } returns
+                mapOf(1L to LocalDate(2020, 1, 2))
 
             val result = worker.doWork()
 
             assertTrue(result is ListenableWorker.Result.Success)
-            coVerify { habitRepository.refreshHabitChainLiveActivity(1L) }
-            coVerify { habitRepository.refreshHabitChainLiveActivity(2L) }
+            coVerify(exactly = 0) {
+                habitRepository.refreshHabitChainLiveActivity(any<Long>(), any(), any())
+            }
+            coVerify { habitChainLiveActivityManager.dismissLiveActivity(1L) }
         }
 
     @Test
@@ -404,5 +435,6 @@ class RescheduleRemindersWorkerTest {
 
             assertTrue(result is ListenableWorker.Result.Success)
             coVerify(exactly = 0) { habitRepository.refreshHabitChainLiveActivity(any<Long>()) }
+            coVerify(exactly = 0) { habitChainLiveActivityManager.dismissLiveActivity(any()) }
         }
 }
