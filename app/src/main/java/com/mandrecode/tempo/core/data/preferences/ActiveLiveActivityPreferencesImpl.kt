@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,25 +20,56 @@ class ActiveLiveActivityPreferencesImpl
                 Context.MODE_PRIVATE,
             )
 
-        override fun getActiveChainIds(): Set<Long> =
+        /**
+         * Writes always go through a map, so one entry per chain is the norm. Should duplicates
+         * ever appear anyway, keep the latest date: `getStringSet` guarantees no iteration order,
+         * so picking arbitrarily would let a stale date decide whether recovery rebuilds or
+         * dismisses a live activity.
+         */
+        override fun getActiveChains(): Map<Long, LocalDate> =
             prefs
                 .getStringSet(KEY_ACTIVE_CHAIN_IDS, emptySet())
                 .orEmpty()
-                .mapNotNull { it.toLongOrNull() }
-                .toSet()
+                .mapNotNull { it.toRecord() }
+                .groupBy({ (chainId, _) -> chainId }, { (_, date) -> date })
+                .mapValues { (_, dates) -> dates.max() }
 
-        override fun addActiveChainId(chainId: Long) {
-            val updated = getActiveChainIds() + chainId
-            prefs.edit { putStringSet(KEY_ACTIVE_CHAIN_IDS, updated.map { it.toString() }.toSet()) }
+        override fun getActiveChainIds(): Set<Long> = getActiveChains().keys
+
+        override fun setActiveChain(
+            chainId: Long,
+            date: LocalDate,
+        ) {
+            persist(getActiveChains() + (chainId to date))
         }
 
         override fun removeActiveChainId(chainId: Long) {
-            val updated = getActiveChainIds() - chainId
-            prefs.edit { putStringSet(KEY_ACTIVE_CHAIN_IDS, updated.map { it.toString() }.toSet()) }
+            persist(getActiveChains() - chainId)
+        }
+
+        private fun persist(records: Map<Long, LocalDate>) {
+            prefs.edit {
+                putStringSet(
+                    KEY_ACTIVE_CHAIN_IDS,
+                    records.map { (chainId, date) -> "$chainId$SEPARATOR$date" }.toSet(),
+                )
+            }
+        }
+
+        /**
+         * Parses a `<chainId>|<iso-date>` entry. Entries written before date-scoping have no
+         * separator and no date, so they parse to null and are discarded — which also clears
+         * records left stuck by the pre-fix resync loop.
+         */
+        private fun String.toRecord(): Pair<Long, LocalDate>? {
+            val chainId = substringBefore(SEPARATOR, missingDelimiterValue = "").toLongOrNull()
+            val date = runCatching { LocalDate.parse(substringAfter(SEPARATOR)) }.getOrNull()
+            return if (chainId != null && date != null) chainId to date else null
         }
 
         companion object {
             private const val PREFS_NAME = "active_live_activity_prefs"
             private const val KEY_ACTIVE_CHAIN_IDS = "active_chain_ids"
+            private const val SEPARATOR = "|"
         }
     }

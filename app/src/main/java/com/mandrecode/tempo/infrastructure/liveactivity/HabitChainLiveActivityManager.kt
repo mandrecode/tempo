@@ -15,6 +15,7 @@ import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelMana
 import com.mandrecode.tempo.infrastructure.notifications.NotificationSyncManager
 import com.mandrecode.tempo.infrastructure.notifications.RequestCodeGenerator
 import com.mandrecode.tempo.infrastructure.reminders.receivers.CompleteHabitReceiver
+import com.mandrecode.tempo.infrastructure.reminders.receivers.DismissLiveActivityReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.datetime.LocalDate
@@ -40,10 +41,11 @@ class HabitChainLiveActivityManager
         private val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
 
+        /** Chains with a live activity currently posted, mapped to the date their progress is for. */
         private val activeChains =
-            java.util.concurrent.ConcurrentHashMap
-                .newKeySet<Long>()
-                .apply { addAll(activeLiveActivityPreferences.getActiveChainIds()) }
+            java.util.concurrent
+                .ConcurrentHashMap<Long, LocalDate>()
+                .apply { putAll(activeLiveActivityPreferences.getActiveChains()) }
 
         init {
             NotificationChannelManager.ensureLiveActivityChannel(context, notificationManager)
@@ -90,8 +92,11 @@ class HabitChainLiveActivityManager
             if (!NotificationChannelManager.canPostNotifications(context)) {
                 dismissLiveActivity(chain.id)
             } else {
-                if (activeChains.add(chain.id)) {
-                    activeLiveActivityPreferences.addActiveChainId(chain.id)
+                // Record the date this live activity belongs to so recovery can tell a
+                // still-current session from a leftover of a previous day.
+                val activeDate = scheduledDate ?: today()
+                if (activeChains.put(chain.id, activeDate) != activeDate) {
+                    activeLiveActivityPreferences.setActiveChain(chain.id, activeDate)
                 }
 
                 // The live activity supersedes the chain reminder notification — dismiss it
@@ -186,6 +191,7 @@ class HabitChainLiveActivityManager
                         ).setOngoing(!allCompleted)
                         .setAutoCancel(allCompleted)
                         .setContentIntent(pendingIntent)
+                        .setDeleteIntent(dismissIntent(chain.id))
                         .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                         .setCategory(NotificationCompat.CATEGORY_PROGRESS)
                         .setRequestPromotedOngoing(!allCompleted)
@@ -241,7 +247,27 @@ class HabitChainLiveActivityManager
             notificationManager.cancel(getNotificationId(chainId))
         }
 
-        fun hasActiveLiveActivity(chainId: Long): Boolean = activeChains.contains(chainId)
+        fun hasActiveLiveActivity(chainId: Long): Boolean = activeChains.containsKey(chainId)
+
+        private fun today(): LocalDate = clock.now().toLocalDateTime(TimeZone.currentSystemDefault()).date
+
+        /**
+         * Delete intent so a user swipe clears the persisted record. Unlike a missing notification,
+         * this fires only on deliberate dismissal — never on reboot, force-stop, or an app-initiated
+         * cancel — which is what keeps recovery from resurrecting a discarded live activity.
+         */
+        private fun dismissIntent(chainId: Long): PendingIntent {
+            val intent =
+                Intent(context, DismissLiveActivityReceiver::class.java).apply {
+                    putExtra(DismissLiveActivityReceiver.EXTRA_HABIT_CHAIN_ID, chainId)
+                }
+            return PendingIntent.getBroadcast(
+                context,
+                RequestCodeGenerator.forLiveActivityDismiss(chainId),
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+        }
 
         private fun getNotificationId(chainId: Long): Int = RequestCodeGenerator.forLiveActivity(chainId)
     }
