@@ -93,7 +93,11 @@ fun FocusContent(
                         ).background(MaterialTheme.colorScheme.surface),
             ) {
                 uiState.finishedSession?.let { finished ->
-                    SessionFinishedSheet(finished = finished, onEvent = onEvent)
+                    SessionFinishedSheet(
+                        finished = finished,
+                        nextSessionMinutes = uiState.defaultSessionLengthMinutes,
+                        onEvent = onEvent,
+                    )
                 }
 
                 if (uiState.isDayEmpty) {

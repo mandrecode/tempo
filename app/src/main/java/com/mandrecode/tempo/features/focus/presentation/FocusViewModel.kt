@@ -110,6 +110,7 @@ class FocusViewModel
                         dismissFinishedSession()
                         if (finished != null && taskId != null) {
                             focusSessionUseCases.start(taskId = taskId, taskTitle = finished.taskTitle)
+                            sendEffect(FocusContract.UiEffect.OpenSessionScreen)
                         }
                     }
 
@@ -127,6 +128,9 @@ class FocusViewModel
             val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry ?: return
             viewModelScope.launch {
                 focusSessionUseCases.start(taskId = upNext.task.id, taskTitle = upNext.task.title)
+                // Starting is a commitment to the work, so the app follows the user into it rather
+                // than leaving them to find the session they just began.
+                sendEffect(FocusContract.UiEffect.OpenSessionScreen)
             }
         }
 

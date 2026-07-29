@@ -171,6 +171,75 @@ class FocusViewModelTest {
         }
 
     @Test
+    fun `starting a session takes the user into it`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.StartSession)
+                advanceUntilIdle()
+
+                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a habit in up next neither starts a session nor navigates`() =
+        runTest {
+            val habitEntry =
+                FocusAgendaItem.HabitEntry(
+                    habit =
+                        com.mandrecode.tempo.features.routines.domain.model
+                            .Habit(
+                                id = 1,
+                                title = "Water",
+                                description = "",
+                                createdDate = LocalDateTime(today, LocalTime(0, 0)),
+                            ),
+                    isCompleted = false,
+                )
+            stubDay(agendaOf(upNext = habitEntry, todayItems = listOf(habitEntry)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.StartSession)
+                advanceUntilIdle()
+
+                expectNoEvents()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `another session also takes the user into it`() =
+        runTest {
+            stubDay()
+            val session = FocusSession.start(11, "Report", nowInstant)
+            sessionFlow.value = session
+            coEvery { focusSessionUseCases.end() } returns session
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.StopSession)
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.StartAnotherSession)
+                advanceUntilIdle()
+
+                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `a habit in up next cannot host a session`() =
         runTest {
             val habitEntry =

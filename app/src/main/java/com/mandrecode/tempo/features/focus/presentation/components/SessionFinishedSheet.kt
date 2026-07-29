@@ -34,6 +34,7 @@ import com.mandrecode.tempo.features.focus.presentation.FocusContract
 @Composable
 internal fun SessionFinishedSheet(
     finished: FocusContract.FinishedSession,
+    nextSessionMinutes: Int,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     TempoModalBottomSheet(
@@ -76,7 +77,9 @@ internal fun SessionFinishedSheet(
             }
 
             SheetButton(
-                label = stringResource(R.string.focus_session_another, finished.minutes),
+                // The configured length, not the elapsed time: this offers the next session, and
+                // stopping early must not shrink what "another" means.
+                label = stringResource(R.string.focus_session_another, nextSessionMinutes),
                 onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 transparent = true,
