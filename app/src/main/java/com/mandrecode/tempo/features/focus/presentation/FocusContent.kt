@@ -1,0 +1,309 @@
+package com.mandrecode.tempo.features.focus.presentation
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
+import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
+import com.mandrecode.tempo.core.ui.theme.groupLabel
+import com.mandrecode.tempo.core.ui.theme.sectionHeader
+import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
+import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
+import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
+import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
+import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitItem
+import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
+import kotlinx.collections.immutable.ImmutableList
+import kotlinx.datetime.LocalDate
+
+private val ContentBlockTopCornerRadius = 28.dp
+
+@Composable
+fun FocusContent(
+    uiState: FocusContract.UiState,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
+
+    Box(
+        // Matches the Scaffold containerColor this normally sits in, so the rounded seam below
+        // resolves against the right colour when previewed or tested standalone.
+        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+    ) {
+        if (uiState.isLoading) {
+            TempoLoadingIndicator(message = stringResource(R.string.focus))
+            return@Box
+        }
+
+        Column(modifier = Modifier.fillMaxWidth()) {
+            FocusSummaryHero(
+                today = uiState.today,
+                streakDays = uiState.streakDays,
+                history = uiState.history,
+                scheduledCount = uiState.scheduledCount,
+                completedCount = uiState.completedCount,
+                progress = uiState.progress,
+                band = uiState.headlineBand,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            )
+
+            Box(
+                modifier =
+                    Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        // clip before background so list overscroll cannot draw past the seam.
+                        .clip(
+                            RoundedCornerShape(
+                                topStart = ContentBlockTopCornerRadius,
+                                topEnd = ContentBlockTopCornerRadius,
+                            ),
+                        ).background(MaterialTheme.colorScheme.surface),
+            ) {
+                if (uiState.isDayEmpty) {
+                    FocusEmptyState(
+                        undatedTaskCount = uiState.undatedTaskCount,
+                        onUndatedClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
+                    )
+                } else {
+                    // `today` is always set once loading finishes; the guard keeps the chain card
+                    // from needing a sentinel date.
+                    uiState.today?.let { day ->
+                        FocusAgendaList(
+                            uiState = uiState,
+                            today = day,
+                            onEvent = onEvent,
+                            bottomPadding = listBottomPadding,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun FocusAgendaList(
+    uiState: FocusContract.UiState,
+    today: LocalDate,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+    bottomPadding: Dp,
+) {
+    LazyColumn(
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = bottomPadding),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxSize(),
+    ) {
+        val upNext = uiState.upNext
+        if (upNext != null) {
+            item(key = "up_next_label") {
+                Text(
+                    text = stringResource(R.string.focus_up_next).uppercase(),
+                    style = MaterialTheme.typography.groupLabel,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            item(key = "up_next_${upNext.id}") {
+                UpNextCard(
+                    title = upNext.displayTitle(),
+                    metadata = upNext.upNextMetadata(),
+                    onClick = { onEvent(upNext.editEvent()) },
+                    modifier = Modifier.fillMaxWidth().animateItem(),
+                )
+            }
+        }
+
+        if (uiState.overdue.isNotEmpty()) {
+            item(key = "overdue_header") {
+                SectionHeader(
+                    label = stringResource(R.string.focus_section_overdue, uiState.overdue.size),
+                    modifier = Modifier.animateItem(),
+                )
+            }
+            items(uiState.overdue, key = { it.id }) { entry ->
+                AgendaRow(entry = entry, today = today, expandedChainIds = uiState.expandedChainIds, onEvent = onEvent)
+            }
+        }
+
+        if (uiState.todayItems.isNotEmpty()) {
+            item(key = "today_header") {
+                SectionHeader(
+                    label = stringResource(R.string.focus_section_today, uiState.todayItems.size),
+                    modifier = Modifier.animateItem(),
+                )
+            }
+            items(uiState.todayItems, key = { it.id }) { entry ->
+                AgendaRow(entry = entry, today = today, expandedChainIds = uiState.expandedChainIds, onEvent = onEvent)
+            }
+        }
+
+        if (uiState.undatedTaskCount > 0) {
+            item(key = "undated_footer") {
+                UndatedTasksFooter(
+                    count = uiState.undatedTaskCount,
+                    onClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
+                    modifier = Modifier.animateItem(),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AgendaRow(
+    entry: FocusAgendaItem,
+    today: LocalDate,
+    expandedChainIds: ImmutableList<Long>,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    when (entry) {
+        is FocusAgendaItem.TaskEntry ->
+            TaskItem(
+                task = entry.task,
+                subtasks = entry.subtasks,
+                onToggleCompletion = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
+                onEdit = { onEvent(FocusContract.UiEvent.EditTask(it)) },
+            )
+
+        is FocusAgendaItem.HabitEntry ->
+            HabitItem(
+                habit = entry.habit,
+                isCompleted = entry.isCompleted,
+                onToggle = {
+                    onEvent(
+                        FocusContract.UiEvent.ToggleHabitCompletion(
+                            habitId = entry.habit.id,
+                            isCompleted = !entry.isCompleted,
+                        ),
+                    )
+                },
+                onClick = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit.id)) },
+            )
+
+        is FocusAgendaItem.ChainEntry ->
+            HabitChainCard(
+                habitChain = entry.chain,
+                chainHabits = entry.habits,
+                selectedDate = today,
+                isExpanded = entry.chain.id in expandedChainIds,
+                onEdit = { },
+                onToggleExpansion = {
+                    onEvent(FocusContract.UiEvent.ToggleChainExpanded(entry.chain.id))
+                },
+                onHabitToggle = { habitId, isCompleted ->
+                    onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
+                },
+                onHabitClick = { onEvent(FocusContract.UiEvent.EditHabit(it)) },
+                showTimeline = false,
+            )
+    }
+}
+
+@Composable
+private fun SectionHeader(
+    label: String,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.sectionHeader,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(end = 12.dp),
+        )
+        WavyDivider(modifier = Modifier.weight(1f))
+    }
+}
+
+@Composable
+private fun UndatedTasksFooter(
+    count: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .clickable(onClick = onClick)
+                .padding(vertical = 20.dp),
+    )
+}
+
+@Composable
+private fun FocusEmptyState(
+    undatedTaskCount: Int,
+    onUndatedClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxSize().padding(32.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.focus_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.focus_empty_message),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp),
+        )
+        if (undatedTaskCount > 0) {
+            UndatedTasksFooter(count = undatedTaskCount, onClick = onUndatedClick)
+        }
+    }
+}
+
+@Composable
+private fun FocusAgendaItem.displayTitle(): String =
+    when (this) {
+        is FocusAgendaItem.TaskEntry -> task.title
+        is FocusAgendaItem.HabitEntry -> habit.title
+        is FocusAgendaItem.ChainEntry -> chain.title
+    }
+
+private fun FocusAgendaItem.editEvent(): FocusContract.UiEvent =
+    when (this) {
+        is FocusAgendaItem.TaskEntry -> FocusContract.UiEvent.EditTask(task)
+        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit.id)
+        is FocusAgendaItem.ChainEntry -> FocusContract.UiEvent.ToggleChainExpanded(chain.id)
+    }

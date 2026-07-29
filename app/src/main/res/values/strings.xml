@@ -634,4 +634,24 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Quick Add Task</string>
     <string name="widget_quick_add_task_description">Add a task to Tempo in one tap from your home screen</string>
+    <string name="focus_headline_nothing_scheduled">Nothing scheduled today</string>
+    <string name="focus_headline_just_started">The day\'s ahead of you</string>
+    <string name="focus_headline_under_way">You\'re under way</string>
+    <string name="focus_headline_nearly_there">Nearly there</string>
+    <string name="focus_headline_complete">Today\'s clear</string>
+    <string name="focus_up_next">Up next</string>
+    <string name="focus_section_overdue">Overdue · %1$d</string>
+    <string name="focus_section_today">Today · %1$d</string>
+    <string name="focus_progress_description">%1$d of %2$d done</string>
+    <string name="focus_history_description">Activity over the last %1$d days</string>
+    <string name="focus_empty_title">Nothing due today</string>
+    <string name="focus_empty_message">Work due today, and anything overdue, shows up here.</string>
+    <plurals name="focus_streak_days">
+        <item quantity="one">%1$d day focusing</item>
+        <item quantity="other">%1$d days focusing</item>
+    </plurals>
+    <plurals name="focus_undated_tasks">
+        <item quantity="one">%1$d task without a date</item>
+        <item quantity="other">%1$d tasks without a date</item>
+    </plurals>
 </resources>
