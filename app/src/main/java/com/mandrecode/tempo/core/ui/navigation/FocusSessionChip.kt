@@ -24,12 +24,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
-import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.presentation.components.asCountdownLabel
 import com.mandrecode.tempo.features.focus.presentation.components.rememberSessionCountdown
 
@@ -46,6 +43,7 @@ internal fun FocusSessionChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     compact: Boolean = false,
+    selected: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     val remaining by rememberSessionCountdown(session)
@@ -69,58 +67,61 @@ internal fun FocusSessionChip(
                 .semantics { contentDescription = description },
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
-        color = MaterialTheme.colorScheme.tertiaryContainer,
-        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+        // Standing in for the Focus tab, it carries that tab's selected treatment when Focus is
+        // the current destination, so the bar still shows where the user is.
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                MaterialTheme.colorScheme.tertiaryContainer
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            },
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = if (compact) 10.dp else 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.ic_focus),
-                contentDescription = null,
-                modifier = Modifier.size(16.dp),
-            )
-            if (compact) return@Row
-            Text(
-                text = label,
-                fontWeight = FontWeight.Bold,
-                // Tabular figures and a reserved width: without both, every ticking second
-                // remeasures the chip and nudges the whole floating bar sideways.
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        fontFeatureSettings = TABULAR_FIGURES,
-                    ),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.width(CountdownLabelWidth),
-            )
-        }
-    }
-}
-
-/**
- * The running-session chip, or `null` when there is nothing to show. Only rendered away from Focus:
- * on Focus the session card itself is already on screen.
- */
-@Composable
-internal fun rememberSessionChip(
-    focusSessionRepository: FocusSessionRepository,
-    currentRoute: NavKey,
-    onOpenSession: () -> Unit,
-): (@Composable () -> Unit)? {
-    val activeSession by focusSessionRepository.activeSession.collectAsStateWithLifecycle()
-    val session = activeSession?.takeIf { currentRoute != FocusRoute } ?: return null
-    // Tasks already carries two contextual action buttons; with the countdown as well the bar runs
-    // out of width on a phone, so there the pill drops to its icon and the time lives in the
-    // notification and on Focus itself.
-    val compact = currentRoute == TasksRoute
-    return {
-        FocusSessionChip(session = session, onClick = onOpenSession, compact = compact)
+        SessionChipContent(label = label, compact = compact, selected = selected)
     }
 }
 
 private val ChipPressedRadius = 12.dp
+
+@Composable
+private fun SessionChipContent(
+    label: String,
+    compact: Boolean,
+    selected: Boolean,
+) {
+    Row(
+        modifier =
+            Modifier
+                .then(if (compact) Modifier.width(FloatingToolbarItemSize) else Modifier)
+                .padding(horizontal = if (compact) 0.dp else 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = if (compact) Arrangement.Center else Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            painter =
+                painterResource(
+                    id = if (selected) R.drawable.ic_focus else R.drawable.ic_focus_outlined,
+                ),
+            contentDescription = null,
+            modifier = Modifier.size(if (compact) 24.dp else 16.dp),
+        )
+        if (compact) return@Row
+        Text(
+            text = label,
+            fontWeight = FontWeight.Bold,
+            // Tabular figures and a reserved width: without both, every ticking second
+            // remeasures the chip and nudges the whole bar sideways.
+            style = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = TABULAR_FIGURES),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(CountdownLabelWidth),
+        )
+    }
+}
 
 /** Wide enough for "59:59"; a session cannot show more than two digits of minutes. */
 private val CountdownLabelWidth = 46.dp

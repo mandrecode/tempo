@@ -175,10 +175,6 @@ fun TempoNavHost(
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
-            onOpenSession = {
-                navigator.navigateToTopLevel(FocusRoute)
-                navigator.navigate(FocusSessionRoute)
-            },
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,

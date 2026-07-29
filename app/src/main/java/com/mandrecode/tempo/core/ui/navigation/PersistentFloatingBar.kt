@@ -69,7 +69,6 @@ internal fun PersistentFloatingBar(
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
-    onOpenSession: () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -92,14 +91,14 @@ internal fun PersistentFloatingBar(
 
     if (!visible) return
 
-    val sessionChip = rememberSessionChip(focusSessionRepository, currentRoute, onOpenSession)
-
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
             currentRoute = currentRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
+            hasContextualActions = isTasksRoute,
         )
     }
 
@@ -126,7 +125,6 @@ internal fun PersistentFloatingBar(
             PersistentPortraitFloatingBar(
                 isTasksRoute = isTasksRoute,
                 topLevelRoute = topLevelRoute,
-                sessionChip = sessionChip,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -356,7 +354,6 @@ private fun PersistentSingleTabPortraitFloatingBar(
 private fun PersistentPortraitFloatingBar(
     isTasksRoute: Boolean,
     topLevelRoute: NavKey,
-    sessionChip: (@Composable () -> Unit)?,
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -393,7 +390,6 @@ private fun PersistentPortraitFloatingBar(
             horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            sessionChip?.invoke()
             TaskActionButtons(
                 tasksState = tasksState,
                 showActions = isTasksRoute,

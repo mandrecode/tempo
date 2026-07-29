@@ -198,7 +198,7 @@ private fun ImmersiveActionRow(
 }
 
 /**
- * Priority, category and reminder for the task under way, as the full pills the task editor uses
+ * Category, priority and reminder for the task under way, as the full pills the task editor uses
  * rather than the compact badges its card shows — this screen has the room, and the editor's
  * vocabulary is the one that names each property outright.
  *
@@ -218,20 +218,20 @@ private fun SessionTaskMetadata(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        task.priority?.let { priority ->
-            SessionMetadataPill(
-                iconRes = R.drawable.ic_flag,
-                label = stringResource(priority.titleResId),
-                containerColor = priority.containerColor,
-                contentColor = priority.color,
-            )
-        }
         categoryName?.takeIf { it.isNotBlank() }?.let { name ->
             SessionMetadataPill(
                 iconRes = R.drawable.ic_category,
                 label = name,
                 containerColor = MaterialTheme.colorScheme.secondaryContainer,
                 contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+        task.priority?.let { priority ->
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_flag,
+                label = stringResource(priority.titleResId),
+                containerColor = priority.containerColor,
+                contentColor = priority.color,
             )
         }
         task.reminderDate?.let { reminder ->
