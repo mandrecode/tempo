@@ -122,26 +122,16 @@ private fun SessionCardActions(
 ) {
     val colors = sessionCardActionColors()
 
-    // Same split and same weights as the session screen: done and pause as one connected control,
-    // stopping on its own line underneath, so an action never means something different depending
-    // on which surface you press it from.
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        SessionActionGroup(
-            actions = runningGroupActions(session, onComplete, onPauseResume),
-            colors = colors,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        SessionActionButton(
-            action =
-                SessionAction(
-                    label = stringResource(R.string.focus_session_stop),
-                    iconRes = R.drawable.ic_stop,
-                    emphasis = ButtonEmphasis.DISCARD,
-                    onClick = onStop,
-                ),
-            colors = colors,
-        )
-    }
+    // All three across one row here, unlike the session screen's two-plus-one: the card is a
+    // summary sitting above the rest of the day, and a second row of controls would cost it more
+    // height than the actions are worth. They stay in the same order and the same weights, and the
+    // tighter compact styling is what buys the third column its room.
+    SessionActionGroup(
+        actions = runningGroupActions(session, onComplete, onPauseResume) + stopSessionAction(onStop),
+        colors = colors,
+        modifier = modifier.fillMaxWidth(),
+        compact = true,
+    )
 }
 
 @Composable

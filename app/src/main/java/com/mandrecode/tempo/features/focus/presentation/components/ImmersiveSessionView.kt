@@ -253,50 +253,12 @@ private fun SessionControls(
                 modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
             )
             SessionActionButton(
-                action =
-                    SessionAction(
-                        label = stringResource(R.string.focus_session_stop),
-                        iconRes = R.drawable.ic_stop,
-                        emphasis = ButtonEmphasis.DISCARD,
-                        onClick = onStop,
-                    ),
+                action = stopSessionAction(onStop),
                 colors = colors,
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
-}
-
-/** Done and pause for a running session — or pause alone on a break, which has no work to finish. */
-@Composable
-internal fun runningGroupActions(
-    session: FocusSession,
-    onComplete: () -> Unit,
-    onPauseResume: () -> Unit,
-): List<SessionAction> {
-    val pause =
-        SessionAction(
-            label =
-                if (session.isPaused) {
-                    stringResource(R.string.focus_session_resume)
-                } else {
-                    stringResource(R.string.focus_session_pause)
-                },
-            iconRes = if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause,
-            emphasis = ButtonEmphasis.TONAL,
-            onClick = onPauseResume,
-        )
-    if (session.isBreak) return listOf(pause)
-
-    return listOf(
-        SessionAction(
-            label = stringResource(R.string.focus_session_mark_done),
-            iconRes = R.drawable.ic_check,
-            emphasis = ButtonEmphasis.FILLED,
-            onClick = onComplete,
-        ),
-        pause,
-    )
 }
 
 /** The quiet way off this screen: no filled container at rest, but one that arrives on press. */

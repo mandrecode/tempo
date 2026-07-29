@@ -23,10 +23,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 
 /**
  * How much weight a session action carries.
@@ -82,8 +86,49 @@ internal data class SessionAction(
     val onClick: () -> Unit,
 )
 
+/** Done and pause for a running session — or pause alone on a break, which has no work to finish. */
+@Composable
+internal fun runningGroupActions(
+    session: FocusSession,
+    onComplete: () -> Unit,
+    onPauseResume: () -> Unit,
+): List<SessionAction> {
+    val pause =
+        SessionAction(
+            label =
+                if (session.isPaused) {
+                    stringResource(R.string.focus_session_resume)
+                } else {
+                    stringResource(R.string.focus_session_pause)
+                },
+            iconRes = if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause,
+            emphasis = ButtonEmphasis.TONAL,
+            onClick = onPauseResume,
+        )
+    if (session.isBreak) return listOf(pause)
+
+    return listOf(
+        SessionAction(
+            label = stringResource(R.string.focus_session_mark_done),
+            iconRes = R.drawable.ic_check,
+            emphasis = ButtonEmphasis.FILLED,
+            onClick = onComplete,
+        ),
+        pause,
+    )
+}
+
+@Composable
+internal fun stopSessionAction(onStop: () -> Unit): SessionAction =
+    SessionAction(
+        label = stringResource(R.string.focus_session_stop),
+        iconRes = R.drawable.ic_stop,
+        emphasis = ButtonEmphasis.DISCARD,
+        onClick = onStop,
+    )
+
 /**
- * Two actions drawn as a connected button group.
+ * Two or three actions drawn as a connected button group.
  *
  * A real [ButtonGroup] rather than a plain row: pressing one item widens it and squeezes its
  * neighbour, which is the interaction that tells you the two belong together. Its items are custom
@@ -99,6 +144,7 @@ internal fun SessionActionGroup(
     actions: List<SessionAction>,
     colors: SessionActionColors,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     ButtonGroup(
         overflowIndicator = {},
@@ -111,6 +157,7 @@ internal fun SessionActionGroup(
                 colors = colors,
                 isFirst = index == 0,
                 isLast = index == actions.lastIndex,
+                compact = compact,
             )
         }
     }
@@ -122,6 +169,7 @@ private fun ButtonGroupScope.groupedAction(
     colors: SessionActionColors,
     isFirst: Boolean,
     isLast: Boolean,
+    compact: Boolean,
 ) {
     customItem(
         buttonGroupContent = {
@@ -141,6 +189,7 @@ private fun ButtonGroupScope.groupedAction(
                         bottomEnd = if (isLast) outerRadius.value else InnerRadius,
                     ),
                 interactionSource = interactionSource,
+                compact = compact,
                 modifier = Modifier.weight(1f).animateWidth(interactionSource),
             )
         },
@@ -174,6 +223,7 @@ private fun SessionActionSurface(
     shape: RoundedCornerShape,
     interactionSource: MutableInteractionSource,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -211,25 +261,44 @@ private fun SessionActionSurface(
                 null
             },
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // The glyph carries the action at a glance — a tick, a pause bar, a stop square — so
-            // the three are told apart before the labels are read.
-            Icon(
-                painter = painterResource(action.iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                text = action.label,
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-            )
-        }
+        SessionActionLabel(action = action, compact = compact)
+    }
+}
+
+@Composable
+private fun SessionActionLabel(
+    action: SessionAction,
+    compact: Boolean,
+) {
+    Row(
+        modifier =
+            Modifier.padding(
+                horizontal = if (compact) 6.dp else 12.dp,
+                vertical = if (compact) 10.dp else 14.dp,
+            ),
+        horizontalArrangement =
+            Arrangement.spacedBy(if (compact) 4.dp else 8.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The glyph carries the action at a glance — a tick, a pause bar, a stop square — so the
+        // three are told apart before the labels are read.
+        Icon(
+            painter = painterResource(action.iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(if (compact) 16.dp else 18.dp),
+        )
+        Text(
+            text = action.label,
+            style =
+                if (compact) {
+                    MaterialTheme.typography.labelMedium
+                } else {
+                    MaterialTheme.typography.labelLarge
+                },
+            fontWeight = FontWeight.Bold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
