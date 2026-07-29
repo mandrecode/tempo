@@ -97,6 +97,9 @@ object FocusContract {
 
         data object StopSession : UiEvent
 
+        /** Finishes the work itself, not just the timer — ticks the task and ends the session. */
+        data object CompleteSessionTask : UiEvent
+
         data object OpenSessionScreen : UiEvent
 
         data object StartAnotherSession : UiEvent

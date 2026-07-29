@@ -64,6 +64,7 @@ fun TempoBottomNavigation(
     onNavigateToTopLevel: (NavKey) -> Unit,
     modifier: Modifier = Modifier,
     onRouteChange: (String) -> Unit = {},
+    onOpenSession: () -> Unit = {},
     hasContextualActions: Boolean = false,
 ) {
     val enabledTabs by navigationPreferencesRepository
@@ -81,7 +82,7 @@ fun TempoBottomNavigation(
             {
                 FocusSessionChip(
                     session = session,
-                    onClick = { onNavigateToTopLevel(FocusRoute) },
+                    onClick = onOpenSession,
                     compact = currentRoute == FocusRoute || hasContextualActions,
                     selected = currentRoute == FocusRoute,
                 )

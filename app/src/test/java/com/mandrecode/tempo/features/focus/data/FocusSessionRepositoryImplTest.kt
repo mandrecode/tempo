@@ -39,6 +39,10 @@ class FocusSessionRepositoryImplTest {
                     stored[firstArg()] = secondArg<Int>()
                     this@mockk
                 }
+                every { putBoolean(any(), any()) } answers {
+                    stored[firstArg()] = secondArg<Boolean>()
+                    this@mockk
+                }
                 every { remove(any()) } answers {
                     stored.remove(firstArg())
                     this@mockk
@@ -52,6 +56,7 @@ class FocusSessionRepositoryImplTest {
                 every { getLong(any(), any()) } answers { stored[firstArg()] as? Long ?: secondArg() }
                 every { getString(any(), any()) } answers { stored[firstArg()] as? String ?: secondArg() }
                 every { getInt(any(), any()) } answers { stored[firstArg()] as? Int ?: secondArg() }
+                every { getBoolean(any(), any()) } answers { stored[firstArg()] as? Boolean ?: secondArg() }
             }
         val context = mockk<Context> { every { getSharedPreferences(any(), any()) } returns prefs }
         return FocusSessionRepositoryImpl(context)
@@ -135,6 +140,17 @@ class FocusSessionRepositoryImplTest {
         // 38 sits between 30 and 45, closer to 45 — but 40 would round the other way.
         assertThat(slot.captured).isEqualTo(FocusSession.SUPPORTED_LENGTHS_MINUTES.minBy { kotlin.math.abs(it - 38) })
         assertThat(repository.defaultLengthMinutes.value).isEqualTo(45)
+    }
+
+    @Test
+    fun `a break round-trips as a break`() {
+        val stored = mutableMapOf<String, Any>()
+        val brk =
+            FocusSession.start(taskId = 7, taskTitle = "Report", now = start, isBreak = true)
+
+        createRepository(stored).setActiveSession(brk)
+
+        assertThat(createRepository(stored).activeSession.value?.isBreak).isTrue()
     }
 
     @Test

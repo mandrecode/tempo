@@ -127,6 +127,7 @@ fun FocusSessionScreen(
                 )
             },
             onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+            onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
             onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
             modifier = Modifier.padding(innerPadding),
         )

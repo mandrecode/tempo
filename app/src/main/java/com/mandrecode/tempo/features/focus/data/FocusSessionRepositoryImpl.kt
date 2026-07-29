@@ -38,6 +38,7 @@ class FocusSessionRepositoryImpl
                     remove(KEY_PLANNED_MILLIS)
                     remove(KEY_COMPLETED_MILLIS)
                     remove(KEY_RUNNING_SINCE)
+                    remove(KEY_IS_BREAK)
                 } else {
                     putLong(KEY_TASK_ID, session.taskId)
                     putString(KEY_TASK_TITLE, session.taskTitle)
@@ -46,6 +47,7 @@ class FocusSessionRepositoryImpl
                     // -1 rather than removing the key, so "paused" is a stored state instead of an
                     // absence that could be confused with a partially written record.
                     putLong(KEY_RUNNING_SINCE, session.runningSince?.toEpochMilliseconds() ?: NOT_RUNNING)
+                    putBoolean(KEY_IS_BREAK, session.isBreak)
                 }
             }
             sessionFlow.value = session
@@ -70,6 +72,7 @@ class FocusSessionRepositoryImpl
                 taskId = prefs.getLong(KEY_TASK_ID, 0L),
                 taskTitle = prefs.getString(KEY_TASK_TITLE, null).orEmpty(),
                 plannedLength = plannedMillis.milliseconds,
+                isBreak = prefs.getBoolean(KEY_IS_BREAK, false),
                 completedBeforeNow = prefs.getLong(KEY_COMPLETED_MILLIS, 0L).milliseconds,
                 runningSince =
                     runningSince
@@ -90,6 +93,7 @@ class FocusSessionRepositoryImpl
             const val KEY_PLANNED_MILLIS = "session_planned_millis"
             const val KEY_COMPLETED_MILLIS = "session_completed_millis"
             const val KEY_RUNNING_SINCE = "session_running_since"
+            const val KEY_IS_BREAK = "session_is_break"
             const val KEY_DEFAULT_LENGTH = "session_default_length_minutes"
             const val NOT_RUNNING = -1L
         }

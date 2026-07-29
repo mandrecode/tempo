@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -69,6 +70,7 @@ internal fun PersistentFloatingBar(
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
+    onOpenSession: () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -98,6 +100,7 @@ internal fun PersistentFloatingBar(
             focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
+            onOpenSession = onOpenSession,
             hasContextualActions = isTasksRoute,
         )
     }
@@ -296,7 +299,7 @@ private fun SettingsRailButton(
 }
 
 @Composable
-private fun PersistentSingleTabPortraitFloatingBar(
+internal fun PersistentSingleTabPortraitFloatingBar(
     isTasksRoute: Boolean,
     addAction: AddAction,
     tasksState: TasksFloatingBarState,
@@ -351,60 +354,7 @@ private fun PersistentSingleTabPortraitFloatingBar(
 }
 
 @Composable
-private fun PersistentPortraitFloatingBar(
-    isTasksRoute: Boolean,
-    topLevelRoute: NavKey,
-    navigationContent: @Composable () -> Unit,
-    routinesState: RoutinesFloatingBarState,
-    tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
-) {
-    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
-    // Single tab and no add action leaves nothing to draw — don't float an empty surface.
-    if (isSingleTabMode && addAction == null) return
-    if (isSingleTabMode && addAction != null) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
-    // One centred row rather than hand-tuned offsets: the previous version compensated for the
-    // task action buttons with fixed dp values measured against the old control set, which the
-    // session pill silently invalidated — on Tasks the assembly drifted off-centre and clipped.
-    // Letting the row centre itself stays correct whatever combination of controls is present.
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        // Order: session pill, then the tab-specific actions, then the bar itself and the add
-        // button. The pill leads because it belongs to work already in flight; the task actions sit
-        // directly against the nav pill they belong to.
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            TaskActionButtons(
-                tasksState = tasksState,
-                showActions = isTasksRoute,
-            )
-            FloatingBarMainControls(
-                isSingleTabMode = isSingleTabMode,
-                addAction = addAction,
-                navigationContent = navigationContent,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FloatingBarMainControls(
+internal fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
     addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
@@ -440,7 +390,7 @@ private fun FloatingBarMainControls(
 }
 
 @Composable
-private fun AddActionButton(addAction: AddAction) {
+internal fun AddActionButton(addAction: AddAction) {
     TempoBottomRailActionButton(
         iconRes = R.drawable.ic_add,
         contentDescription = addAction.label,
@@ -453,7 +403,7 @@ private fun AddActionButton(addAction: AddAction) {
  * through the tab it is showing work from rather than owning a create action of its own.
  */
 @Composable
-private fun rememberAddAction(
+internal fun rememberAddAction(
     topLevelRoute: NavKey,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -476,7 +426,7 @@ private fun rememberAddAction(
         else -> null
     }
 
-private data class AddAction(
+internal data class AddAction(
     val label: String,
     val compact: Boolean,
     val onClick: () -> Unit,

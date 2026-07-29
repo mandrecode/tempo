@@ -674,4 +674,6 @@
     <string name="notification_focus_session_channel_name">Sesiones de enfoque</string>
     <string name="notification_focus_session_channel_description">La cuenta atrás de una sesión de enfoque en curso.</string>
     <string name="focus_session_collapse">Contraer</string>
+    <string name="focus_session_mark_done">Marcar hecha</string>
+    <string name="focus_session_break">En un descanso</string>
 </resources>

@@ -45,6 +45,7 @@ internal fun RunningSessionCard(
     onExpand: () -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
+    onComplete: () -> Unit,
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
@@ -102,8 +103,10 @@ internal fun RunningSessionCard(
 
             SessionActionRow(
                 isPaused = session.isPaused,
+                isBreak = session.isBreak,
                 onPauseResume = onPauseResume,
                 onStop = onStop,
+                onComplete = onComplete,
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
@@ -113,8 +116,10 @@ internal fun RunningSessionCard(
 @Composable
 private fun SessionActionRow(
     isPaused: Boolean,
+    isBreak: Boolean,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
+    onComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -135,8 +140,15 @@ private fun SessionActionRow(
             label = stringResource(R.string.focus_session_stop),
             onClick = onStop,
             modifier = Modifier.weight(1f),
-            emphasised = true,
         )
+        if (!isBreak) {
+            SessionActionButton(
+                label = stringResource(R.string.focus_session_mark_done),
+                onClick = onComplete,
+                modifier = Modifier.weight(1f),
+                emphasised = true,
+            )
+        }
     }
 }
 

@@ -213,6 +213,7 @@ private fun LazyListScope.upNextSection(
                         )
                     },
                     onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+                    onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
                     modifier = Modifier.fillMaxWidth().animateItem(),
                 )
             }

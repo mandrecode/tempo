@@ -509,7 +509,7 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `taking a break just clears the sheet`() =
+    fun `taking a break starts a real break countdown`() =
         runTest {
             stubDay()
             val session = FocusSession.start(1, "Report", nowInstant)
@@ -522,8 +522,45 @@ class FocusViewModelTest {
             advanceUntilIdle()
 
             viewModel.onEvent(FocusContract.UiEvent.TakeBreak)
+            advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.finishedSession).isNull()
+            coVerify { focusSessionUseCases.start(taskId = any(), taskTitle = any(), isBreak = true) }
+        }
+
+    @Test
+    fun `marking the session's task done completes it and ends the session`() =
+        runTest {
+            val open = task(4, "Report")
+            stubDay(agendaOf(upNext = FocusAgendaItem.TaskEntry(open)))
+            val session = FocusSession.start(4, "Report", nowInstant)
+            sessionFlow.value = session
+            coEvery { focusSessionUseCases.end() } returns session
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(open) }
+            coVerify { focusSessionUseCases.end() }
+        }
+
+    @Test
+    fun `marking done is a no-op when the task is already complete`() =
+        runTest {
+            val done = task(4, "Report", isCompleted = true)
+            stubDay(agendaOf(upNext = FocusAgendaItem.TaskEntry(done)))
+            sessionFlow.value = FocusSession.start(4, "Report", nowInstant)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { toggleTaskCompletion(any()) }
         }
 
     @Test

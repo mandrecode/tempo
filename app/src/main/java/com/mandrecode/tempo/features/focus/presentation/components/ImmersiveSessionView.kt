@@ -61,6 +61,7 @@ internal fun SessionBody(
     categoryName: String?,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
+    onComplete: () -> Unit,
     onToggleSubtask: (Task) -> Unit,
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
@@ -120,11 +121,12 @@ internal fun SessionBody(
             }
         }
 
-        ImmersiveActionRow(
+        SessionControls(
             isPaused = session.isPaused,
+            isBreak = session.isBreak,
             onPauseResume = onPauseResume,
             onStop = onStop,
-            modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 32.dp),
+            onComplete = onComplete,
         )
     }
 }
@@ -162,6 +164,34 @@ private fun SessionRing(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionControls(
+    isPaused: Boolean,
+    isBreak: Boolean,
+    onPauseResume: () -> Unit,
+    onStop: () -> Unit,
+    onComplete: () -> Unit,
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        ImmersiveActionRow(
+            isPaused = isPaused,
+            onPauseResume = onPauseResume,
+            onStop = onStop,
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+        )
+
+        // Separate from stopping: ending the timer and finishing the work are different intents,
+        // and only this one ticks the task.
+        if (!isBreak) {
+            ImmersiveButton(
+                label = stringResource(R.string.focus_session_mark_done),
+                onClick = onComplete,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 32.dp),
             )
         }
     }
