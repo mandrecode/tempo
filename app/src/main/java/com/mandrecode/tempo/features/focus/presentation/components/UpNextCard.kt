@@ -20,8 +20,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.util.DateTimeFormatter
 
@@ -101,7 +101,7 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
         buildList {
             // Priority, then category, then time — the order the eye needs them in: how much this
             // matters, where it belongs, when it is due.
-            priority?.let { add(stringResource(it.labelRes).uppercase()) }
+            priority?.let { add(stringResource(it.titleResId).uppercase()) }
             (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
                 ?.categoryName
                 ?.takeIf { it.isNotBlank() }
@@ -110,14 +110,6 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
         }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(SEPARATOR)
 }
-
-private val Priority.labelRes: Int
-    get() =
-        when (this) {
-            Priority.HIGH -> R.string.priority_high
-            Priority.MEDIUM -> R.string.priority_medium
-            Priority.LOW -> R.string.priority_low
-        }
 
 private const val SEPARATOR = " · "
 

@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -22,18 +24,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.util.color
+import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
-import com.mandrecode.tempo.features.tasks.presentation.components.cards.MetadataRow
+import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlin.time.Clock
 
 private val RingSize = 220.dp
@@ -96,9 +104,8 @@ internal fun SessionBody(
         if (task != null) {
             SessionTaskMetadata(
                 task = task,
-                subtasks = subtasks,
                 categoryName = categoryName,
-                modifier = Modifier.padding(top = 20.dp),
+                modifier = Modifier.padding(top = 24.dp),
             )
         }
 
@@ -191,37 +198,81 @@ private fun ImmersiveActionRow(
 }
 
 /**
- * Priority, category and reminder for the task under way, using the same badges its card shows in
- * Tasks — so the session screen states the task's properties in the vocabulary the user already
- * knows, rather than inventing a second one.
+ * Priority, category and reminder for the task under way, as the full pills the task editor uses
+ * rather than the compact badges its card shows — this screen has the room, and the editor's
+ * vocabulary is the one that names each property outright.
+ *
+ * The reminder is the exception: the date is already implied by the session being under way, so it
+ * shows the time alone.
  */
 @Composable
 private fun SessionTaskMetadata(
     task: Task,
-    subtasks: List<Task>,
     categoryName: String?,
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    val context = LocalContext.current
+
+    FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
+        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        categoryName?.takeIf { it.isNotBlank() }?.let { name ->
-            Surface(
-                shape = RoundedCornerShape(percent = FULLY_ROUNDED),
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                modifier = Modifier.padding(bottom = 8.dp),
-            ) {
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
+        task.priority?.let { priority ->
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_flag,
+                label = stringResource(priority.titleResId),
+                containerColor = priority.containerColor,
+                contentColor = priority.color,
+            )
         }
-        MetadataRow(task = task, subtasks = subtasks)
+        categoryName?.takeIf { it.isNotBlank() }?.let { name ->
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_category,
+                label = name,
+                containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            )
+        }
+        task.reminderDate?.let { reminder ->
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_notifications,
+                label = DateTimeFormatter.formatTimeOfDay(reminder.time, context),
+                containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SessionMetadataPill(
+    iconRes: Int,
+    label: String,
+    containerColor: Color,
+    contentColor: Color,
+) {
+    Surface(
+        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        color = containerColor,
+        contentColor = contentColor,
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
     }
 }
 
