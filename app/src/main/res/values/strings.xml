@@ -665,6 +665,7 @@
     <string name="focus_session_focusing">Focusing</string>
     <string name="focus_session_remaining">%1$s left</string>
     <string name="focus_session_length">Focus session length</string>
+    <string name="focus_break_length">Break length</string>
     <string name="focus_session_length_minutes">%1$d min</string>
     <string name="settings_focus">Focus</string>
     <string name="notification_focus_session_channel_name">Focus sessions</string>

@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +25,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -35,9 +38,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.components.ValueStepper
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.core.ui.util.titleResId
@@ -66,7 +72,7 @@ internal fun SessionBody(
     subtasks: List<Task>,
     task: Task?,
     categoryName: String?,
-    onStart: () -> Unit,
+    onStart: (Int) -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
@@ -107,7 +113,13 @@ internal fun SessionBody(
 
         if (subtasks.isNotEmpty()) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
+                // Narrower than the ring above it: a checklist reads down a column, and lines
+                // running the full width of a tablet are a long way for the eye to travel back.
+                modifier =
+                    Modifier
+                        .widthIn(max = SubtaskColumnMaxWidth)
+                        .fillMaxWidth()
+                        .padding(top = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 subtasks.forEach { subtask ->
@@ -218,7 +230,7 @@ private fun SessionRing(
 private fun SessionControls(
     session: FocusSession?,
     plannedLength: Duration,
-    onStart: () -> Unit,
+    onStart: (Int) -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
@@ -227,20 +239,32 @@ private fun SessionControls(
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
         if (session == null) {
+            // The length is adjustable right here, for this start only: most sessions want the
+            // setting, but the one you are about to begin sometimes wants twenty minutes rather
+            // than the twenty-five you normally take, and changing a preference to say so is too
+            // much ceremony for a decision that expires when the timer does.
+            var minutes by
+                remember(plannedLength) {
+                    mutableIntStateOf(plannedLength.inWholeMinutes.toInt())
+                }
+            ValueStepper(
+                value = minutes,
+                label = stringResource(R.string.focus_session_length_minutes, minutes),
+                onValueChange = { minutes = it },
+                range = FocusSession.SESSION_LENGTH_RANGE,
+                step = FocusSession.LENGTH_STEP_MINUTES,
+                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp),
+            )
             SessionActionButton(
                 action =
                     SessionAction(
-                        label =
-                            stringResource(
-                                R.string.focus_session_start,
-                                plannedLength.inWholeMinutes.toInt(),
-                            ),
+                        label = stringResource(R.string.focus_session_start, minutes),
                         iconRes = R.drawable.ic_play_arrow,
                         emphasis = ButtonEmphasis.FILLED,
-                        onClick = onStart,
+                        onClick = { onStart(minutes) },
                     ),
                 colors = colors,
-                modifier = Modifier.padding(top = 32.dp),
+                modifier = Modifier.padding(top = 16.dp),
             )
         } else {
             // Finishing and pausing are the two you reach for while working, so they sit together
@@ -391,32 +415,44 @@ private fun SubtaskRow(
     onToggle: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable {
-                    // Same weight as ticking the checkbox itself, which the row stands in for.
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onToggle()
-                }.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+
+    // A card of its own rather than a bare full-bleed row: the ripple used to spread the whole
+    // screen width as a rectangle, which read as the page reacting rather than the line you
+    // touched. Clipping to the shape keeps the press inside the row it belongs to.
+    Surface(
+        onClick = {
+            // Same weight as ticking the checkbox itself, which the row stands in for.
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onToggle()
+        },
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(SubtaskRadius),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
     ) {
-        TaskCompletionCheckbox(
-            isCompleted = subtask.isCompleted,
-            onToggle = { onToggle() },
-        )
-        Text(
-            text = subtask.title,
-            style = MaterialTheme.typography.bodyLarge,
-            color =
-                if (subtask.isCompleted) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            TaskCompletionCheckbox(
+                isCompleted = subtask.isCompleted,
+                onToggle = { onToggle() },
+            )
+            Text(
+                text = subtask.title,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
+                color =
+                    if (subtask.isCompleted) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    },
+            )
+        }
     }
 }
 
@@ -424,4 +460,6 @@ private val STILL = 0.dp
 private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val SessionHorizontalPadding = 16.dp
+private val SubtaskRadius = 14.dp
+private val SubtaskColumnMaxWidth = 420.dp
 private val TextButtonRadius = 24.dp

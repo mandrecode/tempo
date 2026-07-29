@@ -669,6 +669,7 @@
     <string name="focus_session_focusing">En curso</string>
     <string name="focus_session_remaining">Quedan %1$s</string>
     <string name="focus_session_length">Duración de la sesión</string>
+    <string name="focus_break_length">Duración del descanso</string>
     <string name="focus_session_length_minutes">%1$d min</string>
     <string name="settings_focus">Enfoque</string>
     <string name="notification_focus_session_channel_name">Sesiones de enfoque</string>

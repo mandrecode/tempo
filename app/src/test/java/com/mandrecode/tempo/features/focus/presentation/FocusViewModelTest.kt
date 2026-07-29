@@ -62,6 +62,7 @@ class FocusViewModelTest {
             every { activeSession } returns sessionFlow
             every { defaultLengthMinutes } returns lengthFlow
             every { previewTaskId } returns previewFlow
+            every { breakLengthMinutes } returns MutableStateFlow(5)
             every { setPreviewTaskId(any()) } answers { previewFlow.value = firstArg() }
         }
 
@@ -84,10 +85,10 @@ class FocusViewModelTest {
     )
 
     private fun agendaOf(
-        upNext: FocusAgendaItem? = null,
+        upNext: FocusAgendaItem.TaskEntry? = null,
         todayItems: List<FocusAgendaItem> = emptyList(),
         undated: Int = 0,
-    ) = FocusAgenda(upNext = upNext, today = todayItems, undatedTaskCount = undated)
+    ) = FocusAgenda(upNext = listOfNotNull(upNext), today = todayItems, undatedTaskCount = undated)
 
     private fun stubDay(agenda: FocusAgenda = agendaOf()) {
         every { getFocusAgenda(any()) } returns flowOf(agenda)
@@ -143,7 +144,7 @@ class FocusViewModelTest {
                 val state = awaitItem()
                 assertThat(state.isLoading).isFalse()
                 assertThat(state.streakDays).isEqualTo(14)
-                assertThat(state.upNext).isEqualTo(entry)
+                assertThat(state.upNext).containsExactly(entry)
                 assertThat(state.undatedTaskCount).isEqualTo(3)
                 cancelAndIgnoreRemainingEvents()
             }
@@ -170,7 +171,7 @@ class FocusViewModelTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onEvent(FocusContract.UiEvent.StartSession)
+            viewModel.onEvent(FocusContract.UiEvent.StartSession())
             advanceUntilIdle()
 
             coVerify { focusSessionUseCases.start(taskId = 9, taskTitle = "Report") }
@@ -186,7 +187,7 @@ class FocusViewModelTest {
             advanceUntilIdle()
 
             viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
+                viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext(9))
                 advanceUntilIdle()
 
                 assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
@@ -207,7 +208,7 @@ class FocusViewModelTest {
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
+            viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext(9))
             viewModel.onEvent(FocusContract.UiEvent.ClearSessionPreview)
             advanceUntilIdle()
 
@@ -215,24 +216,19 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `previewing does nothing when up next is a habit, which has no session`() =
+    fun `a day of habits alone leaves the row with nothing to preview`() =
         runTest {
             val habitEntry =
                 FocusAgendaItem.HabitEntry(
                     habit = focusHabit(4),
                     isCompleted = false,
                 )
-            stubDay(agendaOf(upNext = habitEntry, todayItems = listOf(habitEntry)))
+            stubDay(agendaOf(todayItems = listOf(habitEntry)))
 
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
-                advanceUntilIdle()
-
-                expectNoEvents()
-            }
+            assertThat(viewModel.uiState.value.upNext).isEmpty()
             assertThat(viewModel.uiState.value.sessionEntry).isNull()
         }
 
@@ -246,7 +242,7 @@ class FocusViewModelTest {
             advanceUntilIdle()
 
             viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.StartSession)
+                viewModel.onEvent(FocusContract.UiEvent.StartSession())
                 advanceUntilIdle()
 
                 assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
@@ -255,7 +251,7 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `a habit in up next neither starts a session nor navigates`() =
+    fun `a day of habits alone starts nothing and goes nowhere`() =
         runTest {
             val habitEntry =
                 FocusAgendaItem.HabitEntry(
@@ -269,13 +265,13 @@ class FocusViewModelTest {
                             ),
                     isCompleted = false,
                 )
-            stubDay(agendaOf(upNext = habitEntry, todayItems = listOf(habitEntry)))
+            stubDay(agendaOf(todayItems = listOf(habitEntry)))
 
             val viewModel = createViewModel()
             advanceUntilIdle()
 
             viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.StartSession)
+                viewModel.onEvent(FocusContract.UiEvent.StartSession())
                 advanceUntilIdle()
 
                 expectNoEvents()
@@ -322,7 +318,7 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `a habit in up next cannot host a session`() =
+    fun `a day of habits alone never reaches the session use case`() =
         runTest {
             val habitEntry =
                 FocusAgendaItem.HabitEntry(
@@ -336,12 +332,12 @@ class FocusViewModelTest {
                             ),
                     isCompleted = false,
                 )
-            stubDay(agendaOf(upNext = habitEntry, todayItems = listOf(habitEntry)))
+            stubDay(agendaOf(todayItems = listOf(habitEntry)))
 
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onEvent(FocusContract.UiEvent.StartSession)
+            viewModel.onEvent(FocusContract.UiEvent.StartSession())
             advanceUntilIdle()
 
             coVerify(exactly = 0) { focusSessionUseCases.start(any(), any()) }

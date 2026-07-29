@@ -105,15 +105,10 @@ class FocusAgendaTest {
     }
 
     @Test
-    fun `the promoted up next item is counted, since it was lifted out of its section`() {
-        val promoted = taskEntry(1)
-        val agenda = FocusAgenda(upNext = promoted, today = listOf(taskEntry(2)))
+    fun `up next is not counted again, since it is a view onto the sections`() {
+        val shortlisted = taskEntry(1)
+        val agenda = FocusAgenda(upNext = listOf(shortlisted), today = listOf(shortlisted))
 
-        assertThat(agenda.scheduledCount).isEqualTo(2)
-    }
-
-    @Test
-    fun `an agenda holding only an up next item is not empty`() {
-        assertThat(FocusAgenda(upNext = taskEntry(1)).isEmpty).isFalse()
+        assertThat(agenda.scheduledCount).isEqualTo(1)
     }
 }

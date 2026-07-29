@@ -56,11 +56,12 @@ data class FocusSession(
 
     companion object {
         val DEFAULT_LENGTH: Duration = 25.minutes
+        val DEFAULT_BREAK_LENGTH: Duration = 5.minutes
 
-        /** Fixed for v1 — configuring both lengths is more choice than the feature needs yet. */
-        val BREAK_LENGTH: Duration = 5.minutes
-
-        val SUPPORTED_LENGTHS_MINUTES: List<Int> = listOf(15, 20, 25, 30, 45, 60)
+        /** Both lengths step in fives, which is how people say them out loud. */
+        const val LENGTH_STEP_MINUTES: Int = 5
+        val SESSION_LENGTH_RANGE: IntRange = 5..120
+        val BREAK_LENGTH_RANGE: IntRange = 5..60
 
         fun start(
             taskId: Long,

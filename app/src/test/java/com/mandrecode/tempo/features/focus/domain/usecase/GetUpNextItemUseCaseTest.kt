@@ -48,7 +48,7 @@ class GetUpNextItemUseCaseTest {
 
     @Test
     fun `no candidates yields nothing`() {
-        assertThat(useCase(emptyList())).isNull()
+        assertThat(useCase(emptyList())).isEmpty()
     }
 
     @Test
@@ -56,7 +56,7 @@ class GetUpNextItemUseCaseTest {
         val high = taskEntry(1, hour = 17, priority = Priority.HIGH)
         val untimed = taskEntry(2, hour = 9)
 
-        assertThat(useCase(listOf(untimed, high))).isEqualTo(high)
+        assertThat(useCase(listOf(untimed, high)).first()).isEqualTo(high)
     }
 
     @Test
@@ -64,7 +64,7 @@ class GetUpNextItemUseCaseTest {
         val early = taskEntry(1, hour = 9, priority = Priority.MEDIUM)
         val late = taskEntry(2, hour = 12, priority = Priority.MEDIUM)
 
-        assertThat(useCase(listOf(late, early))).isEqualTo(early)
+        assertThat(useCase(listOf(late, early)).first()).isEqualTo(early)
     }
 
     @Test
@@ -72,7 +72,7 @@ class GetUpNextItemUseCaseTest {
         val timed = taskEntry(1, hour = 15)
         val untimed = taskEntry(2, hour = null)
 
-        assertThat(useCase(listOf(untimed, timed))).isEqualTo(timed)
+        assertThat(useCase(listOf(untimed, timed)).first()).isEqualTo(timed)
     }
 
     @Test
@@ -80,7 +80,7 @@ class GetUpNextItemUseCaseTest {
         val done = taskEntry(1, hour = 8, priority = Priority.HIGH, isCompleted = true)
         val open = taskEntry(2, hour = 16)
 
-        assertThat(useCase(listOf(done, open))).isEqualTo(open)
+        assertThat(useCase(listOf(done, open))).containsExactly(open)
     }
 
     @Test
@@ -91,7 +91,7 @@ class GetUpNextItemUseCaseTest {
                 habitEntry(2, hour = 9, isCompleted = true),
             )
 
-        assertThat(useCase(candidates)).isNull()
+        assertThat(useCase(candidates)).isEmpty()
     }
 
     @Test
@@ -99,12 +99,12 @@ class GetUpNextItemUseCaseTest {
         val habit = habitEntry(1, hour = 7)
         val task = taskEntry(2, hour = 9)
 
-        assertThat(useCase(listOf(task, habit))).isEqualTo(task)
+        assertThat(useCase(listOf(task, habit))).containsExactly(task)
     }
 
     @Test
     fun `a day of habits alone leaves the slot empty`() {
-        assertThat(useCase(listOf(habitEntry(1, hour = 7), habitEntry(2, hour = 8)))).isNull()
+        assertThat(useCase(listOf(habitEntry(1, hour = 7), habitEntry(2, hour = 8)))).isEmpty()
     }
 
     @Test
@@ -112,7 +112,7 @@ class GetUpNextItemUseCaseTest {
         val low = taskEntry(1, hour = 20, priority = Priority.LOW)
         val none = taskEntry(2, hour = 6)
 
-        assertThat(useCase(listOf(none, low))).isEqualTo(low)
+        assertThat(useCase(listOf(none, low)).first()).isEqualTo(low)
     }
 
     @Test
@@ -120,6 +120,6 @@ class GetUpNextItemUseCaseTest {
         val first = taskEntry(1, hour = 9)
         val second = taskEntry(2, hour = 9)
 
-        assertThat(useCase(listOf(second, first))).isEqualTo(first)
+        assertThat(useCase(listOf(second, first)).first()).isEqualTo(first)
     }
 }

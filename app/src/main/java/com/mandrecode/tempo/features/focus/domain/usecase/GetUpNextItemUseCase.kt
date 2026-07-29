@@ -4,8 +4,10 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import jakarta.inject.Inject
 
 /**
- * Picks the single task the Up next card spotlights: highest priority first, earliest due time
- * second.
+ * Orders the tasks the Up next row offers: highest priority first, earliest due time second.
+ *
+ * A queue rather than a single pick, because the best next thing is not always the one you are
+ * ready to do — the row lets you swipe past it to the one you are, without leaving the screen.
  *
  * Tasks only. The card's whole purpose is to be the one thing you start a session on, and a habit
  * is not something you sit down and run a timer against — it is ticked off in passing. A habit in
@@ -19,7 +21,7 @@ import jakarta.inject.Inject
 class GetUpNextItemUseCase
     @Inject
     constructor() {
-        operator fun invoke(candidates: List<FocusAgendaItem>): FocusAgendaItem.TaskEntry? =
+        operator fun invoke(candidates: List<FocusAgendaItem>): List<FocusAgendaItem.TaskEntry> =
             candidates
                 .asSequence()
                 .filterIsInstance<FocusAgendaItem.TaskEntry>()
@@ -29,10 +31,17 @@ class GetUpNextItemUseCase
                         .thenBy { it.dueTime == null }
                         .thenBy { it.dueTime }
                         .thenBy { it.id },
-                ).firstOrNull()
+                ).take(MAX_UP_NEXT)
+                .toList()
 
         private companion object {
             /** Sorts after every real priority, whatever their sort orders are. */
             const val UNPRIORITISED = Int.MAX_VALUE
+
+            /**
+             * Enough to swipe past what you are not ready for, few enough that the row stays a
+             * shortlist and the day's own list still has something left in it.
+             */
+            const val MAX_UP_NEXT = 5
         }
     }

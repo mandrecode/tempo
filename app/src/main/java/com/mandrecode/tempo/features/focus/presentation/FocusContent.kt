@@ -2,17 +2,22 @@ package com.mandrecode.tempo.features.focus.presentation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -145,7 +150,13 @@ private fun FocusAgendaList(
                 )
             }
             items(uiState.overdue, key = { it.id }) { entry ->
-                AgendaRow(entry = entry, today = today, expandedChainIds = uiState.expandedChainIds, onEvent = onEvent)
+                AgendaRow(
+                    entry = entry,
+                    today = today,
+                    expandedChainIds = uiState.expandedChainIds,
+                    collapsedTaskIds = uiState.collapsedTaskIds,
+                    onEvent = onEvent,
+                )
             }
         }
 
@@ -157,7 +168,13 @@ private fun FocusAgendaList(
                 )
             }
             items(uiState.todayItems, key = { it.id }) { entry ->
-                AgendaRow(entry = entry, today = today, expandedChainIds = uiState.expandedChainIds, onEvent = onEvent)
+                AgendaRow(
+                    entry = entry,
+                    today = today,
+                    expandedChainIds = uiState.expandedChainIds,
+                    collapsedTaskIds = uiState.collapsedTaskIds,
+                    onEvent = onEvent,
+                )
             }
         }
 
@@ -183,27 +200,27 @@ private fun LazyListScope.upNextSection(
 ) {
     val session = uiState.session
     val upNext = uiState.upNext
-    if (session != null || upNext != null) {
-        item(key = "up_next_label") {
-            Text(
-                text =
-                    if (session != null) {
-                        stringResource(R.string.focus_session_focusing).uppercase()
-                    } else {
-                        stringResource(R.string.focus_up_next).uppercase()
-                    },
-                style = MaterialTheme.typography.groupLabel,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        // The card transforms in place rather than being replaced, so starting a session
-        // does not shift everything below it.
-        if (session != null) {
-            runningSessionItem(session, onEvent)
-        } else if (upNext != null) {
-            upNextItem(upNext, uiState.defaultSessionLengthMinutes, onEvent)
-        }
+    if (session == null && upNext.isEmpty()) return
+
+    item(key = "up_next_label") {
+        Text(
+            text =
+                if (session != null) {
+                    stringResource(R.string.focus_session_focusing).uppercase()
+                } else {
+                    stringResource(R.string.focus_up_next).uppercase()
+                },
+            style = MaterialTheme.typography.groupLabel,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    // The card transforms in place rather than being replaced, so starting a session
+    // does not shift everything below it.
+    if (session != null) {
+        runningSessionItem(session, onEvent)
+    } else {
+        upNextRow(upNext, uiState.defaultSessionLengthMinutes, onEvent)
     }
 }
 
@@ -231,49 +248,65 @@ private fun LazyListScope.runningSessionItem(
     }
 }
 
-private fun LazyListScope.upNextItem(
-    upNext: FocusAgendaItem,
+/**
+ * The shortlist you swipe through.
+ *
+ * A row rather than a single card, because the best next thing is not always the one you are ready
+ * to do, and the alternative was leaving the screen to find the one you are. Cards stop short of
+ * the full width so the next one shows at the edge — the only honest way to say there is more.
+ */
+private fun LazyListScope.upNextRow(
+    upNext: ImmutableList<FocusAgendaItem.TaskEntry>,
     defaultSessionLengthMinutes: Int,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
-    item(key = "up_next_${upNext.id}") {
-        UpNextCard(
-            title = upNext.displayTitle(),
-            metadata = upNext.upNextMetadata(),
-            metadataIconRes = R.drawable.ic_flag.takeIf { upNext.priority != null },
-            // A task's card opens the session screen with the timer waiting rather than running:
-            // looking at the work is not the same as committing to it. A habit or chain has no
-            // session to open, so it still goes to its own sheet.
-            onClick = {
-                onEvent(
-                    if (upNext is FocusAgendaItem.TaskEntry) {
-                        FocusContract.UiEvent.PreviewUpNext
-                    } else {
-                        upNext.editEvent()
-                    },
-                )
-            },
-            modifier = Modifier.fillMaxWidth().animateItem(),
-            trailingContent =
-                if (upNext is FocusAgendaItem.TaskEntry) {
-                    {
-                        StartSessionButton(
-                            minutes = defaultSessionLengthMinutes,
-                            onClick = { onEvent(FocusContract.UiEvent.StartSession) },
-                        )
-                    }
-                } else {
-                    null
-                },
-        )
+    item(key = "up_next_row") {
+        val listState = rememberLazyListState()
+        BoxWithConstraints(modifier = Modifier.fillMaxWidth().animateItem()) {
+            val cardWidth =
+                if (upNext.size > 1) maxWidth * SINGLE_PEEK_FRACTION else maxWidth
+            LazyRow(
+                state = listState,
+                flingBehavior = rememberSnapFlingBehavior(listState),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                items(upNext, key = { it.id }) { entry ->
+                    UpNextCard(
+                        title = entry.displayTitle(),
+                        metadata = entry.upNextMetadata(),
+                        metadataIconRes = R.drawable.ic_flag.takeIf { entry.priority != null },
+                        // Opening the card looks at the work with the timer waiting; starting is
+                        // the separate, deliberate tap beside it.
+                        onClick = {
+                            onEvent(FocusContract.UiEvent.PreviewUpNext(entry.task.id))
+                        },
+                        modifier = Modifier.width(cardWidth),
+                        trailingContent = {
+                            StartSessionButton(
+                                minutes = defaultSessionLengthMinutes,
+                                onClick = {
+                                    onEvent(
+                                        FocusContract.UiEvent.StartSession(taskId = entry.task.id),
+                                    )
+                                },
+                            )
+                        },
+                    )
+                }
+            }
+        }
     }
 }
+
+/** Leaves the next card showing at the edge, so the row reads as a row. */
+private const val SINGLE_PEEK_FRACTION = 0.88f
 
 @Composable
 private fun AgendaRow(
     entry: FocusAgendaItem,
     today: LocalDate,
     expandedChainIds: ImmutableList<Long>,
+    collapsedTaskIds: ImmutableList<Long>,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     when (entry) {
@@ -283,6 +316,12 @@ private fun AgendaRow(
                 subtasks = entry.subtasks,
                 onToggleCompletion = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
                 onEdit = { onEvent(FocusContract.UiEvent.EditTask(it)) },
+                // Without both of these the card is pinned open: its default is expanded and its
+                // toggle goes nowhere, so the chevron did nothing at all here.
+                isSubtasksExpanded = entry.task.id !in collapsedTaskIds,
+                onToggleSubtasksExpansion = {
+                    onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(entry.task.id))
+                },
             )
 
         is FocusAgendaItem.HabitEntry ->

@@ -25,11 +25,14 @@ class FocusSessionRepositoryImpl
 
         private val sessionFlow = MutableStateFlow(readSession())
         private val defaultLengthFlow = MutableStateFlow(readDefaultLength())
+        private val breakLengthFlow = MutableStateFlow(readBreakLength())
         private val previewTaskIdFlow = MutableStateFlow<Long?>(null)
 
         override val activeSession: StateFlow<FocusSession?> = sessionFlow.asStateFlow()
 
         override val defaultLengthMinutes: StateFlow<Int> = defaultLengthFlow.asStateFlow()
+
+        override val breakLengthMinutes: StateFlow<Int> = breakLengthFlow.asStateFlow()
 
         override val previewTaskId: StateFlow<Long?> = previewTaskIdFlow.asStateFlow()
 
@@ -61,12 +64,15 @@ class FocusSessionRepositoryImpl
         }
 
         override fun setDefaultLengthMinutes(minutes: Int) {
-            val normalized =
-                FocusSession.SUPPORTED_LENGTHS_MINUTES.minBy { candidate ->
-                    kotlin.math.abs(candidate - minutes)
-                }
+            val normalized = minutes.coerceIn(FocusSession.SESSION_LENGTH_RANGE)
             prefs.edit { putInt(KEY_DEFAULT_LENGTH, normalized) }
             defaultLengthFlow.value = normalized
+        }
+
+        override fun setBreakLengthMinutes(minutes: Int) {
+            val normalized = minutes.coerceIn(FocusSession.BREAK_LENGTH_RANGE)
+            prefs.edit { putInt(KEY_BREAK_LENGTH, normalized) }
+            breakLengthFlow.value = normalized
         }
 
         private fun readSession(): FocusSession? {
@@ -90,7 +96,12 @@ class FocusSessionRepositoryImpl
 
         private fun readDefaultLength(): Int {
             val fallback = FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt()
-            return prefs.getInt(KEY_DEFAULT_LENGTH, fallback)
+            return prefs.getInt(KEY_DEFAULT_LENGTH, fallback).coerceIn(FocusSession.SESSION_LENGTH_RANGE)
+        }
+
+        private fun readBreakLength(): Int {
+            val fallback = FocusSession.DEFAULT_BREAK_LENGTH.inWholeMinutes.toInt()
+            return prefs.getInt(KEY_BREAK_LENGTH, fallback).coerceIn(FocusSession.BREAK_LENGTH_RANGE)
         }
 
         private companion object {
@@ -102,6 +113,7 @@ class FocusSessionRepositoryImpl
             const val KEY_RUNNING_SINCE = "session_running_since"
             const val KEY_IS_BREAK = "session_is_break"
             const val KEY_DEFAULT_LENGTH = "session_default_length_minutes"
+            const val KEY_BREAK_LENGTH = "session_break_length_minutes"
             const val NOT_RUNNING = -1L
         }
     }

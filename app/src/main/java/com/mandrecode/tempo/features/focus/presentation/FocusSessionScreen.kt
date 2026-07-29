@@ -138,7 +138,7 @@ fun FocusSessionScreen(
             subtasks = uiState.sessionSubtasks,
             task = task,
             categoryName = uiState.sessionEntry?.categoryName,
-            onStart = { onEvent(FocusContract.UiEvent.StartSession) },
+            onStart = { minutes -> onEvent(FocusContract.UiEvent.StartSession(minutes)) },
             onPauseResume = {
                 onEvent(
                     if (session?.isPaused != false) {

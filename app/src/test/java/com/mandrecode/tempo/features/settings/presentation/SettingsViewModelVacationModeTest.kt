@@ -195,6 +195,7 @@ class SettingsViewModelVacationModeTest {
             vacationModeRepository,
             mockk<FocusSessionRepository>(relaxed = true) {
                 every { defaultLengthMinutes } returns MutableStateFlow(25)
+                every { breakLengthMinutes } returns MutableStateFlow(5)
             },
             mockk<Context>(relaxed = true),
         )
