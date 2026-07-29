@@ -32,8 +32,9 @@ gradients, grades, shaming empty states, and celebration copy.
   task retention purge that would otherwise erase it.
 - **New Settings entries**: a Focus tab switch, Focus in the default-tab picker, and a default
   session length.
-- **What's-new prompt**: the #210 sheet gains a one-time action offering to make Focus the start
-  tab. Existing users' default tab is never changed silently.
+- **Focus becomes everyone's default tab**, existing installations included, applied once by the
+  preference migration. The #210 what's-new sheet states that the start tab changed and points at
+  the Settings entry that reverses it, so the change is announced rather than silent.
 - Tasks with no date remain excluded per the issue's today-only rule, surfaced only as a footer
   count linking to Tasks.
 

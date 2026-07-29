@@ -11,7 +11,8 @@ must end green on `./gradlew ktlintFormat && ./gradlew ktlintCheck && ./gradlew 
 - [ ] 1.3 Replace `isRoutinesTabEnabled()`/`isTasksTabEnabled()` on `NavigationPreferencesRepository`
       with `enabledTabs(): Flow<Set<TempoTab>>` and `setTabEnabled(tab, enabled)`
 - [ ] 1.4 Implement the read-time preference migration seeding the tab set from the legacy
-      `routines_tab_enabled`/`tasks_tab_enabled` keys with Focus enabled, leaving legacy keys in place
+      `routines_tab_enabled`/`tasks_tab_enabled` keys with Focus enabled and Focus as the default
+      tab, applied exactly once, leaving legacy keys in place
 - [ ] 1.5 Extract the "at least one tab enabled" and "default tab must be enabled" rules into one
       shared policy used by both `SettingsViewModel` and `OnboardingViewModel`
 - [ ] 1.6 Update `MainActivity.rememberStartDestination` to resolve the start tab from the registry
@@ -108,14 +109,14 @@ must end green on `./gradlew ktlintFormat && ./gradlew ktlintCheck && ./gradlew 
 - [ ] 5.2 Implement the expanded-tier two-pane layout for summary and agenda, resolving the pane-width
       open question from the design
 - [ ] 5.3 Verify the Focus tab switch is an instant cut with no transition, matching Routines and Tasks
-- [ ] 5.4 Add an optional action label and callback to `WhatsNewEntry`, leaving actionless entries
-      rendering unchanged
-- [ ] 5.5 Replace `WhatsNewRegistry.latest` with the Focus entry offering the one-time start-tab
-      switch, and remove the superseded `settings-source-code-link` strings
-- [ ] 5.6 Verify on device that an existing user's default tab is unchanged by the update
-- [ ] 5.7 Run `./gradlew lintDebug` and confirm no `MissingTranslation` or `ExtraTranslation`
-- [ ] 5.8 Run `./gradlew koverVerifyDebug` and close any coverage gaps in new domain code
-- [ ] 5.9 Confirm `app/detekt-baseline.xml` has not grown beyond 189 entries
-- [ ] 5.10 Run `:app:connectedDebugAndroidTest` on the Pixel 10 AVD
-- [ ] 5.11 Run `openspec validate feat-42-focus-mode` and open the final squashed `feat(#42)` PR to
+- [ ] 5.4 Replace `WhatsNewRegistry.latest` with the Focus entry, whose copy states that Focus is
+      now the start tab and where to change it, and remove the superseded
+      `settings-source-code-link` strings
+- [ ] 5.5 Verify on device that an existing installation is moved to Focus once, and that setting
+      the tab back to Routines survives a relaunch
+- [ ] 5.6 Run `./gradlew lintDebug` and confirm no `MissingTranslation` or `ExtraTranslation`
+- [ ] 5.7 Run `./gradlew koverVerifyDebug` and close any coverage gaps in new domain code
+- [ ] 5.8 Confirm `app/detekt-baseline.xml` has not grown beyond 189 entries
+- [ ] 5.9 Run `:app:connectedDebugAndroidTest` on the Pixel 10 AVD
+- [ ] 5.10 Run `openspec validate feat-42-focus-mode` and open the final squashed `feat(#42)` PR to
       `main` with `Closes #42`, `Closes #22`, `Closes #19`
