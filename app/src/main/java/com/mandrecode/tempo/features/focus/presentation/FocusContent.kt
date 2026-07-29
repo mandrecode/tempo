@@ -240,6 +240,7 @@ private fun LazyListScope.upNextItem(
         UpNextCard(
             title = upNext.displayTitle(),
             metadata = upNext.upNextMetadata(),
+            metadataIconRes = R.drawable.ic_flag.takeIf { upNext.priority != null },
             // A task's card opens the session screen with the timer waiting rather than running:
             // looking at the work is not the same as committing to it. A habit or chain has no
             // session to open, so it still goes to its own sheet.

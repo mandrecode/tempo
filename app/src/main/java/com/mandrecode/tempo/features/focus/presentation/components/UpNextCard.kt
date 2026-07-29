@@ -5,7 +5,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -15,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -44,6 +47,8 @@ internal fun UpNextCard(
     metadata: String?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Drawn ahead of [metadata], which leads with the priority the icon belongs to. */
+    metadataIconRes: Int? = null,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -67,14 +72,33 @@ internal fun UpNextCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 if (!metadata.isNullOrBlank()) {
-                    Text(
-                        text = metadata,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = METADATA_ALPHA),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        // The flag reads as "priority" before the word does, the same way it does
+                        // on the task's own card and in its editor.
+                        metadataIconRes?.let { iconRes ->
+                            Icon(
+                                painter = painterResource(iconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(MetadataIconSize),
+                                tint =
+                                    MaterialTheme.colorScheme.onTertiaryContainer
+                                        .copy(alpha = METADATA_ALPHA),
+                            )
+                        }
+                        Text(
+                            text = metadata,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                MaterialTheme.colorScheme.onTertiaryContainer
+                                    .copy(alpha = METADATA_ALPHA),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 Text(
                     text = title,
@@ -112,6 +136,7 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
 }
 
 private const val SEPARATOR = " · "
+private val MetadataIconSize = 12.dp
 
 /**
  * The only place a session starts. One tap, no duration picker — the length comes from Settings so

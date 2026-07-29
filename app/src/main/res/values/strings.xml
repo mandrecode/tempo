@@ -669,7 +669,6 @@
     <string name="settings_focus">Focus</string>
     <string name="notification_focus_session_channel_name">Focus sessions</string>
     <string name="notification_focus_session_channel_description">The countdown for a running focus session.</string>
-    <string name="focus_session_collapse">Collapse</string>
     <string name="focus_session_mark_done">Mark done</string>
     <string name="focus_session_break">On a break</string>
     <string name="focus_session_finished_heading">Time\'s up</string>
