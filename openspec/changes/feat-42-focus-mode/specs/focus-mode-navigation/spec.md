@@ -65,22 +65,27 @@ written before Focus existed SHALL apply the Focus default rather than failing.
 - **WHEN** a backup produced before this change is imported
 - **THEN** the import succeeds and Focus is enabled with the previously stored default tab unchanged
 
-### Requirement: Existing users are asked before their start tab changes
-The app SHALL NOT change an existing user's default tab as a side effect of the update. The
-what's-new sheet SHALL offer the change once, and declining or dismissing SHALL leave the default
-unchanged.
+### Requirement: Focus becomes the default tab for every installation
+Focus SHALL be the default tab for new and existing installations alike, applied once by the
+preference migration. Because this overwrites a preference some users set deliberately, the
+what's-new sheet SHALL state that the start tab changed and SHALL point at the Settings entry that
+changes it back.
 
-#### Scenario: Update leaves the default tab alone
-- **WHEN** a user whose default tab is Routines updates to the version introducing Focus
-- **THEN** the app still opens on Routines
+#### Scenario: Existing installation is moved to Focus
+- **WHEN** a user whose default tab was Routines or Tasks updates to the version introducing Focus
+- **THEN** the app opens on Focus
 
-#### Scenario: Accepting the what's-new offer
-- **WHEN** the user taps the start-tab action in the what's-new sheet
-- **THEN** the default tab becomes Focus and the offer is not shown again
+#### Scenario: The change is announced rather than silent
+- **WHEN** the what's-new sheet is shown for this release
+- **THEN** it states that Focus is now the start tab and where to change it
 
-#### Scenario: Dismissing the what's-new sheet
-- **WHEN** the user dismisses the sheet without taking the action
-- **THEN** the default tab is unchanged and the offer is not shown again
+#### Scenario: The migration applies exactly once
+- **WHEN** the user sets the default tab back to Routines and later relaunches the app
+- **THEN** the default tab is still Routines and the migration does not re-apply
+
+#### Scenario: New installation opens on Focus
+- **WHEN** a fresh installation completes onboarding without choosing a default tab
+- **THEN** the app opens on Focus
 
 ### Requirement: Switching between top-level tabs remains an instant cut
 Navigating between Focus, Routines and Tasks SHALL use no enter or exit transition, preserving the
