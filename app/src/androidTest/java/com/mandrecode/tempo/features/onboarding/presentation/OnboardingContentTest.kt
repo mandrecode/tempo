@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Rule
 import org.junit.Test
@@ -140,10 +141,11 @@ class OnboardingContentTest {
         )
 
         val tasksLabel =
-            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.tasks_tab)
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.tasks)
         composeTestRule.onNodeWithContentDescription(tasksLabel).performClick()
 
-        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.TasksTabToggled(false))
+        assertThat(emittedEvent)
+            .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
     }
 
     @Test

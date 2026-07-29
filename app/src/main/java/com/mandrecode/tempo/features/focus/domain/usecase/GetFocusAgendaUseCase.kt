@@ -6,7 +6,9 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.util.CompletionHistoryUtil
 import jakarta.inject.Inject
@@ -28,6 +30,7 @@ class GetFocusAgendaUseCase
         private val taskRepository: TaskRepository,
         private val habitRepository: HabitRepository,
         private val habitChainRepository: HabitChainRepository,
+        private val categoryRepository: CategoryRepository,
         private val getUpNextItem: GetUpNextItemUseCase,
     ) {
         operator fun invoke(today: LocalDate): Flow<FocusAgenda> =
@@ -35,8 +38,9 @@ class GetFocusAgendaUseCase
                 taskRepository.getAllTasks(),
                 habitRepository.getAllHabits(),
                 habitChainRepository.getAllHabitChains(),
-            ) { tasks, habits, chains ->
-                build(today, tasks, habits, chains)
+                categoryRepository.getAllCategories(),
+            ) { tasks, habits, chains, categories ->
+                build(today, tasks, habits, chains, categories.associateBy { it.id })
             }
 
         private fun build(
@@ -44,6 +48,7 @@ class GetFocusAgendaUseCase
             tasks: List<Task>,
             habits: List<Habit>,
             chains: List<HabitChain>,
+            categoriesById: Map<Long, Category>,
         ): FocusAgenda {
             val subtasksByParent = tasks.filter { it.parentTaskId != null }.groupBy { it.parentTaskId }
             val topLevelTasks = tasks.filter { it.parentTaskId == null }
@@ -53,12 +58,12 @@ class GetFocusAgendaUseCase
                     .filter { task ->
                         val dueDate = task.reminderDate?.date
                         dueDate != null && dueDate < today && !task.isCompleted
-                    }.map { FocusAgendaItem.TaskEntry(it, subtasksByParent[it.id].orEmpty()) }
+                    }.map { it.toEntry(subtasksByParent, categoriesById) }
 
             val todayTasks =
                 topLevelTasks
                     .filter { it.reminderDate?.date == today }
-                    .map { FocusAgendaItem.TaskEntry(it, subtasksByParent[it.id].orEmpty()) }
+                    .map { it.toEntry(subtasksByParent, categoriesById) }
 
             // Habits inside a chain are shown by the chain's own card, not as separate rows.
             val chainedHabitIds = chains.flatMap { it.habitIds }.toSet()
@@ -87,13 +92,25 @@ class GetFocusAgendaUseCase
             val overdue = overdueTasks.sortedByAgendaOrder()
             val todayItems = (todayTasks + todayHabits + todayChains).sortedByAgendaOrder()
 
+            // Up next is lifted out of its section rather than mirrored into it: showing the same
+            // work twice, one card above the other, reads as two things to do.
+            val upNext = getUpNextItem(overdue + todayItems)
             return FocusAgenda(
-                upNext = getUpNextItem(overdue + todayItems),
-                overdue = overdue,
-                today = todayItems,
+                upNext = upNext,
+                overdue = overdue.filterNot { it.id == upNext?.id },
+                today = todayItems.filterNot { it.id == upNext?.id },
                 undatedTaskCount = topLevelTasks.count { it.reminderDate == null && !it.isCompleted },
             )
         }
+
+        private fun Task.toEntry(
+            subtasksByParent: Map<Long?, List<Task>>,
+            categoriesById: Map<Long, Category>,
+        ) = FocusAgendaItem.TaskEntry(
+            task = this,
+            subtasks = subtasksByParent[id].orEmpty(),
+            categoryName = categoriesById[categoryId]?.name,
+        )
 
         /** Timed items first in clock order, then untimed ones, with completed work sinking last. */
         private fun List<FocusAgendaItem>.sortedByAgendaOrder(): List<FocusAgendaItem> =

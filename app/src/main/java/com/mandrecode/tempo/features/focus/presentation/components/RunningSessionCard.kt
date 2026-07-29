@@ -3,8 +3,10 @@ package com.mandrecode.tempo.features.focus.presentation.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -17,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -42,9 +46,11 @@ internal fun RunningSessionCard(
     onExpand: () -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
+    onComplete: () -> Unit,
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
+    val haptic = LocalHapticFeedback.current
     val remaining by rememberSessionCountdown(session, clock)
     val progress =
         if (session.plannedLength.inWholeSeconds <= 0) {
@@ -62,8 +68,10 @@ internal fun RunningSessionCard(
         Column(
             modifier =
                 Modifier
-                    .clickable(onClick = onExpand)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onExpand()
+                    }.padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -76,6 +84,9 @@ internal fun RunningSessionCard(
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                         trackColor =
                             MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TRACK_ALPHA),
+                        // The wave is the session's heartbeat: it travels while time is running
+                        // down and stands still the moment the user pauses.
+                        waveSpeed = if (session.isPaused) STILL else WaveSpeed,
                     )
                     Text(
                         text = remaining.asCountdownLabel(),
@@ -91,10 +102,11 @@ internal fun RunningSessionCard(
                 )
             }
 
-            SessionActionRow(
-                isPaused = session.isPaused,
+            SessionCardActions(
+                session = session,
                 onPauseResume = onPauseResume,
                 onStop = onStop,
+                onComplete = onComplete,
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
@@ -102,34 +114,49 @@ internal fun RunningSessionCard(
 }
 
 @Composable
-private fun SessionActionRow(
-    isPaused: Boolean,
+private fun SessionCardActions(
+    session: FocusSession,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
+    onComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SessionActionButton(
-            label =
-                if (isPaused) {
-                    stringResource(R.string.focus_session_resume)
-                } else {
-                    stringResource(R.string.focus_session_pause)
-                },
-            onClick = onPauseResume,
-            modifier = Modifier.weight(1f),
-        )
-        SessionActionButton(
-            label = stringResource(R.string.focus_session_stop),
-            onClick = onStop,
-            modifier = Modifier.weight(1f),
-            emphasised = true,
-        )
+    val colors = sessionCardActionColors()
+
+    val running = runningGroupActions(session, onComplete, onPauseResume)
+    val stop = stopSessionAction(onStop)
+
+    // All three across one row where they fit, unlike the session screen's two-plus-one: the card
+    // is a summary sitting above the rest of the day, and a second row of controls would cost it
+    // more height than the actions are worth. On a narrow window three columns cannot hold their
+    // labels, and a clipped "Mark do…" is worse than the extra row, so it splits like the screen.
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        if (maxWidth >= ThreeAcrossMinWidth) {
+            SessionActionGroup(
+                actions = running + stop,
+                colors = colors,
+                modifier = Modifier.fillMaxWidth(),
+                compact = true,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SessionActionGroup(
+                    actions = running,
+                    colors = colors,
+                    modifier = Modifier.fillMaxWidth(),
+                    compact = true,
+                )
+                SessionActionButton(action = stop, colors = colors, compact = true)
+            }
+        }
     }
 }
+
+/**
+ * Below this the three labels stop fitting side by side. Measured against the longest of them
+ * rather than a screen breakpoint, since the card is also narrowed by a rail or a docked pane.
+ */
+private val ThreeAcrossMinWidth = 340.dp
 
 @Composable
 private fun SessionTitleBlock(
@@ -160,41 +187,9 @@ private fun SessionTitleBlock(
     }
 }
 
-@Composable
-private fun SessionActionButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    emphasised: Boolean = false,
-) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier,
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
-        color =
-            if (emphasised) {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA)
-            },
-        contentColor =
-            if (emphasised) {
-                MaterialTheme.colorScheme.tertiaryContainer
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            },
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 10.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-    }
-}
-
+private val STILL = 0.dp
+private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.24f
 private const val LABEL_ALPHA = 0.75f
-private const val SUBTLE_BUTTON_ALPHA = 0.12f
-private const val FULLY_ROUNDED = 50
+private val PillRadius = 20.dp
+private val PillPressedRadius = 10.dp

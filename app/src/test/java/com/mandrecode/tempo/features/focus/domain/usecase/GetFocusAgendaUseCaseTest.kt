@@ -9,6 +9,7 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import io.mockk.every
 import io.mockk.mockk
@@ -29,11 +30,13 @@ class GetFocusAgendaUseCaseTest {
     private val taskRepository = mockk<TaskRepository>()
     private val habitRepository = mockk<HabitRepository>()
     private val habitChainRepository = mockk<HabitChainRepository>()
+    private val categoryRepository = mockk<CategoryRepository>()
     private val useCase =
         GetFocusAgendaUseCase(
             taskRepository = taskRepository,
             habitRepository = habitRepository,
             habitChainRepository = habitChainRepository,
+            categoryRepository = categoryRepository,
             getUpNextItem = GetUpNextItemUseCase(),
         )
 
@@ -74,6 +77,7 @@ class GetFocusAgendaUseCaseTest {
         every { taskRepository.getAllTasks() } returns flowOf(tasks)
         every { habitRepository.getAllHabits() } returns flowOf(habits)
         every { habitChainRepository.getAllHabitChains() } returns flowOf(chains)
+        every { categoryRepository.getAllCategories() } returns flowOf(emptyList())
 
         useCase(today).test {
             assertions(awaitItem())
@@ -111,7 +115,8 @@ class GetFocusAgendaUseCaseTest {
     fun `an open past-due task lands in overdue`() =
         runTest {
             agenda(tasks = listOf(task(1, today.minus(2, DateTimeUnit.DAY)))) {
-                assertThat(it.overdue).hasSize(1)
+                assertThat(it.upNext?.id).isEqualTo("task_1")
+                assertThat(it.overdue).isEmpty()
                 assertThat(it.today).isEmpty()
             }
         }
@@ -144,8 +149,7 @@ class GetFocusAgendaUseCaseTest {
                         task(2, today, parentTaskId = 1),
                     ),
             ) {
-                assertThat(it.today).hasSize(1)
-                val entry = it.today.single() as FocusAgendaItem.TaskEntry
+                val entry = it.upNext as FocusAgendaItem.TaskEntry
                 assertThat(entry.subtasks).hasSize(1)
             }
         }
@@ -162,7 +166,7 @@ class GetFocusAgendaUseCaseTest {
     fun `a habit completed today is marked complete`() =
         runTest {
             agenda(habits = listOf(habit(1, completionHistory = today.toString()))) {
-                val entry = it.today.single() as FocusAgendaItem.HabitEntry
+                val entry = (it.upNext ?: it.today.single()) as FocusAgendaItem.HabitEntry
                 assertThat(entry.isCompleted).isTrue()
             }
         }
@@ -179,8 +183,8 @@ class GetFocusAgendaUseCaseTest {
                 )
 
             agenda(habits = listOf(habit(1)), chains = listOf(chain)) {
-                assertThat(it.today).hasSize(1)
-                assertThat(it.today.single()).isInstanceOf(FocusAgendaItem.ChainEntry::class.java)
+                assertThat(it.upNext ?: it.today.single())
+                    .isInstanceOf(FocusAgendaItem.ChainEntry::class.java)
             }
         }
 
@@ -196,17 +200,27 @@ class GetFocusAgendaUseCaseTest {
                     ),
                 habits = listOf(habit(4)),
             ) {
+                // task_2 is promoted to Up next, so it no longer appears in the section.
                 val ids = it.today.map { entry -> entry.id }
-                assertThat(ids).containsExactly("task_2", "task_1", "habit_4", "task_3").inOrder()
+                assertThat(ids).containsExactly("task_1", "habit_4", "task_3").inOrder()
             }
         }
 
     @Test
-    fun `up next is drawn from the agenda without being removed from it`() =
+    fun `up next is lifted out of its section rather than shown twice`() =
         runTest {
             agenda(tasks = listOf(task(1, today, hour = 9))) {
                 assertThat(it.upNext?.id).isEqualTo("task_1")
-                assertThat(it.today.map { entry -> entry.id }).contains("task_1")
+                assertThat(it.today.map { entry -> entry.id }).doesNotContain("task_1")
+            }
+        }
+
+    @Test
+    fun `the promoted item still counts towards the day`() =
+        runTest {
+            agenda(tasks = listOf(task(1, today, hour = 9), task(2, today, hour = 10))) {
+                assertThat(it.scheduledCount).isEqualTo(2)
+                assertThat(it.today).hasSize(1)
             }
         }
 

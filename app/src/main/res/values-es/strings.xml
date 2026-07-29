@@ -527,8 +527,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Tómate un descanso sin perder tu racha</string>
-    <string name="whats_new_description">Activa el modo vacaciones en Ajustes y tus hábitos se pausan: los días que te saltes no rompen la racha y no llegan recordatorios. Desactívalo — o pon una fecha de fin — y todo sigue donde lo dejaste.</string>
+    <string name="whats_new_title">Enfoque: tu día en una pantalla</string>
+    <string name="whats_new_description">Enfoque es una pestaña nueva que muestra solo lo de hoy — tareas, hábitos y cadenas juntos, con lo atrasado y lo siguiente que empezar. También lleva un temporizador para la tarea en curso. La app ahora se abre en Enfoque; puedes cambiar tu pestaña de inicio en Ajustes.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -665,7 +665,7 @@
     <string name="focus_session_resume">Reanudar</string>
     <string name="focus_session_stop">Parar aquí</string>
     <string name="focus_session_another">Otros %1$d minutos</string>
-    <string name="focus_session_take_break">Descansar %1$d</string>
+    <string name="focus_session_take_break">Descanso de %1$d min</string>
     <string name="focus_session_focusing">Enfocado</string>
     <string name="focus_session_remaining">Quedan %1$s</string>
     <string name="focus_session_length">Duración de la sesión</string>
@@ -674,4 +674,13 @@
     <string name="notification_focus_session_channel_name">Sesiones de enfoque</string>
     <string name="notification_focus_session_channel_description">La cuenta atrás de una sesión de enfoque en curso.</string>
     <string name="focus_session_collapse">Contraer</string>
+    <string name="focus_session_mark_done">Marcar hecha</string>
+    <string name="focus_session_break">En un descanso</string>
+    <string name="focus_session_finished_heading">Se acabó el tiempo</string>
+    <string name="focus_session_break_over_heading">Fin del descanso</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_finished_done">Ya está por ahora</string>
+    <string name="focus_session_back_to_it">Volver a ello</string>
+    <string name="focus_session_not_started">Sin empezar</string>
+    <string name="focus_session_open_in_tasks">Abrir en Tareas</string>
 </resources>

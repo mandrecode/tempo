@@ -20,7 +20,7 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
@@ -47,9 +47,8 @@ class MainActivityNavigationTest {
             assertThat(destination).isEqualTo(RoutinesRoute)
             state =
                 state.copy(
-                    defaultTab = NavigationPreferencesRepository.DEFAULT_TAB_TASKS,
-                    isRoutinesTabEnabled = false,
-                    isTasksTabEnabled = true,
+                    defaultTab = TempoTab.TASKS,
+                    enabledTabs = setOf(TempoTab.TASKS),
                 )
         }
 
@@ -105,6 +104,7 @@ class MainActivityNavigationTest {
             NavDisplay(
                 entries =
                     when (navigator.section) {
+                        TempoNavigator.Section.FOCUS -> error("Unexpected focus section")
                         TempoNavigator.Section.ROUTINES -> routinesEntries
                         TempoNavigator.Section.TASKS -> tasksEntries
                         TempoNavigator.Section.SETTINGS -> error("Unexpected settings section")
@@ -124,9 +124,8 @@ class MainActivityNavigationTest {
         MainUiState.Success(
             themeMode = ThemeMode.SYSTEM,
             useTempoColors = true,
-            defaultTab = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES,
-            isRoutinesTabEnabled = true,
-            isTasksTabEnabled = true,
+            defaultTab = TempoTab.ROUTINES,
+            enabledTabs = TempoTab.entries.toSet(),
             isOnboardingCompleted = true,
             whatsNewVersionName = "1.4.0",
         )

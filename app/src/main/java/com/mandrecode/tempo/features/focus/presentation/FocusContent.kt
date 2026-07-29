@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -35,14 +37,13 @@ import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
-import com.mandrecode.tempo.features.focus.presentation.components.ImmersiveSessionView
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
 import com.mandrecode.tempo.features.focus.presentation.components.StartSessionButton
 import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
+import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitCard
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
-import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitItem
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
@@ -56,12 +57,6 @@ fun FocusContent(
     modifier: Modifier = Modifier,
 ) {
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
-
-    val session = uiState.session
-    if (session != null && uiState.isSessionImmersive) {
-        ImmersiveSession(uiState = uiState, session = session, onEvent = onEvent, modifier = modifier)
-        return
-    }
 
     Box(
         // Matches the Scaffold containerColor this normally sits in, so the rounded seam below
@@ -99,7 +94,11 @@ fun FocusContent(
                         ).background(MaterialTheme.colorScheme.surface),
             ) {
                 uiState.finishedSession?.let { finished ->
-                    SessionFinishedSheet(finished = finished, onEvent = onEvent)
+                    SessionFinishedSheet(
+                        finished = finished,
+                        nextSessionMinutes = uiState.defaultSessionLengthMinutes,
+                        onEvent = onEvent,
+                    )
                 }
 
                 if (uiState.isDayEmpty) {
@@ -122,32 +121,6 @@ fun FocusContent(
             }
         }
     }
-}
-
-@Composable
-private fun ImmersiveSession(
-    uiState: FocusContract.UiState,
-    session: FocusSession,
-    onEvent: (FocusContract.UiEvent) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ImmersiveSessionView(
-        session = session,
-        subtasks = uiState.sessionSubtasks,
-        onCollapse = { onEvent(FocusContract.UiEvent.CollapseSession) },
-        onPauseResume = {
-            onEvent(
-                if (session.isPaused) {
-                    FocusContract.UiEvent.ResumeSession
-                } else {
-                    FocusContract.UiEvent.PauseSession
-                },
-            )
-        },
-        onStop = { onEvent(FocusContract.UiEvent.StopSession) },
-        onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
-        modifier = modifier,
-    )
 }
 
 @Composable
@@ -227,44 +200,71 @@ private fun LazyListScope.upNextSection(
         // The card transforms in place rather than being replaced, so starting a session
         // does not shift everything below it.
         if (session != null) {
-            item(key = "running_session") {
-                RunningSessionCard(
-                    session = session,
-                    onExpand = { onEvent(FocusContract.UiEvent.ExpandSession) },
-                    onPauseResume = {
-                        onEvent(
-                            if (session.isPaused) {
-                                FocusContract.UiEvent.ResumeSession
-                            } else {
-                                FocusContract.UiEvent.PauseSession
-                            },
-                        )
-                    },
-                    onStop = { onEvent(FocusContract.UiEvent.StopSession) },
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                )
-            }
+            runningSessionItem(session, onEvent)
         } else if (upNext != null) {
-            item(key = "up_next_${upNext.id}") {
-                UpNextCard(
-                    title = upNext.displayTitle(),
-                    metadata = upNext.upNextMetadata(),
-                    onClick = { onEvent(upNext.editEvent()) },
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                    trailingContent =
-                        if (upNext is FocusAgendaItem.TaskEntry) {
-                            {
-                                StartSessionButton(
-                                    minutes = uiState.defaultSessionLengthMinutes,
-                                    onClick = { onEvent(FocusContract.UiEvent.StartSession) },
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                )
-            }
+            upNextItem(upNext, uiState.defaultSessionLengthMinutes, onEvent)
         }
+    }
+}
+
+private fun LazyListScope.runningSessionItem(
+    session: FocusSession,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    item(key = "running_session") {
+        RunningSessionCard(
+            session = session,
+            onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
+            onPauseResume = {
+                onEvent(
+                    if (session.isPaused) {
+                        FocusContract.UiEvent.ResumeSession
+                    } else {
+                        FocusContract.UiEvent.PauseSession
+                    },
+                )
+            },
+            onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+            onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
+            modifier = Modifier.fillMaxWidth().animateItem(),
+        )
+    }
+}
+
+private fun LazyListScope.upNextItem(
+    upNext: FocusAgendaItem,
+    defaultSessionLengthMinutes: Int,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    item(key = "up_next_${upNext.id}") {
+        UpNextCard(
+            title = upNext.displayTitle(),
+            metadata = upNext.upNextMetadata(),
+            // A task's card opens the session screen with the timer waiting rather than running:
+            // looking at the work is not the same as committing to it. A habit or chain has no
+            // session to open, so it still goes to its own sheet.
+            onClick = {
+                onEvent(
+                    if (upNext is FocusAgendaItem.TaskEntry) {
+                        FocusContract.UiEvent.PreviewUpNext
+                    } else {
+                        upNext.editEvent()
+                    },
+                )
+            },
+            modifier = Modifier.fillMaxWidth().animateItem(),
+            trailingContent =
+                if (upNext is FocusAgendaItem.TaskEntry) {
+                    {
+                        StartSessionButton(
+                            minutes = defaultSessionLengthMinutes,
+                            onClick = { onEvent(FocusContract.UiEvent.StartSession) },
+                        )
+                    }
+                } else {
+                    null
+                },
+        )
     }
 }
 
@@ -285,18 +285,19 @@ private fun AgendaRow(
             )
 
         is FocusAgendaItem.HabitEntry ->
-            HabitItem(
+            // HabitCard, not HabitItem: the card is what resolves the habit's colour and draws its
+            // surface — HabitItem is only the row inside it, and on its own renders an uncoloured
+            // habit as bare text on the background.
+            HabitCard(
                 habit = entry.habit,
-                isCompleted = entry.isCompleted,
-                onToggle = {
-                    onEvent(
-                        FocusContract.UiEvent.ToggleHabitCompletion(
-                            habitId = entry.habit.id,
-                            isCompleted = !entry.isCompleted,
-                        ),
-                    )
+                selectedDate = today,
+                onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit)) },
+                // Focus has no destructive actions; deleting a habit stays in Routines.
+                onDelete = {},
+                onToggle = { habitId, isCompleted ->
+                    onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
                 },
-                onClick = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit.id)) },
+                showTimeline = false,
             )
 
         is FocusAgendaItem.ChainEntry ->
@@ -312,7 +313,11 @@ private fun AgendaRow(
                 onHabitToggle = { habitId, isCompleted ->
                     onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
                 },
-                onHabitClick = { onEvent(FocusContract.UiEvent.EditHabit(it)) },
+                onHabitClick = { habitId ->
+                    entry.habits.firstOrNull { it.id == habitId }?.let { habit ->
+                        onEvent(FocusContract.UiEvent.EditHabit(habit))
+                    }
+                },
                 showTimeline = false,
             )
     }
@@ -343,6 +348,7 @@ private fun UndatedTasksFooter(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
     Text(
         text = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
         style = MaterialTheme.typography.bodySmall,
@@ -351,8 +357,10 @@ private fun UndatedTasksFooter(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(vertical = 20.dp),
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                }.padding(vertical = 20.dp),
     )
 }
 
@@ -396,6 +404,6 @@ private fun FocusAgendaItem.displayTitle(): String =
 private fun FocusAgendaItem.editEvent(): FocusContract.UiEvent =
     when (this) {
         is FocusAgendaItem.TaskEntry -> FocusContract.UiEvent.EditTask(task)
-        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit.id)
+        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit)
         is FocusAgendaItem.ChainEntry -> FocusContract.UiEvent.ToggleChainExpanded(chain.id)
     }

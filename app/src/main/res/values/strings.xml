@@ -523,8 +523,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Take a break without losing your streak</string>
-    <string name="whats_new_description">Turn on vacation mode in Settings and your habits pause: the days you skip don\'t break a streak and no reminders arrive. Turn it off — or set an end date — and everything picks up where it left off.</string>
+    <string name="whats_new_title">Focus: your day on one screen</string>
+    <string name="whats_new_description">Focus is a new tab showing only what\'s due today — tasks, habits and chains together, with what\'s overdue and what to start next. It also runs a timer for the task you\'re on. The app now opens on Focus; you can change your start tab in Settings.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -661,7 +661,7 @@
     <string name="focus_session_resume">Resume</string>
     <string name="focus_session_stop">Stop here</string>
     <string name="focus_session_another">Another %1$d minutes</string>
-    <string name="focus_session_take_break">Take %1$d</string>
+    <string name="focus_session_take_break">%1$d min break</string>
     <string name="focus_session_focusing">Focusing</string>
     <string name="focus_session_remaining">%1$s left</string>
     <string name="focus_session_length">Focus session length</string>
@@ -670,4 +670,13 @@
     <string name="notification_focus_session_channel_name">Focus sessions</string>
     <string name="notification_focus_session_channel_description">The countdown for a running focus session.</string>
     <string name="focus_session_collapse">Collapse</string>
+    <string name="focus_session_mark_done">Mark done</string>
+    <string name="focus_session_break">On a break</string>
+    <string name="focus_session_finished_heading">Time\'s up</string>
+    <string name="focus_session_break_over_heading">Break\'s over</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_finished_done">Done for now</string>
+    <string name="focus_session_back_to_it">Back to it</string>
+    <string name="focus_session_not_started">Not started</string>
+    <string name="focus_session_open_in_tasks">Open in Tasks</string>
 </resources>

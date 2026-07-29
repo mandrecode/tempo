@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -67,6 +71,7 @@ internal fun PersistentFloatingBar(
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
+    onOpenSession: () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -89,14 +94,17 @@ internal fun PersistentFloatingBar(
 
     if (!visible) return
 
-    val sessionChip = rememberSessionChip(focusSessionRepository, currentRoute, onNavigateToTopLevel)
-
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
             currentRoute = currentRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
+            onOpenSession = onOpenSession,
+            // Only a Tasks tab that also has completed tasks to clear is actually short of room;
+            // with sort alone the bar still has space for the countdown.
+            hasContextualActions = isTasksRoute && tasksState.hasCompletedTasks,
         )
     }
 
@@ -123,7 +131,6 @@ internal fun PersistentFloatingBar(
             PersistentPortraitFloatingBar(
                 isTasksRoute = isTasksRoute,
                 topLevelRoute = topLevelRoute,
-                sessionChip = sessionChip,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -295,7 +302,7 @@ private fun SettingsRailButton(
 }
 
 @Composable
-private fun PersistentSingleTabPortraitFloatingBar(
+internal fun PersistentSingleTabPortraitFloatingBar(
     isTasksRoute: Boolean,
     addAction: AddAction,
     tasksState: TasksFloatingBarState,
@@ -350,67 +357,10 @@ private fun PersistentSingleTabPortraitFloatingBar(
 }
 
 @Composable
-private fun PersistentPortraitFloatingBar(
-    isTasksRoute: Boolean,
-    topLevelRoute: NavKey,
-    sessionChip: (@Composable () -> Unit)?,
-    navigationContent: @Composable () -> Unit,
-    routinesState: RoutinesFloatingBarState,
-    tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
-) {
-    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
-    // Single tab and no add action leaves nothing to draw — don't float an empty surface.
-    if (isSingleTabMode && addAction == null) return
-    if (isSingleTabMode && addAction != null) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
-    val (barOffset, actionOffset) =
-        taskFloatingOffsets(
-            showTaskActions = isTasksRoute,
-            hasCompletedTasks = tasksState.hasCompletedTasks,
-        )
-
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        FloatingBarMainControls(
-            isSingleTabMode = isSingleTabMode,
-            addAction = addAction,
-            navigationContent = navigationContent,
-            sessionChip = sessionChip,
-            modifier = Modifier.offset(x = barOffset),
-        )
-
-        Box(
-            modifier = Modifier.offset(x = barOffset - actionOffset),
-            contentAlignment = Alignment.Center,
-        ) {
-            TaskActionButtons(
-                tasksState = tasksState,
-                showActions = isTasksRoute,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FloatingBarMainControls(
+internal fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
     addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
-    sessionChip: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val stableNavigationContent = remember(navigationContent) { movableContentOf(navigationContent) }
@@ -429,16 +379,21 @@ private fun FloatingBarMainControls(
             )
         } else {
             stableNavigationContent()
-            sessionChip?.invoke()
-            if (addAction != null) {
-                AddActionButton(addAction)
+            // (A) The add button joins and leaves the same way the task action buttons do, rather
+            // than appearing and vanishing instantly.
+            AnimatedVisibility(
+                visible = addAction != null,
+                enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
+            ) {
+                addAction?.let { AddActionButton(it) }
             }
         }
     }
 }
 
 @Composable
-private fun AddActionButton(addAction: AddAction) {
+internal fun AddActionButton(addAction: AddAction) {
     TempoBottomRailActionButton(
         iconRes = R.drawable.ic_add,
         contentDescription = addAction.label,
@@ -447,11 +402,22 @@ private fun AddActionButton(addAction: AddAction) {
 }
 
 /**
+ * Holds on to the last non-null [value] so content on its way out of an [AnimatedVisibility] still
+ * has something to draw while it shrinks.
+ */
+@Composable
+internal fun <T : Any> rememberLastNonNull(value: T?): T? {
+    var last by remember { mutableStateOf(value) }
+    if (value != null) last = value
+    return last
+}
+
+/**
  * The primary add action for the active tab, or `null` for a tab that has none — Focus adds
  * through the tab it is showing work from rather than owning a create action of its own.
  */
 @Composable
-private fun rememberAddAction(
+internal fun rememberAddAction(
     topLevelRoute: NavKey,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -474,7 +440,7 @@ private fun rememberAddAction(
         else -> null
     }
 
-private data class AddAction(
+internal data class AddAction(
     val label: String,
     val compact: Boolean,
     val onClick: () -> Unit,

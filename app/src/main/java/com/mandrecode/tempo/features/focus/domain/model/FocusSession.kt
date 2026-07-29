@@ -20,6 +20,8 @@ data class FocusSession(
     val taskId: Long,
     val taskTitle: String,
     val plannedLength: Duration,
+    /** A break counts down and notifies like a session, but banks no focus minutes. */
+    val isBreak: Boolean = false,
     /** Time already banked by previous run segments; grows on each pause. */
     val completedBeforeNow: Duration = Duration.ZERO,
     /** Start of the current run segment, or `null` while paused. */
@@ -65,11 +67,13 @@ data class FocusSession(
             taskTitle: String,
             now: Instant,
             length: Duration = DEFAULT_LENGTH,
+            isBreak: Boolean = false,
         ): FocusSession =
             FocusSession(
                 taskId = taskId,
                 taskTitle = taskTitle,
                 plannedLength = length,
+                isBreak = isBreak,
                 runningSince = now,
             )
 

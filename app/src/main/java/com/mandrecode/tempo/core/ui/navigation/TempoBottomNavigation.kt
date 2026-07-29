@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.core.ui.navigation
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -8,12 +9,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -33,6 +30,8 @@ import com.mandrecode.tempo.core.ui.outlinedIconRes
 import com.mandrecode.tempo.core.ui.selectedIconRes
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.core.ui.titleRes
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
 private data class NavigationItem(
     val tab: TempoTab,
@@ -52,6 +51,9 @@ private val navigationItems = TempoTab.entries.map(::NavigationItem)
 internal val FloatingToolbarItemSize = 48.dp
 internal val FloatingToolbarActionButtonSize = 52.dp
 internal val FloatingToolbarItemSpacing = 8.dp
+
+/** How far the corners pull in while a bar control is held; shared by the tabs and the chip. */
+internal val FloatingToolbarPressedRadius = 12.dp
 internal val FloatingToolbarRailSurfacePadding = 8.dp
 private val FloatingToolbarShape = RoundedCornerShape(36.dp)
 
@@ -59,17 +61,41 @@ private val FloatingToolbarShape = RoundedCornerShape(36.dp)
 fun TempoBottomNavigation(
     currentRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    focusSessionRepository: FocusSessionRepository,
     onNavigateToTopLevel: (NavKey) -> Unit,
-    onRouteChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
+    onRouteChange: (String) -> Unit = {},
+    onOpenSession: () -> Unit = {},
+    hasContextualActions: Boolean = false,
 ) {
     val enabledTabs by navigationPreferencesRepository
         .enabledTabs()
         .collectAsStateWithLifecycle(initialValue = TempoTab.entries.toSet())
+    val activeSession by focusSessionRepository.activeSession.collectAsStateWithLifecycle()
 
     val visibleNavigationItems = navigationItems.filter { it.tab in enabledTabs }
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
+
+    // A running session takes over the Focus tab's own slot rather than adding an element beside
+    // it: the tab it would sit next to is the one it belongs to, and the bar has no width to spare.
+    // It expands to show the countdown only away from Focus — where you are already looking at the
+    // session card — and only when the tab is not also carrying its own action buttons, which is
+    // the case the bar actually runs out of room in. The expanded rail is the exception: its rows
+    // are wide and labelled, so a bare icon there would be the one row saying nothing.
+    val sessionSlot: (@Composable (Modifier) -> Unit)? =
+        activeSession?.let { session ->
+            { slotModifier ->
+                FocusSessionChip(
+                    session = session,
+                    onClick = onOpenSession,
+                    modifier = slotModifier,
+                    compact =
+                        !isExpandedRail && (currentRoute == FocusRoute || hasContextualActions),
+                    selected = currentRoute == FocusRoute,
+                )
+            }
+        }
     val onItemClick: (NavigationItem) -> Unit = { item ->
         navigateTo(item, onNavigateToTopLevel, onRouteChange)
     }
@@ -87,6 +113,7 @@ fun TempoBottomNavigation(
                     items = visibleNavigationItems,
                     currentRoute = currentRoute,
                     onItemClick = onItemClick,
+                    sessionSlot = sessionSlot,
                 )
 
             isRailLayout ->
@@ -94,6 +121,7 @@ fun TempoBottomNavigation(
                     items = visibleNavigationItems,
                     currentRoute = currentRoute,
                     onItemClick = onItemClick,
+                    sessionSlot = sessionSlot,
                 )
 
             else ->
@@ -101,6 +129,7 @@ fun TempoBottomNavigation(
                     items = visibleNavigationItems,
                     currentRoute = currentRoute,
                     onItemClick = onItemClick,
+                    sessionSlot = sessionSlot,
                 )
         }
     }
@@ -111,6 +140,7 @@ private fun ExpandedRailPill(
     items: List<NavigationItem>,
     currentRoute: NavKey,
     onItemClick: (NavigationItem) -> Unit,
+    sessionSlot: (@Composable (Modifier) -> Unit)?,
 ) {
     Column(
         modifier =
@@ -121,11 +151,15 @@ private fun ExpandedRailPill(
     ) {
         items.forEach { item ->
             val selected = currentRoute == item.route
-            ExpandedRailNavigationRow(
-                item = item,
-                selected = selected,
-                onClick = { if (!selected) onItemClick(item) },
-            )
+            if (item.tab == TempoTab.FOCUS && sessionSlot != null) {
+                sessionSlot(Modifier.fillMaxWidth())
+            } else {
+                ExpandedRailNavigationRow(
+                    item = item,
+                    selected = selected,
+                    onClick = { if (!selected) onItemClick(item) },
+                )
+            }
         }
     }
 }
@@ -135,6 +169,7 @@ private fun CompactRailPill(
     items: List<NavigationItem>,
     currentRoute: NavKey,
     onItemClick: (NavigationItem) -> Unit,
+    sessionSlot: (@Composable (Modifier) -> Unit)?,
 ) {
     Column(
         modifier = Modifier.padding(horizontal = FloatingToolbarRailSurfacePadding, vertical = 12.dp),
@@ -143,11 +178,15 @@ private fun CompactRailPill(
     ) {
         items.forEach { item ->
             val selected = currentRoute == item.route
-            ToolbarNavigationButton(
-                item = item,
-                selected = selected,
-                onClick = { if (!selected) onItemClick(item) },
-            )
+            if (item.tab == TempoTab.FOCUS && sessionSlot != null) {
+                sessionSlot(Modifier)
+            } else {
+                ToolbarNavigationButton(
+                    item = item,
+                    selected = selected,
+                    onClick = { if (!selected) onItemClick(item) },
+                )
+            }
         }
     }
 }
@@ -157,6 +196,7 @@ private fun BottomBarPill(
     items: List<NavigationItem>,
     currentRoute: NavKey,
     onItemClick: (NavigationItem) -> Unit,
+    sessionSlot: (@Composable (Modifier) -> Unit)?,
 ) {
     Row(
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -165,11 +205,15 @@ private fun BottomBarPill(
     ) {
         items.forEach { item ->
             val selected = currentRoute == item.route
-            ToolbarNavigationButton(
-                item = item,
-                selected = selected,
-                onClick = { if (!selected) onItemClick(item) },
-            )
+            if (item.tab == TempoTab.FOCUS && sessionSlot != null) {
+                sessionSlot(Modifier)
+            } else {
+                ToolbarNavigationButton(
+                    item = item,
+                    selected = selected,
+                    onClick = { if (!selected) onItemClick(item) },
+                )
+            }
         }
     }
 }
@@ -183,46 +227,47 @@ private fun navigateTo(
     onRouteChange(item.tab.preferenceValue)
 }
 
+/**
+ * A tab in the floating bar.
+ *
+ * A [Surface] rather than an icon button so it can carry the same press treatment as everything
+ * else in the bar: the corners pull in while held and settle back on release. The session chip has
+ * always done this, and a tab that stayed rigid beside it read as the odd one out.
+ */
 @Composable
 private fun ToolbarNavigationButton(
     item: NavigationItem,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val iconRes =
-        if (selected) {
-            item.selectedIcon
-        } else {
-            item.unselectedIcon
-        }
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(
+            baseRadius = FloatingToolbarItemSize / 2,
+            pressedRadius = FloatingToolbarPressedRadius,
+        )
 
-    if (selected) {
-        FilledIconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            shape = CircleShape,
-            colors =
-                IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-        ) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.size(FloatingToolbarItemSize),
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
+        color =
+            if (selected) {
+                MaterialTheme.colorScheme.secondaryContainer
+            } else {
+                Color.Transparent
+            },
+        contentColor =
+            if (selected) {
+                MaterialTheme.colorScheme.onSecondaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
             Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = stringResource(item.titleRes),
-            )
-        }
-    } else {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.size(FloatingToolbarItemSize),
-            colors =
-                IconButtonDefaults.iconButtonColors(
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
+                painter =
+                    painterResource(id = if (selected) item.selectedIcon else item.unselectedIcon),
                 contentDescription = stringResource(item.titleRes),
             )
         }
@@ -242,13 +287,20 @@ private fun ExpandedRailNavigationRow(
             item.unselectedIcon
         }
 
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(
+            baseRadius = FloatingToolbarItemSize / 2,
+            pressedRadius = FloatingToolbarPressedRadius,
+        )
+
     Surface(
         onClick = onClick,
         modifier =
             Modifier
                 .fillMaxWidth()
                 .height(FloatingToolbarItemSize),
-        shape = CircleShape,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
         color =
             if (selected) {
                 MaterialTheme.colorScheme.secondaryContainer

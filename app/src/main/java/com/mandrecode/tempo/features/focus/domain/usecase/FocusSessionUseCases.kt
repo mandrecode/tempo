@@ -31,16 +31,24 @@ class FocusSessionUseCases
         suspend fun start(
             taskId: Long,
             taskTitle: String,
+            isBreak: Boolean = false,
         ) {
             end()
-            val session =
+            val length =
+                if (isBreak) {
+                    FocusSession.BREAK_LENGTH
+                } else {
+                    FocusSession.lengthOf(sessionRepository.defaultLengthMinutes.value)
+                }
+            apply(
                 FocusSession.start(
                     taskId = taskId,
                     taskTitle = taskTitle,
                     now = clock.now(),
-                    length = FocusSession.lengthOf(sessionRepository.defaultLengthMinutes.value),
-                )
-            apply(session)
+                    length = length,
+                    isBreak = isBreak,
+                ),
+            )
         }
 
         fun pause() {
@@ -72,7 +80,8 @@ class FocusSessionUseCases
             scheduler.clearOngoingNotification()
             sessionRepository.setActiveSession(null)
 
-            val minutes = session.bankableMinutes(now)
+            // A break is time away from the work, so it is never banked as focus time.
+            val minutes = if (session.isBreak) 0 else session.bankableMinutes(now)
             if (minutes > 0) {
                 activityRepository.addFocusMinutes(clock.todayIn(TimeZone.currentSystemDefault()), minutes)
             }

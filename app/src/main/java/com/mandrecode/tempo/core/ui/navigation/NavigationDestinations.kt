@@ -16,6 +16,7 @@ import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.focus.presentation.FocusScreen
+import com.mandrecode.tempo.features.focus.presentation.FocusSessionRoute
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.routines.presentation.components.VacationModeTitleBadge
@@ -32,7 +33,26 @@ internal fun FocusDestination(navigator: TempoNavigator) {
             )
         },
         onNavigateToTasks = { navigator.navigateToTopLevel(TasksRoute) },
-        onNavigateToRoutines = { navigator.navigateToTopLevel(RoutinesRoute) },
+        onOpenSession = { navigator.navigate(FocusSessionRoute) },
+    )
+}
+
+/**
+ * The session screen, hosted in the slide-in overlay. It resolves its own [FocusViewModel]: the
+ * screen state it needs — the active session and its subtasks — comes from repositories both
+ * instances observe, so the two stay in step without sharing a store.
+ */
+@Composable
+internal fun FocusSessionDestination(
+    navigator: TempoNavigator,
+    onOpenTaskInTasks: (Long) -> Unit,
+) {
+    FocusSessionRoute(
+        onBack = { navigator.pop() },
+        onOpenTaskInTasks = { taskId ->
+            navigator.pop()
+            onOpenTaskInTasks(taskId)
+        },
     )
 }
 

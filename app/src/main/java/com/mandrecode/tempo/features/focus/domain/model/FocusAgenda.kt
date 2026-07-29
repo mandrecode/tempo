@@ -23,6 +23,8 @@ sealed interface FocusAgendaItem {
     data class TaskEntry(
         val task: Task,
         val subtasks: List<Task> = emptyList(),
+        /** Resolved once in the use case so the card does not have to look it up. */
+        val categoryName: String? = null,
     ) : FocusAgendaItem {
         override val id: String = "task_${task.id}"
         override val isCompleted: Boolean = task.isCompleted
@@ -62,7 +64,13 @@ data class FocusAgenda(
     val today: List<FocusAgendaItem> = emptyList(),
     val undatedTaskCount: Int = 0,
 ) {
-    val scheduledCount: Int get() = overdue.size + today.size
-    val completedCount: Int get() = overdue.count { it.isCompleted } + today.count { it.isCompleted }
-    val isEmpty: Boolean get() = overdue.isEmpty() && today.isEmpty()
+    /**
+     * Up next is counted alongside the sections: it was lifted out of one of them for display, so
+     * leaving it out here would quietly shrink the day the hero reports.
+     */
+    private val allItems: List<FocusAgendaItem> get() = listOfNotNull(upNext) + overdue + today
+
+    val scheduledCount: Int get() = allItems.size
+    val completedCount: Int get() = allItems.count { it.isCompleted }
+    val isEmpty: Boolean get() = allItems.isEmpty()
 }

@@ -4,6 +4,7 @@ import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -31,8 +32,19 @@ object FocusContract {
         val finishedSession: FinishedSession? = null,
         /** The task the last session ran on, so "another session" restarts the same work. */
         val lastSessionTaskId: Long? = null,
+        /**
+         * The task the session screen is showing when no session is running — opened from Up next
+         * to look at the work before committing to a timer.
+         */
+        val previewTaskId: Long? = null,
+        /**
+         * The item whose editor Focus is showing. Focus hosts the sheets itself rather than
+         * sending you to the owning tab: opening an item should not move you off the day you were
+         * looking at.
+         */
+        val editingTask: Task? = null,
+        val editingHabit: Habit? = null,
         val defaultSessionLengthMinutes: Int = 25,
-        val isSessionImmersive: Boolean = false,
     ) {
         val headlineBand: FocusHeadlineBand
             get() = FocusHeadlineBand.resolve(scheduledCount, completedCount)
@@ -41,24 +53,29 @@ object FocusContract {
         val progress: Float
             get() = if (scheduledCount <= 0) 0f else (completedCount.toFloat() / scheduledCount).coerceIn(0f, 1f)
 
-        val isDayEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty()
+        val isDayEmpty: Boolean get() = upNext == null && overdue.isEmpty() && todayItems.isEmpty()
 
-        /** Subtasks of the task the session is running on, for the immersive checklist. */
-        val sessionSubtasks: List<Task>
+        /**
+         * The entry the session screen is showing: the running session's task, or the one being
+         * previewed before a session starts.
+         */
+        val sessionEntry: FocusAgendaItem.TaskEntry?
             get() {
-                val taskId = session?.taskId ?: return emptyList()
-                return (overdue + todayItems)
+                val taskId = session?.taskId ?: previewTaskId ?: return null
+                return (listOfNotNull(upNext) + overdue + todayItems)
                     .filterIsInstance<FocusAgendaItem.TaskEntry>()
                     .firstOrNull { it.task.id == taskId }
-                    ?.subtasks
-                    .orEmpty()
             }
+
+        val sessionSubtasks: List<Task> get() = sessionEntry?.subtasks.orEmpty()
     }
 
     /** What the completion sheet reports: plain facts, no score and no streak. */
     data class FinishedSession(
         val taskTitle: String,
         val minutes: Int,
+        /** A finished break offers going back to the work, not another break. */
+        val wasBreak: Boolean = false,
     )
 
     sealed interface UiEvent {
@@ -85,8 +102,10 @@ object FocusContract {
         ) : UiEvent
 
         data class EditHabit(
-            val habitId: Long,
+            val habit: Habit,
         ) : UiEvent
+
+        data object DismissEditor : UiEvent
 
         data object UndatedTasksClicked : UiEvent
 
@@ -98,9 +117,15 @@ object FocusContract {
 
         data object StopSession : UiEvent
 
-        data object ExpandSession : UiEvent
+        /** Finishes the work itself, not just the timer — ticks the task and ends the session. */
+        data object CompleteSessionTask : UiEvent
 
-        data object CollapseSession : UiEvent
+        /** Opens the session screen for the Up next item without starting its timer. */
+        data object PreviewUpNext : UiEvent
+
+        data object ClearSessionPreview : UiEvent
+
+        data object OpenSessionScreen : UiEvent
 
         data object StartAnotherSession : UiEvent
 
@@ -110,15 +135,10 @@ object FocusContract {
     }
 
     sealed interface UiEffect {
-        /** Focus edits through the tab that owns the item rather than duplicating its editor. */
-        data class OpenTaskInTasksTab(
-            val taskId: Long,
-        ) : UiEffect
-
-        data class OpenHabitInRoutinesTab(
-            val habitId: Long,
-        ) : UiEffect
-
+        /** The undated list has no Focus equivalent, so that one really does hand over to Tasks. */
         data object OpenTasksTab : UiEffect
+
+        /** The session gets its own slide-in screen, so opening it is navigation. */
+        data object OpenSessionScreen : UiEffect
     }
 }

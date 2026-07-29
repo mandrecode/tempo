@@ -81,10 +81,13 @@ class FocusViewModel
                 is FocusContract.UiEvent.ToggleChainExpanded -> toggleChainExpanded(event.chainId)
 
                 is FocusContract.UiEvent.EditTask ->
-                    sendEffect(FocusContract.UiEffect.OpenTaskInTasksTab(event.task.id))
+                    mutableUiState.update { it.copy(editingTask = event.task, editingHabit = null) }
 
                 is FocusContract.UiEvent.EditHabit ->
-                    sendEffect(FocusContract.UiEffect.OpenHabitInRoutinesTab(event.habitId))
+                    mutableUiState.update { it.copy(editingHabit = event.habit, editingTask = null) }
+
+                FocusContract.UiEvent.DismissEditor ->
+                    mutableUiState.update { it.copy(editingTask = null, editingHabit = null) }
 
                 FocusContract.UiEvent.UndatedTasksClicked ->
                     sendEffect(FocusContract.UiEffect.OpenTasksTab)
@@ -93,63 +96,100 @@ class FocusViewModel
             }
         }
 
-        /** Session controls, split out to keep [onEvent] readable as the list grows. */
+        /**
+         * Timer controls. Split from the completion-sheet handling below so neither `when` grows
+         * past what is readable, and starting is inlined here because it has exactly one caller.
+         */
         private fun onSessionEvent(event: FocusContract.UiEvent) {
             when (event) {
-                FocusContract.UiEvent.StartSession -> startSessionOnUpNext()
+                FocusContract.UiEvent.StartSession -> {
+                    val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry
+                    if (upNext != null) {
+                        viewModelScope.launch {
+                            focusSessionUseCases.start(upNext.task.id, upNext.task.title)
+                            focusSessionRepository.setPreviewTaskId(null)
+                            // Starting is a commitment to the work, so the app follows the user
+                            // into it rather than leaving them to find what they just began.
+                            sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+                        }
+                    }
+                }
+
                 FocusContract.UiEvent.PauseSession -> focusSessionUseCases.pause()
                 FocusContract.UiEvent.ResumeSession -> focusSessionUseCases.resume()
                 FocusContract.UiEvent.StopSession -> viewModelScope.launch { finishSession() }
-                FocusContract.UiEvent.ExpandSession ->
-                    mutableUiState.update { it.copy(isSessionImmersive = true) }
 
-                FocusContract.UiEvent.CollapseSession ->
-                    mutableUiState.update { it.copy(isSessionImmersive = false) }
-
-                FocusContract.UiEvent.StartAnotherSession ->
+                FocusContract.UiEvent.CompleteSessionTask ->
                     viewModelScope.launch {
-                        val finished = mutableUiState.value.finishedSession
-                        val taskId = mutableUiState.value.lastSessionTaskId
-                        dismissFinishedSession()
-                        if (finished != null && taskId != null) {
-                            focusSessionUseCases.start(taskId = taskId, taskTitle = finished.taskTitle)
+                        // Finishing the work, not just the timer: a session you cut short is not
+                        // the same as a job done, so completing has to be its own action.
+                        val entry = mutableUiState.value.sessionEntry
+                        if (entry != null && !entry.task.isCompleted) {
+                            toggleTaskCompletion(entry.task)
+                            finishSession()
                         }
                     }
 
-                FocusContract.UiEvent.TakeBreak -> dismissFinishedSession()
+                FocusContract.UiEvent.OpenSessionScreen ->
+                    sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+
+                FocusContract.UiEvent.PreviewUpNext -> {
+                    // Look at the work first: the screen opens on the task with its timer at full
+                    // length, and starting stays a separate, deliberate tap.
+                    val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry
+                    if (upNext != null) {
+                        focusSessionRepository.setPreviewTaskId(upNext.task.id)
+                        sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+                    }
+                }
+
+                FocusContract.UiEvent.ClearSessionPreview ->
+                    focusSessionRepository.setPreviewTaskId(null)
+
+                else -> onCompletionSheetEvent(event)
+            }
+        }
+
+        /** What the sheet offers once time is up. */
+        private fun onCompletionSheetEvent(event: FocusContract.UiEvent) {
+            val finished = mutableUiState.value.finishedSession
+            val taskId = mutableUiState.value.lastSessionTaskId
+            when (event) {
+                FocusContract.UiEvent.StartAnotherSession ->
+                    viewModelScope.launch {
+                        dismissFinishedSession()
+                        if (finished != null && taskId != null) {
+                            focusSessionUseCases.start(taskId, finished.taskTitle)
+                            sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+                        }
+                    }
+
+                FocusContract.UiEvent.TakeBreak ->
+                    viewModelScope.launch {
+                        dismissFinishedSession()
+                        if (finished != null && taskId != null) {
+                            // A real countdown, not a dismissal: the break notifies when it is over
+                            // so the user is not the one who has to remember to come back.
+                            focusSessionUseCases.start(taskId, finished.taskTitle, isBreak = true)
+                        }
+                    }
+
                 FocusContract.UiEvent.DismissFinishedSession -> dismissFinishedSession()
                 else -> Unit
             }
         }
 
         /**
-         * Starts a session on whatever Up next is currently spotlighting. Only tasks can host a
-         * session — a habit is a checkbox, not a stretch of work.
+         * Ends the running session because the user said so.
+         *
+         * No sheet: stopping and marking done are already decisions, and asking "what next?" the
+         * moment one is made is asking a question that has just been answered. The banked minutes
+         * need no announcement either — they are already in the hero and the heatmap on the screen
+         * this returns to. The sheet belongs to the one ending nobody chose, see [onSessionVanished].
          */
-        private fun startSessionOnUpNext() {
-            val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry ?: return
-            viewModelScope.launch {
-                focusSessionUseCases.start(taskId = upNext.task.id, taskTitle = upNext.task.title)
-            }
-        }
-
-        /** Ends the running session and raises the completion sheet with what it banked. */
         private suspend fun finishSession() {
-            val now = clock.now()
-            val running = mutableUiState.value.session
-            val minutes = running?.bankableMinutes(now) ?: 0
             val ended = focusSessionUseCases.end() ?: return
-            mutableUiState.update {
-                it.copy(
-                    isSessionImmersive = false,
-                    lastSessionTaskId = ended.taskId,
-                    finishedSession =
-                        FocusContract.FinishedSession(
-                            taskTitle = ended.taskTitle,
-                            minutes = minutes,
-                        ),
-                )
-            }
+            mutableUiState.update { it.copy(lastSessionTaskId = ended.taskId) }
         }
 
         private fun dismissFinishedSession() {
@@ -159,12 +199,35 @@ class FocusViewModel
         private fun observeSession() {
             viewModelScope.launch {
                 focusSessionRepository.activeSession.collect { session ->
+                    val previous = mutableUiState.value.session
                     mutableUiState.update { it.copy(session = session) }
+                    // The alarm receiver ends an expired session wherever the app happens to be,
+                    // so a session disappearing is the only signal there is. Having run out is what
+                    // tells the two endings apart: one the user stopped still had time on it, and
+                    // only the one nobody chose is worth asking a question about.
+                    if (session == null && previous != null && previous.hasExpired(clock.now())) {
+                        mutableUiState.update { state ->
+                            state.copy(
+                                lastSessionTaskId = previous.taskId,
+                                finishedSession =
+                                    FocusContract.FinishedSession(
+                                        taskTitle = previous.taskTitle,
+                                        minutes = previous.plannedLength.inWholeMinutes.toInt(),
+                                        wasBreak = previous.isBreak,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
             viewModelScope.launch {
                 focusSessionRepository.defaultLengthMinutes.collect { minutes ->
                     mutableUiState.update { it.copy(defaultSessionLengthMinutes = minutes) }
+                }
+            }
+            viewModelScope.launch {
+                focusSessionRepository.previewTaskId.collect { taskId ->
+                    mutableUiState.update { it.copy(previewTaskId = taskId) }
                 }
             }
         }

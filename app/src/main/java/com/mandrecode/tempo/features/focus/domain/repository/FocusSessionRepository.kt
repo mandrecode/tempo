@@ -16,7 +16,19 @@ interface FocusSessionRepository {
     /** Default length for sessions started from now on; changing it never affects a running one. */
     val defaultLengthMinutes: StateFlow<Int>
 
+    /**
+     * The task the session screen is showing when nothing is running — opened from Up next to look
+     * at the work before committing to a timer.
+     *
+     * Here rather than in a view model because the session screen is its own navigation entry with
+     * its own view model, so this is the same boundary [activeSession] already crosses. In memory
+     * only: unlike a session, an unstarted preview is not worth surviving the process.
+     */
+    val previewTaskId: StateFlow<Long?>
+
     fun setActiveSession(session: FocusSession?)
 
     fun setDefaultLengthMinutes(minutes: Int)
+
+    fun setPreviewTaskId(taskId: Long?)
 }
