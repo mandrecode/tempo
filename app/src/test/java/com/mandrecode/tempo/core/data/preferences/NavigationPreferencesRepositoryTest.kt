@@ -110,12 +110,38 @@ class NavigationPreferencesRepositoryTest {
         }
 
     @Test
-    fun `defaultTabIsRoutinesWhenNothingStored`() =
+    fun `defaultTabIsFocusWhenNothingStored`() =
         runTest {
             createRepository().getDefaultTab().test {
-                assertThat(awaitItem()).isEqualTo(TempoTab.ROUTINES)
+                assertThat(awaitItem()).isEqualTo(TempoTab.FOCUS)
                 cancelAndIgnoreRemainingEvents()
             }
+        }
+
+    @Test
+    fun `migrationMovesAnExistingInstallationToFocus`() =
+        runTest {
+            // An installation that had deliberately chosen Tasks as its start tab.
+            val repository = createRepository(storedDefaultTab = "tasks")
+
+            verify(exactly = 1) { mockEditor.putString("default_tab", "focus") }
+            repository.getDefaultTab().test {
+                assertThat(awaitItem()).isEqualTo(TempoTab.FOCUS)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `migrationDoesNotReapplyOnceTheTabSetIsStored`() =
+        runTest {
+            // Already migrated, and the user has since picked Tasks again.
+            createRepository(storedTabs = setOf("focus", "tasks"), storedDefaultTab = "tasks")
+                .getDefaultTab()
+                .test {
+                    assertThat(awaitItem()).isEqualTo(TempoTab.TASKS)
+                    cancelAndIgnoreRemainingEvents()
+                }
+            verify(exactly = 0) { mockEditor.putString("default_tab", "focus") }
         }
 
     @Test
@@ -159,12 +185,6 @@ class NavigationPreferencesRepositoryTest {
             verify(exactly = 1) { mockEditor.putString("default_tab", "tasks") }
             verify { mockEditor.apply() }
         }
-
-    @Test
-    fun `hasExplicitDefaultTabReflectsStoredKey`() {
-        assertThat(createRepository().hasExplicitDefaultTab()).isFalse()
-        assertThat(createRepository(storedDefaultTab = "tasks").hasExplicitDefaultTab()).isTrue()
-    }
 
     @Test
     fun `saveAndGetLastRoute`() {

@@ -24,8 +24,11 @@ class NavigationPreferencesRepositoryImpl
                 Context.MODE_PRIVATE,
             )
 
-        private val enabledTabsFlow = MutableStateFlow(readEnabledTabs())
-        private val defaultTabFlow = MutableStateFlow(readDefaultTab())
+        // Read once, together, so the migration below cannot depend on which flow happens to be
+        // declared first — it writes both keys, and both flows must see the post-migration values.
+        private val initialState = migrateIfNeeded()
+        private val enabledTabsFlow = MutableStateFlow(initialState.enabledTabs)
+        private val defaultTabFlow = MutableStateFlow(initialState.defaultTab)
 
         override fun saveLastRoute(routeName: String) {
             prefs.edit { putString(KEY_LAST_ROUTE, routeName) }
@@ -49,8 +52,6 @@ class NavigationPreferencesRepositoryImpl
             defaultTabFlow.value = tab
         }
 
-        override fun hasExplicitDefaultTab(): Boolean = prefs.contains(KEY_DEFAULT_TAB)
-
         private fun writeEnabledTabs(tabs: Set<TempoTab>) {
             val resolved = TabPreferencesPolicy.resolveEnabledTabs(tabs)
             prefs.edit {
@@ -59,16 +60,33 @@ class NavigationPreferencesRepositoryImpl
             enabledTabsFlow.value = resolved
         }
 
+        private data class StoredState(
+            val enabledTabs: Set<TempoTab>,
+            val defaultTab: TempoTab,
+        )
+
         /**
-         * Reads the per-tab set, migrating from the legacy paired booleans on first read. The
-         * legacy keys are deliberately left in place rather than removed: a downgrade to a build
-         * that only understands two tabs then still finds the user's Routines/Tasks choices.
+         * Reads the stored navigation preferences, migrating from the legacy paired booleans the
+         * first time this build runs.
+         *
+         * The same one-time pass moves the default tab to Focus, for existing installations as
+         * well as new ones. That deliberately overwrites a tab some users chose on purpose, which
+         * is why the what's-new sheet announces the change and points at the Settings entry that
+         * reverses it. Keyed on [KEY_ENABLED_TABS] being absent, so it runs exactly once and never
+         * re-applies after the user picks a different tab.
+         *
+         * The legacy keys are deliberately left in place rather than removed: a downgrade to a
+         * build that only understands two tabs then still finds the user's Routines/Tasks choices.
          */
-        private fun readEnabledTabs(): Set<TempoTab> {
+        private fun migrateIfNeeded(): StoredState {
             val stored = prefs.getStringSet(KEY_ENABLED_TABS, null)
             if (stored != null) {
-                return TabPreferencesPolicy.resolveEnabledTabs(
-                    stored.mapNotNull { TempoTab.fromPreferenceValue(it) }.toSet(),
+                return StoredState(
+                    enabledTabs =
+                        TabPreferencesPolicy.resolveEnabledTabs(
+                            stored.mapNotNull { TempoTab.fromPreferenceValue(it) }.toSet(),
+                        ),
+                    defaultTab = readStoredDefaultTab(),
                 )
             }
 
@@ -82,11 +100,15 @@ class NavigationPreferencesRepositoryImpl
             val resolved = TabPreferencesPolicy.resolveEnabledTabs(migrated)
             prefs.edit {
                 putStringSet(KEY_ENABLED_TABS, resolved.map { it.preferenceValue }.toSet())
+                putString(KEY_DEFAULT_TAB, TempoTab.DEFAULT.preferenceValue)
             }
-            return resolved
+            return StoredState(
+                enabledTabs = resolved,
+                defaultTab = TabPreferencesPolicy.resolveDefaultTab(TempoTab.DEFAULT, resolved),
+            )
         }
 
-        private fun readDefaultTab(): TempoTab {
+        private fun readStoredDefaultTab(): TempoTab {
             val stored = prefs.getString(KEY_DEFAULT_TAB, null)
             return TempoTab.fromPreferenceValue(stored) ?: TempoTab.DEFAULT
         }

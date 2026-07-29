@@ -48,7 +48,6 @@ class OnboardingViewModelTest {
         every { themePreferencesRepository.getThemeMode() } returns themeMode
         every { navigationPreferencesRepository.enabledTabs() } returns enabledTabs
         every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
-        every { navigationPreferencesRepository.hasExplicitDefaultTab() } returns true
         every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
     }
 
@@ -245,7 +244,7 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun givenCorruptedStateWithNoEnabledTabs_whenFinished_thenRoutinesFallbackIsEmitted() =
+    fun givenCorruptedStateWithNoEnabledTabs_whenFinished_thenDefaultTabFallbackIsEmitted() =
         runTest {
             enabledTabs.value = emptySet()
             defaultTab.value = TempoTab.TASKS
@@ -257,7 +256,7 @@ class OnboardingViewModelTest {
                 advanceUntilIdle()
 
                 assertThat(awaitItem())
-                    .isEqualTo(OnboardingContract.UiEffect.Exit(TempoTab.ROUTINES))
+                    .isEqualTo(OnboardingContract.UiEffect.Exit(TempoTab.DEFAULT))
                 cancelAndIgnoreRemainingEvents()
             }
         }

@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -35,7 +34,6 @@ class OnboardingViewModel
         val uiEffect = effectChannel.receiveAsFlow()
 
         init {
-            seedDefaultTabForNewInstall()
             observePreferences()
         }
 
@@ -124,20 +122,6 @@ class OnboardingViewModel
 
             mutableUiState.update { it.copy(defaultTab = defaultTab) }
             navigationPreferencesRepository.setDefaultTab(defaultTab)
-        }
-
-        /**
-         * Gives a brand-new installation Focus as its start tab, without touching an installation
-         * that already made a choice. Guarded on onboarding not being complete so a replay from
-         * Settings never rewrites an existing preference.
-         */
-        private fun seedDefaultTabForNewInstall() {
-            viewModelScope.launch {
-                val isOnboardingCompleted = onboardingPreferencesRepository.isCompleted.first()
-                if (!isOnboardingCompleted && !navigationPreferencesRepository.hasExplicitDefaultTab()) {
-                    navigationPreferencesRepository.setDefaultTab(TempoTab.FOCUS)
-                }
-            }
         }
 
         private fun completeOnboarding() {

@@ -18,13 +18,14 @@ enum class TempoTab(
 
     companion object {
         /**
-         * The tab an installation falls back to when no explicit preference is stored.
+         * The tab the app opens on unless the user has chosen otherwise.
          *
-         * Deliberately [ROUTINES] rather than [FOCUS]: this is the value existing installations
-         * have always resolved to, and adding Focus must not silently move anyone's start tab.
-         * New installations are seeded with [FOCUS] during onboarding instead.
+         * Focus is the app's home surface, so it is the default for new and existing
+         * installations alike. Existing users are moved to it once by the preference migration
+         * and told about the change in the what's-new sheet, which points at the Settings entry
+         * that reverses it.
          */
-        val DEFAULT: TempoTab = ROUTINES
+        val DEFAULT: TempoTab = FOCUS
 
         fun fromPreferenceValue(value: String?): TempoTab? = entries.firstOrNull { it.preferenceValue == value }
     }

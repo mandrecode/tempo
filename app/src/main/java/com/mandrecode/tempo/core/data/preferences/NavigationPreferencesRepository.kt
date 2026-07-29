@@ -19,11 +19,4 @@ interface NavigationPreferencesRepository {
     fun getDefaultTab(): Flow<TempoTab>
 
     fun setDefaultTab(tab: TempoTab)
-
-    /**
-     * Whether the user has ever chosen a default tab, as opposed to falling through to
-     * [TempoTab.DEFAULT]. Onboarding uses this to seed a new installation's start tab without
-     * overwriting a choice an existing installation already made.
-     */
-    fun hasExplicitDefaultTab(): Boolean
 }
