@@ -48,6 +48,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
@@ -65,6 +66,7 @@ internal fun PersistentFloatingBar(
     currentRoute: NavKey,
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    focusSessionRepository: FocusSessionRepository,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -86,6 +88,8 @@ internal fun PersistentFloatingBar(
         }
 
     if (!visible) return
+
+    val sessionChip = rememberSessionChip(focusSessionRepository, currentRoute, onNavigateToTopLevel)
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
@@ -119,6 +123,7 @@ internal fun PersistentFloatingBar(
             PersistentPortraitFloatingBar(
                 isTasksRoute = isTasksRoute,
                 topLevelRoute = topLevelRoute,
+                sessionChip = sessionChip,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -348,6 +353,7 @@ private fun PersistentSingleTabPortraitFloatingBar(
 private fun PersistentPortraitFloatingBar(
     isTasksRoute: Boolean,
     topLevelRoute: NavKey,
+    sessionChip: (@Composable () -> Unit)?,
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
@@ -383,6 +389,7 @@ private fun PersistentPortraitFloatingBar(
             isSingleTabMode = isSingleTabMode,
             addAction = addAction,
             navigationContent = navigationContent,
+            sessionChip = sessionChip,
             modifier = Modifier.offset(x = barOffset),
         )
 
@@ -403,6 +410,7 @@ private fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
     addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
+    sessionChip: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val stableNavigationContent = remember(navigationContent) { movableContentOf(navigationContent) }
@@ -421,6 +429,7 @@ private fun FloatingBarMainControls(
             )
         } else {
             stableNavigationContent()
+            sessionChip?.invoke()
             if (addAction != null) {
                 AddActionButton(addAction)
             }
