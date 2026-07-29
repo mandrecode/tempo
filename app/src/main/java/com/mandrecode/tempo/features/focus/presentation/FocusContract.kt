@@ -42,6 +42,17 @@ object FocusContract {
             get() = if (scheduledCount <= 0) 0f else (completedCount.toFloat() / scheduledCount).coerceIn(0f, 1f)
 
         val isDayEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty()
+
+        /** Subtasks of the task the session is running on, for the immersive checklist. */
+        val sessionSubtasks: List<Task>
+            get() {
+                val taskId = session?.taskId ?: return emptyList()
+                return (overdue + todayItems)
+                    .filterIsInstance<FocusAgendaItem.TaskEntry>()
+                    .firstOrNull { it.task.id == taskId }
+                    ?.subtasks
+                    .orEmpty()
+            }
     }
 
     /** What the completion sheet reports: plain facts, no score and no streak. */

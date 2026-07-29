@@ -40,6 +40,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
@@ -95,6 +96,7 @@ sealed interface PendingNotificationAction {
 @Composable
 fun TempoNavHost(
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    focusSessionRepository: FocusSessionRepository,
     modifier: Modifier = Modifier,
     routinesNavigationTrigger: Long = 0L,
     tasksNavigationTrigger: Long = 0L,
@@ -171,6 +173,7 @@ fun TempoNavHost(
             currentRoute = navigator.currentRoute,
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            focusSessionRepository = focusSessionRepository,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,

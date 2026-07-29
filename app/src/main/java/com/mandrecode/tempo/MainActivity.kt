@@ -35,6 +35,7 @@ import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
 import com.mandrecode.tempo.core.ui.navigation.route
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
 import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
@@ -50,6 +51,9 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
+
+    @Inject
+    lateinit var focusSessionRepository: FocusSessionRepository
 
     @Inject
     lateinit var themePreferencesRepository: ThemePreferencesRepository
@@ -140,6 +144,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,
+                                focusSessionRepository = focusSessionRepository,
                                 routinesNavigationTrigger = routinesNavigationTrigger.longValue,
                                 tasksNavigationTrigger = tasksNavigationTrigger.longValue,
                                 pendingNotificationAction = pendingNotificationAction,
