@@ -14,6 +14,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 
 @Stable
 internal class TempoNavigator(
+    internal val focusBackStack: NavBackStack<NavKey>,
     internal val routinesBackStack: NavBackStack<NavKey>,
     internal val tasksBackStack: NavBackStack<NavKey>,
     internal val settingsBackStack: NavBackStack<NavKey>,
@@ -21,6 +22,7 @@ internal class TempoNavigator(
     sectionState: MutableState<Section>,
 ) {
     internal enum class Section {
+        FOCUS,
         ROUTINES,
         TASKS,
         SETTINGS,
@@ -33,6 +35,7 @@ internal class TempoNavigator(
     val activeBackStack: NavBackStack<NavKey>
         get() =
             when (section) {
+                Section.FOCUS -> focusBackStack
                 Section.ROUTINES -> routinesBackStack
                 Section.TASKS -> tasksBackStack
                 Section.SETTINGS -> settingsBackStack
@@ -45,6 +48,7 @@ internal class TempoNavigator(
     val topLevelRoute: NavKey
         get() =
             when (section) {
+                Section.FOCUS -> FocusRoute
                 Section.ROUTINES -> RoutinesRoute
                 Section.TASKS -> TasksRoute
                 Section.SETTINGS -> SettingsRoute
@@ -87,6 +91,7 @@ internal class TempoNavigator(
 
     private fun NavKey.toSection(): Section =
         when (this) {
+            FocusRoute -> Section.FOCUS
             RoutinesRoute -> Section.ROUTINES
             TasksRoute -> Section.TASKS
             SettingsRoute -> Section.SETTINGS
@@ -96,6 +101,7 @@ internal class TempoNavigator(
 
 @Composable
 internal fun rememberTempoNavigator(startDestination: NavKey): TempoNavigator {
+    val focusBackStack = rememberNavBackStack(FocusRoute)
     val routinesBackStack = rememberNavBackStack(RoutinesRoute)
     val tasksBackStack = rememberNavBackStack(TasksRoute)
     val settingsBackStack = rememberNavBackStack(SettingsRoute)
@@ -103,6 +109,7 @@ internal fun rememberTempoNavigator(startDestination: NavKey): TempoNavigator {
     val onboardingBackStack = rememberNavBackStack(onboardingStart)
     val initialSection =
         when (startDestination) {
+            FocusRoute -> TempoNavigator.Section.FOCUS
             RoutinesRoute -> TempoNavigator.Section.ROUTINES
             TasksRoute -> TempoNavigator.Section.TASKS
             SettingsRoute -> TempoNavigator.Section.SETTINGS
@@ -111,8 +118,15 @@ internal fun rememberTempoNavigator(startDestination: NavKey): TempoNavigator {
         }
     val sectionState = rememberSaveable { mutableStateOf(initialSection) }
 
-    return remember(routinesBackStack, tasksBackStack, settingsBackStack, onboardingBackStack) {
+    return remember(
+        focusBackStack,
+        routinesBackStack,
+        tasksBackStack,
+        settingsBackStack,
+        onboardingBackStack,
+    ) {
         TempoNavigator(
+            focusBackStack = focusBackStack,
             routinesBackStack = routinesBackStack,
             tasksBackStack = tasksBackStack,
             settingsBackStack = settingsBackStack,

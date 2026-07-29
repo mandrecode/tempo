@@ -1,8 +1,11 @@
 package com.mandrecode.tempo.features.onboarding.presentation
 
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentSet
 
 object OnboardingContract {
     const val PAGE_COUNT = 5
@@ -13,9 +16,8 @@ object OnboardingContract {
         val availableThemeModes: ImmutableList<ThemeMode> =
             persistentListOf(ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SYSTEM),
         val useTempoColors: Boolean = true,
-        val isRoutinesTabEnabled: Boolean = true,
-        val isTasksTabEnabled: Boolean = true,
-        val defaultTab: DefaultTab = DefaultTab.ROUTINES,
+        val enabledTabs: ImmutableSet<TempoTab> = TempoTab.entries.toPersistentSet(),
+        val defaultTab: TempoTab = TempoTab.DEFAULT,
     ) {
         val isFirstPage: Boolean get() = currentPage == 0
         val isLastPage: Boolean get() = currentPage == PAGE_COUNT - 1
@@ -38,27 +40,19 @@ object OnboardingContract {
             val mode: ThemeMode,
         ) : UiEvent
 
-        data class RoutinesTabToggled(
-            val enabled: Boolean,
-        ) : UiEvent
-
-        data class TasksTabToggled(
+        data class TabToggled(
+            val tab: TempoTab,
             val enabled: Boolean,
         ) : UiEvent
 
         data class DefaultTabSelected(
-            val defaultTab: DefaultTab,
+            val defaultTab: TempoTab,
         ) : UiEvent
     }
 
     sealed interface UiEffect {
         data class Exit(
-            val defaultTab: DefaultTab,
+            val defaultTab: TempoTab,
         ) : UiEffect
-    }
-
-    enum class DefaultTab {
-        ROUTINES,
-        TASKS,
     }
 }

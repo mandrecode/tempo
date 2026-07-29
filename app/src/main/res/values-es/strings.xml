@@ -18,7 +18,7 @@
 
     <!-- TASKS FEATURE -->
     <string name="tasks">Tareas</string>
-    <string name="tasks_tab">Tareas</string>
+    <string name="focus">Enfoque</string>
     <string name="add_task">Añadir tarea</string>
     <string name="add_new_task">Añadir nueva tarea</string>
     <string name="add_subtask">Añadir subtarea</string>
@@ -79,7 +79,6 @@
 
     <!-- ROUTINES (HABITS & CHAINS) FEATURE -->
     <string name="routines">Rutinas</string>
-    <string name="routines_tab">Rutinas</string>
     <string name="habit">Hábito</string>
     <string name="add_habit">Añadir hábito</string>
     <string name="habit_title">Título del hábito</string>

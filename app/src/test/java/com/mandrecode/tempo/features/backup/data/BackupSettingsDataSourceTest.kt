@@ -2,13 +2,11 @@ package com.mandrecode.tempo.features.backup.data
 
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
-import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import io.mockk.every
@@ -53,9 +51,8 @@ class BackupSettingsDataSourceTest {
         runTest {
             every { themePreferences.getThemeMode() } returns flowOf(ThemeMode.DARK)
             every { themePreferences.getUseTempoColors() } returns flowOf(true)
-            every { navigationPreferences.isRoutinesTabEnabled() } returns flowOf(false)
-            every { navigationPreferences.isTasksTabEnabled() } returns flowOf(true)
-            every { navigationPreferences.getDefaultTab() } returns flowOf(DEFAULT_TAB_TASKS)
+            every { navigationPreferences.enabledTabs() } returns flowOf(setOf(TempoTab.FOCUS, TempoTab.TASKS))
+            every { navigationPreferences.getDefaultTab() } returns flowOf(TempoTab.TASKS)
             every { retentionPreferences.isEnabled } returns MutableStateFlow(true)
             every { retentionPreferences.retentionDays } returns MutableStateFlow(90)
             storedVacationPeriods.value = listOf(VACATION)
@@ -66,9 +63,8 @@ class BackupSettingsDataSourceTest {
                 BackupSettings(
                     themeMode = ThemeMode.DARK,
                     useTempoColors = true,
-                    routinesTabEnabled = false,
-                    tasksTabEnabled = true,
-                    defaultTab = BackupDefaultTab.TASKS,
+                    enabledTabs = setOf(TempoTab.FOCUS, TempoTab.TASKS),
+                    defaultTab = TempoTab.TASKS,
                     autoRemoveCompletedTasks = true,
                     completedTaskRetentionDays = 90,
                     vacationPeriods = listOf(VACATION),
@@ -81,13 +77,12 @@ class BackupSettingsDataSourceTest {
         runTest {
             every { themePreferences.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
             every { themePreferences.getUseTempoColors() } returns flowOf(false)
-            every { navigationPreferences.isRoutinesTabEnabled() } returns flowOf(true)
-            every { navigationPreferences.isTasksTabEnabled() } returns flowOf(true)
-            every { navigationPreferences.getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
+            every { navigationPreferences.enabledTabs() } returns flowOf(TempoTab.entries.toSet())
+            every { navigationPreferences.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
             every { retentionPreferences.isEnabled } returns MutableStateFlow(false)
             every { retentionPreferences.retentionDays } returns MutableStateFlow(30)
 
-            assertThat(dataSource.snapshot().defaultTab).isEqualTo(BackupDefaultTab.ROUTINES)
+            assertThat(dataSource.snapshot().defaultTab).isEqualTo(TempoTab.ROUTINES)
         }
 
     @Test
@@ -96,9 +91,8 @@ class BackupSettingsDataSourceTest {
             BackupSettings(
                 themeMode = ThemeMode.LIGHT,
                 useTempoColors = true,
-                routinesTabEnabled = true,
-                tasksTabEnabled = true,
-                defaultTab = BackupDefaultTab.TASKS,
+                enabledTabs = TempoTab.entries.toSet(),
+                defaultTab = TempoTab.TASKS,
                 autoRemoveCompletedTasks = true,
                 completedTaskRetentionDays = 90,
                 vacationPeriods = listOf(VACATION),
@@ -107,9 +101,10 @@ class BackupSettingsDataSourceTest {
 
         verify { themePreferences.setThemeMode(ThemeMode.LIGHT) }
         verify { themePreferences.setUseTempoColors(true) }
-        verify { navigationPreferences.setRoutinesTabEnabled(true) }
-        verify { navigationPreferences.setTasksTabEnabled(true) }
-        verify { navigationPreferences.setDefaultTab(DEFAULT_TAB_TASKS) }
+        TempoTab.entries.forEach { tab ->
+            verify { navigationPreferences.setTabEnabled(tab, true) }
+        }
+        verify { navigationPreferences.setDefaultTab(TempoTab.TASKS) }
         verify { retentionPreferences.setEnabled(true) }
         verify { retentionPreferences.setRetentionDays(90) }
         verify { vacationModeRepository.replaceAll(listOf(VACATION)) }
@@ -124,25 +119,23 @@ class BackupSettingsDataSourceTest {
 
     @Test
     fun `apply keeps at least one tab enabled`() {
-        dataSource.apply(
-            settings(routinesTabEnabled = false, tasksTabEnabled = false),
-        )
+        dataSource.apply(settings(enabledTabs = emptySet()))
 
-        verify { navigationPreferences.setRoutinesTabEnabled(true) }
-        verify { navigationPreferences.setDefaultTab(DEFAULT_TAB_ROUTINES) }
+        verify { navigationPreferences.setTabEnabled(TempoTab.DEFAULT, true) }
+        verify { navigationPreferences.setDefaultTab(TempoTab.DEFAULT) }
     }
 
     @Test
     fun `apply moves the default tab off a disabled tab`() {
         dataSource.apply(
             settings(
-                routinesTabEnabled = false,
-                tasksTabEnabled = true,
-                defaultTab = BackupDefaultTab.ROUTINES,
+                enabledTabs = setOf(TempoTab.TASKS),
+                defaultTab = TempoTab.ROUTINES,
             ),
         )
 
-        verify { navigationPreferences.setDefaultTab(DEFAULT_TAB_TASKS) }
+        verify { navigationPreferences.setTabEnabled(TempoTab.ROUTINES, false) }
+        verify { navigationPreferences.setDefaultTab(TempoTab.TASKS) }
     }
 
     @Test
@@ -153,15 +146,13 @@ class BackupSettingsDataSourceTest {
     }
 
     private fun settings(
-        routinesTabEnabled: Boolean = true,
-        tasksTabEnabled: Boolean = true,
-        defaultTab: BackupDefaultTab = BackupDefaultTab.ROUTINES,
+        enabledTabs: Set<TempoTab> = TempoTab.entries.toSet(),
+        defaultTab: TempoTab = TempoTab.ROUTINES,
         completedTaskRetentionDays: Int = 30,
     ) = BackupSettings(
         themeMode = ThemeMode.SYSTEM,
         useTempoColors = false,
-        routinesTabEnabled = routinesTabEnabled,
-        tasksTabEnabled = tasksTabEnabled,
+        enabledTabs = enabledTabs,
         defaultTab = defaultTab,
         autoRemoveCompletedTasks = false,
         completedTaskRetentionDays = completedTaskRetentionDays,

@@ -1,10 +1,11 @@
 package com.mandrecode.tempo.features.backup.data.mapper
 
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.features.backup.data.model.SettingsBackupDto
 import com.mandrecode.tempo.features.backup.data.model.VacationPeriodBackupDto
-import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import kotlinx.datetime.LocalDate
 
@@ -12,8 +13,11 @@ internal fun BackupSettings.toDto(): SettingsBackupDto =
     SettingsBackupDto(
         themeMode = themeMode.name,
         useTempoColors = useTempoColors,
-        routinesTabEnabled = routinesTabEnabled,
-        tasksTabEnabled = tasksTabEnabled,
+        // Legacy booleans stay populated so a file written here still restores sensibly on a
+        // build that predates the tab registry.
+        routinesTabEnabled = TempoTab.ROUTINES in enabledTabs,
+        tasksTabEnabled = TempoTab.TASKS in enabledTabs,
+        enabledTabs = enabledTabs.map { it.name },
         defaultTab = defaultTab.name,
         autoRemoveCompletedTasks = autoRemoveCompletedTasks,
         completedTaskRetentionDays = completedTaskRetentionDays,
@@ -26,17 +30,29 @@ internal fun BackupSettings.toDto(): SettingsBackupDto =
             },
     )
 
-internal fun SettingsBackupDto.toDomain(): BackupSettings =
-    BackupSettings(
+internal fun SettingsBackupDto.toDomain(): BackupSettings {
+    val restoredTabs =
+        enabledTabs
+            ?.mapNotNull { name -> TempoTab.entries.firstOrNull { it.name == name } }
+            ?.toSet()
+            // Pre-Focus file: rebuild from the legacy booleans, with Focus enabled since the file
+            // could not have expressed a preference about it.
+            ?: buildSet {
+                add(TempoTab.FOCUS)
+                if (routinesTabEnabled) add(TempoTab.ROUTINES)
+                if (tasksTabEnabled) add(TempoTab.TASKS)
+            }
+
+    return BackupSettings(
         themeMode = enumValueOf<ThemeMode>(themeMode),
         useTempoColors = useTempoColors,
-        routinesTabEnabled = routinesTabEnabled,
-        tasksTabEnabled = tasksTabEnabled,
-        defaultTab = enumValueOf<BackupDefaultTab>(defaultTab),
+        enabledTabs = TabPreferencesPolicy.resolveEnabledTabs(restoredTabs),
+        defaultTab = TempoTab.entries.firstOrNull { it.name == defaultTab } ?: TempoTab.DEFAULT,
         autoRemoveCompletedTasks = autoRemoveCompletedTasks,
         completedTaskRetentionDays = completedTaskRetentionDays,
         vacationPeriods = vacationPeriods.toDomainPeriods(),
     )
+}
 
 /**
  * Parses the backup's vacation periods, dropping entries whose dates are unreadable and

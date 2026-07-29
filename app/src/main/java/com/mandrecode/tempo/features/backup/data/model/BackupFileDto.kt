@@ -30,8 +30,12 @@ data class BackupFileDto(
 data class SettingsBackupDto(
     val themeMode: String = "SYSTEM",
     val useTempoColors: Boolean = false,
+    // Superseded by [enabledTabs]. Still written on export so a file produced by this version
+    // still restores correctly on an older build that only understands two tabs.
     val routinesTabEnabled: Boolean = true,
     val tasksTabEnabled: Boolean = true,
+    // Absent in files written before Focus existed; [toDomain] falls back to the booleans above.
+    val enabledTabs: List<String>? = null,
     val defaultTab: String = "ROUTINES",
     val autoRemoveCompletedTasks: Boolean = false,
     val completedTaskRetentionDays: Int = 30,

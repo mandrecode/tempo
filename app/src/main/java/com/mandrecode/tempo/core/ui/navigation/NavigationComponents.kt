@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 internal val FloatingRailStartPadding = 24.dp
@@ -55,15 +56,16 @@ fun Modifier.adaptiveScreenContentLayout(railClearance: Dp): Modifier =
         .wrapContentWidth(Alignment.CenterHorizontally)
         .widthIn(max = ReadableContentMaxWidth)
 
+/**
+ * True when there is nothing to navigate between, so the navigation pill is replaced by the active
+ * tab's solo action.
+ */
 @Composable
 internal fun rememberIsSingleTabMode(navigationPreferencesRepository: NavigationPreferencesRepository): Boolean {
-    val isRoutinesTabEnabled by navigationPreferencesRepository
-        .isRoutinesTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-    val isTasksTabEnabled by navigationPreferencesRepository
-        .isTasksTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-    return !isRoutinesTabEnabled || !isTasksTabEnabled
+    val enabledTabs by navigationPreferencesRepository
+        .enabledTabs()
+        .collectAsStateWithLifecycle(initialValue = TempoTab.entries.toSet())
+    return enabledTabs.size <= 1
 }
 
 @Composable

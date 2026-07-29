@@ -7,10 +7,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mandrecode.tempo.core.domain.model.TempoTab
 
 @Composable
 fun OnboardingScreen(
-    onExit: (OnboardingContract.DefaultTab) -> Unit,
+    onExit: (TempoTab) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OnboardingViewModel = viewModel(),
 ) {
