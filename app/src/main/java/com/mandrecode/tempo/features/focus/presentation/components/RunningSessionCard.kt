@@ -82,6 +82,9 @@ internal fun RunningSessionCard(
                         color = MaterialTheme.colorScheme.onTertiaryContainer,
                         trackColor =
                             MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TRACK_ALPHA),
+                        // The wave is the session's heartbeat: it travels while time is running
+                        // down and stands still the moment the user pauses.
+                        waveSpeed = if (session.isPaused) STILL else WaveSpeed,
                     )
                     Text(
                         text = remaining.asCountdownLabel(),
@@ -211,6 +214,8 @@ private fun SessionActionButton(
     }
 }
 
+private val STILL = 0.dp
+private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.24f
 private const val LABEL_ALPHA = 0.75f
 private const val SUBTLE_BUTTON_ALPHA = 0.12f

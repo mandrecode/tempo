@@ -100,11 +100,8 @@ class FocusViewModel
                 FocusContract.UiEvent.PauseSession -> focusSessionUseCases.pause()
                 FocusContract.UiEvent.ResumeSession -> focusSessionUseCases.resume()
                 FocusContract.UiEvent.StopSession -> viewModelScope.launch { finishSession() }
-                FocusContract.UiEvent.ExpandSession ->
-                    mutableUiState.update { it.copy(isSessionImmersive = true) }
-
-                FocusContract.UiEvent.CollapseSession ->
-                    mutableUiState.update { it.copy(isSessionImmersive = false) }
+                FocusContract.UiEvent.OpenSessionScreen ->
+                    sendEffect(FocusContract.UiEffect.OpenSessionScreen)
 
                 FocusContract.UiEvent.StartAnotherSession ->
                     viewModelScope.launch {
@@ -141,7 +138,6 @@ class FocusViewModel
             val ended = focusSessionUseCases.end() ?: return
             mutableUiState.update {
                 it.copy(
-                    isSessionImmersive = false,
                     lastSessionTaskId = ended.taskId,
                     finishedSession =
                         FocusContract.FinishedSession(

@@ -51,30 +51,38 @@ internal fun TaskActionButtons(
         label = "shell_tasks_sort_button_slot_offset",
     )
 
-    Box(
-        modifier = Modifier.size(width = TASK_ACTIONS_WIDTH, height = TASK_ACTIONS_BUTTON_SIZE),
-        contentAlignment = Alignment.Center,
+    // Collapses to zero width when hidden so the surrounding row can centre itself; previously it
+    // always reserved TASK_ACTIONS_WIDTH and the caller compensated with fixed offsets.
+    AnimatedVisibility(
+        visible = showActions,
+        enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
+        exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
     ) {
-        AnimatedVisibility(
-            visible = showActions && tasksState.hasCompletedTasks,
-            modifier = Modifier.align(Alignment.CenterStart),
-            enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
+        Box(
+            modifier = Modifier.size(width = TASK_ACTIONS_WIDTH, height = TASK_ACTIONS_BUTTON_SIZE),
+            contentAlignment = Alignment.Center,
         ) {
-            ClearCompletedButton(
-                onClick = tasksState.onClearCompleted,
-            )
-        }
-        AnimatedVisibility(
-            visible = showActions,
-            modifier = Modifier.offset(x = sortOffset),
-            enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-            exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
-        ) {
-            SortButton(
-                sortOption = tasksState.sortOption,
-                onClick = tasksState.onSort,
-            )
+            AnimatedVisibility(
+                visible = showActions && tasksState.hasCompletedTasks,
+                modifier = Modifier.align(Alignment.CenterStart),
+                enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
+            ) {
+                ClearCompletedButton(
+                    onClick = tasksState.onClearCompleted,
+                )
+            }
+            AnimatedVisibility(
+                visible = showActions,
+                modifier = Modifier.offset(x = sortOffset),
+                enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
+            ) {
+                SortButton(
+                    sortOption = tasksState.sortOption,
+                    onClick = tasksState.onSort,
+                )
+            }
         }
     }
 }

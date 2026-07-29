@@ -213,17 +213,19 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `expanding and collapsing toggles the immersive flag`() =
+    fun `opening the session asks for its screen rather than flipping a flag`() =
         runTest {
             stubDay()
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.onEvent(FocusContract.UiEvent.ExpandSession)
-            assertThat(viewModel.uiState.value.isSessionImmersive).isTrue()
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.OpenSessionScreen)
+                advanceUntilIdle()
 
-            viewModel.onEvent(FocusContract.UiEvent.CollapseSession)
-            assertThat(viewModel.uiState.value.isSessionImmersive).isFalse()
+                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     @Test

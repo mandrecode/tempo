@@ -57,6 +57,13 @@ object TasksRoute : NavKey
 @Serializable
 object SettingsRoute : NavKey
 
+/**
+ * The running focus session, presented as a slide-in overlay like Settings rather than a tab
+ * destination — it is somewhere the user goes and comes back from.
+ */
+@Serializable
+object FocusSessionRoute : NavKey
+
 @Serializable
 object RoutinesEditorRoute : EditorRoute {
     override fun supports(mainRoute: NavKey): Boolean = mainRoute == RoutinesRoute
@@ -160,13 +167,7 @@ fun TempoNavHost(
             modifier = insetPaddingModifier,
         )
 
-        SettingsSlideOverlay(
-            visible = navigator.currentRoute == SettingsRoute,
-            onDismiss = { navigator.pop() },
-            modifier = insetPaddingModifier,
-        ) {
-            SettingsDestination(navigator = navigator)
-        }
+        SlideOverlays(navigator = navigator)
 
         PersistentFloatingBar(
             modifier = insetPaddingModifier,
@@ -174,6 +175,10 @@ fun TempoNavHost(
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
+            onOpenSession = {
+                navigator.navigateToTopLevel(FocusRoute)
+                navigator.navigate(FocusSessionRoute)
+            },
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,
@@ -220,6 +225,34 @@ private fun BoxScope.HorizontalInsetMarginStrips() {
     }
 }
 
+/**
+ * Settings and the focus session both present as slide-in overlays rather than NavDisplay scenes,
+ * for the reason documented on [SettingsSlideOverlay].
+ */
+@Composable
+private fun BoxScope.SlideOverlays(navigator: TempoNavigator) {
+    // Computed here rather than passed in: two sibling overlays sharing one caller-supplied
+    // modifier trips the "modifiers are used once, by the root layout" rule.
+    val insetPadding =
+        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+
+    SettingsSlideOverlay(
+        visible = navigator.currentRoute == SettingsRoute,
+        onDismiss = { navigator.pop() },
+        modifier = insetPadding,
+    ) {
+        SettingsDestination(navigator = navigator)
+    }
+
+    SettingsSlideOverlay(
+        visible = navigator.currentRoute == FocusSessionRoute,
+        onDismiss = { navigator.pop() },
+        modifier = insetPadding,
+    ) {
+        FocusSessionDestination(navigator = navigator)
+    }
+}
+
 @Composable
 private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
@@ -253,42 +286,15 @@ private fun rememberActiveEntries(
             rememberViewModelStoreNavEntryDecorator(),
         )
     val entries =
-        entryProvider<NavKey> {
-            entry<FocusRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to FocusRoute)) {
-                FocusDestination(navigator = navigator)
-            }
-            entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
-                RoutinesDestination(
-                    navigator = navigator,
-                    navigationPreferencesRepository = navigationPreferencesRepository,
-                    pendingNotificationAction = pendingNotificationAction,
-                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                    onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
-                )
-            }
-            entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
-                TasksDestination(
-                    navigator = navigator,
-                    navigationPreferencesRepository = navigationPreferencesRepository,
-                    pendingNotificationAction = pendingNotificationAction,
-                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                    onFloatingBarStateChange = onTasksFloatingBarStateChange,
-                )
-            }
-            entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
-                OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
-            }
-            // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
-            // currently active, so this registration is needed for every section's entries, not
-            // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
-            // the resulting entry is filtered out before reaching NavDisplay (see below) since
-            // Settings is never rendered as a NavDisplay scene.
-            entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
-                SettingsDestination(navigator = navigator)
-            }
-            entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
-            entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
-        }
+        rememberNavEntryProvider(
+            navigator,
+            navigationPreferencesRepository,
+            pendingNotificationAction,
+            onConsumePendingNotificationAction,
+            onRoutinesFloatingBarStateChange,
+            onTasksFloatingBarStateChange,
+        )
+
     val focusEntries = rememberDecoratedNavEntries(navigator.focusBackStack, decorators, entries)
     val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
     val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
@@ -310,6 +316,54 @@ private fun rememberActiveEntries(
     } else {
         entriesWithoutSettings.filterNot { it.metadata.containsKey(EDITOR_ROUTE_METADATA) }
     }
+}
+
+@Composable
+private fun rememberNavEntryProvider(
+    navigator: TempoNavigator,
+    navigationPreferencesRepository: NavigationPreferencesRepository,
+    pendingNotificationAction: PendingNotificationAction?,
+    onConsumePendingNotificationAction: () -> Unit,
+    onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
+    onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
+) = entryProvider<NavKey> {
+    entry<FocusRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to FocusRoute)) {
+        FocusDestination(navigator = navigator)
+    }
+    entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
+        RoutinesDestination(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
+        )
+    }
+    entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
+        TasksDestination(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onFloatingBarStateChange = onTasksFloatingBarStateChange,
+        )
+    }
+    entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
+        OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
+    }
+    // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
+    // currently active, so this registration is needed for every section's entries, not
+    // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
+    // the resulting entry is filtered out before reaching NavDisplay (see below) since
+    // Settings is never rendered as a NavDisplay scene.
+    entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+        SettingsDestination(navigator = navigator)
+    }
+    entry<FocusSessionRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+        FocusSessionDestination(navigator = navigator)
+    }
+    entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
+    entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
 }
 
 @Composable

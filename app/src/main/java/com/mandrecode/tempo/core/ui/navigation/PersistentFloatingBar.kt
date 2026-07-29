@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -67,6 +69,7 @@ internal fun PersistentFloatingBar(
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
+    onOpenSession: () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -89,7 +92,7 @@ internal fun PersistentFloatingBar(
 
     if (!visible) return
 
-    val sessionChip = rememberSessionChip(focusSessionRepository, currentRoute, onNavigateToTopLevel)
+    val sessionChip = rememberSessionChip(focusSessionRepository, currentRoute, onOpenSession)
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
@@ -371,12 +374,10 @@ private fun PersistentPortraitFloatingBar(
         return
     }
 
-    val (barOffset, actionOffset) =
-        taskFloatingOffsets(
-            showTaskActions = isTasksRoute,
-            hasCompletedTasks = tasksState.hasCompletedTasks,
-        )
-
+    // One centred row rather than hand-tuned offsets: the previous version compensated for the
+    // task action buttons with fixed dp values measured against the old control set, which the
+    // session pill silently invalidated — on Tasks the assembly drifted off-centre and clipped.
+    // Letting the row centre itself stays correct whatever combination of controls is present.
     Box(
         modifier =
             Modifier
@@ -385,21 +386,22 @@ private fun PersistentPortraitFloatingBar(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        FloatingBarMainControls(
-            isSingleTabMode = isSingleTabMode,
-            addAction = addAction,
-            navigationContent = navigationContent,
-            sessionChip = sessionChip,
-            modifier = Modifier.offset(x = barOffset),
-        )
-
-        Box(
-            modifier = Modifier.offset(x = barOffset - actionOffset),
-            contentAlignment = Alignment.Center,
+        // Order: session pill, then the tab-specific actions, then the bar itself and the add
+        // button. The pill leads because it belongs to work already in flight; the task actions sit
+        // directly against the nav pill they belong to.
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            sessionChip?.invoke()
             TaskActionButtons(
                 tasksState = tasksState,
                 showActions = isTasksRoute,
+            )
+            FloatingBarMainControls(
+                isSingleTabMode = isSingleTabMode,
+                addAction = addAction,
+                navigationContent = navigationContent,
             )
         }
     }
@@ -410,7 +412,6 @@ private fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
     addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
-    sessionChip: (@Composable () -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val stableNavigationContent = remember(navigationContent) { movableContentOf(navigationContent) }
@@ -429,9 +430,14 @@ private fun FloatingBarMainControls(
             )
         } else {
             stableNavigationContent()
-            sessionChip?.invoke()
-            if (addAction != null) {
-                AddActionButton(addAction)
+            // (A) The add button joins and leaves the same way the task action buttons do, rather
+            // than appearing and vanishing instantly.
+            AnimatedVisibility(
+                visible = addAction != null,
+                enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
+            ) {
+                addAction?.let { AddActionButton(it) }
             }
         }
     }

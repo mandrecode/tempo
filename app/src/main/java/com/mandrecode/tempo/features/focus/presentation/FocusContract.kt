@@ -32,7 +32,6 @@ object FocusContract {
         /** The task the last session ran on, so "another session" restarts the same work. */
         val lastSessionTaskId: Long? = null,
         val defaultSessionLengthMinutes: Int = 25,
-        val isSessionImmersive: Boolean = false,
     ) {
         val headlineBand: FocusHeadlineBand
             get() = FocusHeadlineBand.resolve(scheduledCount, completedCount)
@@ -41,18 +40,18 @@ object FocusContract {
         val progress: Float
             get() = if (scheduledCount <= 0) 0f else (completedCount.toFloat() / scheduledCount).coerceIn(0f, 1f)
 
-        val isDayEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty()
+        val isDayEmpty: Boolean get() = upNext == null && overdue.isEmpty() && todayItems.isEmpty()
 
-        /** Subtasks of the task the session is running on, for the immersive checklist. */
-        val sessionSubtasks: List<Task>
+        /** The agenda entry the session is running on, for the session screen's detail. */
+        val sessionEntry: FocusAgendaItem.TaskEntry?
             get() {
-                val taskId = session?.taskId ?: return emptyList()
-                return (overdue + todayItems)
+                val taskId = session?.taskId ?: return null
+                return (listOfNotNull(upNext) + overdue + todayItems)
                     .filterIsInstance<FocusAgendaItem.TaskEntry>()
                     .firstOrNull { it.task.id == taskId }
-                    ?.subtasks
-                    .orEmpty()
             }
+
+        val sessionSubtasks: List<Task> get() = sessionEntry?.subtasks.orEmpty()
     }
 
     /** What the completion sheet reports: plain facts, no score and no streak. */
@@ -98,9 +97,7 @@ object FocusContract {
 
         data object StopSession : UiEvent
 
-        data object ExpandSession : UiEvent
-
-        data object CollapseSession : UiEvent
+        data object OpenSessionScreen : UiEvent
 
         data object StartAnotherSession : UiEvent
 
@@ -120,5 +117,8 @@ object FocusContract {
         ) : UiEffect
 
         data object OpenTasksTab : UiEffect
+
+        /** The session gets its own slide-in screen, so opening it is navigation. */
+        data object OpenSessionScreen : UiEffect
     }
 }

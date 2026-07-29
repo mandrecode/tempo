@@ -106,6 +106,9 @@ internal fun FocusSummaryHero(
                         },
                 color = MaterialTheme.colorScheme.onPrimaryContainer,
                 trackColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = TRACK_ALPHA),
+                // Frozen wave: the hero reports the day, it is not an activity in progress. Motion
+                // here would read as something happening right now, which is the session's job.
+                waveSpeed = STILL,
             )
         }
     }
@@ -182,6 +185,7 @@ private val FocusHeadlineBand.headlineRes: Int
             FocusHeadlineBand.COMPLETE -> R.string.focus_headline_complete
         }
 
+private val STILL = 0.dp
 private const val SEPARATOR = " · "
 private const val HEADER_ALPHA = 0.78f
 private const val TRACK_ALPHA = 0.24f

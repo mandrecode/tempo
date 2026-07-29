@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,24 +33,24 @@ import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.presentation.components.cards.MetadataRow
 import kotlin.time.Clock
 
 private val RingSize = 220.dp
+private const val FULLY_ROUNDED = 50
 
 /**
- * The session, alone on the screen.
- *
- * Reached by tapping the session card — going deeper is a choice, not the default. Everything the
- * agenda normally shows steps away; what remains is the ring, the task, and its subtasks as a
- * checklist. This is the one screen where subtasks earn top billing, because they are the shape of
- * the work being done right now.
+ * The session itself: ring, task subtasks and controls. Hosted by [FocusSessionScreen], which
+ * supplies the top bar and the back affordance — this composable deliberately owns neither, so the
+ * screen around it decides how the user leaves.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun ImmersiveSessionView(
+internal fun SessionBody(
     session: FocusSession,
     subtasks: List<Task>,
-    onCollapse: () -> Unit,
+    task: Task?,
+    categoryName: String?,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onToggleSubtask: (Task) -> Unit,
@@ -66,10 +65,6 @@ internal fun ImmersiveSessionView(
             1f - (remaining.inWholeSeconds.toFloat() / session.plannedLength.inWholeSeconds)
         }.coerceIn(0f, 1f)
 
-    // Collapsing returns to the list with the session still running — back should never be the
-    // thing that stops your work.
-    BackHandler(onBack = onCollapse)
-
     Column(
         modifier =
             modifier
@@ -79,29 +74,37 @@ internal fun ImmersiveSessionView(
                 .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CollapseRow(
-            plannedMinutes = session.plannedLength.inWholeMinutes.toInt(),
-            onCollapse = onCollapse,
-        )
+        // Description sits above the timer: it is context for the work, and the title it belongs
+        // to is already the screen's own title in the bar above.
+        task?.description?.takeIf { it.isNotBlank() }?.let { description ->
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            )
+        }
 
         SessionRing(
             progress = progress,
             label = remaining.asCountdownLabel(),
             isPaused = session.isPaused,
-            modifier = Modifier.padding(top = 20.dp),
-        )
-
-        Text(
-            text = session.taskTitle,
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 24.dp),
         )
 
+        if (task != null) {
+            SessionTaskMetadata(
+                task = task,
+                subtasks = subtasks,
+                categoryName = categoryName,
+                modifier = Modifier.padding(top = 20.dp),
+            )
+        }
+
         if (subtasks.isNotEmpty()) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+                modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 subtasks.forEach { subtask ->
@@ -114,7 +117,7 @@ internal fun ImmersiveSessionView(
             isPaused = session.isPaused,
             onPauseResume = onPauseResume,
             onStop = onStop,
-            modifier = Modifier.fillMaxWidth().padding(top = 28.dp, bottom = 32.dp),
+            modifier = Modifier.fillMaxWidth().padding(top = 32.dp, bottom = 32.dp),
         )
     }
 }
@@ -133,6 +136,8 @@ private fun SessionRing(
             modifier = Modifier.size(RingSize),
             color = MaterialTheme.colorScheme.primary,
             trackColor = MaterialTheme.colorScheme.primary.copy(alpha = TRACK_ALPHA),
+            // Travels while running, still while paused — same rule as the card's ring.
+            waveSpeed = if (isPaused) STILL else WaveSpeed,
         )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -185,35 +190,38 @@ private fun ImmersiveActionRow(
     }
 }
 
+/**
+ * Priority, category and reminder for the task under way, using the same badges its card shows in
+ * Tasks — so the session screen states the task's properties in the vocabulary the user already
+ * knows, rather than inventing a second one.
+ */
 @Composable
-private fun CollapseRow(
-    plannedMinutes: Int,
-    onCollapse: () -> Unit,
+private fun SessionTaskMetadata(
+    task: Task,
+    subtasks: List<Task>,
+    categoryName: String?,
+    modifier: Modifier = Modifier,
 ) {
-    val haptic = LocalHapticFeedback.current
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text(
-            text = stringResource(R.string.focus_session_collapse),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier =
-                Modifier
-                    .clickable {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onCollapse()
-                    }.padding(vertical = 8.dp, horizontal = 4.dp),
-        )
-        Text(
-            text = stringResource(R.string.focus_session_length_minutes, plannedMinutes),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        categoryName?.takeIf { it.isNotBlank() }?.let { name ->
+            Surface(
+                shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                modifier = Modifier.padding(bottom = 8.dp),
+            ) {
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+        MetadataRow(task = task, subtasks = subtasks)
     }
 }
 
@@ -296,6 +304,8 @@ private fun ImmersiveButton(
     }
 }
 
+private val STILL = 0.dp
+private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val PillRadius = 24.dp
 private val PillPressedRadius = 12.dp

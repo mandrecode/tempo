@@ -35,9 +35,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearance
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
-import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
-import com.mandrecode.tempo.features.focus.presentation.components.ImmersiveSessionView
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
 import com.mandrecode.tempo.features.focus.presentation.components.StartSessionButton
@@ -58,12 +56,6 @@ fun FocusContent(
     modifier: Modifier = Modifier,
 ) {
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
-
-    val session = uiState.session
-    if (session != null && uiState.isSessionImmersive) {
-        ImmersiveSession(uiState = uiState, session = session, onEvent = onEvent, modifier = modifier)
-        return
-    }
 
     Box(
         // Matches the Scaffold containerColor this normally sits in, so the rounded seam below
@@ -124,32 +116,6 @@ fun FocusContent(
             }
         }
     }
-}
-
-@Composable
-private fun ImmersiveSession(
-    uiState: FocusContract.UiState,
-    session: FocusSession,
-    onEvent: (FocusContract.UiEvent) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ImmersiveSessionView(
-        session = session,
-        subtasks = uiState.sessionSubtasks,
-        onCollapse = { onEvent(FocusContract.UiEvent.CollapseSession) },
-        onPauseResume = {
-            onEvent(
-                if (session.isPaused) {
-                    FocusContract.UiEvent.ResumeSession
-                } else {
-                    FocusContract.UiEvent.PauseSession
-                },
-            )
-        },
-        onStop = { onEvent(FocusContract.UiEvent.StopSession) },
-        onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
-        modifier = modifier,
-    )
 }
 
 @Composable
@@ -232,7 +198,7 @@ private fun LazyListScope.upNextSection(
             item(key = "running_session") {
                 RunningSessionCard(
                     session = session,
-                    onExpand = { onEvent(FocusContract.UiEvent.ExpandSession) },
+                    onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
                     onPauseResume = {
                         onEvent(
                             if (session.isPaused) {

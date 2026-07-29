@@ -38,7 +38,7 @@ internal fun navigationTransition(
     val targetMainRoute = targetScene.entries.first().metadata[EDITOR_MAIN_ROUTE_METADATA]
     return when {
         initialEntry.metadata.containsKey(ONBOARDING_ROUTE_METADATA) &&
-            (targetMainRoute == RoutinesRoute || targetMainRoute == TasksRoute) ->
+            targetMainRoute in topLevelRoutes ->
             onboardingHandoffEnterTransition() togetherWith onboardingHandoffExitTransition()
 
         isTopLevelTabSwitch(initialMainRoute, targetMainRoute) -> tabSwitchTransition()
@@ -52,13 +52,15 @@ internal fun navigationPopTransition(
     targetScene: Scene<NavKey>,
 ): ContentTransform = navigationTransition(initialScene, targetScene)
 
+private val topLevelRoutes = setOf(FocusRoute, RoutinesRoute, TasksRoute)
+
 private fun isTopLevelTabSwitch(
     initialMainRoute: Any?,
     targetMainRoute: Any?,
 ): Boolean =
     initialMainRoute != targetMainRoute &&
-        (initialMainRoute == RoutinesRoute || initialMainRoute == TasksRoute) &&
-        (targetMainRoute == RoutinesRoute || targetMainRoute == TasksRoute)
+        initialMainRoute in topLevelRoutes &&
+        targetMainRoute in topLevelRoutes
 
 /**
  * Tasks/Routines bottom-tab switch: an instant cut, no animation at all — matching how apps like

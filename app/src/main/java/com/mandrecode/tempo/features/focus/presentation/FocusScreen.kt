@@ -25,6 +25,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 fun FocusScreen(
     onNavigateToTasks: () -> Unit,
     onNavigateToRoutines: () -> Unit,
+    onOpenSession: () -> Unit,
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit = {},
     viewModel: FocusViewModel = viewModel(),
@@ -32,6 +33,7 @@ fun FocusScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnNavigateToTasks by rememberUpdatedState(onNavigateToTasks)
     val currentOnNavigateToRoutines by rememberUpdatedState(onNavigateToRoutines)
+    val currentOnOpenSession by rememberUpdatedState(onOpenSession)
     val railContentClearance = floatingRailContentClearance()
 
     LaunchedEffect(viewModel) {
@@ -42,6 +44,7 @@ fun FocusScreen(
                 is FocusContract.UiEffect.OpenTaskInTasksTab -> currentOnNavigateToTasks()
                 FocusContract.UiEffect.OpenTasksTab -> currentOnNavigateToTasks()
                 is FocusContract.UiEffect.OpenHabitInRoutinesTab -> currentOnNavigateToRoutines()
+                FocusContract.UiEffect.OpenSessionScreen -> currentOnOpenSession()
             }
         }
     }
