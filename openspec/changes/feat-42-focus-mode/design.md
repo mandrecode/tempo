@@ -27,7 +27,7 @@ none of the types describe a Pomodoro timer, so the session timer must be built 
 - A day summary that is durable across retention purges, per issues #22 and #19.
 - A navigation layer where adding a fourth tab is a registry entry, not a refactor.
 - A focus session timer that survives force-close and reboot without a foreground service.
-- No silent change to any existing user's navigation preferences.
+- One announced change to the default tab, reversible in Settings — not a silent one.
 
 **Non-Goals:**
 
@@ -127,12 +127,14 @@ start-tab switch once. Entries without an action render exactly as they do today
 ## Migration Plan
 
 1. **Preferences**: on first read of `enabledTabs`, seed from the legacy boolean keys, add Focus as
-   enabled, and persist the new shape. Default tab is preserved as-is.
+   enabled, set the default tab to Focus, and persist the new shape. Keyed on the enabled-tabs key
+   being absent, so it applies exactly once and never overrides a later choice.
 2. **Database**: additive migration creating the daily-activity table; no existing table is altered,
    so downgrade leaves the table orphaned but harmless.
 3. **Backup schema**: bump the version and add tab-set, default-tab and daily-activity fields, all
    optional with defaults so pre-change exports import cleanly.
-4. **Rollout**: the what's-new entry announces Focus and offers the start-tab change once.
+4. **Rollout**: the what's-new entry announces Focus, states that it is now the start tab, and
+   points at the Settings entry that changes it back.
 5. **Rollback**: reverting the final squash restores the two-tab UI; the orphaned table and the
    rewritten preference keys are inert, and legacy keys are left in place rather than deleted
    precisely so a revert reads them again.
