@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +34,9 @@ import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
+import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
+import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
+import com.mandrecode.tempo.features.focus.presentation.components.StartSessionButton
 import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
@@ -86,6 +90,10 @@ fun FocusContent(
                             ),
                         ).background(MaterialTheme.colorScheme.surface),
             ) {
+                uiState.finishedSession?.let { finished ->
+                    SessionFinishedSheet(finished = finished, onEvent = onEvent)
+                }
+
                 if (uiState.isDayEmpty) {
                     FocusEmptyState(
                         undatedTaskCount = uiState.undatedTaskCount,
@@ -120,25 +128,7 @@ private fun FocusAgendaList(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier.fillMaxSize(),
     ) {
-        val upNext = uiState.upNext
-        if (upNext != null) {
-            item(key = "up_next_label") {
-                Text(
-                    text = stringResource(R.string.focus_up_next).uppercase(),
-                    style = MaterialTheme.typography.groupLabel,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            item(key = "up_next_${upNext.id}") {
-                UpNextCard(
-                    title = upNext.displayTitle(),
-                    metadata = upNext.upNextMetadata(),
-                    onClick = { onEvent(upNext.editEvent()) },
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                )
-            }
-        }
+        upNextSection(uiState = uiState, onEvent = onEvent)
 
         if (uiState.overdue.isNotEmpty()) {
             item(key = "overdue_header") {
@@ -170,6 +160,74 @@ private fun FocusAgendaList(
                     count = uiState.undatedTaskCount,
                     onClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
                     modifier = Modifier.animateItem(),
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The spotlight slot: the Up next card, or the same card transformed into the running session.
+ * Lifted out of the list builder so neither grows past what fits on a screen.
+ */
+private fun LazyListScope.upNextSection(
+    uiState: FocusContract.UiState,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    val session = uiState.session
+    val upNext = uiState.upNext
+    if (session != null || upNext != null) {
+        item(key = "up_next_label") {
+            Text(
+                text =
+                    if (session != null) {
+                        stringResource(R.string.focus_session_focusing).uppercase()
+                    } else {
+                        stringResource(R.string.focus_up_next).uppercase()
+                    },
+                style = MaterialTheme.typography.groupLabel,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        // The card transforms in place rather than being replaced, so starting a session
+        // does not shift everything below it.
+        if (session != null) {
+            item(key = "running_session") {
+                RunningSessionCard(
+                    session = session,
+                    onExpand = { onEvent(FocusContract.UiEvent.ExpandSession) },
+                    onPauseResume = {
+                        onEvent(
+                            if (session.isPaused) {
+                                FocusContract.UiEvent.ResumeSession
+                            } else {
+                                FocusContract.UiEvent.PauseSession
+                            },
+                        )
+                    },
+                    onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+                    modifier = Modifier.fillMaxWidth().animateItem(),
+                )
+            }
+        } else if (upNext != null) {
+            item(key = "up_next_${upNext.id}") {
+                UpNextCard(
+                    title = upNext.displayTitle(),
+                    metadata = upNext.upNextMetadata(),
+                    onClick = { onEvent(upNext.editEvent()) },
+                    modifier = Modifier.fillMaxWidth().animateItem(),
+                    trailingContent =
+                        if (upNext is FocusAgendaItem.TaskEntry) {
+                            {
+                                StartSessionButton(
+                                    minutes = uiState.defaultSessionLengthMinutes,
+                                    onClick = { onEvent(FocusContract.UiEvent.StartSession) },
+                                )
+                            }
+                        } else {
+                            null
+                        },
                 )
             }
         }

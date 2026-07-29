@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
+import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
@@ -40,6 +41,7 @@ class RescheduleRemindersWorker
         private val activeLiveActivityPreferences: ActiveLiveActivityPreferences,
         private val habitChainLiveActivityManager: HabitChainLiveActivityManager,
         private val missedReminderScheduler: MissedReminderScheduler,
+        private val focusSessionUseCases: FocusSessionUseCases,
         private val clock: Clock,
     ) : CoroutineWorker(appContext, workerParams) {
         override suspend fun doWork(): Result =
@@ -52,6 +54,9 @@ class RescheduleRemindersWorker
                 // This worker runs at startup, on boot, on time/timezone change, on package
                 // replacement, and every 24h — the same events that drop the catch-up alarm.
                 missedReminderScheduler.sync()
+                // Restores the alarm and countdown of a session that survived the reboot, or
+                // settles one whose time ran out while the device was off.
+                focusSessionUseCases.reconcile()
                 Result.success()
             } catch (e: CancellationException) {
                 throw e

@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.focus.presentation
 import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
+import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -25,6 +26,13 @@ object FocusContract {
         val todayItems: ImmutableList<FocusAgendaItem> = persistentListOf(),
         val undatedTaskCount: Int = 0,
         val expandedChainIds: ImmutableList<Long> = persistentListOf(),
+        val session: FocusSession? = null,
+        /** Set when a session has just finished, driving the completion sheet. */
+        val finishedSession: FinishedSession? = null,
+        /** The task the last session ran on, so "another session" restarts the same work. */
+        val lastSessionTaskId: Long? = null,
+        val defaultSessionLengthMinutes: Int = 25,
+        val isSessionImmersive: Boolean = false,
     ) {
         val headlineBand: FocusHeadlineBand
             get() = FocusHeadlineBand.resolve(scheduledCount, completedCount)
@@ -35,6 +43,12 @@ object FocusContract {
 
         val isDayEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty()
     }
+
+    /** What the completion sheet reports: plain facts, no score and no streak. */
+    data class FinishedSession(
+        val taskTitle: String,
+        val minutes: Int,
+    )
 
     sealed interface UiEvent {
         data class ToggleTaskCompletion(
@@ -64,6 +78,24 @@ object FocusContract {
         ) : UiEvent
 
         data object UndatedTasksClicked : UiEvent
+
+        data object StartSession : UiEvent
+
+        data object PauseSession : UiEvent
+
+        data object ResumeSession : UiEvent
+
+        data object StopSession : UiEvent
+
+        data object ExpandSession : UiEvent
+
+        data object CollapseSession : UiEvent
+
+        data object StartAnotherSession : UiEvent
+
+        data object TakeBreak : UiEvent
+
+        data object DismissFinishedSession : UiEvent
     }
 
     sealed interface UiEffect {

@@ -13,6 +13,7 @@ object NotificationChannelManager {
     const val TASK_REMINDER_CHANNEL_ID = "task_reminder_channel"
     const val HABIT_REMINDER_CHANNEL_ID = "habit_reminder_channel"
     const val HABIT_CHAIN_LIVE_ACTIVITY_CHANNEL_ID = "habit_chain_live_activity_channel"
+    const val FOCUS_SESSION_CHANNEL_ID = "focus_session_channel"
 
     fun ensureTaskReminderChannel(
         context: Context,
@@ -58,6 +59,26 @@ object NotificationChannelManager {
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
                 description = context.getString(R.string.notification_habit_chain_live_activity_channel_description)
+            }
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    /**
+     * Low importance on purpose: the session notification is a countdown the user chose to start,
+     * so it should sit quietly in the shade rather than buzz.
+     */
+    fun ensureFocusSessionChannel(
+        context: Context,
+        notificationManager: NotificationManager,
+    ) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val channel =
+            NotificationChannel(
+                FOCUS_SESSION_CHANNEL_ID,
+                context.getString(R.string.notification_focus_session_channel_name),
+                NotificationManager.IMPORTANCE_LOW,
+            ).apply {
+                description = context.getString(R.string.notification_focus_session_channel_description)
             }
         notificationManager.createNotificationChannel(channel)
     }

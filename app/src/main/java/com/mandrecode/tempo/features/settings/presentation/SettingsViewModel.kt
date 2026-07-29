@@ -11,6 +11,7 @@ import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -62,6 +63,7 @@ class SettingsViewModel
         private val missedReminderScheduler: MissedReminderScheduler,
         private val backupDelegate: SettingsBackupDelegate,
         private val vacationModeRepository: VacationModeRepository,
+        private val focusSessionRepository: FocusSessionRepository,
         @ApplicationContext private val appContext: Context,
     ) : ViewModel() {
         private val _uiState = MutableStateFlow(SettingsContract.UiState())
@@ -82,6 +84,7 @@ class SettingsViewModel
             observeTempoColors()
             loadVersionInfo()
             observeTabPreferences()
+            observeFocusPreferences()
             observePreferenceStores()
         }
 
@@ -105,6 +108,14 @@ class SettingsViewModel
             val versionInfo = appVersionProvider.getVersionInfo()
             _uiState.update {
                 it.copy(appVersion = versionInfo.versionName)
+            }
+        }
+
+        private fun observeFocusPreferences() {
+            viewModelScope.launch {
+                focusSessionRepository.defaultLengthMinutes.collect { minutes ->
+                    _uiState.update { it.copy(focusSessionLengthMinutes = minutes) }
+                }
             }
         }
 
@@ -135,6 +146,10 @@ class SettingsViewModel
                 is SettingsContract.UiEvent.TempoColorsToggled -> {
                     themePreferencesRepository.setUseTempoColors(event.enabled)
                     refreshQuickAddTaskWidget()
+                }
+
+                is SettingsContract.UiEvent.FocusSessionLengthChanged -> {
+                    focusSessionRepository.setDefaultLengthMinutes(event.minutes)
                 }
 
                 is SettingsContract.UiEvent.TabToggled -> {

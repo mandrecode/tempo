@@ -16,6 +16,7 @@ import com.mandrecode.tempo.features.backup.domain.model.ImportSummary
 import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
 import com.mandrecode.tempo.features.backup.domain.usecase.ExportBackupUseCase
 import com.mandrecode.tempo.features.backup.domain.usecase.ImportBackupUseCase
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -47,6 +48,12 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SettingsViewModelTest {
+    private val focusSessionRepository =
+        mockk<FocusSessionRepository>(relaxed = true) {
+            // A relaxed mock returns a mock StateFlow, which never emits — the ViewModel collects
+            // this on init, so it has to be a real flow.
+            every { defaultLengthMinutes } returns MutableStateFlow(25)
+        }
     private lateinit var viewModel: SettingsViewModel
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
     private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
@@ -741,6 +748,7 @@ class SettingsViewModelTest {
             missedReminderScheduler,
             SettingsBackupDelegate(exportBackup, importBackup, backupRepository, backupFileDataSource),
             vacationModeRepository,
+            focusSessionRepository,
             appContext,
         )
 }

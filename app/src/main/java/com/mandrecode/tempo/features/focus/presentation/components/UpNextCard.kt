@@ -13,9 +13,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.util.DateTimeFormatter
 
@@ -88,4 +90,31 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
     return DateTimeFormatter.formatTimeOfDay(time, context)
 }
 
+/**
+ * The only place a session starts. One tap, no duration picker — the length comes from Settings so
+ * that starting stays a single gesture.
+ */
+@Composable
+internal fun StartSessionButton(
+    minutes: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        color = MaterialTheme.colorScheme.onTertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.tertiaryContainer,
+    ) {
+        Text(
+            text = stringResource(R.string.focus_session_start, minutes),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+        )
+    }
+}
+
 private const val METADATA_ALPHA = 0.75f
+private const val FULLY_ROUNDED = 50

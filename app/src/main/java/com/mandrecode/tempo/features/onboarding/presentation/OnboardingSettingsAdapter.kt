@@ -18,6 +18,7 @@ internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.Ui
         is SettingsContract.UiEvent.TabToggled -> OnboardingContract.UiEvent.TabToggled(tab, enabled)
         is SettingsContract.UiEvent.DefaultTabSelected -> OnboardingContract.UiEvent.DefaultTabSelected(defaultTab)
 
+        is SettingsContract.UiEvent.FocusSessionLengthChanged,
         is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled,
         is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged,
         is SettingsContract.UiEvent.MissedReminderCatchUpToggled,
