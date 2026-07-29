@@ -95,11 +95,16 @@ class GetUpNextItemUseCaseTest {
     }
 
     @Test
-    fun `habits compete with tasks and can win on time`() {
+    fun `a habit never takes the slot, however early it is due`() {
         val habit = habitEntry(1, hour = 7)
         val task = taskEntry(2, hour = 9)
 
-        assertThat(useCase(listOf(task, habit))).isEqualTo(habit)
+        assertThat(useCase(listOf(task, habit))).isEqualTo(task)
+    }
+
+    @Test
+    fun `a day of habits alone leaves the slot empty`() {
+        assertThat(useCase(listOf(habitEntry(1, hour = 7), habitEntry(2, hour = 8)))).isNull()
     }
 
     @Test

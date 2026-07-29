@@ -638,15 +638,15 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Añadir tarea rápida</string>
     <string name="widget_quick_add_task_description">Añade una tarea a Tempo con un toque desde tu pantalla de inicio</string>
-    <string name="focus_headline_nothing_scheduled">Nada programado para hoy</string>
-    <string name="focus_headline_just_started">El día está por delante</string>
-    <string name="focus_headline_under_way">Vas en marcha</string>
+    <string name="focus_headline_nothing_scheduled">Hoy no hay nada</string>
+    <string name="focus_headline_just_started">Tienes el día por delante</string>
+    <string name="focus_headline_under_way">Ya estás en marcha</string>
     <string name="focus_headline_nearly_there">Casi está</string>
-    <string name="focus_headline_complete">Hoy está despejado</string>
+    <string name="focus_headline_complete">Todo hecho por hoy</string>
     <string name="focus_up_next">A continuación</string>
     <string name="focus_section_overdue">Atrasado · %1$d</string>
     <string name="focus_section_today">Hoy · %1$d</string>
-    <string name="focus_progress_description">%1$d de %2$d hechos</string>
+    <string name="focus_progress_description">%1$d de %2$d completados</string>
     <string name="focus_history_description">Actividad de los últimos %1$d días</string>
     <string name="focus_empty_title">Nada para hoy</string>
     <string name="focus_empty_message">Aquí aparece lo que vence hoy y lo que está atrasado.</string>
@@ -659,28 +659,27 @@
         <item quantity="other">%1$d tareas sin fecha</item>
     </plurals>
     <string name="focus_session_paused">En pausa</string>
-    <string name="focus_session_finished_title">%1$d minutos hechos</string>
+    <string name="focus_session_finished_title">%1$d minutos completados</string>
     <string name="focus_session_start">Empezar %1$d min</string>
     <string name="focus_session_pause">Pausar</string>
     <string name="focus_session_resume">Reanudar</string>
-    <string name="focus_session_stop">Parar aquí</string>
+    <string name="focus_session_stop">Parar</string>
     <string name="focus_session_another">Otros %1$d minutos</string>
     <string name="focus_session_take_break">Descanso de %1$d min</string>
-    <string name="focus_session_focusing">Enfocado</string>
+    <string name="focus_session_focusing">En curso</string>
     <string name="focus_session_remaining">Quedan %1$s</string>
     <string name="focus_session_length">Duración de la sesión</string>
     <string name="focus_session_length_minutes">%1$d min</string>
     <string name="settings_focus">Enfoque</string>
     <string name="notification_focus_session_channel_name">Sesiones de enfoque</string>
     <string name="notification_focus_session_channel_description">La cuenta atrás de una sesión de enfoque en curso.</string>
-    <string name="focus_session_collapse">Contraer</string>
-    <string name="focus_session_mark_done">Marcar hecha</string>
+    <string name="focus_session_mark_done">Completar</string>
     <string name="focus_session_break">En un descanso</string>
     <string name="focus_session_finished_heading">Se acabó el tiempo</string>
     <string name="focus_session_break_over_heading">Fin del descanso</string>
     <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
-    <string name="focus_session_finished_done">Ya está por ahora</string>
-    <string name="focus_session_back_to_it">Volver a ello</string>
+    <string name="focus_session_finished_done">Dejarlo aquí</string>
+    <string name="focus_session_back_to_it">Retomar</string>
     <string name="focus_session_not_started">Sin empezar</string>
     <string name="focus_session_open_in_tasks">Abrir en Tareas</string>
 </resources>

@@ -67,20 +67,13 @@ internal fun FocusSessionChip(
                 .semantics { contentDescription = description },
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
-        // Standing in for the Focus tab, it carries that tab's selected treatment when Focus is
-        // the current destination, so the bar still shows where the user is.
-        color =
-            if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.tertiaryContainer
-            },
-        contentColor =
-            if (selected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            },
+        // Always the session's own colour, on every surface and whichever tab you are on. Swapping
+        // it for the selected-tab treatment on Focus made the one control carrying a live session
+        // indistinguishable from an ordinary tab, and made the wide rail's copy of it look like a
+        // different component from the phone's. Being filled at all is what marks it as current;
+        // the icon still switches to its filled variant to say you are here.
+        color = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
         SessionChipContent(label = label, compact = compact, selected = selected)
     }
@@ -106,7 +99,9 @@ private fun SessionChipContent(
                     id = if (selected) R.drawable.ic_focus else R.drawable.ic_focus_outlined,
                 ),
             contentDescription = null,
-            modifier = Modifier.size(if (compact) 24.dp else 16.dp),
+            // The same size the tab icons beside it use. It stands in for the Focus tab, so a
+            // smaller glyph made the one slot carrying a session look like the odd one out.
+            modifier = Modifier.size(ChipIconSize),
         )
         if (compact) return@Row
         Text(
@@ -123,4 +118,5 @@ private fun SessionChipContent(
 
 /** Wide enough for "59:59"; a session cannot show more than two digits of minutes. */
 private val CountdownLabelWidth = 46.dp
+private val ChipIconSize = 24.dp
 private const val TABULAR_FIGURES = "tnum"
