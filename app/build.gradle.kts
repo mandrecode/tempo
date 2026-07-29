@@ -69,6 +69,12 @@ kover {
                     // Android-dependent classes (require Context/SDK, not unit-testable)
                     "com.mandrecode.tempo.infrastructure.permissions.*",
                     "com.mandrecode.tempo.infrastructure.reminders.scheduler.android.*",
+                    // Focus-session alarm scheduler and its end-of-session receiver: the same
+                    // AlarmManager/NotificationManager/PendingIntent shape as the reminder
+                    // scheduler and receivers excluded above, for the same reason. The session's
+                    // own logic — timing, banking, reconciliation — lives in FocusSessionUseCases
+                    // and FocusSession, both of which are unit-tested.
+                    "com.mandrecode.tempo.infrastructure.focus.*",
                     // Notification builder: NotificationManager/PendingIntent only, was previously
                     // inlined in the (excluded) TaskReminderReceiver.
                     "com.mandrecode.tempo.infrastructure.notifications.TaskReminderNotifier*",
