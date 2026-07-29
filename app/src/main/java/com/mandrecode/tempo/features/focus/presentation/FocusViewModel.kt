@@ -3,6 +3,8 @@ package com.mandrecode.tempo.features.focus.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
+import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusAgendaUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
@@ -34,6 +36,8 @@ class FocusViewModel
         private val getFocusStreak: GetFocusStreakUseCase,
         private val recordDailyActivity: RecordDailyActivityUseCase,
         private val toggleTaskCompletion: ToggleTaskCompletionUseCase,
+        private val focusSessionRepository: FocusSessionRepository,
+        private val focusSessionUseCases: FocusSessionUseCases,
         private val toggleHabitCompletion: ToggleHabitCompletionUseCase,
         private val clock: Clock,
     ) : ViewModel() {
@@ -46,6 +50,7 @@ class FocusViewModel
         private val today: LocalDate get() = clock.todayIn(TimeZone.currentSystemDefault())
 
         init {
+            observeSession()
             observeDay()
             // The screen being opened is itself a reason to recount: work may have been added or
             // rescheduled from another tab since the last completion.
@@ -55,7 +60,15 @@ class FocusViewModel
         fun onEvent(event: FocusContract.UiEvent) {
             when (event) {
                 is FocusContract.UiEvent.ToggleTaskCompletion ->
-                    viewModelScope.launch { toggleTaskCompletion(event.task) }
+                    viewModelScope.launch {
+                        toggleTaskCompletion(event.task)
+                        // Finishing the work is finishing the session: no point counting down on
+                        // something already done.
+                        val session = mutableUiState.value.session
+                        if (session?.taskId == event.task.id && !event.task.isCompleted) {
+                            finishSession()
+                        }
+                    }
 
                 is FocusContract.UiEvent.ToggleHabitCompletion ->
                     viewModelScope.launch {
@@ -75,6 +88,84 @@ class FocusViewModel
 
                 FocusContract.UiEvent.UndatedTasksClicked ->
                     sendEffect(FocusContract.UiEffect.OpenTasksTab)
+
+                else -> onSessionEvent(event)
+            }
+        }
+
+        /** Session controls, split out to keep [onEvent] readable as the list grows. */
+        private fun onSessionEvent(event: FocusContract.UiEvent) {
+            when (event) {
+                FocusContract.UiEvent.StartSession -> startSessionOnUpNext()
+                FocusContract.UiEvent.PauseSession -> focusSessionUseCases.pause()
+                FocusContract.UiEvent.ResumeSession -> focusSessionUseCases.resume()
+                FocusContract.UiEvent.StopSession -> viewModelScope.launch { finishSession() }
+                FocusContract.UiEvent.ExpandSession ->
+                    mutableUiState.update { it.copy(isSessionImmersive = true) }
+
+                FocusContract.UiEvent.CollapseSession ->
+                    mutableUiState.update { it.copy(isSessionImmersive = false) }
+
+                FocusContract.UiEvent.StartAnotherSession ->
+                    viewModelScope.launch {
+                        val finished = mutableUiState.value.finishedSession
+                        val taskId = mutableUiState.value.lastSessionTaskId
+                        dismissFinishedSession()
+                        if (finished != null && taskId != null) {
+                            focusSessionUseCases.start(taskId = taskId, taskTitle = finished.taskTitle)
+                        }
+                    }
+
+                FocusContract.UiEvent.TakeBreak -> dismissFinishedSession()
+                FocusContract.UiEvent.DismissFinishedSession -> dismissFinishedSession()
+                else -> Unit
+            }
+        }
+
+        /**
+         * Starts a session on whatever Up next is currently spotlighting. Only tasks can host a
+         * session — a habit is a checkbox, not a stretch of work.
+         */
+        private fun startSessionOnUpNext() {
+            val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry ?: return
+            viewModelScope.launch {
+                focusSessionUseCases.start(taskId = upNext.task.id, taskTitle = upNext.task.title)
+            }
+        }
+
+        /** Ends the running session and raises the completion sheet with what it banked. */
+        private suspend fun finishSession() {
+            val now = clock.now()
+            val running = mutableUiState.value.session
+            val minutes = running?.bankableMinutes(now) ?: 0
+            val ended = focusSessionUseCases.end() ?: return
+            mutableUiState.update {
+                it.copy(
+                    isSessionImmersive = false,
+                    lastSessionTaskId = ended.taskId,
+                    finishedSession =
+                        FocusContract.FinishedSession(
+                            taskTitle = ended.taskTitle,
+                            minutes = minutes,
+                        ),
+                )
+            }
+        }
+
+        private fun dismissFinishedSession() {
+            mutableUiState.update { it.copy(finishedSession = null) }
+        }
+
+        private fun observeSession() {
+            viewModelScope.launch {
+                focusSessionRepository.activeSession.collect { session ->
+                    mutableUiState.update { it.copy(session = session) }
+                }
+            }
+            viewModelScope.launch {
+                focusSessionRepository.defaultLengthMinutes.collect { minutes ->
+                    mutableUiState.update { it.copy(defaultSessionLengthMinutes = minutes) }
+                }
             }
         }
 

@@ -39,6 +39,7 @@ object SettingsContract {
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
         val missedReminderCatchUpEnabled: Boolean = MissedReminderPreferences.DEFAULT_ENABLED,
         val missedReminderCatchUpTime: LocalTime = MissedReminderPreferences.DEFAULT_CATCH_UP_TIME,
+        val focusSessionLengthMinutes: Int = 25,
         val vacationModeActive: Boolean = false,
         val vacationStartDate: LocalDate? = null,
         val vacationEndDate: LocalDate? = null,
@@ -124,6 +125,10 @@ object SettingsContract {
 
         data class MissedReminderCatchUpTimeChanged(
             val time: LocalTime,
+        ) : UiEvent
+
+        data class FocusSessionLengthChanged(
+            val minutes: Int,
         ) : UiEvent
 
         data class VacationModeToggled(

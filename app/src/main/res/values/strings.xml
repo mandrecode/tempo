@@ -654,4 +654,19 @@
         <item quantity="one">%1$d task without a date</item>
         <item quantity="other">%1$d tasks without a date</item>
     </plurals>
+    <string name="focus_session_paused">Paused</string>
+    <string name="focus_session_finished_title">%1$d minutes done</string>
+    <string name="focus_session_start">Start %1$d min</string>
+    <string name="focus_session_pause">Pause</string>
+    <string name="focus_session_resume">Resume</string>
+    <string name="focus_session_stop">Stop here</string>
+    <string name="focus_session_another">Another %1$d minutes</string>
+    <string name="focus_session_take_break">Take %1$d</string>
+    <string name="focus_session_focusing">Focusing</string>
+    <string name="focus_session_remaining">%1$s left</string>
+    <string name="focus_session_length">Focus session length</string>
+    <string name="focus_session_length_minutes">%1$d min</string>
+    <string name="settings_focus">Focus</string>
+    <string name="notification_focus_session_channel_name">Focus sessions</string>
+    <string name="notification_focus_session_channel_description">The countdown for a running focus session.</string>
 </resources>

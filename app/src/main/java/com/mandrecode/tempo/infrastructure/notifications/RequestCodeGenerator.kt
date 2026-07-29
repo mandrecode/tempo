@@ -10,6 +10,7 @@ package com.mandrecode.tempo.infrastructure.notifications
  * - Live Activity:  3,000,000 - 3,999,999
  * - Live Activity dismissal: 4,000,000 - 4,999,999
  * - Missed-reminder catch-up: 5,000,000 (single app-wide alarm)
+ * - Focus session:  6,000,000 (single app-wide session)
  */
 object RequestCodeGenerator {
     private const val RANGE_SIZE = 1_000_000
@@ -19,6 +20,7 @@ object RequestCodeGenerator {
     private const val LIVE_ACTIVITY_OFFSET = 3 * RANGE_SIZE
     private const val LIVE_ACTIVITY_DISMISS_OFFSET = 4 * RANGE_SIZE
     private const val MISSED_REMINDER_CATCH_UP_OFFSET = 5 * RANGE_SIZE
+    private const val FOCUS_SESSION_OFFSET = 6 * RANGE_SIZE
 
     fun forTask(taskId: Long): Int = TASK_OFFSET + (taskId % RANGE_SIZE).toInt()
 
@@ -36,4 +38,11 @@ object RequestCodeGenerator {
      * idempotent: re-arming replaces the pending intent rather than adding a second alarm.
      */
     fun forMissedReminderCatchUp(): Int = MISSED_REMINDER_CATCH_UP_OFFSET
+
+    /**
+     * Fixed code for the single focus session. There is only ever one session, so a fixed code
+     * makes both the alarm and the ongoing notification idempotent: starting a new session
+     * replaces the previous pending intent rather than leaving a second alarm armed.
+     */
+    fun forFocusSession(): Int = FOCUS_SESSION_OFFSET
 }

@@ -13,6 +13,7 @@ import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
 import com.mandrecode.tempo.features.backup.domain.usecase.ExportBackupUseCase
 import com.mandrecode.tempo.features.backup.domain.usecase.ImportBackupUseCase
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -192,6 +193,9 @@ class SettingsViewModelVacationModeTest {
                 mockk<BackupFileDataSource>(relaxed = true),
             ),
             vacationModeRepository,
+            mockk<FocusSessionRepository>(relaxed = true) {
+                every { defaultLengthMinutes } returns MutableStateFlow(25)
+            },
             mockk<Context>(relaxed = true),
         )
     }
