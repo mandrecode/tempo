@@ -33,7 +33,6 @@ internal fun FocusDestination(navigator: TempoNavigator) {
             )
         },
         onNavigateToTasks = { navigator.navigateToTopLevel(TasksRoute) },
-        onNavigateToRoutines = { navigator.navigateToTopLevel(RoutinesRoute) },
         onOpenSession = { navigator.navigate(FocusSessionRoute) },
     )
 }
@@ -44,8 +43,17 @@ internal fun FocusDestination(navigator: TempoNavigator) {
  * instances observe, so the two stay in step without sharing a store.
  */
 @Composable
-internal fun FocusSessionDestination(navigator: TempoNavigator) {
-    FocusSessionRoute(onBack = { navigator.pop() })
+internal fun FocusSessionDestination(
+    navigator: TempoNavigator,
+    onOpenTaskInTasks: (Long) -> Unit,
+) {
+    FocusSessionRoute(
+        onBack = { navigator.pop() },
+        onOpenTaskInTasks = { taskId ->
+            navigator.pop()
+            onOpenTaskInTasks(taskId)
+        },
+    )
 }
 
 @Composable

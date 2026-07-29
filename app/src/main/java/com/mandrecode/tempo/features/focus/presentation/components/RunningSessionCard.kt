@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -126,6 +128,16 @@ private fun SessionActionRow(
         modifier = modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Same order and same weights as the session screen's controls, so an action does not
+        // change meaning depending on which surface you press it from.
+        if (!isBreak) {
+            SessionActionButton(
+                label = stringResource(R.string.focus_session_mark_done),
+                onClick = onComplete,
+                modifier = Modifier.weight(1f),
+                emphasis = ButtonEmphasis.FILLED,
+            )
+        }
         SessionActionButton(
             label =
                 if (isPaused) {
@@ -135,20 +147,14 @@ private fun SessionActionRow(
                 },
             onClick = onPauseResume,
             modifier = Modifier.weight(1f),
+            emphasis = ButtonEmphasis.TONAL,
         )
         SessionActionButton(
             label = stringResource(R.string.focus_session_stop),
             onClick = onStop,
             modifier = Modifier.weight(1f),
+            emphasis = ButtonEmphasis.DISCARD,
         )
-        if (!isBreak) {
-            SessionActionButton(
-                label = stringResource(R.string.focus_session_mark_done),
-                onClick = onComplete,
-                modifier = Modifier.weight(1f),
-                emphasised = true,
-            )
-        }
     }
 }
 
@@ -186,7 +192,7 @@ private fun SessionActionButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    emphasised: Boolean = false,
+    emphasis: ButtonEmphasis = ButtonEmphasis.TONAL,
 ) {
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) =
@@ -194,26 +200,42 @@ private fun SessionActionButton(
 
     Surface(
         onClick = {
-            // Stopping commits something; pausing is reversible, so it gets the lighter tick.
+            // Finishing commits something; the reversible ones get the lighter tick.
             haptic.performHapticFeedback(
-                if (emphasised) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove,
+                if (emphasis == ButtonEmphasis.FILLED) {
+                    HapticFeedbackType.LongPress
+                } else {
+                    HapticFeedbackType.TextHandleMove
+                },
             )
             onClick()
         },
         modifier = modifier,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
+        // Drawn from the card's own palette rather than the screen's, since it sits on a
+        // tertiary-container surface, but the three weights read the same way.
         color =
-            if (emphasised) {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA)
+            when (emphasis) {
+                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.onTertiaryContainer
+                ButtonEmphasis.TONAL ->
+                    MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA)
+                ButtonEmphasis.DISCARD -> Color.Transparent
             },
         contentColor =
-            if (emphasised) {
-                MaterialTheme.colorScheme.tertiaryContainer
+            when (emphasis) {
+                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.tertiaryContainer
+                ButtonEmphasis.TONAL, ButtonEmphasis.DISCARD ->
+                    MaterialTheme.colorScheme.onTertiaryContainer
+            },
+        border =
+            if (emphasis == ButtonEmphasis.DISCARD) {
+                BorderStroke(
+                    1.dp,
+                    MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA),
+                )
             } else {
-                MaterialTheme.colorScheme.onTertiaryContainer
+                null
             },
     ) {
         Text(

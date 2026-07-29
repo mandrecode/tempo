@@ -101,7 +101,9 @@ internal fun PersistentFloatingBar(
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
             onOpenSession = onOpenSession,
-            hasContextualActions = isTasksRoute,
+            // Only a Tasks tab that also has completed tasks to clear is actually short of room;
+            // with sort alone the bar still has space for the countdown.
+            hasContextualActions = isTasksRoute && tasksState.hasCompletedTasks,
         )
     }
 

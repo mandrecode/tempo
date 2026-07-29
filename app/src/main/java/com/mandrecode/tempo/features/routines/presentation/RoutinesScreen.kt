@@ -282,7 +282,7 @@ private fun RoutinesContract.UiEvent.targetsOpenDockedEditor(
 }
 
 @Composable
-private fun HabitEditor(
+internal fun HabitEditor(
     uiState: RoutinesContract.UiState,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
     placement: SheetPlacement,

@@ -41,6 +41,7 @@ kover {
                     "com.mandrecode.tempo.features.settings.presentation.BackupSection*",
                     "com.mandrecode.tempo.features.settings.presentation.ImportModeDialog*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",
+                    "com.mandrecode.tempo.features.focus.presentation.FocusEditors*",
                     "com.mandrecode.tempo.*.presentation.*Content*",
                     "com.mandrecode.tempo.*.presentation.*Screen*",
                     "com.mandrecode.tempo.*.presentation.*Contract*",

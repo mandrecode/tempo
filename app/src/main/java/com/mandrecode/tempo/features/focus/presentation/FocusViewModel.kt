@@ -81,10 +81,13 @@ class FocusViewModel
                 is FocusContract.UiEvent.ToggleChainExpanded -> toggleChainExpanded(event.chainId)
 
                 is FocusContract.UiEvent.EditTask ->
-                    sendEffect(FocusContract.UiEffect.OpenTaskInTasksTab(event.task.id))
+                    mutableUiState.update { it.copy(editingTask = event.task, editingHabit = null) }
 
                 is FocusContract.UiEvent.EditHabit ->
-                    sendEffect(FocusContract.UiEffect.OpenHabitInRoutinesTab(event.habitId))
+                    mutableUiState.update { it.copy(editingHabit = event.habit, editingTask = null) }
+
+                FocusContract.UiEvent.DismissEditor ->
+                    mutableUiState.update { it.copy(editingTask = null, editingHabit = null) }
 
                 FocusContract.UiEvent.UndatedTasksClicked ->
                     sendEffect(FocusContract.UiEffect.OpenTasksTab)
@@ -104,6 +107,7 @@ class FocusViewModel
                     if (upNext != null) {
                         viewModelScope.launch {
                             focusSessionUseCases.start(upNext.task.id, upNext.task.title)
+                            focusSessionRepository.setPreviewTaskId(null)
                             // Starting is a commitment to the work, so the app follows the user
                             // into it rather than leaving them to find what they just began.
                             sendEffect(FocusContract.UiEffect.OpenSessionScreen)
@@ -128,6 +132,19 @@ class FocusViewModel
 
                 FocusContract.UiEvent.OpenSessionScreen ->
                     sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+
+                FocusContract.UiEvent.PreviewUpNext -> {
+                    // Look at the work first: the screen opens on the task with its timer at full
+                    // length, and starting stays a separate, deliberate tap.
+                    val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry
+                    if (upNext != null) {
+                        focusSessionRepository.setPreviewTaskId(upNext.task.id)
+                        sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+                    }
+                }
+
+                FocusContract.UiEvent.ClearSessionPreview ->
+                    focusSessionRepository.setPreviewTaskId(null)
 
                 else -> onCompletionSheetEvent(event)
             }
@@ -192,6 +209,11 @@ class FocusViewModel
             viewModelScope.launch {
                 focusSessionRepository.defaultLengthMinutes.collect { minutes ->
                     mutableUiState.update { it.copy(defaultSessionLengthMinutes = minutes) }
+                }
+            }
+            viewModelScope.launch {
+                focusSessionRepository.previewTaskId.collect { taskId ->
+                    mutableUiState.update { it.copy(previewTaskId = taskId) }
                 }
             }
         }

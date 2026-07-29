@@ -19,6 +19,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.material3.TwoRowsTopAppBar
 import androidx.compose.material3.rememberTopAppBarState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
@@ -42,24 +43,38 @@ import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
 @Composable
 fun FocusSessionRoute(
     onBack: () -> Unit,
+    onOpenTaskInTasks: (Long) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val session = uiState.session
+    val entry = uiState.sessionEntry
     val currentOnBack by rememberUpdatedState(onBack)
 
-    // Nothing left to show once the session is over — leave rather than stranding an empty screen.
-    LaunchedEffect(session == null) {
-        if (session == null) currentOnBack()
+    // Nothing left to show once the session is over and no task is being previewed — leave rather
+    // than stranding an empty screen. Keyed off the raw preview id, not the resolved entry: the
+    // agenda this screen looks the task up in has not loaded on the first composition, and reading
+    // that as "nothing to show" would close the screen the moment it opened.
+    val hasSomethingToShow = session != null || uiState.previewTaskId != null
+    LaunchedEffect(hasSomethingToShow) {
+        if (!hasSomethingToShow) currentOnBack()
     }
 
-    session?.let {
+    // The preview is this screen's own state: keeping it alive after leaving would make the next
+    // visit open on a task the user did not pick.
+    DisposableEffect(Unit) {
+        onDispose { viewModel.onEvent(FocusContract.UiEvent.ClearSessionPreview) }
+    }
+
+    if (hasSomethingToShow) {
         FocusSessionScreen(
-            session = it,
+            session = session,
+            title = session?.taskTitle ?: entry?.task?.title.orEmpty(),
             uiState = uiState,
             onEvent = viewModel::onEvent,
             onBack = currentOnBack,
+            onOpenTaskInTasks = onOpenTaskInTasks,
             modifier = modifier,
         )
     }
@@ -75,10 +90,12 @@ fun FocusSessionRoute(
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun FocusSessionScreen(
-    session: FocusSession,
+    session: FocusSession?,
+    title: String,
     uiState: FocusContract.UiState,
     onEvent: (FocusContract.UiEvent) -> Unit,
     onBack: () -> Unit,
+    onOpenTaskInTasks: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior(rememberTopAppBarState())
@@ -104,7 +121,7 @@ fun FocusSessionScreen(
         contentWindowInsets = WindowInsets(0),
         topBar = {
             SessionTopBar(
-                title = session.taskTitle,
+                title = title,
                 isRailLayout = isRailLayout,
                 navigationIcon = navigationIcon,
                 colors = colors,
@@ -112,14 +129,19 @@ fun FocusSessionScreen(
             )
         },
     ) { innerPadding ->
+        val task = uiState.sessionEntry?.task
         SessionBody(
             session = session,
+            plannedLength =
+                session?.plannedLength
+                    ?: FocusSession.lengthOf(uiState.defaultSessionLengthMinutes),
             subtasks = uiState.sessionSubtasks,
-            task = uiState.sessionEntry?.task,
+            task = task,
             categoryName = uiState.sessionEntry?.categoryName,
+            onStart = { onEvent(FocusContract.UiEvent.StartSession) },
             onPauseResume = {
                 onEvent(
-                    if (session.isPaused) {
+                    if (session?.isPaused != false) {
                         FocusContract.UiEvent.ResumeSession
                     } else {
                         FocusContract.UiEvent.PauseSession
@@ -129,6 +151,7 @@ fun FocusSessionScreen(
             onStop = { onEvent(FocusContract.UiEvent.StopSession) },
             onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
             onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
+            onOpenInTasks = { task?.let { onOpenTaskInTasks(it.id) } },
             modifier = Modifier.padding(innerPadding),
         )
     }

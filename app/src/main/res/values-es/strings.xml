@@ -676,4 +676,6 @@
     <string name="focus_session_collapse">Contraer</string>
     <string name="focus_session_mark_done">Marcar hecha</string>
     <string name="focus_session_break">En un descanso</string>
+    <string name="focus_session_not_started">Sin empezar</string>
+    <string name="focus_session_open_in_tasks">Abrir en Tareas</string>
 </resources>

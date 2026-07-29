@@ -24,7 +24,6 @@ import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 @Composable
 fun FocusScreen(
     onNavigateToTasks: () -> Unit,
-    onNavigateToRoutines: () -> Unit,
     onOpenSession: () -> Unit,
     modifier: Modifier = Modifier,
     topBar: @Composable () -> Unit = {},
@@ -32,18 +31,13 @@ fun FocusScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnNavigateToTasks by rememberUpdatedState(onNavigateToTasks)
-    val currentOnNavigateToRoutines by rememberUpdatedState(onNavigateToRoutines)
     val currentOnOpenSession by rememberUpdatedState(onOpenSession)
     val railContentClearance = floatingRailContentClearance()
 
     LaunchedEffect(viewModel) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                // Focus shows the day; editing an item happens in the tab that owns it, so there is
-                // one editor per entity rather than a second copy living here.
-                is FocusContract.UiEffect.OpenTaskInTasksTab -> currentOnNavigateToTasks()
                 FocusContract.UiEffect.OpenTasksTab -> currentOnNavigateToTasks()
-                is FocusContract.UiEffect.OpenHabitInRoutinesTab -> currentOnNavigateToRoutines()
                 FocusContract.UiEffect.OpenSessionScreen -> currentOnOpenSession()
             }
         }
@@ -73,5 +67,13 @@ fun FocusScreen(
                 )
             }
         }
+    }
+
+    val dismissEditor = { viewModel.onEvent(FocusContract.UiEvent.DismissEditor) }
+    uiState.editingTask?.let { task ->
+        FocusTaskEditor(task = task, onDismiss = dismissEditor)
+    }
+    uiState.editingHabit?.let { habit ->
+        FocusHabitEditor(habit = habit, onDismiss = dismissEditor)
     }
 }

@@ -35,6 +35,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearance
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
@@ -199,45 +200,71 @@ private fun LazyListScope.upNextSection(
         // The card transforms in place rather than being replaced, so starting a session
         // does not shift everything below it.
         if (session != null) {
-            item(key = "running_session") {
-                RunningSessionCard(
-                    session = session,
-                    onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
-                    onPauseResume = {
-                        onEvent(
-                            if (session.isPaused) {
-                                FocusContract.UiEvent.ResumeSession
-                            } else {
-                                FocusContract.UiEvent.PauseSession
-                            },
-                        )
-                    },
-                    onStop = { onEvent(FocusContract.UiEvent.StopSession) },
-                    onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                )
-            }
+            runningSessionItem(session, onEvent)
         } else if (upNext != null) {
-            item(key = "up_next_${upNext.id}") {
-                UpNextCard(
-                    title = upNext.displayTitle(),
-                    metadata = upNext.upNextMetadata(),
-                    onClick = { onEvent(upNext.editEvent()) },
-                    modifier = Modifier.fillMaxWidth().animateItem(),
-                    trailingContent =
-                        if (upNext is FocusAgendaItem.TaskEntry) {
-                            {
-                                StartSessionButton(
-                                    minutes = uiState.defaultSessionLengthMinutes,
-                                    onClick = { onEvent(FocusContract.UiEvent.StartSession) },
-                                )
-                            }
-                        } else {
-                            null
-                        },
-                )
-            }
+            upNextItem(upNext, uiState.defaultSessionLengthMinutes, onEvent)
         }
+    }
+}
+
+private fun LazyListScope.runningSessionItem(
+    session: FocusSession,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    item(key = "running_session") {
+        RunningSessionCard(
+            session = session,
+            onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
+            onPauseResume = {
+                onEvent(
+                    if (session.isPaused) {
+                        FocusContract.UiEvent.ResumeSession
+                    } else {
+                        FocusContract.UiEvent.PauseSession
+                    },
+                )
+            },
+            onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+            onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
+            modifier = Modifier.fillMaxWidth().animateItem(),
+        )
+    }
+}
+
+private fun LazyListScope.upNextItem(
+    upNext: FocusAgendaItem,
+    defaultSessionLengthMinutes: Int,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    item(key = "up_next_${upNext.id}") {
+        UpNextCard(
+            title = upNext.displayTitle(),
+            metadata = upNext.upNextMetadata(),
+            // A task's card opens the session screen with the timer waiting rather than running:
+            // looking at the work is not the same as committing to it. A habit or chain has no
+            // session to open, so it still goes to its own sheet.
+            onClick = {
+                onEvent(
+                    if (upNext is FocusAgendaItem.TaskEntry) {
+                        FocusContract.UiEvent.PreviewUpNext
+                    } else {
+                        upNext.editEvent()
+                    },
+                )
+            },
+            modifier = Modifier.fillMaxWidth().animateItem(),
+            trailingContent =
+                if (upNext is FocusAgendaItem.TaskEntry) {
+                    {
+                        StartSessionButton(
+                            minutes = defaultSessionLengthMinutes,
+                            onClick = { onEvent(FocusContract.UiEvent.StartSession) },
+                        )
+                    }
+                } else {
+                    null
+                },
+        )
     }
 }
 
@@ -264,7 +291,7 @@ private fun AgendaRow(
             HabitCard(
                 habit = entry.habit,
                 selectedDate = today,
-                onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit.id)) },
+                onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit)) },
                 // Focus has no destructive actions; deleting a habit stays in Routines.
                 onDelete = {},
                 onToggle = { habitId, isCompleted ->
@@ -286,7 +313,11 @@ private fun AgendaRow(
                 onHabitToggle = { habitId, isCompleted ->
                     onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
                 },
-                onHabitClick = { onEvent(FocusContract.UiEvent.EditHabit(it)) },
+                onHabitClick = { habitId ->
+                    entry.habits.firstOrNull { it.id == habitId }?.let { habit ->
+                        onEvent(FocusContract.UiEvent.EditHabit(habit))
+                    }
+                },
                 showTimeline = false,
             )
     }
@@ -373,6 +404,6 @@ private fun FocusAgendaItem.displayTitle(): String =
 private fun FocusAgendaItem.editEvent(): FocusContract.UiEvent =
     when (this) {
         is FocusAgendaItem.TaskEntry -> FocusContract.UiEvent.EditTask(task)
-        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit.id)
+        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit)
         is FocusAgendaItem.ChainEntry -> FocusContract.UiEvent.ToggleChainExpanded(chain.id)
     }

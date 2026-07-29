@@ -25,10 +25,13 @@ class FocusSessionRepositoryImpl
 
         private val sessionFlow = MutableStateFlow(readSession())
         private val defaultLengthFlow = MutableStateFlow(readDefaultLength())
+        private val previewTaskIdFlow = MutableStateFlow<Long?>(null)
 
         override val activeSession: StateFlow<FocusSession?> = sessionFlow.asStateFlow()
 
         override val defaultLengthMinutes: StateFlow<Int> = defaultLengthFlow.asStateFlow()
+
+        override val previewTaskId: StateFlow<Long?> = previewTaskIdFlow.asStateFlow()
 
         override fun setActiveSession(session: FocusSession?) {
             prefs.edit {
@@ -51,6 +54,10 @@ class FocusSessionRepositoryImpl
                 }
             }
             sessionFlow.value = session
+        }
+
+        override fun setPreviewTaskId(taskId: Long?) {
+            previewTaskIdFlow.value = taskId
         }
 
         override fun setDefaultLengthMinutes(minutes: Int) {

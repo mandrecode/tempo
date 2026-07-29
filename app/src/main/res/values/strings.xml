@@ -672,4 +672,6 @@
     <string name="focus_session_collapse">Collapse</string>
     <string name="focus_session_mark_done">Mark done</string>
     <string name="focus_session_break">On a break</string>
+    <string name="focus_session_not_started">Not started</string>
+    <string name="focus_session_open_in_tasks">Open in Tasks</string>
 </resources>

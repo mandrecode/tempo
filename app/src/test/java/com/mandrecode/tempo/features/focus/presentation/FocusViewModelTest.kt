@@ -13,6 +13,7 @@ import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusAgendaUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
+import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
@@ -53,10 +54,13 @@ class FocusViewModelTest {
     private val focusSessionUseCases = mockk<FocusSessionUseCases>(relaxed = true)
     private val sessionFlow = MutableStateFlow<FocusSession?>(null)
     private val lengthFlow = MutableStateFlow(25)
+    private val previewFlow = MutableStateFlow<Long?>(null)
     private val focusSessionRepository =
         mockk<FocusSessionRepository> {
             every { activeSession } returns sessionFlow
             every { defaultLengthMinutes } returns lengthFlow
+            every { previewTaskId } returns previewFlow
+            every { setPreviewTaskId(any()) } answers { previewFlow.value = firstArg() }
         }
 
     private val clock =
@@ -168,6 +172,66 @@ class FocusViewModelTest {
             advanceUntilIdle()
 
             coVerify { focusSessionUseCases.start(taskId = 9, taskTitle = "Report") }
+        }
+
+    @Test
+    fun `previewing up next opens the session screen without starting a session`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
+                advanceUntilIdle()
+
+                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any()) }
+            // The screen resolves its subject from the preview when nothing is running.
+            assertThat(viewModel.uiState.value.sessionEntry).isEqualTo(entry)
+        }
+
+    @Test
+    fun `leaving the session screen clears the preview`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
+            viewModel.onEvent(FocusContract.UiEvent.ClearSessionPreview)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.sessionEntry).isNull()
+        }
+
+    @Test
+    fun `previewing does nothing when up next is a habit, which has no session`() =
+        runTest {
+            val habitEntry =
+                FocusAgendaItem.HabitEntry(
+                    habit = focusHabit(4),
+                    isCompleted = false,
+                )
+            stubDay(agendaOf(upNext = habitEntry, todayItems = listOf(habitEntry)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext)
+                advanceUntilIdle()
+
+                expectNoEvents()
+            }
+            assertThat(viewModel.uiState.value.sessionEntry).isNull()
         }
 
     @Test
@@ -370,19 +434,24 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `editing a task asks the Tasks tab to open`() =
+    fun `editing a task opens its editor in Focus, without leaving the tab`() =
         runTest {
             stubDay()
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
-                advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
+            advanceUntilIdle()
 
-                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenTaskInTasksTab(2))
-                cancelAndIgnoreRemainingEvents()
-            }
+            assertThat(
+                viewModel.uiState.value.editingTask
+                    ?.id,
+            ).isEqualTo(2)
+
+            viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.editingTask).isNull()
         }
 
     @Test
@@ -429,20 +498,30 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `editing a habit asks the Routines tab to open`() =
+    fun `editing a habit opens its editor in Focus, and only one editor is ever open`() =
         runTest {
             stubDay()
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.EditHabit(5))
-                advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
+            viewModel.onEvent(FocusContract.UiEvent.EditHabit(focusHabit(5)))
+            advanceUntilIdle()
 
-                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenHabitInRoutinesTab(5))
-                cancelAndIgnoreRemainingEvents()
-            }
+            assertThat(
+                viewModel.uiState.value.editingHabit
+                    ?.id,
+            ).isEqualTo(5)
+            assertThat(viewModel.uiState.value.editingTask).isNull()
         }
+
+    private fun focusHabit(id: Long) =
+        Habit(
+            id = id,
+            title = "Habit $id",
+            description = "",
+            createdDate = LocalDateTime(today, LocalTime(9, 0)),
+        )
 
     @Test
     fun `expanding a chain toggles it on and off again`() =
