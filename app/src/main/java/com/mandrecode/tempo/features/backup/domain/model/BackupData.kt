@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.backup.domain.model
 
+import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
@@ -25,6 +26,7 @@ data class BackupData(
     val habitChains: List<HabitChain>,
     val chainMemberships: List<ChainMembership>,
     val settings: BackupSettings? = null,
+    val dailyFocusActivity: List<DailyFocusActivity> = emptyList(),
 )
 
 /** The app configuration carried by a backup file. */

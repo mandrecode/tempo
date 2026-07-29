@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.routines.domain.usecase
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
@@ -27,6 +28,7 @@ class ToggleHabitCompletionUseCaseTest {
     private lateinit var habitChainRepository: HabitChainRepository
     private lateinit var habitReminderScheduler: HabitReminderScheduler
     private lateinit var updateHabitUseCase: UpdateHabitUseCase
+    private val dailyActivityRecorder = mockk<DailyActivityRecorder>(relaxed = true)
     private lateinit var useCase: ToggleHabitCompletionUseCase
 
     // Fixed date: Sunday, June 15, 2025
@@ -57,6 +59,7 @@ class ToggleHabitCompletionUseCaseTest {
                 habitChainRepository,
                 habitReminderScheduler,
                 updateHabitUseCase,
+                dailyActivityRecorder,
                 testClock,
             )
     }

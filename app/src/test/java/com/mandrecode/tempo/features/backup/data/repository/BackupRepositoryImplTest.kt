@@ -19,6 +19,7 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.repository.DailyFocusActivityRepository
 import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
 import com.mandrecode.tempo.features.backup.data.mapper.toDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
@@ -50,6 +51,7 @@ class BackupRepositoryImplTest {
     private lateinit var database: TempoDatabase
     private lateinit var context: Context
     private lateinit var settingsDataSource: BackupSettingsDataSource
+    private val dailyFocusActivityRepository = mockk<DailyFocusActivityRepository>(relaxed = true)
     private lateinit var repository: BackupRepositoryImpl
 
     @Before
@@ -80,6 +82,7 @@ class BackupRepositoryImplTest {
                 BackupPayloadValidator(),
                 MergePlanner(),
                 settingsDataSource,
+                dailyFocusActivityRepository,
                 BackupEncryptionService(),
                 context,
             )

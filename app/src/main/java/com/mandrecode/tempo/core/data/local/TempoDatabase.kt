@@ -12,11 +12,13 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.entity.CategoryEntity
 import com.mandrecode.tempo.core.data.entity.Converters
+import com.mandrecode.tempo.core.data.entity.DailyFocusActivityEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.entity.HabitEntity
 import com.mandrecode.tempo.core.data.entity.TaskEntity
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
+import com.mandrecode.tempo.core.data.local.dao.DailyFocusActivityDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
@@ -36,8 +38,9 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         HabitEntity::class,
         HabitChainEntity::class,
         HabitChainMemberEntity::class,
+        DailyFocusActivityEntity::class,
     ],
-    version = 9,
+    version = 10,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -51,6 +54,8 @@ abstract class TempoDatabase : RoomDatabase() {
     abstract fun habitChainDao(): HabitChainDao
 
     abstract fun habitChainMemberDao(): HabitChainMemberDao
+
+    abstract fun dailyFocusActivityDao(): DailyFocusActivityDao
 
     companion object {
         const val DATABASE_NAME = "tempo_database"
@@ -222,6 +227,29 @@ abstract class TempoDatabase : RoomDatabase() {
                 }
             }
 
+        /**
+         * Adds `daily_focus_activity`, the durable per-day record behind the Focus summary.
+         * Purely additive: no existing table is touched, so a downgrade leaves the table orphaned
+         * but harmless. History starts empty — counts for past days cannot be reconstructed,
+         * because the completed tasks they would come from may already have been purged.
+         */
+        val MIGRATION_9_10 =
+            object : Migration(9, 10) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `daily_focus_activity` (
+                            `date` TEXT NOT NULL,
+                            `scheduledCount` INTEGER NOT NULL,
+                            `completedCount` INTEGER NOT NULL,
+                            `focusMinutes` INTEGER NOT NULL,
+                            PRIMARY KEY(`date`)
+                        )
+                        """.trimIndent(),
+                    )
+                }
+            }
+
         val MIGRATIONS =
             arrayOf(
                 MIGRATION_1_2,
@@ -232,6 +260,7 @@ abstract class TempoDatabase : RoomDatabase() {
                 MIGRATION_6_7,
                 MIGRATION_7_8,
                 MIGRATION_8_9,
+                MIGRATION_9_10,
             )
 
         suspend fun getDatabase(

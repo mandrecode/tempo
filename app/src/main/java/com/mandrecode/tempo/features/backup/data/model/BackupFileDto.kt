@@ -23,6 +23,17 @@ data class BackupFileDto(
     val habitChains: List<HabitChainBackupDto> = emptyList(),
     val habitChainMembers: List<ChainMemberBackupDto> = emptyList(),
     val settings: SettingsBackupDto? = null,
+    /** Per-day activity history; absent in files written before Focus mode existed. */
+    val dailyFocusActivity: List<DailyFocusActivityBackupDto> = emptyList(),
+)
+
+/** One recorded day of activity. The quiet/some/all state is derived, so it is not stored. */
+@Serializable
+data class DailyFocusActivityBackupDto(
+    val date: String,
+    val scheduledCount: Int = 0,
+    val completedCount: Int = 0,
+    val focusMinutes: Int = 0,
 )
 
 /** App configuration section; absent in files written before it existed. */
