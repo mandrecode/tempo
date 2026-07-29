@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.focus.presentation.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -122,17 +123,40 @@ private fun SessionCardActions(
 ) {
     val colors = sessionCardActionColors()
 
-    // All three across one row here, unlike the session screen's two-plus-one: the card is a
-    // summary sitting above the rest of the day, and a second row of controls would cost it more
-    // height than the actions are worth. They stay in the same order and the same weights, and the
-    // tighter compact styling is what buys the third column its room.
-    SessionActionGroup(
-        actions = runningGroupActions(session, onComplete, onPauseResume) + stopSessionAction(onStop),
-        colors = colors,
-        modifier = modifier.fillMaxWidth(),
-        compact = true,
-    )
+    val running = runningGroupActions(session, onComplete, onPauseResume)
+    val stop = stopSessionAction(onStop)
+
+    // All three across one row where they fit, unlike the session screen's two-plus-one: the card
+    // is a summary sitting above the rest of the day, and a second row of controls would cost it
+    // more height than the actions are worth. On a narrow window three columns cannot hold their
+    // labels, and a clipped "Mark do…" is worse than the extra row, so it splits like the screen.
+    BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
+        if (maxWidth >= ThreeAcrossMinWidth) {
+            SessionActionGroup(
+                actions = running + stop,
+                colors = colors,
+                modifier = Modifier.fillMaxWidth(),
+                compact = true,
+            )
+        } else {
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                SessionActionGroup(
+                    actions = running,
+                    colors = colors,
+                    modifier = Modifier.fillMaxWidth(),
+                    compact = true,
+                )
+                SessionActionButton(action = stop, colors = colors, compact = true)
+            }
+        }
+    }
 }
+
+/**
+ * Below this the three labels stop fitting side by side. Measured against the longest of them
+ * rather than a screen breakpoint, since the card is also narrowed by a rail or a docked pane.
+ */
+private val ThreeAcrossMinWidth = 340.dp
 
 @Composable
 private fun SessionTitleBlock(

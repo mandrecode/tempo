@@ -52,7 +52,7 @@ internal fun FocusSessionChip(
     val (interactionSource, cornerRadius) =
         rememberPressableButtonAnimation(
             baseRadius = FloatingToolbarItemSize / 2,
-            pressedRadius = ChipPressedRadius,
+            pressedRadius = FloatingToolbarPressedRadius,
         )
 
     Surface(
@@ -85,8 +85,6 @@ internal fun FocusSessionChip(
         SessionChipContent(label = label, compact = compact, selected = selected)
     }
 }
-
-private val ChipPressedRadius = 12.dp
 
 @Composable
 private fun SessionChipContent(

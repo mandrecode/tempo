@@ -204,6 +204,7 @@ internal fun SessionActionButton(
     action: SessionAction,
     colors: SessionActionColors,
     modifier: Modifier = Modifier,
+    compact: Boolean = false,
 ) {
     val (interactionSource, radius) =
         rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
@@ -212,6 +213,7 @@ internal fun SessionActionButton(
         colors = colors,
         shape = RoundedCornerShape(radius.value),
         interactionSource = interactionSource,
+        compact = compact,
         modifier = modifier.fillMaxWidth(),
     )
 }

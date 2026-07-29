@@ -27,6 +27,11 @@ internal fun PersistentPortraitFloatingBar(
     isSingleTabMode: Boolean,
 ) {
     val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
+    // The button that is leaving has to keep drawing itself. The action goes null the instant the
+    // route changes, so rendering straight from it left AnimatedVisibility shrinking an empty box:
+    // the button blinked out and the gap closed after it. Holding the last one lets the exit
+    // animate the button itself, which is what arriving on Focus was missing and leaving it had.
+    val exitingAddAction = rememberLastNonNull(addAction)
     // Single tab and no add action leaves nothing to draw — don't float an empty surface.
     if (isSingleTabMode && addAction == null) return
     if (isSingleTabMode && addAction != null) {
@@ -69,7 +74,7 @@ internal fun PersistentPortraitFloatingBar(
                 enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
                 exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
             ) {
-                addAction?.let { AddActionButton(it) }
+                exitingAddAction?.let { AddActionButton(it) }
             }
         }
     }
