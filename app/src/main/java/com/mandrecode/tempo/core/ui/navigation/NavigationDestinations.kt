@@ -1,9 +1,7 @@
 package com.mandrecode.tempo.core.ui.navigation
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
@@ -17,24 +15,25 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.spacing
+import com.mandrecode.tempo.features.focus.presentation.FocusScreen
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
 import com.mandrecode.tempo.features.routines.presentation.components.VacationModeTitleBadge
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
 
-/**
- * Placeholder for the Focus screen, which lands in a later change. It exists now so the third tab,
- * its back stack and its preferences are exercisable end to end without waiting for the screen.
- */
 @Composable
 internal fun FocusDestination(navigator: TempoNavigator) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        RouteTopBarOrStatusInset(
-            title = stringResource(R.string.focus),
-            onOpenSettings = { navigator.navigate(SettingsRoute) },
-        )
-    }
+    FocusScreen(
+        topBar = {
+            RouteTopBarOrStatusInset(
+                title = stringResource(R.string.focus),
+                onOpenSettings = { navigator.navigate(SettingsRoute) },
+            )
+        },
+        onNavigateToTasks = { navigator.navigateToTopLevel(TasksRoute) },
+        onNavigateToRoutines = { navigator.navigateToTopLevel(RoutinesRoute) },
+    )
 }
 
 @Composable
