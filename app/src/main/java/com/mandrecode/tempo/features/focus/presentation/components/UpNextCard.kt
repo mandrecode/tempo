@@ -12,12 +12,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.util.DateTimeFormatter
 
@@ -42,6 +45,8 @@ internal fun UpNextCard(
     modifier: Modifier = Modifier,
     trailingContent: (@Composable () -> Unit)? = null,
 ) {
+    val haptic = LocalHapticFeedback.current
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(UpNextCornerRadius),
@@ -51,8 +56,11 @@ internal fun UpNextCard(
         Row(
             modifier =
                 Modifier
-                    .clickable(onClick = onClick)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .clickable {
+                        // Opening the item elsewhere is navigation, not a commit — the lighter tick.
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onClick()
+                    }.padding(horizontal = 16.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -100,12 +108,23 @@ internal fun StartSessionButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(
+            baseRadius = PillRadius,
+            pressedRadius = PillPressedRadius,
+        )
+
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            onClick()
+        },
         modifier = modifier,
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        shape = RoundedCornerShape(cornerRadius.value),
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         contentColor = MaterialTheme.colorScheme.tertiaryContainer,
+        interactionSource = interactionSource,
     ) {
         Text(
             text = stringResource(R.string.focus_session_start, minutes),
@@ -117,4 +136,5 @@ internal fun StartSessionButton(
 }
 
 private const val METADATA_ALPHA = 0.75f
-private const val FULLY_ROUNDED = 50
+private val PillRadius = 20.dp
+private val PillPressedRadius = 10.dp

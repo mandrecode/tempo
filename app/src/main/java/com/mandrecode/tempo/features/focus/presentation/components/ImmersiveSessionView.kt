@@ -23,12 +23,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlin.time.Clock
@@ -187,6 +190,7 @@ private fun CollapseRow(
     plannedMinutes: Int,
     onCollapse: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     Row(
         modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -198,8 +202,10 @@ private fun CollapseRow(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier =
                 Modifier
-                    .clickable(onClick = onCollapse)
-                    .padding(vertical = 8.dp, horizontal = 4.dp),
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onCollapse()
+                    }.padding(vertical = 8.dp, horizontal = 4.dp),
         )
         Text(
             text = stringResource(R.string.focus_session_length_minutes, plannedMinutes),
@@ -216,12 +222,16 @@ private fun SubtaskRow(
     subtask: Task,
     onToggle: () -> Unit,
 ) {
+    val haptic = LocalHapticFeedback.current
     Row(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .clickable(onClick = onToggle)
-                .padding(vertical = 4.dp),
+                .clickable {
+                    // Same weight as ticking the checkbox itself, which the row stands in for.
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    onToggle()
+                }.padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -249,10 +259,20 @@ private fun ImmersiveButton(
     modifier: Modifier = Modifier,
     emphasised: Boolean = false,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
+
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(
+                if (emphasised) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove,
+            )
+            onClick()
+        },
         modifier = modifier,
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
         color =
             if (emphasised) {
                 MaterialTheme.colorScheme.primary
@@ -277,4 +297,5 @@ private fun ImmersiveButton(
 }
 
 private const val TRACK_ALPHA = 0.22f
-private const val FULLY_ROUNDED = 50
+private val PillRadius = 24.dp
+private val PillPressedRadius = 12.dp

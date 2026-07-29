@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -343,6 +345,7 @@ private fun UndatedTasksFooter(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
     Text(
         text = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
         style = MaterialTheme.typography.bodySmall,
@@ -351,8 +354,10 @@ private fun UndatedTasksFooter(
         modifier =
             modifier
                 .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(vertical = 20.dp),
+                .clickable {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    onClick()
+                }.padding(vertical = 20.dp),
     )
 }
 

@@ -11,12 +11,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
 
@@ -90,10 +93,20 @@ private fun SheetButton(
     emphasised: Boolean = false,
     transparent: Boolean = false,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
+
     Surface(
-        onClick = onClick,
+        onClick = {
+            haptic.performHapticFeedback(
+                if (emphasised) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove,
+            )
+            onClick()
+        },
         modifier = modifier,
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
         color =
             when {
                 transparent -> androidx.compose.ui.graphics.Color.Transparent
@@ -117,4 +130,5 @@ private fun SheetButton(
     }
 }
 
-private const val FULLY_ROUNDED = 50
+private val PillRadius = 22.dp
+private val PillPressedRadius = 11.dp

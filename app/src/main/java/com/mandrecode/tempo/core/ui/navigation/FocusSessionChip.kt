@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -14,6 +14,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -23,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.presentation.components.asCountdownLabel
@@ -41,14 +44,25 @@ internal fun FocusSessionChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val haptic = LocalHapticFeedback.current
     val remaining by rememberSessionCountdown(session)
     val label = remaining.asCountdownLabel()
     val description = stringResource(R.string.focus_session_remaining, label)
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(
+            baseRadius = FloatingToolbarItemSize / 2,
+            pressedRadius = ChipPressedRadius,
+        )
 
     Surface(
-        onClick = onClick,
+        onClick = {
+            // Returning to Focus is navigation, matching the tab buttons beside it.
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            onClick()
+        },
         modifier = modifier.height(FloatingToolbarItemSize).semantics { contentDescription = description },
-        shape = CircleShape,
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
@@ -90,3 +104,5 @@ internal fun rememberSessionChip(
         )
     }
 }
+
+private val ChipPressedRadius = 12.dp

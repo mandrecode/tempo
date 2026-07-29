@@ -17,11 +17,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import kotlin.time.Clock
 
@@ -45,6 +48,7 @@ internal fun RunningSessionCard(
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
+    val haptic = LocalHapticFeedback.current
     val remaining by rememberSessionCountdown(session, clock)
     val progress =
         if (session.plannedLength.inWholeSeconds <= 0) {
@@ -62,8 +66,10 @@ internal fun RunningSessionCard(
         Column(
             modifier =
                 Modifier
-                    .clickable(onClick = onExpand)
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                    .clickable {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        onExpand()
+                    }.padding(horizontal = 16.dp, vertical = 14.dp),
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -167,10 +173,21 @@ private fun SessionActionButton(
     modifier: Modifier = Modifier,
     emphasised: Boolean = false,
 ) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
+
     Surface(
-        onClick = onClick,
+        onClick = {
+            // Stopping commits something; pausing is reversible, so it gets the lighter tick.
+            haptic.performHapticFeedback(
+                if (emphasised) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove,
+            )
+            onClick()
+        },
         modifier = modifier,
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
         color =
             if (emphasised) {
                 MaterialTheme.colorScheme.onTertiaryContainer
@@ -197,4 +214,5 @@ private fun SessionActionButton(
 private const val TRACK_ALPHA = 0.24f
 private const val LABEL_ALPHA = 0.75f
 private const val SUBTLE_BUTTON_ALPHA = 0.12f
-private const val FULLY_ROUNDED = 50
+private val PillRadius = 20.dp
+private val PillPressedRadius = 10.dp
