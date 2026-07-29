@@ -43,15 +43,13 @@ class MainViewModel
                 themePreferencesRepository.getThemeMode(),
                 themePreferencesRepository.getUseTempoColors(),
                 navigationPreferencesRepository.getDefaultTab(),
-                navigationPreferencesRepository.isRoutinesTabEnabled(),
-                navigationPreferencesRepository.isTasksTabEnabled(),
-            ) { themeMode, useTempoColors, defaultTab, isRoutinesTabEnabled, isTasksTabEnabled ->
+                navigationPreferencesRepository.enabledTabs(),
+            ) { themeMode, useTempoColors, defaultTab, enabledTabs ->
                 MainUiState.Success(
                     themeMode = themeMode,
                     useTempoColors = useTempoColors,
                     defaultTab = defaultTab,
-                    isRoutinesTabEnabled = isRoutinesTabEnabled,
-                    isTasksTabEnabled = isTasksTabEnabled,
+                    enabledTabs = enabledTabs,
                     isOnboardingCompleted = false,
                     whatsNewVersionName = appVersionName,
                 )

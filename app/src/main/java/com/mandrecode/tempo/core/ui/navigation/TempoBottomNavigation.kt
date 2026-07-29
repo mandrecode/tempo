@@ -27,32 +27,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
-import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.ui.outlinedIconRes
+import com.mandrecode.tempo.core.ui.selectedIconRes
 import com.mandrecode.tempo.core.ui.theme.spacing
+import com.mandrecode.tempo.core.ui.titleRes
 
-private data class NavigationItem<T : NavKey>(
-    val route: T,
-    val titleRes: Int,
-    val selectedIcon: Int,
-    val unselectedIcon: Int,
-)
+private data class NavigationItem(
+    val tab: TempoTab,
+) {
+    val route: NavKey get() = tab.route
+    val titleRes: Int get() = tab.titleRes
+    val selectedIcon: Int get() = tab.selectedIconRes
+    val unselectedIcon: Int get() = tab.outlinedIconRes
+}
 
-private val navigationItems =
-    listOf(
-        NavigationItem(
-            route = RoutinesRoute,
-            titleRes = R.string.routines,
-            selectedIcon = R.drawable.ic_routine,
-            unselectedIcon = R.drawable.ic_routine_outlined,
-        ),
-        NavigationItem(
-            route = TasksRoute,
-            titleRes = R.string.tasks,
-            selectedIcon = R.drawable.ic_tasks,
-            unselectedIcon = R.drawable.ic_tasks_outlined,
-        ),
-    )
+/**
+ * Derived from [TempoTab] rather than hand-listed, so declaration order in the enum is the order
+ * shown here and a new tab cannot be half-added.
+ */
+private val navigationItems = TempoTab.entries.map(::NavigationItem)
 
 internal val FloatingToolbarItemSize = 48.dp
 internal val FloatingToolbarActionButtonSize = 52.dp
@@ -68,24 +63,14 @@ fun TempoBottomNavigation(
     onRouteChange: (String) -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
-    val isRoutinesTabEnabled by navigationPreferencesRepository
-        .isRoutinesTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
-    val isTasksTabEnabled by navigationPreferencesRepository
-        .isTasksTabEnabled()
-        .collectAsStateWithLifecycle(initialValue = true)
+    val enabledTabs by navigationPreferencesRepository
+        .enabledTabs()
+        .collectAsStateWithLifecycle(initialValue = TempoTab.entries.toSet())
 
-    val visibleNavigationItems =
-        navigationItems.filter { item ->
-            when (item.route) {
-                RoutinesRoute -> isRoutinesTabEnabled
-                TasksRoute -> isTasksTabEnabled
-                else -> true
-            }
-        }
+    val visibleNavigationItems = navigationItems.filter { it.tab in enabledTabs }
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
-    val onItemClick: (NavigationItem<*>) -> Unit = { item ->
+    val onItemClick: (NavigationItem) -> Unit = { item ->
         navigateTo(item, onNavigateToTopLevel, onRouteChange)
     }
 
@@ -123,9 +108,9 @@ fun TempoBottomNavigation(
 
 @Composable
 private fun ExpandedRailPill(
-    items: List<NavigationItem<*>>,
+    items: List<NavigationItem>,
     currentRoute: NavKey,
-    onItemClick: (NavigationItem<*>) -> Unit,
+    onItemClick: (NavigationItem) -> Unit,
 ) {
     Column(
         modifier =
@@ -147,9 +132,9 @@ private fun ExpandedRailPill(
 
 @Composable
 private fun CompactRailPill(
-    items: List<NavigationItem<*>>,
+    items: List<NavigationItem>,
     currentRoute: NavKey,
-    onItemClick: (NavigationItem<*>) -> Unit,
+    onItemClick: (NavigationItem) -> Unit,
 ) {
     Column(
         modifier = Modifier.padding(horizontal = FloatingToolbarRailSurfacePadding, vertical = 12.dp),
@@ -169,9 +154,9 @@ private fun CompactRailPill(
 
 @Composable
 private fun BottomBarPill(
-    items: List<NavigationItem<*>>,
+    items: List<NavigationItem>,
     currentRoute: NavKey,
-    onItemClick: (NavigationItem<*>) -> Unit,
+    onItemClick: (NavigationItem) -> Unit,
 ) {
     Row(
         modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
@@ -190,25 +175,17 @@ private fun BottomBarPill(
 }
 
 private fun navigateTo(
-    item: NavigationItem<*>,
+    item: NavigationItem,
     onNavigateToTopLevel: (NavKey) -> Unit,
     onRouteChange: (String) -> Unit,
 ) {
     onNavigateToTopLevel(item.route)
-    val routeName =
-        when (item.route) {
-            RoutinesRoute -> ROUTINES_ROUTE_NAME
-            TasksRoute -> TASKS_ROUTE_NAME
-            else -> item.route::class.simpleName ?: ""
-        }
-    if (routeName.isNotEmpty()) {
-        onRouteChange(routeName)
-    }
+    onRouteChange(item.tab.preferenceValue)
 }
 
 @Composable
 private fun ToolbarNavigationButton(
-    item: NavigationItem<*>,
+    item: NavigationItem,
     selected: Boolean,
     onClick: () -> Unit,
 ) {
@@ -254,7 +231,7 @@ private fun ToolbarNavigationButton(
 
 @Composable
 private fun ExpandedRailNavigationRow(
-    item: NavigationItem<*>,
+    item: NavigationItem,
     selected: Boolean,
     onClick: () -> Unit,
 ) {

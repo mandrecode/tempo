@@ -9,10 +9,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.LocalTime
 
 // region SettingsContent Previews
@@ -20,9 +22,8 @@ import kotlinx.datetime.LocalTime
 private val defaultLightState =
     SettingsContract.UiState(
         selectedThemeMode = ThemeMode.LIGHT,
-        isRoutinesTabEnabled = true,
-        isTasksTabEnabled = true,
-        defaultTab = SettingsContract.DefaultTab.ROUTINES,
+        enabledTabs = persistentSetOf(TempoTab.FOCUS, TempoTab.ROUTINES, TempoTab.TASKS),
+        defaultTab = TempoTab.FOCUS,
         appVersion = "1.0",
         autoRemoveCompletedTasksEnabled = true,
         completedTaskRetentionDays = 30,
@@ -32,18 +33,16 @@ private val tempoColorsState =
     SettingsContract.UiState(
         selectedThemeMode = ThemeMode.DARK,
         useTempoColors = true,
-        isRoutinesTabEnabled = true,
-        isTasksTabEnabled = false,
-        defaultTab = SettingsContract.DefaultTab.ROUTINES,
+        enabledTabs = persistentSetOf(TempoTab.ROUTINES),
+        defaultTab = TempoTab.ROUTINES,
         appVersion = "1.0",
     )
 
 private val systemState =
     SettingsContract.UiState(
         selectedThemeMode = ThemeMode.SYSTEM,
-        isRoutinesTabEnabled = false,
-        isTasksTabEnabled = true,
-        defaultTab = SettingsContract.DefaultTab.TASKS,
+        enabledTabs = persistentSetOf(TempoTab.FOCUS, TempoTab.TASKS),
+        defaultTab = TempoTab.TASKS,
         appVersion = "1.0",
     )
 

@@ -17,10 +17,10 @@ import com.mandrecode.tempo.core.data.local.dao.TaskDao
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
 import com.mandrecode.tempo.features.backup.data.mapper.toDto
-import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportOutcome
@@ -503,9 +503,8 @@ class BackupRepositoryImplTest {
         BackupSettings(
             themeMode = ThemeMode.DARK,
             useTempoColors = true,
-            routinesTabEnabled = true,
-            tasksTabEnabled = true,
-            defaultTab = BackupDefaultTab.TASKS,
+            enabledTabs = TempoTab.entries.toSet(),
+            defaultTab = TempoTab.TASKS,
             autoRemoveCompletedTasks = true,
             completedTaskRetentionDays = 30,
         )

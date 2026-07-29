@@ -1,11 +1,10 @@
 package com.mandrecode.tempo.features.backup.data
 
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
-import com.mandrecode.tempo.features.backup.domain.model.BackupDefaultTab
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import jakarta.inject.Inject
@@ -28,13 +27,8 @@ class BackupSettingsDataSource
             BackupSettings(
                 themeMode = themePreferences.getThemeMode().first(),
                 useTempoColors = themePreferences.getUseTempoColors().first(),
-                routinesTabEnabled = navigationPreferences.isRoutinesTabEnabled().first(),
-                tasksTabEnabled = navigationPreferences.isTasksTabEnabled().first(),
-                defaultTab =
-                    when (navigationPreferences.getDefaultTab().first()) {
-                        DEFAULT_TAB_TASKS -> BackupDefaultTab.TASKS
-                        else -> BackupDefaultTab.ROUTINES
-                    },
+                enabledTabs = navigationPreferences.enabledTabs().first(),
+                defaultTab = navigationPreferences.getDefaultTab().first(),
                 autoRemoveCompletedTasks = retentionPreferences.isEnabled.value,
                 completedTaskRetentionDays = retentionPreferences.retentionDays.value,
                 vacationPeriods = vacationModeRepository.periods.value,
@@ -48,18 +42,13 @@ class BackupSettingsDataSource
         fun apply(settings: BackupSettings) {
             themePreferences.setThemeMode(settings.themeMode)
             themePreferences.setUseTempoColors(settings.useTempoColors)
-            val routinesEnabled = settings.routinesTabEnabled || !settings.tasksTabEnabled
-            navigationPreferences.setRoutinesTabEnabled(routinesEnabled)
-            navigationPreferences.setTasksTabEnabled(settings.tasksTabEnabled)
-            val defaultTab =
-                when {
-                    settings.defaultTab == BackupDefaultTab.TASKS && settings.tasksTabEnabled ->
-                        DEFAULT_TAB_TASKS
-
-                    routinesEnabled -> DEFAULT_TAB_ROUTINES
-                    else -> DEFAULT_TAB_TASKS
-                }
-            navigationPreferences.setDefaultTab(defaultTab)
+            val enabledTabs = TabPreferencesPolicy.resolveEnabledTabs(settings.enabledTabs)
+            TempoTab.entries.forEach { tab ->
+                navigationPreferences.setTabEnabled(tab, tab in enabledTabs)
+            }
+            navigationPreferences.setDefaultTab(
+                TabPreferencesPolicy.resolveDefaultTab(settings.defaultTab, enabledTabs),
+            )
             retentionPreferences.setEnabled(settings.autoRemoveCompletedTasks)
             retentionPreferences.setRetentionDays(
                 CompletedTaskRetentionPreferences.normalizeRetentionDays(

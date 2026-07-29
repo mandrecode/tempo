@@ -78,6 +78,7 @@ internal fun PersistentFloatingBar(
     val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
     val visible =
         when {
+            currentRoute == FocusRoute -> true
             currentRoute == RoutinesRoute -> routinesState.visible
             currentRoute == TasksRoute -> tasksState.visible
             isRailSettingsDestination -> true
@@ -107,6 +108,7 @@ internal fun PersistentFloatingBar(
         if (isRailLayout) {
             PersistentLandscapeFloatingBar(
                 isTasksRoute = isTasksRoute,
+                topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -116,6 +118,7 @@ internal fun PersistentFloatingBar(
         } else {
             PersistentPortraitFloatingBar(
                 isTasksRoute = isTasksRoute,
+                topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -128,13 +131,14 @@ internal fun PersistentFloatingBar(
 @Composable
 private fun PersistentLandscapeFloatingBar(
     isTasksRoute: Boolean,
+    topLevelRoute: NavKey,
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onOpenSettings: () -> Unit,
     settingsSelected: Boolean,
 ) {
-    val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
+    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
@@ -175,7 +179,7 @@ private fun RailScrollableContent(
     isTasksRoute: Boolean,
     navigationContent: @Composable () -> Unit,
     tasksState: TasksFloatingBarState,
-    addAction: AddAction,
+    addAction: AddAction?,
     isExpandedRail: Boolean,
     settingsSelected: Boolean,
     modifier: Modifier = Modifier,
@@ -197,24 +201,28 @@ private fun RailScrollableContent(
                     ),
             )
             AnimatedVisibility(
-                visible = !settingsSelected,
+                visible = !settingsSelected && addAction != null,
                 enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
                 exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
             ) {
-                TempoSoloActionButton(
-                    iconRes = R.drawable.ic_add,
-                    label = addAction.label,
-                    expanded = true,
-                    onClick = addAction.onClick,
-                )
+                if (addAction != null) {
+                    TempoSoloActionButton(
+                        iconRes = R.drawable.ic_add,
+                        label = addAction.label,
+                        expanded = true,
+                        onClick = addAction.onClick,
+                    )
+                }
             }
         } else {
             AnimatedVisibility(
-                visible = !settingsSelected,
+                visible = !settingsSelected && addAction != null,
                 enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
                 exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
             ) {
-                AddActionButton(addAction)
+                if (addAction != null) {
+                    AddActionButton(addAction)
+                }
             }
         }
 
@@ -339,13 +347,16 @@ private fun PersistentSingleTabPortraitFloatingBar(
 @Composable
 private fun PersistentPortraitFloatingBar(
     isTasksRoute: Boolean,
+    topLevelRoute: NavKey,
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     isSingleTabMode: Boolean,
 ) {
-    val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode) {
+    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
+    // Single tab and no add action leaves nothing to draw — don't float an empty surface.
+    if (isSingleTabMode && addAction == null) return
+    if (isSingleTabMode && addAction != null) {
         PersistentSingleTabPortraitFloatingBar(
             isTasksRoute = isTasksRoute,
             addAction = addAction,
@@ -390,7 +401,7 @@ private fun PersistentPortraitFloatingBar(
 @Composable
 private fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
-    addAction: AddAction,
+    addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -401,7 +412,7 @@ private fun FloatingBarMainControls(
         horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (isSingleTabMode) {
+        if (isSingleTabMode && addAction != null) {
             TempoSoloActionButton(
                 iconRes = R.drawable.ic_add,
                 label = addAction.label,
@@ -410,7 +421,9 @@ private fun FloatingBarMainControls(
             )
         } else {
             stableNavigationContent()
-            AddActionButton(addAction)
+            if (addAction != null) {
+                AddActionButton(addAction)
+            }
         }
     }
 }
@@ -424,24 +437,32 @@ private fun AddActionButton(addAction: AddAction) {
     )
 }
 
+/**
+ * The primary add action for the active tab, or `null` for a tab that has none — Focus adds
+ * through the tab it is showing work from rather than owning a create action of its own.
+ */
 @Composable
 private fun rememberAddAction(
-    isTasksRoute: Boolean,
+    topLevelRoute: NavKey,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-): AddAction =
-    if (isTasksRoute) {
-        AddAction(
-            label = stringResource(R.string.add_task),
-            compact = tasksState.compactSoloAction,
-            onClick = tasksState.onAddTask,
-        )
-    } else {
-        AddAction(
-            label = stringResource(R.string.add_habit),
-            compact = routinesState.compactSoloAction,
-            onClick = routinesState.onAddHabit,
-        )
+): AddAction? =
+    when (topLevelRoute) {
+        TasksRoute ->
+            AddAction(
+                label = stringResource(R.string.add_task),
+                compact = tasksState.compactSoloAction,
+                onClick = tasksState.onAddTask,
+            )
+
+        RoutinesRoute ->
+            AddAction(
+                label = stringResource(R.string.add_habit),
+                compact = routinesState.compactSoloAction,
+                onClick = routinesState.onAddHabit,
+            )
+
+        else -> null
     }
 
 private data class AddAction(

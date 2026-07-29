@@ -1,8 +1,10 @@
 package com.mandrecode.tempo.features.onboarding.presentation
 
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.settings.presentation.SettingsContract
+import kotlinx.collections.immutable.persistentSetOf
 import org.junit.Test
 
 class OnboardingSettingsAdapterTest {
@@ -13,22 +15,20 @@ class OnboardingSettingsAdapterTest {
                 .UiState(
                     selectedThemeMode = ThemeMode.DARK,
                     useTempoColors = false,
-                    isRoutinesTabEnabled = true,
-                    isTasksTabEnabled = false,
-                    defaultTab = OnboardingContract.DefaultTab.ROUTINES,
+                    enabledTabs = persistentSetOf(TempoTab.FOCUS, TempoTab.ROUTINES),
+                    defaultTab = TempoTab.ROUTINES,
                 ).toSettingsUiState()
         val tasksState =
             OnboardingContract
                 .UiState(
-                    defaultTab = OnboardingContract.DefaultTab.TASKS,
+                    defaultTab = TempoTab.TASKS,
                 ).toSettingsUiState()
 
         assertThat(routinesState.selectedThemeMode).isEqualTo(ThemeMode.DARK)
         assertThat(routinesState.useTempoColors).isFalse()
-        assertThat(routinesState.isRoutinesTabEnabled).isTrue()
-        assertThat(routinesState.isTasksTabEnabled).isFalse()
-        assertThat(routinesState.defaultTab).isEqualTo(SettingsContract.DefaultTab.ROUTINES)
-        assertThat(tasksState.defaultTab).isEqualTo(SettingsContract.DefaultTab.TASKS)
+        assertThat(routinesState.enabledTabs).containsExactly(TempoTab.FOCUS, TempoTab.ROUTINES)
+        assertThat(routinesState.defaultTab).isEqualTo(TempoTab.ROUTINES)
+        assertThat(tasksState.defaultTab).isEqualTo(TempoTab.TASKS)
     }
 
     @Test
@@ -37,16 +37,16 @@ class OnboardingSettingsAdapterTest {
             .isEqualTo(OnboardingContract.UiEvent.ThemeModeSelected(ThemeMode.LIGHT))
         assertThat(SettingsContract.UiEvent.TempoColorsToggled(true).toOnboardingEvent())
             .isEqualTo(OnboardingContract.UiEvent.UseTempoColorsToggled(true))
-        assertThat(SettingsContract.UiEvent.RoutinesTabToggled(false).toOnboardingEvent())
-            .isEqualTo(OnboardingContract.UiEvent.RoutinesTabToggled(false))
-        assertThat(SettingsContract.UiEvent.TasksTabToggled(false).toOnboardingEvent())
-            .isEqualTo(OnboardingContract.UiEvent.TasksTabToggled(false))
+        assertThat(SettingsContract.UiEvent.TabToggled(TempoTab.ROUTINES, false).toOnboardingEvent())
+            .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
+        assertThat(SettingsContract.UiEvent.TabToggled(TempoTab.TASKS, false).toOnboardingEvent())
+            .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
         assertThat(
-            SettingsContract.UiEvent.DefaultTabSelected(SettingsContract.DefaultTab.ROUTINES).toOnboardingEvent(),
-        ).isEqualTo(OnboardingContract.UiEvent.DefaultTabSelected(OnboardingContract.DefaultTab.ROUTINES))
+            SettingsContract.UiEvent.DefaultTabSelected(TempoTab.ROUTINES).toOnboardingEvent(),
+        ).isEqualTo(OnboardingContract.UiEvent.DefaultTabSelected(TempoTab.ROUTINES))
         assertThat(
-            SettingsContract.UiEvent.DefaultTabSelected(SettingsContract.DefaultTab.TASKS).toOnboardingEvent(),
-        ).isEqualTo(OnboardingContract.UiEvent.DefaultTabSelected(OnboardingContract.DefaultTab.TASKS))
+            SettingsContract.UiEvent.DefaultTabSelected(TempoTab.TASKS).toOnboardingEvent(),
+        ).isEqualTo(OnboardingContract.UiEvent.DefaultTabSelected(TempoTab.TASKS))
     }
 
     @Test

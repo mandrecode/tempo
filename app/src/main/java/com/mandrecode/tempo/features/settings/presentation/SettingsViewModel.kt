@@ -6,11 +6,11 @@ import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -19,6 +19,7 @@ import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -110,21 +111,15 @@ class SettingsViewModel
         private fun observeTabPreferences() {
             viewModelScope.launch {
                 combine(
-                    navigationPreferencesRepository.isRoutinesTabEnabled(),
-                    navigationPreferencesRepository.isTasksTabEnabled(),
+                    navigationPreferencesRepository.enabledTabs(),
                     navigationPreferencesRepository.getDefaultTab(),
-                ) { routinesEnabled, tasksEnabled, defaultTab ->
-                    Triple(routinesEnabled, tasksEnabled, defaultTab)
-                }.collect { (routinesEnabled, tasksEnabled, defaultTab) ->
+                ) { enabledTabs, defaultTab ->
+                    enabledTabs to defaultTab
+                }.collect { (enabledTabs, defaultTab) ->
                     _uiState.update {
                         it.copy(
-                            isRoutinesTabEnabled = routinesEnabled,
-                            isTasksTabEnabled = tasksEnabled,
-                            defaultTab =
-                                when (defaultTab) {
-                                    DEFAULT_TAB_TASKS -> SettingsContract.DefaultTab.TASKS
-                                    else -> SettingsContract.DefaultTab.ROUTINES
-                                },
+                            enabledTabs = enabledTabs.toPersistentSet(),
+                            defaultTab = TabPreferencesPolicy.resolveDefaultTab(defaultTab, enabledTabs),
                         )
                     }
                 }
@@ -142,12 +137,8 @@ class SettingsViewModel
                     refreshQuickAddTaskWidget()
                 }
 
-                is SettingsContract.UiEvent.RoutinesTabToggled -> {
-                    handleRoutinesTabToggle(event.enabled)
-                }
-
-                is SettingsContract.UiEvent.TasksTabToggled -> {
-                    handleTasksTabToggle(event.enabled)
+                is SettingsContract.UiEvent.TabToggled -> {
+                    handleTabToggle(event.tab, event.enabled)
                 }
 
                 is SettingsContract.UiEvent.DefaultTabSelected -> {
@@ -272,54 +263,28 @@ class SettingsViewModel
             }
         }
 
-        private fun handleRoutinesTabToggle(enabled: Boolean) {
+        /**
+         * Both invariants — at least one tab enabled, and the default tab always being an enabled
+         * one — live in [TabPreferencesPolicy] so Settings and Onboarding cannot drift apart.
+         */
+        private fun handleTabToggle(
+            tab: TempoTab,
+            enabled: Boolean,
+        ) {
             val currentState = _uiState.value
+            if (!enabled && !TabPreferencesPolicy.canDisable(currentState.enabledTabs, tab)) return
 
-            // Prevent disabling if it's the only enabled tab
-            if (!enabled && !currentState.isTasksTabEnabled) {
-                return // Cannot disable both tabs
-            }
+            navigationPreferencesRepository.setTabEnabled(tab, enabled)
 
-            navigationPreferencesRepository.setRoutinesTabEnabled(enabled)
-
-            // If disabling the default tab, switch to the other tab
-            if (!enabled && currentState.defaultTab == SettingsContract.DefaultTab.ROUTINES) {
-                navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_TASKS)
+            val resolvedTabs = TabPreferencesPolicy.withTabEnabled(currentState.enabledTabs, tab, enabled)
+            val resolvedDefault = TabPreferencesPolicy.resolveDefaultTab(currentState.defaultTab, resolvedTabs)
+            if (resolvedDefault != currentState.defaultTab) {
+                navigationPreferencesRepository.setDefaultTab(resolvedDefault)
             }
         }
 
-        private fun handleTasksTabToggle(enabled: Boolean) {
-            val currentState = _uiState.value
-
-            // Prevent disabling if it's the only enabled tab
-            if (!enabled && !currentState.isRoutinesTabEnabled) {
-                return // Cannot disable both tabs
-            }
-
-            navigationPreferencesRepository.setTasksTabEnabled(enabled)
-
-            // If disabling the default tab, switch to the other tab
-            if (!enabled && currentState.defaultTab == SettingsContract.DefaultTab.TASKS) {
-                navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_ROUTINES)
-            }
-        }
-
-        private fun handleDefaultTabSelection(defaultTab: SettingsContract.DefaultTab) {
-            val currentState = _uiState.value
-
-            // Only allow selecting a tab that is enabled
-            when (defaultTab) {
-                SettingsContract.DefaultTab.ROUTINES -> {
-                    if (currentState.isRoutinesTabEnabled) {
-                        navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_ROUTINES)
-                    }
-                }
-
-                SettingsContract.DefaultTab.TASKS -> {
-                    if (currentState.isTasksTabEnabled) {
-                        navigationPreferencesRepository.setDefaultTab(DEFAULT_TAB_TASKS)
-                    }
-                }
-            }
+        private fun handleDefaultTabSelection(defaultTab: TempoTab) {
+            if (defaultTab !in _uiState.value.enabledTabs) return
+            navigationPreferencesRepository.setDefaultTab(defaultTab)
         }
     }

@@ -18,7 +18,7 @@
 
     <!-- TASKS FEATURE -->
     <string name="tasks">Tasks</string>
-    <string name="tasks_tab">Tasks</string>
+    <string name="focus">Focus</string>
     <string name="add_task">Add Task</string>
     <string name="add_new_task">Add New Task</string>
     <string name="add_subtask">Add Subtask</string>
@@ -78,7 +78,6 @@
 
     <!-- ROUTINES (HABITS & CHAINS) FEATURE -->
     <string name="routines">Routines</string>
-    <string name="routines_tab">Routines</string>
     <string name="habit">Habit</string>
     <string name="add_habit">Add habit</string>
     <string name="habit_title">Habit Title</string>
