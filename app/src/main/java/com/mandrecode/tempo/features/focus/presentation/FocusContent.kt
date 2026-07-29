@@ -43,8 +43,8 @@ import com.mandrecode.tempo.features.focus.presentation.components.SessionFinish
 import com.mandrecode.tempo.features.focus.presentation.components.StartSessionButton
 import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
+import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitCard
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
-import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitItem
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
@@ -287,18 +287,19 @@ private fun AgendaRow(
             )
 
         is FocusAgendaItem.HabitEntry ->
-            HabitItem(
+            // HabitCard, not HabitItem: the card is what resolves the habit's colour and draws its
+            // surface — HabitItem is only the row inside it, and on its own renders an uncoloured
+            // habit as bare text on the background.
+            HabitCard(
                 habit = entry.habit,
-                isCompleted = entry.isCompleted,
-                onToggle = {
-                    onEvent(
-                        FocusContract.UiEvent.ToggleHabitCompletion(
-                            habitId = entry.habit.id,
-                            isCompleted = !entry.isCompleted,
-                        ),
-                    )
+                selectedDate = today,
+                onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit.id)) },
+                // Focus has no destructive actions; deleting a habit stays in Routines.
+                onDelete = {},
+                onToggle = { habitId, isCompleted ->
+                    onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
                 },
-                onClick = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit.id)) },
+                showTimeline = false,
             )
 
         is FocusAgendaItem.ChainEntry ->
