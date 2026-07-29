@@ -1,11 +1,11 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -18,7 +18,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import kotlin.time.Clock
 
@@ -103,9 +101,8 @@ internal fun RunningSessionCard(
                 )
             }
 
-            SessionActionRow(
-                isPaused = session.isPaused,
-                isBreak = session.isBreak,
+            SessionCardActions(
+                session = session,
                 onPauseResume = onPauseResume,
                 onStop = onStop,
                 onComplete = onComplete,
@@ -116,44 +113,33 @@ internal fun RunningSessionCard(
 }
 
 @Composable
-private fun SessionActionRow(
-    isPaused: Boolean,
-    isBreak: Boolean,
+private fun SessionCardActions(
+    session: FocusSession,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        // Same order and same weights as the session screen's controls, so an action does not
-        // change meaning depending on which surface you press it from.
-        if (!isBreak) {
-            SessionActionButton(
-                label = stringResource(R.string.focus_session_mark_done),
-                onClick = onComplete,
-                modifier = Modifier.weight(1f),
-                emphasis = ButtonEmphasis.FILLED,
-            )
-        }
-        SessionActionButton(
-            label =
-                if (isPaused) {
-                    stringResource(R.string.focus_session_resume)
-                } else {
-                    stringResource(R.string.focus_session_pause)
-                },
-            onClick = onPauseResume,
-            modifier = Modifier.weight(1f),
-            emphasis = ButtonEmphasis.TONAL,
+    val colors = sessionCardActionColors()
+
+    // Same split and same weights as the session screen: done and pause as one connected control,
+    // stopping on its own line underneath, so an action never means something different depending
+    // on which surface you press it from.
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        SessionActionGroup(
+            actions = runningGroupActions(session, onComplete, onPauseResume),
+            colors = colors,
+            modifier = Modifier.fillMaxWidth(),
         )
         SessionActionButton(
-            label = stringResource(R.string.focus_session_stop),
-            onClick = onStop,
-            modifier = Modifier.weight(1f),
-            emphasis = ButtonEmphasis.DISCARD,
+            action =
+                SessionAction(
+                    label = stringResource(R.string.focus_session_stop),
+                    iconRes = R.drawable.ic_stop,
+                    emphasis = ButtonEmphasis.DISCARD,
+                    onClick = onStop,
+                ),
+            colors = colors,
         )
     }
 }
@@ -187,71 +173,9 @@ private fun SessionTitleBlock(
     }
 }
 
-@Composable
-private fun SessionActionButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    emphasis: ButtonEmphasis = ButtonEmphasis.TONAL,
-) {
-    val haptic = LocalHapticFeedback.current
-    val (interactionSource, cornerRadius) =
-        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
-
-    Surface(
-        onClick = {
-            // Finishing commits something; the reversible ones get the lighter tick.
-            haptic.performHapticFeedback(
-                if (emphasis == ButtonEmphasis.FILLED) {
-                    HapticFeedbackType.LongPress
-                } else {
-                    HapticFeedbackType.TextHandleMove
-                },
-            )
-            onClick()
-        },
-        modifier = modifier,
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
-        // Drawn from the card's own palette rather than the screen's, since it sits on a
-        // tertiary-container surface, but the three weights read the same way.
-        color =
-            when (emphasis) {
-                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.onTertiaryContainer
-                ButtonEmphasis.TONAL ->
-                    MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA)
-                ButtonEmphasis.DISCARD -> Color.Transparent
-            },
-        contentColor =
-            when (emphasis) {
-                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.tertiaryContainer
-                ButtonEmphasis.TONAL, ButtonEmphasis.DISCARD ->
-                    MaterialTheme.colorScheme.onTertiaryContainer
-            },
-        border =
-            if (emphasis == ButtonEmphasis.DISCARD) {
-                BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = SUBTLE_BUTTON_ALPHA),
-                )
-            } else {
-                null
-            },
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(vertical = 10.dp),
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-        )
-    }
-}
-
 private val STILL = 0.dp
 private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.24f
 private const val LABEL_ALPHA = 0.75f
-private const val SUBTLE_BUTTON_ALPHA = 0.12f
 private val PillRadius = 20.dp
 private val PillPressedRadius = 10.dp

@@ -1,8 +1,9 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -223,49 +224,82 @@ private fun SessionControls(
     onStop: () -> Unit,
     onComplete: () -> Unit,
 ) {
+    val colors = sessionScreenActionColors()
+
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
         if (session == null) {
-            ImmersiveButton(
-                label =
-                    stringResource(
-                        R.string.focus_session_start,
-                        plannedLength.inWholeMinutes.toInt(),
+            SessionActionButton(
+                action =
+                    SessionAction(
+                        label =
+                            stringResource(
+                                R.string.focus_session_start,
+                                plannedLength.inWholeMinutes.toInt(),
+                            ),
+                        iconRes = R.drawable.ic_play_arrow,
+                        emphasis = ButtonEmphasis.FILLED,
+                        onClick = onStart,
                     ),
-                onClick = onStart,
-                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                emphasis = ButtonEmphasis.FILLED,
+                colors = colors,
+                modifier = Modifier.padding(top = 32.dp),
             )
         } else {
-            if (!session.isBreak) {
-                ImmersiveButton(
-                    label = stringResource(R.string.focus_session_mark_done),
-                    onClick = onComplete,
-                    modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
-                    emphasis = ButtonEmphasis.FILLED,
-                )
-            }
-            ImmersiveButton(
-                label =
-                    if (session.isPaused) {
-                        stringResource(R.string.focus_session_resume)
-                    } else {
-                        stringResource(R.string.focus_session_pause)
-                    },
-                onClick = onPauseResume,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                emphasis = ButtonEmphasis.TONAL,
+            // Finishing and pausing are the two you reach for while working, so they sit together
+            // as one control. Stopping throws the session away, so it stays on its own line where
+            // it cannot be hit by aiming slightly wide.
+            SessionActionGroup(
+                actions = runningGroupActions(session, onComplete, onPauseResume),
+                colors = colors,
+                modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
             )
-            ImmersiveButton(
-                label = stringResource(R.string.focus_session_stop),
-                onClick = onStop,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                emphasis = ButtonEmphasis.DISCARD,
+            SessionActionButton(
+                action =
+                    SessionAction(
+                        label = stringResource(R.string.focus_session_stop),
+                        iconRes = R.drawable.ic_stop,
+                        emphasis = ButtonEmphasis.DISCARD,
+                        onClick = onStop,
+                    ),
+                colors = colors,
+                modifier = Modifier.padding(top = 8.dp),
             )
         }
     }
 }
 
-/** The quiet sibling of [ImmersiveButton]: same motion and haptics, no filled container. */
+/** Done and pause for a running session — or pause alone on a break, which has no work to finish. */
+@Composable
+internal fun runningGroupActions(
+    session: FocusSession,
+    onComplete: () -> Unit,
+    onPauseResume: () -> Unit,
+): List<SessionAction> {
+    val pause =
+        SessionAction(
+            label =
+                if (session.isPaused) {
+                    stringResource(R.string.focus_session_resume)
+                } else {
+                    stringResource(R.string.focus_session_pause)
+                },
+            iconRes = if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause,
+            emphasis = ButtonEmphasis.TONAL,
+            onClick = onPauseResume,
+        )
+    if (session.isBreak) return listOf(pause)
+
+    return listOf(
+        SessionAction(
+            label = stringResource(R.string.focus_session_mark_done),
+            iconRes = R.drawable.ic_check,
+            emphasis = ButtonEmphasis.FILLED,
+            onClick = onComplete,
+        ),
+        pause,
+    )
+}
+
+/** The quiet way off this screen: no filled container at rest, but one that arrives on press. */
 @Composable
 private fun ImmersiveTextButton(
     label: String,
@@ -275,7 +309,19 @@ private fun ImmersiveTextButton(
 ) {
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) =
-        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
+        rememberPressableButtonAnimation(baseRadius = TextButtonRadius, pressedRadius = 12.dp)
+    val isPressed by interactionSource.collectIsPressedAsState()
+    // A ripple alone on a transparent surface is easy to miss, and this is the one control here
+    // that navigates away — it has to show it registered the press.
+    val container by animateColorAsState(
+        targetValue =
+            if (isPressed) {
+                MaterialTheme.colorScheme.primary.copy(alpha = PRESSED_CONTAINER_ALPHA)
+            } else {
+                Color.Transparent
+            },
+        label = "open_in_tasks_container",
+    )
 
     Surface(
         onClick = {
@@ -285,7 +331,7 @@ private fun ImmersiveTextButton(
         modifier = modifier,
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
-        color = Color.Transparent,
+        color = container,
         contentColor = MaterialTheme.colorScheme.primary,
     ) {
         Row(
@@ -423,74 +469,9 @@ private fun SubtaskRow(
     }
 }
 
-/**
- * How much weight a session action carries.
- *
- * [FILLED] finishes the work for good, [TONAL] is reversible, [DISCARD] throws the session away —
- * three different kinds of act, so three different looks. Shared with the running-session card so
- * the same action never changes weight between the card and this screen.
- */
-internal enum class ButtonEmphasis { FILLED, TONAL, DISCARD }
-
-@Composable
-private fun ImmersiveButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    emphasis: ButtonEmphasis = ButtonEmphasis.TONAL,
-) {
-    val haptic = LocalHapticFeedback.current
-    val (interactionSource, cornerRadius) =
-        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
-
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(
-                // A commitment gets the firmer confirmation; the reversible ones do not.
-                if (emphasis == ButtonEmphasis.FILLED) {
-                    HapticFeedbackType.LongPress
-                } else {
-                    HapticFeedbackType.TextHandleMove
-                },
-            )
-            onClick()
-        },
-        modifier = modifier,
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
-        color =
-            when (emphasis) {
-                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.primary
-                ButtonEmphasis.TONAL -> MaterialTheme.colorScheme.secondaryContainer
-                ButtonEmphasis.DISCARD -> Color.Transparent
-            },
-        contentColor =
-            when (emphasis) {
-                ButtonEmphasis.FILLED -> MaterialTheme.colorScheme.onPrimary
-                ButtonEmphasis.TONAL -> MaterialTheme.colorScheme.onSecondaryContainer
-                ButtonEmphasis.DISCARD -> MaterialTheme.colorScheme.error
-            },
-        border =
-            if (emphasis == ButtonEmphasis.DISCARD) {
-                BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = DISCARD_BORDER_ALPHA))
-            } else {
-                null
-            },
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 14.dp),
-        )
-    }
-}
-
 private val STILL = 0.dp
 private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
-private val PillRadius = 24.dp
-private val PillPressedRadius = 12.dp
 private val SessionHorizontalPadding = 16.dp
-private const val DISCARD_BORDER_ALPHA = 0.4f
+private val TextButtonRadius = 24.dp
+private const val PRESSED_CONTAINER_ALPHA = 0.14f
