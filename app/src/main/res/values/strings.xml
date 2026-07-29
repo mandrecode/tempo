@@ -661,7 +661,7 @@
     <string name="focus_session_resume">Resume</string>
     <string name="focus_session_stop">Stop here</string>
     <string name="focus_session_another">Another %1$d minutes</string>
-    <string name="focus_session_take_break">Take %1$d</string>
+    <string name="focus_session_take_break">%1$d min break</string>
     <string name="focus_session_focusing">Focusing</string>
     <string name="focus_session_remaining">%1$s left</string>
     <string name="focus_session_length">Focus session length</string>
@@ -672,6 +672,11 @@
     <string name="focus_session_collapse">Collapse</string>
     <string name="focus_session_mark_done">Mark done</string>
     <string name="focus_session_break">On a break</string>
+    <string name="focus_session_finished_heading">Time\'s up</string>
+    <string name="focus_session_break_over_heading">Break\'s over</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_finished_done">Done for now</string>
+    <string name="focus_session_back_to_it">Back to it</string>
     <string name="focus_session_not_started">Not started</string>
     <string name="focus_session_open_in_tasks">Open in Tasks</string>
 </resources>

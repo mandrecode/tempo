@@ -74,6 +74,8 @@ object FocusContract {
     data class FinishedSession(
         val taskTitle: String,
         val minutes: Int,
+        /** A finished break offers going back to the work, not another break. */
+        val wasBreak: Boolean = false,
     )
 
     sealed interface UiEvent {

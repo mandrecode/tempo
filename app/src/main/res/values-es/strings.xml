@@ -665,7 +665,7 @@
     <string name="focus_session_resume">Reanudar</string>
     <string name="focus_session_stop">Parar aquí</string>
     <string name="focus_session_another">Otros %1$d minutos</string>
-    <string name="focus_session_take_break">Descansar %1$d</string>
+    <string name="focus_session_take_break">Descanso de %1$d min</string>
     <string name="focus_session_focusing">Enfocado</string>
     <string name="focus_session_remaining">Quedan %1$s</string>
     <string name="focus_session_length">Duración de la sesión</string>
@@ -676,6 +676,11 @@
     <string name="focus_session_collapse">Contraer</string>
     <string name="focus_session_mark_done">Marcar hecha</string>
     <string name="focus_session_break">En un descanso</string>
+    <string name="focus_session_finished_heading">Se acabó el tiempo</string>
+    <string name="focus_session_break_over_heading">Fin del descanso</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_finished_done">Ya está por ahora</string>
+    <string name="focus_session_back_to_it">Volver a ello</string>
     <string name="focus_session_not_started">Sin empezar</string>
     <string name="focus_session_open_in_tasks">Abrir en Tareas</string>
 </resources>

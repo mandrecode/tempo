@@ -1,19 +1,19 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -40,7 +40,6 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
-import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
@@ -261,7 +260,11 @@ private fun SessionControls(
     }
 }
 
-/** The quiet way off this screen: no filled container at rest, but one that arrives on press. */
+/**
+ * The quiet way off this screen, styled like the editors' own "Delete task" and "Delete habit"
+ * actions: a transparent surface with a plain ripple, so a secondary action looks the same
+ * wherever the app offers one.
+ */
 @Composable
 private fun ImmersiveTextButton(
     label: String,
@@ -270,20 +273,6 @@ private fun ImmersiveTextButton(
     modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
-    val (interactionSource, cornerRadius) =
-        rememberPressableButtonAnimation(baseRadius = TextButtonRadius, pressedRadius = 12.dp)
-    val isPressed by interactionSource.collectIsPressedAsState()
-    // A ripple alone on a transparent surface is easy to miss, and this is the one control here
-    // that navigates away — it has to show it registered the press.
-    val container by animateColorAsState(
-        targetValue =
-            if (isPressed) {
-                MaterialTheme.colorScheme.primary.copy(alpha = PRESSED_CONTAINER_ALPHA)
-            } else {
-                Color.Transparent
-            },
-        label = "open_in_tasks_container",
-    )
 
     Surface(
         onClick = {
@@ -291,15 +280,13 @@ private fun ImmersiveTextButton(
             onClick()
         },
         modifier = modifier,
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
-        color = container,
-        contentColor = MaterialTheme.colorScheme.primary,
+        shape = RoundedCornerShape(TextButtonRadius),
+        color = Color.Transparent,
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             // The icon is the promise that this leaves the screen, so the label alone never has to
             // carry that on its own.
@@ -307,11 +294,13 @@ private fun ImmersiveTextButton(
                 painter = painterResource(iconRes),
                 contentDescription = null,
                 modifier = Modifier.size(18.dp),
+                tint = MaterialTheme.colorScheme.primary,
             )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
             )
         }
     }
@@ -436,4 +425,3 @@ private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val SessionHorizontalPadding = 16.dp
 private val TextButtonRadius = 24.dp
-private const val PRESSED_CONTAINER_ALPHA = 0.14f

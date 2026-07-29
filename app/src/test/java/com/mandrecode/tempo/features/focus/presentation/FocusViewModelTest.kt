@@ -26,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -37,6 +38,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import kotlin.time.Clock
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -281,18 +283,34 @@ class FocusViewModelTest {
             }
         }
 
+    /**
+     * The alarm receiver's ending, as the ViewModel sees it: a session whose time is spent, then
+     * gone from the repository. Nothing else tells the app a session expired.
+     */
+    private suspend fun TestScope.runSessionOut(
+        taskId: Long = 1,
+        title: String = "Report",
+        isBreak: Boolean = false,
+    ) {
+        sessionFlow.value =
+            FocusSession.start(
+                taskId = taskId,
+                taskTitle = title,
+                now = nowInstant - 30.minutes,
+                isBreak = isBreak,
+            )
+        advanceUntilIdle()
+        sessionFlow.value = null
+        advanceUntilIdle()
+    }
+
     @Test
     fun `another session also takes the user into it`() =
         runTest {
             stubDay()
-            val session = FocusSession.start(11, "Report", nowInstant)
-            sessionFlow.value = session
-            coEvery { focusSessionUseCases.end() } returns session
-
             val viewModel = createViewModel()
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.StopSession)
-            advanceUntilIdle()
+            runSessionOut(taskId = 11)
 
             viewModel.uiEffect.test {
                 viewModel.onEvent(FocusContract.UiEvent.StartAnotherSession)
@@ -362,7 +380,23 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `stopping raises the completion sheet with the banked minutes`() =
+    fun `a session that runs out raises the completion sheet`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            runSessionOut()
+
+            val finished = viewModel.uiState.value.finishedSession
+            assertThat(finished?.taskTitle).isEqualTo("Report")
+            // The planned length, not the elapsed time: an expired session ran its full course.
+            assertThat(finished?.minutes).isEqualTo(25)
+            assertThat(finished?.wasBreak).isFalse()
+        }
+
+    @Test
+    fun `stopping raises no sheet, since the user already decided`() =
         runTest {
             stubDay()
             val session = FocusSession.start(1, "Report", nowInstant)
@@ -375,10 +409,37 @@ class FocusViewModelTest {
             viewModel.onEvent(FocusContract.UiEvent.StopSession)
             advanceUntilIdle()
 
+            assertThat(viewModel.uiState.value.finishedSession).isNull()
+        }
+
+    @Test
+    fun `a session cleared before its time is up raises no sheet`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            sessionFlow.value = FocusSession.start(1, "Report", nowInstant)
+            advanceUntilIdle()
+            sessionFlow.value = null
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.finishedSession).isNull()
+        }
+
+    @Test
+    fun `a break that runs out is reported as a break`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            runSessionOut(isBreak = true)
+
             assertThat(
                 viewModel.uiState.value.finishedSession
-                    ?.taskTitle,
-            ).isEqualTo("Report")
+                    ?.wasBreak,
+            ).isTrue()
         }
 
     @Test
@@ -591,14 +652,9 @@ class FocusViewModelTest {
     fun `taking a break starts a real break countdown`() =
         runTest {
             stubDay()
-            val session = FocusSession.start(1, "Report", nowInstant)
-            sessionFlow.value = session
-            coEvery { focusSessionUseCases.end() } returns session
-
             val viewModel = createViewModel()
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.StopSession)
-            advanceUntilIdle()
+            runSessionOut()
 
             viewModel.onEvent(FocusContract.UiEvent.TakeBreak)
             advanceUntilIdle()
@@ -646,14 +702,9 @@ class FocusViewModelTest {
     fun `another session restarts on the task the last one ran`() =
         runTest {
             stubDay()
-            val session = FocusSession.start(11, "Report", nowInstant)
-            sessionFlow.value = session
-            coEvery { focusSessionUseCases.end() } returns session
-
             val viewModel = createViewModel()
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.StopSession)
-            advanceUntilIdle()
+            runSessionOut(taskId = 11)
 
             viewModel.onEvent(FocusContract.UiEvent.StartAnotherSession)
             advanceUntilIdle()

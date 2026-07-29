@@ -179,21 +179,17 @@ class FocusViewModel
             }
         }
 
-        /** Ends the running session and raises the completion sheet with what it banked. */
+        /**
+         * Ends the running session because the user said so.
+         *
+         * No sheet: stopping and marking done are already decisions, and asking "what next?" the
+         * moment one is made is asking a question that has just been answered. The banked minutes
+         * need no announcement either — they are already in the hero and the heatmap on the screen
+         * this returns to. The sheet belongs to the one ending nobody chose, see [onSessionVanished].
+         */
         private suspend fun finishSession() {
-            val now = clock.now()
-            val minutes = mutableUiState.value.session?.bankableMinutes(now) ?: 0
             val ended = focusSessionUseCases.end() ?: return
-            mutableUiState.update {
-                it.copy(
-                    lastSessionTaskId = ended.taskId,
-                    finishedSession =
-                        FocusContract.FinishedSession(
-                            taskTitle = ended.taskTitle,
-                            minutes = minutes,
-                        ),
-                )
-            }
+            mutableUiState.update { it.copy(lastSessionTaskId = ended.taskId) }
         }
 
         private fun dismissFinishedSession() {
@@ -203,7 +199,25 @@ class FocusViewModel
         private fun observeSession() {
             viewModelScope.launch {
                 focusSessionRepository.activeSession.collect { session ->
+                    val previous = mutableUiState.value.session
                     mutableUiState.update { it.copy(session = session) }
+                    // The alarm receiver ends an expired session wherever the app happens to be,
+                    // so a session disappearing is the only signal there is. Having run out is what
+                    // tells the two endings apart: one the user stopped still had time on it, and
+                    // only the one nobody chose is worth asking a question about.
+                    if (session == null && previous != null && previous.hasExpired(clock.now())) {
+                        mutableUiState.update { state ->
+                            state.copy(
+                                lastSessionTaskId = previous.taskId,
+                                finishedSession =
+                                    FocusContract.FinishedSession(
+                                        taskTitle = previous.taskTitle,
+                                        minutes = previous.plannedLength.inWholeMinutes.toInt(),
+                                        wasBreak = previous.isBreak,
+                                    ),
+                            )
+                        }
+                    }
                 }
             }
             viewModelScope.launch {
