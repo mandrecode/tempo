@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.app.NotificationCompat
+import androidx.core.content.ContextCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
@@ -68,6 +69,19 @@ class AndroidFocusSessionScheduler
                     .Builder(context, NotificationChannelManager.FOCUS_SESSION_CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_focus)
                     .setContentTitle(session.taskTitle)
+                    // A second line, and the app's own accent. Title-plus-chronometer alone left
+                    // the row looking like a system message with three buttons bolted under it.
+                    // Not colorized: the platform only honours that for foreground-service
+                    // notifications, and this feature deliberately has no service.
+                    .setContentText(
+                        context.getString(
+                            when {
+                                session.isBreak -> R.string.focus_session_break
+                                session.isPaused -> R.string.focus_session_paused
+                                else -> R.string.focus_session_focusing
+                            },
+                        ),
+                    ).setColor(ContextCompat.getColor(context, R.color.notification_accent))
                     .setOngoing(true)
                     // Alerts when it arrives and then stays quiet: the pause and resume updates
                     // that follow are the same notification changing, not news.
@@ -87,8 +101,6 @@ class AndroidFocusSessionScheduler
                     .setChronometerCountDown(true)
                     .setWhen(endsAt.toEpochMilliseconds())
                     .setShowWhen(true)
-            } else {
-                builder.setContentText(context.getString(R.string.focus_session_paused))
             }
 
             addSessionActions(builder, session)
