@@ -21,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -129,10 +130,15 @@ internal fun sessionStatusLine(
     return "$status · $soFar"
 }
 
-/** One action's label, icon and weight, so a group can be described as data. */
+/**
+ * One action's label, icon and weight, so a group can be described as data.
+ *
+ * A painter rather than a drawable id, so the tick can be the same `Icons.Filled.Check` the task
+ * and habit cards use to mean done — one glyph for one meaning, wherever it appears.
+ */
 internal data class SessionAction(
     val label: String,
-    val iconRes: Int,
+    val icon: Painter,
     val emphasis: ButtonEmphasis,
     val onClick: () -> Unit,
 )
@@ -159,7 +165,7 @@ internal fun runningGroupActions(
                 } else {
                     stringResource(R.string.focus_session_pause)
                 },
-            iconRes = if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause,
+            icon = painterResource(if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause),
             emphasis = ButtonEmphasis.TONAL,
             onClick = onPauseResume,
         )
@@ -170,13 +176,13 @@ internal fun runningGroupActions(
         return listOf(
             SessionAction(
                 label = stringResource(R.string.focus_session_back_to_it),
-                iconRes = R.drawable.ic_play_arrow,
+                icon = painterResource(R.drawable.ic_play_arrow),
                 emphasis = ButtonEmphasis.FILLED,
                 onClick = onBackToWork,
             ),
             SessionAction(
                 label = stringResource(R.string.focus_session_mark_done),
-                iconRes = R.drawable.ic_check,
+                icon = doneIcon(),
                 emphasis = ButtonEmphasis.TONAL,
                 onClick = onComplete,
             ),
@@ -186,7 +192,7 @@ internal fun runningGroupActions(
     return listOf(
         SessionAction(
             label = stringResource(R.string.focus_session_mark_done),
-            iconRes = R.drawable.ic_check,
+            icon = doneIcon(),
             emphasis = ButtonEmphasis.FILLED,
             onClick = onComplete,
         ),
@@ -198,7 +204,7 @@ internal fun runningGroupActions(
 internal fun stopSessionAction(onStop: () -> Unit): SessionAction =
     SessionAction(
         label = stringResource(R.string.focus_session_stop),
-        iconRes = R.drawable.ic_stop,
+        icon = painterResource(R.drawable.ic_stop),
         emphasis = ButtonEmphasis.DISCARD,
         onClick = onStop,
     )
@@ -365,7 +371,7 @@ private fun SessionActionLabel(
         // The glyph carries the action at a glance — a tick, a pause bar, a stop square — so the
         // three are told apart before the labels are read.
         Icon(
-            painter = painterResource(action.iconRes),
+            painter = action.icon,
             contentDescription = null,
             modifier = Modifier.size(if (compact) 16.dp else 18.dp),
         )

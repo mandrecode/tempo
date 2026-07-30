@@ -8,6 +8,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -90,14 +91,14 @@ private fun ColumnScope.FinishedChoices(
         if (finished.wasBreak) {
             SessionAction(
                 label = stringResource(R.string.focus_session_back_to_it),
-                iconRes = R.drawable.ic_play_arrow,
+                icon = painterResource(R.drawable.ic_play_arrow),
                 emphasis = ButtonEmphasis.FILLED,
                 onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
             )
         } else {
             SessionAction(
                 label = stringResource(R.string.focus_session_take_break, finished.breakMinutes),
-                iconRes = R.drawable.ic_coffee,
+                icon = painterResource(R.drawable.ic_coffee),
                 emphasis = ButtonEmphasis.FILLED,
                 onClick = { onEvent(FocusContract.UiEvent.TakeBreak) },
             )
@@ -109,7 +110,7 @@ private fun ColumnScope.FinishedChoices(
     val markDone =
         SessionAction(
             label = stringResource(R.string.focus_session_mark_done),
-            iconRes = R.drawable.ic_check,
+            icon = doneIcon(),
             emphasis = ButtonEmphasis.TONAL,
             onClick = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
         )
@@ -132,7 +133,7 @@ private fun ColumnScope.FinishedChoices(
                     // The configured length, not the elapsed time: this offers the next session,
                     // and stopping early must not shrink what "another" means.
                     label = stringResource(R.string.focus_session_another, nextSessionMinutes),
-                    iconRes = R.drawable.ic_play_arrow,
+                    icon = painterResource(R.drawable.ic_play_arrow),
                     emphasis = ButtonEmphasis.QUIET,
                     onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
                 ),
