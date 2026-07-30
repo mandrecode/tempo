@@ -69,9 +69,14 @@ class AndroidFocusSessionScheduler
                     .setSmallIcon(R.drawable.ic_focus)
                     .setContentTitle(session.taskTitle)
                     .setOngoing(true)
+                    // Alerts when it arrives and then stays quiet: the pause and resume updates
+                    // that follow are the same notification changing, not news.
                     .setOnlyAlertOnce(true)
-                    .setSilent(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+                    // Promoted the way a habit chain's live activity is, so a running session can be
+                    // glanced at from the status bar rather than only found in the shade.
+                    .setRequestPromotedOngoing(true)
                     .setContentIntent(openFocusPendingIntent())
 
             val endsAt = session.endsAt

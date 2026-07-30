@@ -93,6 +93,22 @@ internal fun sessionCardActionColors(): SessionActionColors =
         quietBorder = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TONAL_ALPHA),
     )
 
+/**
+ * A session length as it reads on the day's surfaces: `25 min` under the hour, `01:30` over it.
+ *
+ * Matches [asCountdownLabel]'s rollover, so the length you chose and the time left after starting
+ * are written the same way rather than one saying "90 min" and the other "01:29".
+ */
+@Composable
+internal fun sessionLengthLabel(minutes: Int): String =
+    if (minutes < MINUTES_PER_HOUR) {
+        stringResource(R.string.focus_session_length_minutes, minutes)
+    } else {
+        "%02d:%02d".format(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
+    }
+
+private const val MINUTES_PER_HOUR = 60
+
 /** One action's label, icon and weight, so a group can be described as data. */
 internal data class SessionAction(
     val label: String,

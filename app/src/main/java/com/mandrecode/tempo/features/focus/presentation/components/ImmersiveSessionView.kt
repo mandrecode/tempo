@@ -139,6 +139,61 @@ internal fun SessionBody(
     }
 }
 
+/**
+ * What a session that has not started yet offers: the length you set, and the length you want today.
+ *
+ * Two buttons rather than one adjustable one. Starting at the configured length has to stay a
+ * single tap — that is the whole point of having configured it — so the adjustable start sits
+ * below with its modifier beside it, for the session that wants to be different just this once.
+ */
+@Composable
+private fun ColumnScope.PreStartControls(
+    plannedLength: Duration,
+    colors: SessionActionColors,
+    onStart: (Int) -> Unit,
+) {
+    val standardMinutes = plannedLength.inWholeMinutes.toInt()
+    var customMinutes by remember(standardMinutes) { mutableIntStateOf(standardMinutes) }
+
+    SessionActionButton(
+        action =
+            SessionAction(
+                label = stringResource(R.string.focus_session_start, sessionLengthLabel(standardMinutes)),
+                iconRes = R.drawable.ic_play_arrow,
+                emphasis = ButtonEmphasis.FILLED,
+                onClick = { onStart(standardMinutes) },
+            ),
+        colors = colors,
+        modifier = Modifier.padding(top = 32.dp),
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        ValueStepper(
+            value = customMinutes,
+            label = sessionLengthLabel(customMinutes),
+            onValueChange = { customMinutes = it },
+            range = FocusSession.SESSION_LENGTH_RANGE,
+            step = FocusSession.LENGTH_STEP_MINUTES,
+        )
+        SessionActionButton(
+            action =
+                SessionAction(
+                    label = stringResource(R.string.focus_session_start_custom),
+                    iconRes = R.drawable.ic_play_arrow,
+                    emphasis = ButtonEmphasis.QUIET,
+                    onClick = { onStart(customMinutes) },
+                ),
+            colors = colors,
+            modifier = Modifier.weight(1f),
+            compact = true,
+        )
+    }
+}
+
 /** What the session is on: its description, the ring, and the task's category, priority and time. */
 @Composable
 private fun ColumnScope.SessionSubject(
@@ -239,32 +294,10 @@ private fun SessionControls(
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
         if (session == null) {
-            // The length is adjustable right here, for this start only: most sessions want the
-            // setting, but the one you are about to begin sometimes wants twenty minutes rather
-            // than the twenty-five you normally take, and changing a preference to say so is too
-            // much ceremony for a decision that expires when the timer does.
-            var minutes by
-                remember(plannedLength) {
-                    mutableIntStateOf(plannedLength.inWholeMinutes.toInt())
-                }
-            ValueStepper(
-                value = minutes,
-                label = stringResource(R.string.focus_session_length_minutes, minutes),
-                onValueChange = { minutes = it },
-                range = FocusSession.SESSION_LENGTH_RANGE,
-                step = FocusSession.LENGTH_STEP_MINUTES,
-                modifier = Modifier.align(Alignment.CenterHorizontally).padding(top = 24.dp),
-            )
-            SessionActionButton(
-                action =
-                    SessionAction(
-                        label = stringResource(R.string.focus_session_start, minutes),
-                        iconRes = R.drawable.ic_play_arrow,
-                        emphasis = ButtonEmphasis.FILLED,
-                        onClick = { onStart(minutes) },
-                    ),
+            PreStartControls(
+                plannedLength = plannedLength,
                 colors = colors,
-                modifier = Modifier.padding(top = 16.dp),
+                onStart = onStart,
             )
         } else {
             // Finishing and pausing are the two you reach for while working, so they sit together
