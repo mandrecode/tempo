@@ -102,19 +102,23 @@ private fun ColumnScope.FinishedChoices(
                 onClick = { onEvent(FocusContract.UiEvent.TakeBreak) },
             )
         }
-    val stopThere =
+    // "Done for now" said the work was unfinished while wearing a tick, and did neither — it only
+    // closed the sheet. This is the same act, and the same word, as marking the task done anywhere
+    // else in the app. Closing without deciding is still there: the sheet dismisses on a swipe or
+    // a tap outside.
+    val markDone =
         SessionAction(
-            label = stringResource(R.string.focus_session_finished_done),
+            label = stringResource(R.string.focus_session_mark_done),
             iconRes = R.drawable.ic_check,
             emphasis = ButtonEmphasis.TONAL,
-            onClick = { onEvent(FocusContract.UiEvent.DismissFinishedSession) },
+            onClick = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
         )
 
     // The two first-class choices as one connected control, matching the card and the session
-    // screen. Stopping stays a peer here rather than a dismissal in the corner: a Pomodoro app
+    // screen. Finishing stays a peer here rather than a dismissal in the corner: a Pomodoro app
     // that makes stopping feel like failure is the thing this feature is trying not to be.
     SessionActionGroup(
-        actions = listOf(carryOn, stopThere),
+        actions = listOf(carryOn, markDone),
         colors = colors,
         modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
         compact = true,

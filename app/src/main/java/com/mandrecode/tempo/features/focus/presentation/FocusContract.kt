@@ -92,6 +92,15 @@ object FocusContract {
             }
 
         val sessionSubtasks: List<Task> get() = sessionEntry?.subtasks.orEmpty()
+
+        /** The task the last session ran on, for the choices offered once it has ended. */
+        val lastSessionEntry: FocusAgendaItem.TaskEntry?
+            get() {
+                val taskId = lastSessionTaskId ?: return null
+                return (upNext + overdue + todayItems)
+                    .filterIsInstance<FocusAgendaItem.TaskEntry>()
+                    .firstOrNull { it.task.id == taskId }
+            }
     }
 
     /** Why the task editor is open: to change a task, or to add a subtask beneath one. */

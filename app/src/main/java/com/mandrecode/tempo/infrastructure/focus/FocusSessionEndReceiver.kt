@@ -41,7 +41,12 @@ class FocusSessionEndReceiver : BroadcastReceiver() {
         CoroutineScope(ioDispatcher).launch {
             try {
                 val finished = focusSessionUseCases.end() ?: return@launch
-                notifyTimeIsUp(context, finished.taskTitle, finished.plannedLength.inWholeMinutes.toInt())
+                notifyTimeIsUp(
+                    context = context,
+                    taskTitle = finished.taskTitle,
+                    minutes = finished.plannedLength.inWholeMinutes.toInt(),
+                    wasBreak = finished.isBreak,
+                )
             } finally {
                 pendingResult.finish()
             }
@@ -52,6 +57,7 @@ class FocusSessionEndReceiver : BroadcastReceiver() {
         context: Context,
         taskTitle: String,
         minutes: Int,
+        wasBreak: Boolean,
     ) {
         if (!NotificationChannelManager.canPostNotifications(context)) return
         val notificationManager =
@@ -73,8 +79,15 @@ class FocusSessionEndReceiver : BroadcastReceiver() {
             NotificationCompat
                 .Builder(context, NotificationChannelManager.FOCUS_SESSION_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_focus)
-                .setContentTitle(context.getString(R.string.focus_session_finished_title, minutes))
-                .setContentText(taskTitle)
+                // A break did not complete anything, so counting its minutes as work done was
+                // both wrong and a strange thing to be told after resting.
+                .setContentTitle(
+                    if (wasBreak) {
+                        context.getString(R.string.focus_break_finished_title)
+                    } else {
+                        context.getString(R.string.focus_session_finished_title, minutes)
+                    },
+                ).setContentText(taskTitle)
                 .setAutoCancel(true)
                 .setContentIntent(openFocus)
                 .build()
