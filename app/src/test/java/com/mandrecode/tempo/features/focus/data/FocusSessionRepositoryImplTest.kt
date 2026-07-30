@@ -8,7 +8,6 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.slot
 import io.mockk.verify
 import org.junit.Test
 import kotlin.time.Duration.Companion.minutes
@@ -130,16 +129,28 @@ class FocusSessionRepositoryImplTest {
     }
 
     @Test
-    fun `an unsupported length snaps to the nearest supported one`() {
+    fun `a length outside the range is clamped to it`() {
         val repository = createRepository()
-        val slot = slot<Int>()
-        every { editor.putInt(any(), capture(slot)) } returns editor
 
-        repository.setDefaultLengthMinutes(38)
+        repository.setDefaultLengthMinutes(FocusSession.SESSION_LENGTH_RANGE.last + 30)
+        assertThat(repository.defaultLengthMinutes.value)
+            .isEqualTo(FocusSession.SESSION_LENGTH_RANGE.last)
 
-        // 38 sits between 30 and 45, closer to 45 — but 40 would round the other way.
-        assertThat(slot.captured).isEqualTo(FocusSession.SUPPORTED_LENGTHS_MINUTES.minBy { kotlin.math.abs(it - 38) })
-        assertThat(repository.defaultLengthMinutes.value).isEqualTo(45)
+        repository.setDefaultLengthMinutes(0)
+        assertThat(repository.defaultLengthMinutes.value)
+            .isEqualTo(FocusSession.SESSION_LENGTH_RANGE.first)
+    }
+
+    @Test
+    fun `the break length is its own setting`() {
+        val repository = createRepository()
+
+        repository.setBreakLengthMinutes(15)
+
+        assertThat(repository.breakLengthMinutes.value).isEqualTo(15)
+        // Changing one never moves the other.
+        assertThat(repository.defaultLengthMinutes.value)
+            .isEqualTo(FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt())
     }
 
     @Test

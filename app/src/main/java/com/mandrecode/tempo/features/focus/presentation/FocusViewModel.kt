@@ -12,6 +12,7 @@ import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUse
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -78,16 +79,37 @@ class FocusViewModel
                 is FocusContract.UiEvent.ToggleChainCompletion ->
                     viewModelScope.launch { toggleChain(event.chainId, event.isCompleted) }
 
-                is FocusContract.UiEvent.ToggleChainExpanded -> toggleChainExpanded(event.chainId)
+                is FocusContract.UiEvent.ToggleChainExpanded ->
+                    mutableUiState.update {
+                        it.copy(expandedChainIds = it.expandedChainIds.toggling(event.chainId))
+                    }
+
+                is FocusContract.UiEvent.ToggleSubtasksExpanded ->
+                    mutableUiState.update {
+                        it.copy(collapsedTaskIds = it.collapsedTaskIds.toggling(event.taskId))
+                    }
 
                 is FocusContract.UiEvent.EditTask ->
-                    mutableUiState.update { it.copy(editingTask = event.task, editingHabit = null) }
+                    mutableUiState.update {
+                        it.copy(
+                            taskEditor = FocusContract.TaskEditorTarget.Existing(event.task),
+                            editingHabit = null,
+                        )
+                    }
+
+                is FocusContract.UiEvent.AddSubtask ->
+                    mutableUiState.update {
+                        it.copy(
+                            taskEditor = FocusContract.TaskEditorTarget.NewSubtask(event.parentTaskId),
+                            editingHabit = null,
+                        )
+                    }
 
                 is FocusContract.UiEvent.EditHabit ->
-                    mutableUiState.update { it.copy(editingHabit = event.habit, editingTask = null) }
+                    mutableUiState.update { it.copy(editingHabit = event.habit, taskEditor = null) }
 
                 FocusContract.UiEvent.DismissEditor ->
-                    mutableUiState.update { it.copy(editingTask = null, editingHabit = null) }
+                    mutableUiState.update { it.copy(taskEditor = null, editingHabit = null) }
 
                 FocusContract.UiEvent.UndatedTasksClicked ->
                     sendEffect(FocusContract.UiEffect.OpenTasksTab)
@@ -102,18 +124,7 @@ class FocusViewModel
          */
         private fun onSessionEvent(event: FocusContract.UiEvent) {
             when (event) {
-                FocusContract.UiEvent.StartSession -> {
-                    val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry
-                    if (upNext != null) {
-                        viewModelScope.launch {
-                            focusSessionUseCases.start(upNext.task.id, upNext.task.title)
-                            focusSessionRepository.setPreviewTaskId(null)
-                            // Starting is a commitment to the work, so the app follows the user
-                            // into it rather than leaving them to find what they just began.
-                            sendEffect(FocusContract.UiEffect.OpenSessionScreen)
-                        }
-                    }
-                }
+                is FocusContract.UiEvent.StartSession -> startSession(event)
 
                 FocusContract.UiEvent.PauseSession -> focusSessionUseCases.pause()
                 FocusContract.UiEvent.ResumeSession -> focusSessionUseCases.resume()
@@ -133,14 +144,11 @@ class FocusViewModel
                 FocusContract.UiEvent.OpenSessionScreen ->
                     sendEffect(FocusContract.UiEffect.OpenSessionScreen)
 
-                FocusContract.UiEvent.PreviewUpNext -> {
+                is FocusContract.UiEvent.PreviewUpNext -> {
                     // Look at the work first: the screen opens on the task with its timer at full
                     // length, and starting stays a separate, deliberate tap.
-                    val upNext = mutableUiState.value.upNext as? FocusAgendaItem.TaskEntry
-                    if (upNext != null) {
-                        focusSessionRepository.setPreviewTaskId(upNext.task.id)
-                        sendEffect(FocusContract.UiEffect.OpenSessionScreen)
-                    }
+                    focusSessionRepository.setPreviewTaskId(event.taskId)
+                    sendEffect(FocusContract.UiEffect.OpenSessionScreen)
                 }
 
                 FocusContract.UiEvent.ClearSessionPreview ->
@@ -192,6 +200,32 @@ class FocusViewModel
             mutableUiState.update { it.copy(lastSessionTaskId = ended.taskId) }
         }
 
+        /**
+         * Starts on the card that was tapped, or on whatever the screen is already showing when
+         * nothing names a task — the session screen's own button has only one candidate.
+         */
+        private fun startSession(event: FocusContract.UiEvent.StartSession) {
+            val state = mutableUiState.value
+            val task =
+                event.taskId
+                    ?.let { id -> state.upNext.firstOrNull { it.task.id == id } }
+                    ?.task
+                    ?: (state.sessionEntry ?: state.upNext.firstOrNull())?.task
+                    ?: return
+
+            viewModelScope.launch {
+                focusSessionUseCases.start(
+                    taskId = task.id,
+                    taskTitle = task.title,
+                    lengthMinutes = event.lengthMinutes,
+                )
+                focusSessionRepository.setPreviewTaskId(null)
+                // Starting is a commitment to the work, so the app follows the user into it rather
+                // than leaving them to find what they just began.
+                sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+            }
+        }
+
         private fun dismissFinishedSession() {
             mutableUiState.update { it.copy(finishedSession = null) }
         }
@@ -214,6 +248,7 @@ class FocusViewModel
                                         taskTitle = previous.taskTitle,
                                         minutes = previous.plannedLength.inWholeMinutes.toInt(),
                                         wasBreak = previous.isBreak,
+                                        breakMinutes = focusSessionRepository.breakLengthMinutes.value,
                                     ),
                             )
                         }
@@ -228,6 +263,11 @@ class FocusViewModel
             viewModelScope.launch {
                 focusSessionRepository.previewTaskId.collect { taskId ->
                     mutableUiState.update { it.copy(previewTaskId = taskId) }
+                }
+            }
+            viewModelScope.launch {
+                focusSessionRepository.breakLengthMinutes.collect { minutes ->
+                    mutableUiState.update { it.copy(breakLengthMinutes = minutes) }
                 }
             }
         }
@@ -251,7 +291,7 @@ class FocusViewModel
                             scheduledCount = agenda.scheduledCount,
                             completedCount = agenda.completedCount,
                             focusMinutes = history.lastOrNull { it.date == day }?.focusMinutes ?: 0,
-                            upNext = agenda.upNext,
+                            upNext = agenda.upNext.toPersistentList(),
                             overdue = agenda.overdue.toPersistentList(),
                             todayItems = agenda.today.toPersistentList(),
                             undatedTaskCount = agenda.undatedTaskCount,
@@ -276,16 +316,11 @@ class FocusViewModel
                 .filterIsInstance<FocusAgendaItem.ChainEntry>()
                 .firstOrNull { it.chain.id == chainId }
 
-        private fun toggleChainExpanded(chainId: Long) {
-            mutableUiState.update { state ->
-                val expanded = state.expandedChainIds
-                val updated =
-                    if (chainId in expanded) expanded - chainId else expanded + chainId
-                state.copy(expandedChainIds = updated.toPersistentList())
-            }
-        }
-
         private fun sendEffect(effect: FocusContract.UiEffect) {
             viewModelScope.launch { effectChannel.send(effect) }
         }
     }
+
+/** Adds [id] when absent, removes it when present — the shape both expansion toggles need. */
+private fun ImmutableList<Long>.toggling(id: Long): ImmutableList<Long> =
+    if (id in this) (this - id).toPersistentList() else (this + id).toPersistentList()

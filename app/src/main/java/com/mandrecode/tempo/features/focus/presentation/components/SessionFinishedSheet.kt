@@ -1,27 +1,18 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
-import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
-import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
 
 /**
@@ -94,96 +85,56 @@ private fun ColumnScope.FinishedChoices(
     nextSessionMinutes: Int,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        SheetButton(
+    val colors = sessionScreenActionColors()
+    val carryOn =
+        if (finished.wasBreak) {
+            SessionAction(
+                label = stringResource(R.string.focus_session_back_to_it),
+                iconRes = R.drawable.ic_play_arrow,
+                emphasis = ButtonEmphasis.FILLED,
+                onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
+            )
+        } else {
+            SessionAction(
+                label = stringResource(R.string.focus_session_take_break, finished.breakMinutes),
+                iconRes = R.drawable.ic_coffee,
+                emphasis = ButtonEmphasis.FILLED,
+                onClick = { onEvent(FocusContract.UiEvent.TakeBreak) },
+            )
+        }
+    val stopThere =
+        SessionAction(
             label = stringResource(R.string.focus_session_finished_done),
+            iconRes = R.drawable.ic_check,
+            emphasis = ButtonEmphasis.TONAL,
             onClick = { onEvent(FocusContract.UiEvent.DismissFinishedSession) },
-            modifier = Modifier.weight(1f),
         )
-        SheetButton(
-            label =
-                if (finished.wasBreak) {
-                    stringResource(R.string.focus_session_back_to_it)
-                } else {
-                    stringResource(
-                        R.string.focus_session_take_break,
-                        FocusSession.BREAK_LENGTH.inWholeMinutes.toInt(),
-                    )
-                },
-            onClick = {
-                onEvent(
-                    if (finished.wasBreak) {
-                        FocusContract.UiEvent.StartAnotherSession
-                    } else {
-                        FocusContract.UiEvent.TakeBreak
-                    },
-                )
-            },
-            modifier = Modifier.weight(1f),
-            emphasised = true,
-        )
-    }
+
+    // The two first-class choices as one connected control, matching the card and the session
+    // screen. Stopping stays a peer here rather than a dismissal in the corner: a Pomodoro app
+    // that makes stopping feel like failure is the thing this feature is trying not to be.
+    SessionActionGroup(
+        actions = listOf(carryOn, stopThere),
+        colors = colors,
+        modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        compact = true,
+    )
 
     // A break already offers going back to the work, so it needs no second way to say so.
     if (!finished.wasBreak) {
-        SheetButton(
-            // The configured length, not the elapsed time: this offers the next session, and
-            // stopping early must not shrink what "another" means.
-            label = stringResource(R.string.focus_session_another, nextSessionMinutes),
-            onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-            transparent = true,
+        SessionActionButton(
+            action =
+                SessionAction(
+                    // The configured length, not the elapsed time: this offers the next session,
+                    // and stopping early must not shrink what "another" means.
+                    label = stringResource(R.string.focus_session_another, nextSessionMinutes),
+                    iconRes = R.drawable.ic_play_arrow,
+                    emphasis = ButtonEmphasis.QUIET,
+                    onClick = { onEvent(FocusContract.UiEvent.StartAnotherSession) },
+                ),
+            colors = colors,
+            modifier = Modifier.padding(top = 8.dp),
+            compact = true,
         )
     }
 }
-
-@Composable
-private fun SheetButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    emphasised: Boolean = false,
-    transparent: Boolean = false,
-) {
-    val haptic = LocalHapticFeedback.current
-    val (interactionSource, cornerRadius) =
-        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
-
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(
-                if (emphasised) HapticFeedbackType.LongPress else HapticFeedbackType.TextHandleMove,
-            )
-            onClick()
-        },
-        modifier = modifier,
-        interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
-        color =
-            when {
-                transparent -> androidx.compose.ui.graphics.Color.Transparent
-                emphasised -> MaterialTheme.colorScheme.primary
-                else -> MaterialTheme.colorScheme.secondaryContainer
-            },
-        contentColor =
-            when {
-                transparent -> MaterialTheme.colorScheme.onSurfaceVariant
-                emphasised -> MaterialTheme.colorScheme.onPrimary
-                else -> MaterialTheme.colorScheme.onSecondaryContainer
-            },
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
-        )
-    }
-}
-
-private val PillRadius = 22.dp
-private val PillPressedRadius = 11.dp

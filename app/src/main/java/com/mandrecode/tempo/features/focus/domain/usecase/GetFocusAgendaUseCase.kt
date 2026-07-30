@@ -92,13 +92,12 @@ class GetFocusAgendaUseCase
             val overdue = overdueTasks.sortedByAgendaOrder()
             val todayItems = (todayTasks + todayHabits + todayChains).sortedByAgendaOrder()
 
-            // Up next is lifted out of its section rather than mirrored into it: showing the same
-            // work twice, one card above the other, reads as two things to do.
-            val upNext = getUpNextItem(overdue + todayItems)
+            // A shortlist over the day rather than a slice taken out of it: the row is somewhere
+            // to start from, not a fourth section, so the work still appears where it belongs.
             return FocusAgenda(
-                upNext = upNext,
-                overdue = overdue.filterNot { it.id == upNext?.id },
-                today = todayItems.filterNot { it.id == upNext?.id },
+                upNext = getUpNextItem(overdue + todayItems),
+                overdue = overdue,
+                today = todayItems,
                 undatedTaskCount = topLevelTasks.count { it.reminderDate == null && !it.isCompleted },
             )
         }

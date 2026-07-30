@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +25,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,12 +40,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.components.ValueStepper
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.presentation.components.cards.SubtaskItem
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -66,15 +70,17 @@ internal fun SessionBody(
     subtasks: List<Task>,
     task: Task?,
     categoryName: String?,
-    onStart: () -> Unit,
+    onStart: (Int) -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
     onToggleSubtask: (Task) -> Unit,
+    onEditSubtask: (Task) -> Unit,
     onOpenInTasks: () -> Unit,
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
+    val haptic = LocalHapticFeedback.current
     val counted by rememberSessionCountdown(session, clock)
     // Before it starts there is nothing to count down, so the ring shows the whole session ahead.
     val remaining = if (session == null) plannedLength else counted
@@ -100,6 +106,7 @@ internal fun SessionBody(
             session = session,
             task = task,
             categoryName = categoryName,
+            subtasks = subtasks,
             progress = progress,
             countdownLabel = remaining.asCountdownLabel(),
             onOpenInTasks = onOpenInTasks,
@@ -107,11 +114,26 @@ internal fun SessionBody(
 
         if (subtasks.isNotEmpty()) {
             Column(
-                modifier = Modifier.fillMaxWidth().padding(top = 28.dp),
+                // Narrower than the ring above it: a checklist reads down a column, and lines
+                // running the full width of a tablet are a long way for the eye to travel back.
+                modifier =
+                    Modifier
+                        .widthIn(max = SubtaskColumnMaxWidth)
+                        .fillMaxWidth()
+                        .padding(top = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                // The Tasks screen's own row, not a copy of it: same labels, same checkbox
+                // animation, and tapping one opens the same editor it opens there. A subtask that
+                // behaved differently depending on the screen you found it on would be a different
+                // thing wearing the same name.
                 subtasks.forEach { subtask ->
-                    SubtaskRow(subtask = subtask, onToggle = { onToggleSubtask(subtask) })
+                    SubtaskItem(
+                        subtask = subtask,
+                        onToggleCompletion = onToggleSubtask,
+                        onEdit = onEditSubtask,
+                        haptic = haptic,
+                    )
                 }
             }
         }
@@ -127,12 +149,70 @@ internal fun SessionBody(
     }
 }
 
+/**
+ * What a session that has not started yet offers: the length you set, and the length you want today.
+ *
+ * Two buttons rather than one adjustable one. Starting at the configured length has to stay a
+ * single tap — that is the whole point of having configured it — so the adjustable start sits
+ * below with its modifier beside it, for the session that wants to be different just this once.
+ */
+@Composable
+private fun ColumnScope.PreStartControls(
+    plannedLength: Duration,
+    colors: SessionActionColors,
+    onStart: (Int) -> Unit,
+) {
+    val standardMinutes = plannedLength.inWholeMinutes.toInt()
+    var customMinutes by remember(standardMinutes) { mutableIntStateOf(standardMinutes) }
+
+    SessionActionButton(
+        action =
+            SessionAction(
+                label = stringResource(R.string.focus_session_start, sessionLengthLabel(standardMinutes)),
+                iconRes = R.drawable.ic_play_arrow,
+                emphasis = ButtonEmphasis.FILLED,
+                onClick = { onStart(standardMinutes) },
+            ),
+        colors = colors,
+        modifier = Modifier.padding(top = 32.dp),
+    )
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        // Button first, then the length: the row reads as one sentence — "start with … minutes" —
+        // rather than asking you to set a number before you know what it is for.
+        SessionActionButton(
+            action =
+                SessionAction(
+                    label = stringResource(R.string.focus_session_start_custom),
+                    iconRes = R.drawable.ic_play_arrow,
+                    emphasis = ButtonEmphasis.QUIET,
+                    onClick = { onStart(customMinutes) },
+                ),
+            colors = colors,
+            modifier = Modifier.weight(1f),
+            compact = true,
+        )
+        ValueStepper(
+            value = customMinutes,
+            label = sessionLengthLabel(customMinutes),
+            onValueChange = { customMinutes = it },
+            range = FocusSession.SESSION_LENGTH_RANGE,
+            step = FocusSession.LENGTH_STEP_MINUTES,
+        )
+    }
+}
+
 /** What the session is on: its description, the ring, and the task's category, priority and time. */
 @Composable
 private fun ColumnScope.SessionSubject(
     session: FocusSession?,
     task: Task?,
     categoryName: String?,
+    subtasks: List<Task>,
     progress: Float,
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
@@ -167,6 +247,7 @@ private fun ColumnScope.SessionSubject(
         SessionTaskMetadata(
             task = task,
             categoryName = categoryName,
+            subtasks = subtasks,
             modifier = Modifier.padding(top = 24.dp),
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
@@ -218,7 +299,7 @@ private fun SessionRing(
 private fun SessionControls(
     session: FocusSession?,
     plannedLength: Duration,
-    onStart: () -> Unit,
+    onStart: (Int) -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
@@ -227,20 +308,10 @@ private fun SessionControls(
 
     Column(modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp)) {
         if (session == null) {
-            SessionActionButton(
-                action =
-                    SessionAction(
-                        label =
-                            stringResource(
-                                R.string.focus_session_start,
-                                plannedLength.inWholeMinutes.toInt(),
-                            ),
-                        iconRes = R.drawable.ic_play_arrow,
-                        emphasis = ButtonEmphasis.FILLED,
-                        onClick = onStart,
-                    ),
+            PreStartControls(
+                plannedLength = plannedLength,
                 colors = colors,
-                modifier = Modifier.padding(top = 32.dp),
+                onStart = onStart,
             )
         } else {
             // Finishing and pausing are the two you reach for while working, so they sit together
@@ -318,6 +389,7 @@ private fun ImmersiveTextButton(
 private fun SessionTaskMetadata(
     task: Task,
     categoryName: String?,
+    subtasks: List<Task>,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -349,6 +421,16 @@ private fun SessionTaskMetadata(
                 label = DateTimeFormatter.formatTimeOfDay(reminder.time, context),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }
+        // How much of the task is broken down, alongside its other properties. The checklist itself
+        // is further down the screen, so the count says it is there before you scroll to it.
+        if (subtasks.isNotEmpty()) {
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_checklist,
+                label = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -385,43 +467,10 @@ private fun SessionMetadataPill(
     }
 }
 
-@Composable
-private fun SubtaskRow(
-    subtask: Task,
-    onToggle: () -> Unit,
-) {
-    val haptic = LocalHapticFeedback.current
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .clickable {
-                    // Same weight as ticking the checkbox itself, which the row stands in for.
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    onToggle()
-                }.padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        TaskCompletionCheckbox(
-            isCompleted = subtask.isCompleted,
-            onToggle = { onToggle() },
-        )
-        Text(
-            text = subtask.title,
-            style = MaterialTheme.typography.bodyLarge,
-            color =
-                if (subtask.isCompleted) {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.onSurface
-                },
-        )
-    }
-}
-
 private val STILL = 0.dp
 private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val SessionHorizontalPadding = 16.dp
+private val SubtaskRadius = 14.dp
+private val SubtaskColumnMaxWidth = 420.dp
 private val TextButtonRadius = 24.dp

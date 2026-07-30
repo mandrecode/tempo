@@ -167,7 +167,7 @@ internal fun StartSessionButton(
         interactionSource = interactionSource,
     ) {
         Text(
-            text = stringResource(R.string.focus_session_start, minutes),
+            text = stringResource(R.string.focus_session_start, sessionLengthLabel(minutes)),
             style = MaterialTheme.typography.labelLarge,
             fontWeight = FontWeight.Bold,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),

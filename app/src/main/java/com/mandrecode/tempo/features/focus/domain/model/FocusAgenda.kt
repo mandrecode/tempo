@@ -55,20 +55,19 @@ sealed interface FocusAgendaItem {
 /**
  * Everything the Focus screen shows, already ordered.
  *
- * [upNext] is drawn from [overdue] and [today] rather than removed from them: the card is a
- * spotlight on one item, not a fourth section, so the item still appears in its own section below.
+ * [upNext] is drawn from [overdue] and [today] rather than removed from them. A single card
+ * directly above the same row read as two things to do; a shortlist you swipe through reads as
+ * what it is — a way to start something without hunting for it — so the day's own list stays whole.
  */
 data class FocusAgenda(
-    val upNext: FocusAgendaItem? = null,
+    /** The tasks worth starting next, best first — the row you swipe through. */
+    val upNext: List<FocusAgendaItem.TaskEntry> = emptyList(),
     val overdue: List<FocusAgendaItem> = emptyList(),
     val today: List<FocusAgendaItem> = emptyList(),
     val undatedTaskCount: Int = 0,
 ) {
-    /**
-     * Up next is counted alongside the sections: it was lifted out of one of them for display, so
-     * leaving it out here would quietly shrink the day the hero reports.
-     */
-    private val allItems: List<FocusAgendaItem> get() = listOfNotNull(upNext) + overdue + today
+    /** Up next is a view onto the sections, so counting it again would inflate the day. */
+    private val allItems: List<FocusAgendaItem> get() = overdue + today
 
     val scheduledCount: Int get() = allItems.size
     val completedCount: Int get() = allItems.count { it.isCompleted }

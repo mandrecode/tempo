@@ -27,19 +27,24 @@ class FocusSessionUseCases
         /**
          * Begins a session on [taskId]. Any session already running is ended first and its minutes
          * banked, so starting on a second task replaces rather than stacks.
+         *
+         * [lengthMinutes] overrides the configured length for this start alone, for the times one
+         * session wants to be shorter or longer without changing what every session is.
          */
         suspend fun start(
             taskId: Long,
             taskTitle: String,
             isBreak: Boolean = false,
+            lengthMinutes: Int? = null,
         ) {
             end()
-            val length =
+            val configured =
                 if (isBreak) {
-                    FocusSession.BREAK_LENGTH
+                    sessionRepository.breakLengthMinutes.value
                 } else {
-                    FocusSession.lengthOf(sessionRepository.defaultLengthMinutes.value)
+                    sessionRepository.defaultLengthMinutes.value
                 }
+            val length = FocusSession.lengthOf(lengthMinutes ?: configured)
             apply(
                 FocusSession.start(
                     taskId = taskId,

@@ -117,6 +117,11 @@ class SettingsViewModel
                     _uiState.update { it.copy(focusSessionLengthMinutes = minutes) }
                 }
             }
+            viewModelScope.launch {
+                focusSessionRepository.breakLengthMinutes.collect { minutes ->
+                    _uiState.update { it.copy(focusBreakLengthMinutes = minutes) }
+                }
+            }
         }
 
         private fun observeTabPreferences() {
@@ -150,6 +155,10 @@ class SettingsViewModel
 
                 is SettingsContract.UiEvent.FocusSessionLengthChanged -> {
                     focusSessionRepository.setDefaultLengthMinutes(event.minutes)
+                }
+
+                is SettingsContract.UiEvent.FocusBreakLengthChanged -> {
+                    focusSessionRepository.setBreakLengthMinutes(event.minutes)
                 }
 
                 is SettingsContract.UiEvent.TabToggled -> {

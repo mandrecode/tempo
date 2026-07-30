@@ -16,6 +16,9 @@ interface FocusSessionRepository {
     /** Default length for sessions started from now on; changing it never affects a running one. */
     val defaultLengthMinutes: StateFlow<Int>
 
+    /** How long a break runs, on the same terms. */
+    val breakLengthMinutes: StateFlow<Int>
+
     /**
      * The task the session screen is showing when nothing is running — opened from Up next to look
      * at the work before committing to a timer.
@@ -29,6 +32,8 @@ interface FocusSessionRepository {
     fun setActiveSession(session: FocusSession?)
 
     fun setDefaultLengthMinutes(minutes: Int)
+
+    fun setBreakLengthMinutes(minutes: Int)
 
     fun setPreviewTaskId(taskId: Long?)
 }

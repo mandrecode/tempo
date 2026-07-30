@@ -42,7 +42,6 @@ import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
 import com.mandrecode.tempo.core.ui.titleRes
-import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.util.dynamicColorScheme
 import com.mandrecode.tempo.util.supportsDynamicColor
 
@@ -201,46 +200,6 @@ private fun NotificationsSection() {
             trailingIcon = R.drawable.ic_open_in_new,
             onClick = { openNotificationSettings(context) },
         )
-    }
-}
-
-/**
- * The default length for focus sessions. There is deliberately no picker on the session card
- * itself — starting a session stays one tap, and the length is a preference rather than a decision
- * to make each time.
- */
-@Composable
-internal fun FocusSection(
-    uiState: SettingsContract.UiState,
-    onEvent: (SettingsContract.UiEvent) -> Unit,
-) {
-    SettingsSection(title = stringResource(R.string.settings_focus)) {
-        Column(modifier = Modifier.padding(SettingsSectionContentPadding)) {
-            Text(
-                text = stringResource(R.string.focus_session_length),
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                FocusSession.SUPPORTED_LENGTHS_MINUTES.forEachIndexed { index, minutes ->
-                    ExpressiveChip(
-                        label = stringResource(R.string.focus_session_length_minutes, minutes),
-                        isSelected = uiState.focusSessionLengthMinutes == minutes,
-                        onClick = {
-                            onEvent(SettingsContract.UiEvent.FocusSessionLengthChanged(minutes))
-                        },
-                        isFirst = index == 0,
-                        isLast = index == FocusSession.SUPPORTED_LENGTHS_MINUTES.lastIndex,
-                        modifier = Modifier.weight(1f),
-                        height = 44.dp,
-                        horizontalPadding = 2.dp,
-                    )
-                }
-            }
-        }
     }
 }
 

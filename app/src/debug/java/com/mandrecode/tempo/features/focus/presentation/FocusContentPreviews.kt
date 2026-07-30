@@ -62,8 +62,13 @@ private val midDayState =
         scheduledCount = 9,
         completedCount = 5,
         upNext =
-            FocusAgendaItem.TaskEntry(
-                task(1, "Finish Q3 budget report", hour = 9, priority = Priority.HIGH),
+            persistentListOf(
+                FocusAgendaItem.TaskEntry(
+                    task(1, "Finish Q3 budget report", hour = 9, priority = Priority.HIGH),
+                ),
+                FocusAgendaItem.TaskEntry(
+                    task(2, "Reply to the design review", hour = 11, priority = Priority.MEDIUM),
+                ),
             ),
         overdue =
             persistentListOf(
@@ -94,7 +99,7 @@ private val emptyDayState =
 private val allDoneState =
     midDayState.copy(
         completedCount = 9,
-        upNext = null,
+        upNext = persistentListOf(),
         overdue = persistentListOf(),
         todayItems =
             persistentListOf(

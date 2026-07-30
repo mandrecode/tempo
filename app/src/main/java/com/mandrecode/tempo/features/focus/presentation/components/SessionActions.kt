@@ -39,7 +39,16 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusSession
  * three different kinds of act, so three different looks. The running-session card and the session
  * screen share these, so an action never changes weight depending on where you press it.
  */
-internal enum class ButtonEmphasis { FILLED, TONAL, DISCARD }
+internal enum class ButtonEmphasis {
+    FILLED,
+    TONAL,
+
+    /** Throws the session away — outlined in the error colour, so it reads as "undo this". */
+    DISCARD,
+
+    /** Available but not being suggested: outlined, in the surface's own ink rather than red. */
+    QUIET,
+}
 
 /**
  * The colours a session action draws from.
@@ -54,6 +63,8 @@ internal data class SessionActionColors(
     val tonalContent: Color,
     val discardContent: Color,
     val discardBorder: Color,
+    val quietContent: Color,
+    val quietBorder: Color,
 )
 
 @Composable
@@ -65,6 +76,8 @@ internal fun sessionScreenActionColors(): SessionActionColors =
         tonalContent = MaterialTheme.colorScheme.onSecondaryContainer,
         discardContent = MaterialTheme.colorScheme.error,
         discardBorder = MaterialTheme.colorScheme.error.copy(alpha = DISCARD_BORDER_ALPHA),
+        quietContent = MaterialTheme.colorScheme.onSurfaceVariant,
+        quietBorder = MaterialTheme.colorScheme.outlineVariant,
     )
 
 @Composable
@@ -76,7 +89,25 @@ internal fun sessionCardActionColors(): SessionActionColors =
         tonalContent = MaterialTheme.colorScheme.onTertiaryContainer,
         discardContent = MaterialTheme.colorScheme.onTertiaryContainer,
         discardBorder = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TONAL_ALPHA),
+        quietContent = MaterialTheme.colorScheme.onTertiaryContainer,
+        quietBorder = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TONAL_ALPHA),
     )
+
+/**
+ * A session length as it reads on the day's surfaces: `25 min` under the hour, `01:30` over it.
+ *
+ * Matches [asCountdownLabel]'s rollover, so the length you chose and the time left after starting
+ * are written the same way rather than one saying "90 min" and the other "01:29".
+ */
+@Composable
+internal fun sessionLengthLabel(minutes: Int): String =
+    if (minutes < MINUTES_PER_HOUR) {
+        stringResource(R.string.focus_session_length_minutes, minutes)
+    } else {
+        "%02d:%02d".format(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
+    }
+
+private const val MINUTES_PER_HOUR = 60
 
 /** One action's label, icon and weight, so a group can be described as data. */
 internal data class SessionAction(
@@ -248,19 +279,20 @@ private fun SessionActionSurface(
             when (action.emphasis) {
                 ButtonEmphasis.FILLED -> colors.filledContainer
                 ButtonEmphasis.TONAL -> colors.tonalContainer
-                ButtonEmphasis.DISCARD -> Color.Transparent
+                ButtonEmphasis.DISCARD, ButtonEmphasis.QUIET -> Color.Transparent
             },
         contentColor =
             when (action.emphasis) {
                 ButtonEmphasis.FILLED -> colors.filledContent
                 ButtonEmphasis.TONAL -> colors.tonalContent
                 ButtonEmphasis.DISCARD -> colors.discardContent
+                ButtonEmphasis.QUIET -> colors.quietContent
             },
         border =
-            if (action.emphasis == ButtonEmphasis.DISCARD) {
-                BorderStroke(1.dp, colors.discardBorder)
-            } else {
-                null
+            when (action.emphasis) {
+                ButtonEmphasis.DISCARD -> BorderStroke(1.dp, colors.discardBorder)
+                ButtonEmphasis.QUIET -> BorderStroke(1.dp, colors.quietBorder)
+                else -> null
             },
     ) {
         SessionActionLabel(action = action, compact = compact)

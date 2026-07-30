@@ -53,6 +53,7 @@ class SettingsViewModelTest {
             // A relaxed mock returns a mock StateFlow, which never emits — the ViewModel collects
             // this on init, so it has to be a real flow.
             every { defaultLengthMinutes } returns MutableStateFlow(25)
+            every { breakLengthMinutes } returns MutableStateFlow(5)
         }
     private lateinit var viewModel: SettingsViewModel
     private lateinit var themePreferencesRepository: ThemePreferencesRepository

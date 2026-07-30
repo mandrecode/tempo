@@ -48,13 +48,22 @@ internal fun rememberSessionCountdown(
     }
 }
 
-/** `mm:ss`, which is what a Pomodoro reads as even when it runs over an hour. */
+/**
+ * `mm:ss` while under an hour, `hh:mm` once over it.
+ *
+ * A Pomodoro reads as minutes and seconds, but "90:00" does not read as anything — past the hour
+ * the useful unit changes, and the seconds stop being what you are watching.
+ */
 internal fun Duration.asCountdownLabel(): String {
     val totalSeconds = inWholeSeconds.coerceAtLeast(0)
-    val minutes = totalSeconds / SECONDS_PER_MINUTE
-    val seconds = totalSeconds % SECONDS_PER_MINUTE
-    return "%02d:%02d".format(minutes, seconds)
+    val hours = totalSeconds / SECONDS_PER_HOUR
+    return if (hours > 0) {
+        "%02d:%02d".format(hours, (totalSeconds % SECONDS_PER_HOUR) / SECONDS_PER_MINUTE)
+    } else {
+        "%02d:%02d".format(totalSeconds / SECONDS_PER_MINUTE, totalSeconds % SECONDS_PER_MINUTE)
+    }
 }
 
 private const val TICK_MILLIS = 1_000L
 private const val SECONDS_PER_MINUTE = 60
+private const val SECONDS_PER_HOUR = 60 * 60

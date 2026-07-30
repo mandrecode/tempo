@@ -115,8 +115,7 @@ class GetFocusAgendaUseCaseTest {
     fun `an open past-due task lands in overdue`() =
         runTest {
             agenda(tasks = listOf(task(1, today.minus(2, DateTimeUnit.DAY)))) {
-                assertThat(it.upNext?.id).isEqualTo("task_1")
-                assertThat(it.overdue).isEmpty()
+                assertThat(it.overdue.map { entry -> entry.id }).containsExactly("task_1")
                 assertThat(it.today).isEmpty()
             }
         }
@@ -149,7 +148,7 @@ class GetFocusAgendaUseCaseTest {
                         task(2, today, parentTaskId = 1),
                     ),
             ) {
-                val entry = it.upNext as FocusAgendaItem.TaskEntry
+                val entry = it.today.single() as FocusAgendaItem.TaskEntry
                 assertThat(entry.subtasks).hasSize(1)
             }
         }
@@ -166,7 +165,7 @@ class GetFocusAgendaUseCaseTest {
     fun `a habit completed today is marked complete`() =
         runTest {
             agenda(habits = listOf(habit(1, completionHistory = today.toString()))) {
-                val entry = (it.upNext ?: it.today.single()) as FocusAgendaItem.HabitEntry
+                val entry = it.today.single() as FocusAgendaItem.HabitEntry
                 assertThat(entry.isCompleted).isTrue()
             }
         }
@@ -183,8 +182,7 @@ class GetFocusAgendaUseCaseTest {
                 )
 
             agenda(habits = listOf(habit(1)), chains = listOf(chain)) {
-                assertThat(it.upNext ?: it.today.single())
-                    .isInstanceOf(FocusAgendaItem.ChainEntry::class.java)
+                assertThat(it.today.single()).isInstanceOf(FocusAgendaItem.ChainEntry::class.java)
             }
         }
 
@@ -200,27 +198,29 @@ class GetFocusAgendaUseCaseTest {
                     ),
                 habits = listOf(habit(4)),
             ) {
-                // task_2 is promoted to Up next, so it no longer appears in the section.
+                // The section keeps every item; the row is a separate view onto the same day.
                 val ids = it.today.map { entry -> entry.id }
-                assertThat(ids).containsExactly("task_1", "habit_4", "task_3").inOrder()
+                assertThat(ids).containsExactly("task_2", "task_1", "habit_4", "task_3").inOrder()
             }
         }
 
     @Test
-    fun `up next is lifted out of its section rather than shown twice`() =
+    fun `up next draws from the day's sections without emptying them`() =
         runTest {
             agenda(tasks = listOf(task(1, today, hour = 9))) {
-                assertThat(it.upNext?.id).isEqualTo("task_1")
-                assertThat(it.today.map { entry -> entry.id }).doesNotContain("task_1")
+                assertThat(it.upNext.map { entry -> entry.id }).containsExactly("task_1")
+                assertThat(it.today.map { entry -> entry.id }).contains("task_1")
             }
         }
 
     @Test
-    fun `the promoted item still counts towards the day`() =
+    fun `the row shortlists the day without inflating its count`() =
         runTest {
             agenda(tasks = listOf(task(1, today, hour = 9), task(2, today, hour = 10))) {
+                assertThat(it.upNext).hasSize(2)
+                assertThat(it.today).hasSize(2)
+                // Counted once, from the sections — the row is a view, not a fourth section.
                 assertThat(it.scheduledCount).isEqualTo(2)
-                assertThat(it.today).hasSize(1)
             }
         }
 
@@ -228,7 +228,7 @@ class GetFocusAgendaUseCaseTest {
     fun `overdue work is eligible for up next when nothing is due today`() =
         runTest {
             agenda(tasks = listOf(task(1, today.minus(1, DateTimeUnit.DAY)))) {
-                assertThat(it.upNext?.id).isEqualTo("task_1")
+                assertThat(it.upNext.map { entry -> entry.id }).containsExactly("task_1")
             }
         }
 
@@ -236,7 +236,7 @@ class GetFocusAgendaUseCaseTest {
     fun `an entirely finished day has no up next`() =
         runTest {
             agenda(tasks = listOf(task(1, today, isCompleted = true))) {
-                assertThat(it.upNext).isNull()
+                assertThat(it.upNext).isEmpty()
             }
         }
 

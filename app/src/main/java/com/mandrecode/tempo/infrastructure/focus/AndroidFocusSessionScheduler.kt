@@ -69,9 +69,14 @@ class AndroidFocusSessionScheduler
                     .setSmallIcon(R.drawable.ic_focus)
                     .setContentTitle(session.taskTitle)
                     .setOngoing(true)
+                    // Alerts when it arrives and then stays quiet: the pause and resume updates
+                    // that follow are the same notification changing, not news.
                     .setOnlyAlertOnce(true)
-                    .setSilent(true)
+                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
                     .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+                    // Promoted the way a habit chain's live activity is, so a running session can be
+                    // glanced at from the status bar rather than only found in the shade.
+                    .setRequestPromotedOngoing(true)
                     .setContentIntent(openFocusPendingIntent())
 
             val endsAt = session.endsAt
@@ -86,7 +91,52 @@ class AndroidFocusSessionScheduler
                 builder.setContentText(context.getString(R.string.focus_session_paused))
             }
 
+            addSessionActions(builder, session)
+
             notificationManager.notify(RequestCodeGenerator.forFocusSession(), builder.build())
+        }
+
+        /**
+         * Done, pause-or-resume, stop — the same three the card and the session screen offer, in the
+         * same order, so the notification is the app's controls rather than a cut-down version of
+         * them. A break has no work to finish, so it gets two.
+         */
+        private fun addSessionActions(
+            builder: NotificationCompat.Builder,
+            session: FocusSession,
+        ) {
+            if (!session.isBreak) {
+                builder.addAction(
+                    R.drawable.ic_check,
+                    context.getString(R.string.focus_session_mark_done),
+                    FocusSessionActionReceiver.pendingIntent(
+                        context,
+                        FocusSessionActionReceiver.ACTION_COMPLETE,
+                    ),
+                )
+            }
+            builder.addAction(
+                if (session.isPaused) R.drawable.ic_play_arrow else R.drawable.ic_pause,
+                context.getString(
+                    if (session.isPaused) {
+                        R.string.focus_session_resume
+                    } else {
+                        R.string.focus_session_pause
+                    },
+                ),
+                FocusSessionActionReceiver.pendingIntent(
+                    context,
+                    FocusSessionActionReceiver.ACTION_PAUSE,
+                ),
+            )
+            builder.addAction(
+                R.drawable.ic_stop,
+                context.getString(R.string.focus_session_stop),
+                FocusSessionActionReceiver.pendingIntent(
+                    context,
+                    FocusSessionActionReceiver.ACTION_STOP,
+                ),
+            )
         }
 
         override fun clearOngoingNotification() {

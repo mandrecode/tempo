@@ -45,4 +45,15 @@ object RequestCodeGenerator {
      * replaces the previous pending intent rather than leaving a second alarm armed.
      */
     fun forFocusSession(): Int = FOCUS_SESSION_OFFSET
+
+    /**
+     * A slot per session action. Distinct from each other and from the session's own code, or the
+     * three action intents would overwrite one another and every button would do the same thing.
+     */
+    fun forFocusSessionAction(action: String): Int {
+        val slot = action.hashCode().mod(FOCUS_SESSION_ACTION_SLOTS)
+        return FOCUS_SESSION_OFFSET + 1 + slot
+    }
+
+    private const val FOCUS_SESSION_ACTION_SLOTS = 64
 }

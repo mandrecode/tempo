@@ -70,8 +70,8 @@ fun FocusScreen(
     }
 
     val dismissEditor = { viewModel.onEvent(FocusContract.UiEvent.DismissEditor) }
-    uiState.editingTask?.let { task ->
-        FocusTaskEditor(task = task, onDismiss = dismissEditor)
+    uiState.taskEditor?.let { target ->
+        FocusTaskEditor(target = target, onDismiss = dismissEditor)
     }
     uiState.editingHabit?.let { habit ->
         FocusHabitEditor(habit = habit, onDismiss = dismissEditor)
