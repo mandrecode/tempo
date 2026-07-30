@@ -10,10 +10,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.domain.scheduler.FocusSessionScheduler
 import com.mandrecode.tempo.infrastructure.notifications.NotificationChannelManager
 import com.mandrecode.tempo.infrastructure.notifications.RequestCodeGenerator
+import com.mandrecode.tempo.util.supportsDynamicColor
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -30,6 +32,7 @@ class AndroidFocusSessionScheduler
     @Inject
     constructor(
         @ApplicationContext private val context: Context,
+        private val themePreferences: ThemePreferencesRepository,
     ) : FocusSessionScheduler {
         private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         private val notificationManager =
@@ -81,7 +84,7 @@ class AndroidFocusSessionScheduler
                                 else -> R.string.focus_session_focusing
                             },
                         ),
-                    ).setColor(ContextCompat.getColor(context, R.color.notification_accent))
+                    ).setColor(accentColor())
                     .setOngoing(true)
                     // Alerts when it arrives and then stays quiet: the pause and resume updates
                     // that follow are the same notification changing, not news.
@@ -149,6 +152,18 @@ class AndroidFocusSessionScheduler
                     FocusSessionActionReceiver.ACTION_STOP,
                 ),
             )
+        }
+
+        /**
+         * Tempo's own teal when the app is on its own palette, and the wallpaper's accent when it
+         * is on dynamic colour — so the notification matches the app the user is actually looking
+         * at rather than always advertising the brand.
+         */
+        private fun accentColor(): Int {
+            val dynamic = !themePreferences.currentUseTempoColors() && supportsDynamicColor
+            val colorRes =
+                if (dynamic) android.R.color.system_accent1_600 else R.color.notification_accent
+            return ContextCompat.getColor(context, colorRes)
         }
 
         override fun clearOngoingNotification() {

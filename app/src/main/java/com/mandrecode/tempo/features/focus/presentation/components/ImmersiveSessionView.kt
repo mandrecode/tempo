@@ -219,19 +219,6 @@ private fun ColumnScope.SessionSubject(
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
 ) {
-    // Description sits above the timer: it is context for the work, and the title it belongs to is
-    // already the screen's own title in the bar above — so it reads as a continuation of that
-    // title, left-aligned under it, not as a centred caption.
-    task?.description?.takeIf { it.isNotBlank() }?.let { description ->
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        )
-    }
-
     SessionRing(
         progress = progress,
         label = countdownLabel,
@@ -244,6 +231,19 @@ private fun ColumnScope.SessionSubject(
             },
         modifier = Modifier.padding(top = 24.dp),
     )
+
+    // Below the ring rather than above it: the countdown is what this sheet is for, and pushing it
+    // down the page behind a paragraph buried the one thing you opened it to see. Here the
+    // description reads as the first of the task's details rather than a preamble to the timer.
+    task?.description?.takeIf { it.isNotBlank() }?.let { description ->
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        )
+    }
 
     if (task != null) {
         SessionTaskMetadata(
