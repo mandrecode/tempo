@@ -83,7 +83,7 @@ class OnboardingContentTest {
 
     @Test
     fun givenAnyPage_whenRendered_thenProgressExposesItsCurrentStep() {
-        val currentPage = 2
+        val currentPage = OnboardingContract.Page.ROUTINES
         setContent(OnboardingContract.UiState(currentPage = currentPage))
 
         val rangeInfo =
@@ -119,7 +119,7 @@ class OnboardingContentTest {
     fun givenAppearancePage_whenDynamicColorsClicked_thenSelectionEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 2),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.APPEARANCE),
             onEvent = { emittedEvent = it },
         )
 
@@ -136,7 +136,7 @@ class OnboardingContentTest {
     fun givenSetupPage_whenTasksSwitchClicked_thenToggleEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 3),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
             onEvent = { emittedEvent = it },
         )
 
@@ -152,7 +152,7 @@ class OnboardingContentTest {
     fun givenSetupPage_whenForwardClicked_thenNextEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 3),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
             onEvent = { emittedEvent = it },
         )
 
@@ -163,7 +163,7 @@ class OnboardingContentTest {
 
     @Test
     fun givenSetupPage_whenRendered_thenCompletedTaskRetentionIsNotShown() {
-        setContent(OnboardingContract.UiState(currentPage = 3))
+        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP))
 
         val autoRemoveLabel =
             InstrumentationRegistry.getInstrumentation().targetContext.getString(

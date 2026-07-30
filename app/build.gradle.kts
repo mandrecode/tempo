@@ -42,6 +42,10 @@ kover {
                     "com.mandrecode.tempo.features.settings.presentation.ImportModeDialog*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",
                     "com.mandrecode.tempo.features.focus.presentation.FocusEditors*",
+                    // The onboarding page bodies, split out of OnboardingContent when it outgrew
+                    // the function limit. Same Compose UI, same instrumented tests, same reason as
+                    // the *Content* line above — only the file name changed.
+                    "com.mandrecode.tempo.features.onboarding.presentation.OnboardingEducationPages*",
                     "com.mandrecode.tempo.*.presentation.*Content*",
                     "com.mandrecode.tempo.*.presentation.*Screen*",
                     "com.mandrecode.tempo.*.presentation.*Contract*",

@@ -8,7 +8,21 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentSet
 
 object OnboardingContract {
-    const val PAGE_COUNT = 5
+    /**
+     * The pages, in the order they are shown. Named rather than counted at each call site: the
+     * order has changed more than once, and every magic index was somewhere else that had to be
+     * found and corrected when it did.
+     */
+    object Page {
+        const val FOCUS = 0
+        const val TASKS = 1
+        const val ROUTINES = 2
+        const val APPEARANCE = 3
+        const val SETUP = 4
+        const val WELCOME = 5
+    }
+
+    const val PAGE_COUNT = 6
 
     data class UiState(
         val currentPage: Int = 0,

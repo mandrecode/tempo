@@ -301,4 +301,19 @@ class FocusViewModelTest : FocusViewModelHarness() {
             assertThat(viewModel.uiState.value.streakDays).isEqualTo(9)
             assertThat(viewModel.uiState.value.isVacationModeActive).isTrue()
         }
+
+    @Test
+    fun `a task's subtasks fold and unfold`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Folded is the resting state, so the first toggle has to open rather than close.
+            viewModel.onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(9))
+            assertThat(viewModel.uiState.value.expandedTaskIds).containsExactly(9L)
+
+            viewModel.onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(9))
+            assertThat(viewModel.uiState.value.expandedTaskIds).isEmpty()
+        }
 }
