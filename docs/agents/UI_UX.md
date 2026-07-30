@@ -201,11 +201,35 @@ get() = when (this) {
 }
 ```
 
+## Adaptability
+
+**Adaptability is a default consideration, not an optional phase.** Every UI issue, proposal and
+implementation states how the surface behaves across window size classes — even when the answer is
+"identical everywhere". Silence is not an acceptable answer, because it is indistinguishable from
+having not thought about it.
+
+- Resolve size classes with `currentWindowAdaptiveInfo()`. Never read screen dimensions from
+  `LocalConfiguration` to make layout decisions.
+- The app uses a **floating rail**, not a bottom navigation bar. The rail is top-left anchored and
+  ordered by importance: primary Add action, then navigation tabs, then contextual secondary actions.
+- Established breakpoints: collapsed icon rail at 600–1199dp, labeled rail at ≥1200dp, modal side
+  sheet at ≥840dp width or <480dp height, docked supporting pane at ≥1200dp.
+- **A fixed item or size constant is a red flag.** Anything tuned to "what fits on screen" is tuned
+  to one screen. Derive it per size class, or state explicitly why one value is correct everywhere.
+- Large windows come with pointers and keyboards. Consider hover, focus order and Escape-to-dismiss
+  rather than treating them as a later pass.
+- Growing an icon or badge footprint has repeatedly broken constrained-width instrumented tests.
+  Verify at 360dp, not only in previews.
+
 ## Checklist for AI
 
 Before completing a UI task, verify (see also the release-gate
 [visual consistency checklist](../design/release-visual-consistency-checklist.md) when preparing
 a release or reviewing UI-heavy changes):
+
+- [ ] Is the behaviour at compact, medium and expanded widths stated, even if unchanged?
+- [ ] Are size-class decisions made with `currentWindowAdaptiveInfo()` rather than raw configuration?
+- [ ] Is every "what fits on screen" constant derived per size class, or justified as universal?
 
 - [ ] Is `UiState` immutable with `val` properties?
 - [ ] Are we using `kotlinx.collections.immutable` collections?
