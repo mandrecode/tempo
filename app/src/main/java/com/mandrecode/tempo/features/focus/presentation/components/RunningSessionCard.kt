@@ -88,6 +88,7 @@ internal fun RunningSessionCard(
                 SessionTitleBlock(
                     title = session.taskTitle,
                     isPaused = session.isPaused,
+                    isBreak = session.isBreak,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -164,7 +165,9 @@ private fun SessionRing(
 ) {
     Box(contentAlignment = Alignment.Center) {
         CircularWavyProgressIndicator(
-            progress = { progress },
+            // A break unwinds: the ring empties as it runs, where a session fills. Opposite
+            // directions for opposite things, so which one is under way reads without a label.
+            progress = { if (session.isBreak) 1f - progress else progress },
             modifier = Modifier.size(RingSize),
             color = MaterialTheme.colorScheme.onTertiaryContainer,
             trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TRACK_ALPHA),
@@ -172,7 +175,17 @@ private fun SessionRing(
             // stands still the moment the user pauses.
             waveSpeed = if (session.isPaused) STILL else WaveSpeed,
         )
-        Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        if (session.isBreak) {
+            // The cup says it at a glance, and the numerals are too small here to be missed. The
+            // sheet keeps its countdown — that surface exists to show the time.
+            Icon(
+                painter = painterResource(R.drawable.ic_coffee),
+                contentDescription = stringResource(R.string.focus_session_break),
+                modifier = Modifier.size(20.dp),
+            )
+        } else {
+            Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        }
     }
 }
 
@@ -205,6 +218,7 @@ private fun SubtaskCount(subtasks: List<Task>) {
 private fun SessionTitleBlock(
     title: String,
     isPaused: Boolean,
+    isBreak: Boolean,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -215,13 +229,17 @@ private fun SessionTitleBlock(
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
         )
+        // A break is time away from the task, not time spent on it. Saying "Focusing" through one
+        // told the user the opposite of what was happening.
         Text(
             text =
-                if (isPaused) {
-                    stringResource(R.string.focus_session_paused)
-                } else {
-                    stringResource(R.string.focus_session_focusing)
-                },
+                stringResource(
+                    when {
+                        isPaused -> R.string.focus_session_paused
+                        isBreak -> R.string.focus_session_break
+                        else -> R.string.focus_session_focusing
+                    },
+                ),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = LABEL_ALPHA),

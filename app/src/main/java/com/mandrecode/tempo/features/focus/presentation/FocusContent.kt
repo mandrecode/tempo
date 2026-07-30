@@ -206,12 +206,16 @@ private fun LazyListScope.upNextSection(
 
     item(key = "up_next_label") {
         Text(
+            // The header names what the slot is holding. It said FOCUSING through a break too,
+            // which is the same thing the card was doing one level down.
             text =
-                if (session != null) {
-                    stringResource(R.string.focus_session_focusing).uppercase()
-                } else {
-                    stringResource(R.string.focus_up_next).uppercase()
-                },
+                stringResource(
+                    when {
+                        session == null -> R.string.focus_up_next
+                        session.isBreak -> R.string.focus_session_break
+                        else -> R.string.focus_session_focusing
+                    },
+                ).uppercase(),
             style = MaterialTheme.typography.groupLabel,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
