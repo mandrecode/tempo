@@ -31,6 +31,7 @@ import com.mandrecode.tempo.core.ui.selectedIconRes
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.core.ui.titleRes
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
 private data class NavigationItem(
@@ -77,19 +78,16 @@ fun TempoBottomNavigation(
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
 
-    // A running session takes over the Focus tab's own slot rather than adding an element beside
-    // it: the tab it would sit next to is the one it belongs to, and the bar has no width to spare.
     val sessionSlot: (@Composable (Modifier) -> Unit)? =
         activeSession?.let { session ->
-            { slotModifier ->
-                FocusSessionChip(
-                    session = session,
-                    onClick = onOpenSession,
-                    modifier = slotModifier,
-                    compact = isSessionChipCompact(isRailLayout, isExpandedRail, currentRoute, hasContextualActions),
-                    selected = currentRoute == FocusRoute,
-                )
-            }
+            focusSessionSlot(
+                session = session,
+                isRailLayout = isRailLayout,
+                isExpandedRail = isExpandedRail,
+                currentRoute = currentRoute,
+                hasContextualActions = hasContextualActions,
+                onOpenSession = onOpenSession,
+            )
         }
     val onItemClick: (NavigationItem) -> Unit = { item ->
         navigateTo(item, onNavigateToTopLevel, onRouteChange)
@@ -349,4 +347,29 @@ internal fun isSessionChipCompact(
         isExpandedRail -> false
         isRailLayout -> true
         else -> currentRoute == FocusRoute || hasContextualActions
+    }
+
+/** The Focus tab's slot while a session is running, sized to the room the bar actually has. */
+private fun focusSessionSlot(
+    session: FocusSession,
+    isRailLayout: Boolean,
+    isExpandedRail: Boolean,
+    currentRoute: NavKey,
+    hasContextualActions: Boolean,
+    onOpenSession: () -> Unit,
+): @Composable (Modifier) -> Unit =
+    { slotModifier ->
+        FocusSessionChip(
+            session = session,
+            onClick = onOpenSession,
+            modifier = slotModifier,
+            compact =
+                isSessionChipCompact(
+                    isRailLayout = isRailLayout,
+                    isExpandedRail = isExpandedRail,
+                    currentRoute = currentRoute,
+                    hasContextualActions = hasContextualActions,
+                ),
+            selected = currentRoute == FocusRoute,
+        )
     }
