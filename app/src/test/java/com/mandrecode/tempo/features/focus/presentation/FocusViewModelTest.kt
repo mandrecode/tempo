@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.focus.presentation
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
@@ -10,8 +11,10 @@ import io.mockk.coVerify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.minus
 import org.junit.Test
 
 /** The day Focus shows: agenda, counts, streak, and opening items from it. */
@@ -246,5 +249,36 @@ class FocusViewModelTest : FocusViewModelHarness() {
             advanceUntilIdle()
 
             coVerify(exactly = 0) { toggleTaskCompletion(any()) }
+        }
+
+    @Test
+    fun `a day inside a vacation period says so`() =
+        runTest {
+            stubDay()
+            vacationPeriods.value = listOf(VacationPeriod(start = today.minus(2, DateTimeUnit.DAY)))
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // Drives the palm on the title, the same badge Routines carries while paused.
+            assertThat(viewModel.uiState.value.isVacationModeActive).isTrue()
+        }
+
+    @Test
+    fun `a day outside every vacation period does not`() =
+        runTest {
+            stubDay()
+            vacationPeriods.value =
+                listOf(
+                    VacationPeriod(
+                        start = today.minus(9, DateTimeUnit.DAY),
+                        endInclusive = today.minus(4, DateTimeUnit.DAY),
+                    ),
+                )
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isVacationModeActive).isFalse()
         }
 }

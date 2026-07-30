@@ -2,6 +2,8 @@ package com.mandrecode.tempo.features.focus.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
@@ -40,6 +42,7 @@ class FocusViewModel
         private val focusSessionRepository: FocusSessionRepository,
         private val focusSessionUseCases: FocusSessionUseCases,
         private val toggleHabitCompletion: ToggleHabitCompletionUseCase,
+        private val vacationModeRepository: VacationModeRepository,
         private val clock: Clock,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(FocusContract.UiState())
@@ -337,6 +340,15 @@ class FocusViewModel
         }
 
         private fun observeDay() {
+            // Hosted here rather than in its own observer: whether the day is paused is a fact
+            // about the day, and the view model is already at the function count its own rules
+            // allow.
+            viewModelScope.launch {
+                vacationModeRepository.periods.collect { periods ->
+                    val paused = VacationPeriod.activeOn(periods, today) != null
+                    mutableUiState.update { it.copy(isVacationModeActive = paused) }
+                }
+            }
             viewModelScope.launch {
                 val day = today
                 combine(

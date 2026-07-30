@@ -57,6 +57,12 @@ object FocusContract {
         val pendingStart: PendingStart? = null,
         val defaultSessionLengthMinutes: Int = 25,
         val breakLengthMinutes: Int = 5,
+        /**
+         * Whether today falls inside a vacation period. Vacation is a broad "relax without breaking
+         * streaks" toggle rather than a habits-only one, so the day says so here too — and the
+         * streak beside it is counted on those terms.
+         */
+        val isVacationModeActive: Boolean = false,
     ) {
         val headlineBand: FocusHeadlineBand
             get() = FocusHeadlineBand.resolve(scheduledCount, completedCount)

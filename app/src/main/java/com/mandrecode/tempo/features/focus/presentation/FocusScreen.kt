@@ -27,7 +27,12 @@ fun FocusScreen(
     onNavigateToTasks: () -> Unit,
     onOpenSession: () -> Unit,
     modifier: Modifier = Modifier,
-    topBar: @Composable () -> Unit = {},
+    /**
+     * Told whether today is paused, so the title can carry the same palm Routines does. Vacation is
+     * one toggle across the app, and a surface with its own streak has to say when that streak is
+     * being counted on holiday terms.
+     */
+    topBar: @Composable (isVacationModeActive: Boolean) -> Unit = {},
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -59,7 +64,7 @@ fun FocusScreen(
             modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
             containerColor = MaterialTheme.colorScheme.background,
             contentWindowInsets = WindowInsets(0),
-            topBar = topBar,
+            topBar = { topBar(uiState.isVacationModeActive) },
         ) { innerPadding ->
             Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
                 FocusContent(

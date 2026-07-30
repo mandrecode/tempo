@@ -77,6 +77,9 @@ must end green on `./gradlew ktlintFormat && ./gradlew ktlintCheck && ./gradlew 
 - [x] 3.14 Unit-test agenda assembly (exclusions, section membership, ordering) and Up next ranking
       including ties and completed items
 - [ ] 3.15 UI-test `FocusContent` for section order, Up next collapse, and the undated footer
+- [x] 3.16 Make vacation mode cover the focus streak too (#333): a paused day is optional rather
+      than out of scope, on the same terms habits already get, and the Focus title carries the
+      same vacation badge Routines does
 
 ## 4. Focus session timer
 
