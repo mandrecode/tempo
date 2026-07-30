@@ -269,8 +269,9 @@ private fun BoxScope.HorizontalInsetMarginStrips() {
 }
 
 /**
- * Settings and the focus session both present as slide-in overlays rather than NavDisplay scenes,
- * for the reason documented on [SettingsSlideOverlay].
+ * Settings presents as a slide-in overlay rather than a NavDisplay scene, for the reason documented
+ * on [SettingsSlideOverlay]. The session is a bottom sheet, which brings its own scrim and window,
+ * so it needs no overlay of its own — only the route to decide when it is showing.
  */
 @Composable
 private fun BoxScope.SlideOverlays(
@@ -290,11 +291,7 @@ private fun BoxScope.SlideOverlays(
         SettingsDestination(navigator = navigator)
     }
 
-    SettingsSlideOverlay(
-        visible = navigator.currentRoute == FocusSessionRoute,
-        onDismiss = { navigator.pop() },
-        modifier = insetPadding,
-    ) {
+    if (navigator.currentRoute == FocusSessionRoute) {
         FocusSessionDestination(navigator = navigator, onOpenTaskInTasks = onOpenTaskInTasks)
     }
 }

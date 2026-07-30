@@ -661,7 +661,7 @@
     <string name="focus_session_paused">En pausa</string>
     <string name="focus_session_finished_title">%1$d minutos completados</string>
     <string name="focus_session_start">Empezar %1$s</string>
-    <string name="focus_session_start_custom">Empezar así</string>
+    <string name="focus_session_start_custom">Empezar con</string>
     <string name="focus_session_pause">Pausar</string>
     <string name="focus_session_resume">Reanudar</string>
     <string name="focus_session_stop">Parar</string>

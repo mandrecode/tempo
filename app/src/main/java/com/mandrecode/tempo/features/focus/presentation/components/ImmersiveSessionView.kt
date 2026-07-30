@@ -182,13 +182,8 @@ private fun ColumnScope.PreStartControls(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        ValueStepper(
-            value = customMinutes,
-            label = sessionLengthLabel(customMinutes),
-            onValueChange = { customMinutes = it },
-            range = FocusSession.SESSION_LENGTH_RANGE,
-            step = FocusSession.LENGTH_STEP_MINUTES,
-        )
+        // Button first, then the length: the row reads as one sentence — "start with … minutes" —
+        // rather than asking you to set a number before you know what it is for.
         SessionActionButton(
             action =
                 SessionAction(
@@ -200,6 +195,13 @@ private fun ColumnScope.PreStartControls(
             colors = colors,
             modifier = Modifier.weight(1f),
             compact = true,
+        )
+        ValueStepper(
+            value = customMinutes,
+            label = sessionLengthLabel(customMinutes),
+            onValueChange = { customMinutes = it },
+            range = FocusSession.SESSION_LENGTH_RANGE,
+            step = FocusSession.LENGTH_STEP_MINUTES,
         )
     }
 }
