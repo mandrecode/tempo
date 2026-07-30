@@ -18,7 +18,7 @@
 
     <!-- TASKS FEATURE -->
     <string name="tasks">Tasks</string>
-    <string name="tasks_tab">Tasks</string>
+    <string name="focus">Focus</string>
     <string name="add_task">Add Task</string>
     <string name="add_new_task">Add New Task</string>
     <string name="add_subtask">Add Subtask</string>
@@ -78,7 +78,6 @@
 
     <!-- ROUTINES (HABITS & CHAINS) FEATURE -->
     <string name="routines">Routines</string>
-    <string name="routines_tab">Routines</string>
     <string name="habit">Habit</string>
     <string name="add_habit">Add habit</string>
     <string name="habit_title">Habit Title</string>
@@ -506,6 +505,12 @@
     <string name="onboarding_skip">Skip</string>
     <string name="onboarding_next">Next</string>
     <string name="onboarding_start">Start using Tempo</string>
+    <string name="onboarding_focus_title">Start with the day in front of you</string>
+    <string name="onboarding_focus_description">Focus is where today lives: the tasks, habits and chains due now, in one place, with a timer for whatever you are on.</string>
+    <string name="onboarding_focus_today_concept_title">Today, not everything</string>
+    <string name="onboarding_focus_today_concept_description">Focus shows only what is due today, with anything overdue and the work worth starting next.</string>
+    <string name="onboarding_focus_session_concept_title">Work in sessions</string>
+    <string name="onboarding_focus_session_concept_description">Start a timer on a task and Tempo counts it down, then says when it is time for a break.</string>
     <string name="onboarding_tasks_title">Clear your head and plan your day</string>
     <string name="onboarding_tasks_description">Capture what needs doing so you always know where to focus next. Use categories when you want a cleaner view.</string>
     <string name="onboarding_tasks_concept_title">Know what’s next</string>
@@ -524,8 +529,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Take a break without losing your streak</string>
-    <string name="whats_new_description">Turn on vacation mode in Settings and your habits pause: the days you skip don\'t break a streak and no reminders arrive. Turn it off — or set an end date — and everything picks up where it left off.</string>
+    <string name="whats_new_title">Focus: your day on one screen</string>
+    <string name="whats_new_description">Focus is a new tab showing only what\'s due today — tasks, habits and chains together, with what\'s overdue and what to start next. It also runs a timer for the task you\'re on. The app now opens on Focus; you can change your start tab in Settings.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -635,4 +640,62 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Quick Add Task</string>
     <string name="widget_quick_add_task_description">Add a task to Tempo in one tap from your home screen</string>
+    <string name="focus_headline_nothing_scheduled">Nothing scheduled today</string>
+    <string name="focus_headline_just_started">The day\'s ahead of you</string>
+    <string name="focus_headline_under_way">You\'re under way</string>
+    <string name="focus_headline_nearly_there">Nearly there</string>
+    <string name="focus_headline_complete">Today\'s clear</string>
+    <string name="focus_up_next">Up next</string>
+    <string name="focus_section_overdue">Overdue · %1$d</string>
+    <string name="focus_section_today">Today · %1$d</string>
+    <string name="focus_progress_description">%1$d of %2$d done</string>
+    <string name="focus_history_description">Activity over the last %1$d days</string>
+    <string name="focus_empty_title">Nothing due today</string>
+    <string name="focus_empty_message">Work due today, and anything overdue, shows up here.</string>
+    <plurals name="focus_streak_days">
+        <item quantity="one">%1$d day focusing</item>
+        <item quantity="other">%1$d days focusing</item>
+    </plurals>
+    <plurals name="focus_undated_tasks">
+        <item quantity="one">%1$d task without a date</item>
+        <item quantity="other">%1$d tasks without a date</item>
+    </plurals>
+    <string name="focus_session_paused">Paused</string>
+    <string name="focus_session_finished_title">%1$d minutes done</string>
+    <string name="focus_break_finished_title">Break\'s over — back to it</string>
+    <string name="focus_session_start">Start %1$s</string>
+    <string name="focus_session_start_custom">Start with</string>
+    <string name="focus_session_length_decrease">Shorter session</string>
+    <string name="focus_session_length_increase">Longer session</string>
+    <string name="focus_session_pause">Pause</string>
+    <string name="focus_session_resume">Resume</string>
+    <string name="focus_session_stop">Stop here</string>
+    <string name="focus_session_another">Another %1$d minutes</string>
+    <string name="focus_session_take_break">%1$d min break</string>
+    <string name="focus_session_focusing">Focusing</string>
+    <string name="focus_session_remaining">%1$s left</string>
+    <string name="focus_session_length">Focus session length</string>
+    <string name="focus_break_length">Break length</string>
+    <string name="focus_duration_hours">%1$d h</string>
+    <string name="focus_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="focus_session_length_minutes">%1$d min</string>
+    <string name="settings_focus">Focus</string>
+    <string name="notification_focus_session_channel_name">Focus sessions</string>
+    <string name="notification_focus_session_channel_description">The countdown for a running focus session.</string>
+    <string name="focus_session_mark_done">Mark done</string>
+    <string name="focus_session_break">On a break</string>
+    <string name="focus_session_finished_heading">Time\'s up</string>
+    <string name="focus_session_break_over_heading">Break\'s over</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_back_to_it">Back to it</string>
+    <string name="focus_replace_session_title">Replace the running session?</string>
+    <string name="focus_replace_session_message">%1$s is still running. Starting %2$s ends it and keeps only the minutes it earned.</string>
+    <string name="focus_replace_session_confirm">Start anyway</string>
+    <string name="focus_session_not_started">Not started</string>
+    <string name="focus_session_open_in_tasks">Open in Tasks</string>
+    <plurals name="focus_sessions_done">
+        <item quantity="one">%1$d session done</item>
+        <item quantity="other">%1$d sessions done</item>
+    </plurals>
+    <string name="focus_today_minutes">%1$d min today</string>
 </resources>

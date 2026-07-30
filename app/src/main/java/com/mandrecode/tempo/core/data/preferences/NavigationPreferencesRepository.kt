@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.data.preferences
 
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import kotlinx.coroutines.flow.Flow
 
 interface NavigationPreferencesRepository {
@@ -7,20 +8,15 @@ interface NavigationPreferencesRepository {
 
     fun getLastRoute(): String?
 
-    fun isRoutinesTabEnabled(): Flow<Boolean>
+    /** The tabs currently shown in the navigation bar and rail; never empty. */
+    fun enabledTabs(): Flow<Set<TempoTab>>
 
-    fun isTasksTabEnabled(): Flow<Boolean>
+    fun setTabEnabled(
+        tab: TempoTab,
+        enabled: Boolean,
+    )
 
-    fun getDefaultTab(): Flow<String>
+    fun getDefaultTab(): Flow<TempoTab>
 
-    fun setRoutinesTabEnabled(enabled: Boolean)
-
-    fun setTasksTabEnabled(enabled: Boolean)
-
-    fun setDefaultTab(tabName: String)
-
-    companion object {
-        const val DEFAULT_TAB_ROUTINES = "routines"
-        const val DEFAULT_TAB_TASKS = "tasks"
-    }
+    fun setDefaultTab(tab: TempoTab)
 }

@@ -22,6 +22,7 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Rule
 import org.junit.Test
@@ -82,7 +83,7 @@ class OnboardingContentTest {
 
     @Test
     fun givenAnyPage_whenRendered_thenProgressExposesItsCurrentStep() {
-        val currentPage = 2
+        val currentPage = OnboardingContract.Page.ROUTINES
         setContent(OnboardingContract.UiState(currentPage = currentPage))
 
         val rangeInfo =
@@ -118,7 +119,7 @@ class OnboardingContentTest {
     fun givenAppearancePage_whenDynamicColorsClicked_thenSelectionEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 2),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.APPEARANCE),
             onEvent = { emittedEvent = it },
         )
 
@@ -135,22 +136,23 @@ class OnboardingContentTest {
     fun givenSetupPage_whenTasksSwitchClicked_thenToggleEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 3),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
             onEvent = { emittedEvent = it },
         )
 
         val tasksLabel =
-            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.tasks_tab)
+            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.tasks)
         composeTestRule.onNodeWithContentDescription(tasksLabel).performClick()
 
-        assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.TasksTabToggled(false))
+        assertThat(emittedEvent)
+            .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
     }
 
     @Test
     fun givenSetupPage_whenForwardClicked_thenNextEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = 3),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
             onEvent = { emittedEvent = it },
         )
 
@@ -161,7 +163,7 @@ class OnboardingContentTest {
 
     @Test
     fun givenSetupPage_whenRendered_thenCompletedTaskRetentionIsNotShown() {
-        setContent(OnboardingContract.UiState(currentPage = 3))
+        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP))
 
         val autoRemoveLabel =
             InstrumentationRegistry.getInstrumentation().targetContext.getString(

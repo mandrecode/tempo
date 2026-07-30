@@ -3,6 +3,7 @@ package com.mandrecode.tempo.core.di
 import android.content.Context
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
+import com.mandrecode.tempo.core.data.local.dao.DailyFocusActivityDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
@@ -68,4 +69,7 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideHabitChainMemberDao(database: TempoDatabase): HabitChainMemberDao = database.habitChainMemberDao()
+
+    @Provides
+    fun provideDailyFocusActivityDao(database: TempoDatabase): DailyFocusActivityDao = database.dailyFocusActivityDao()
 }

@@ -121,6 +121,17 @@ object DateTimeFormatter {
         return SimpleDateFormat(pattern, Locale.getDefault()).format(calendar.time)
     }
 
+    /** Localized weekday name, e.g. "Wednesday" — used by the Focus summary header. */
+    fun formatWeekday(date: LocalDate): String {
+        val calendar =
+            Calendar.getInstance().apply {
+                set(date.year, date.month.number - 1, date.day)
+            }
+        return SimpleDateFormat("EEEE", Locale.getDefault())
+            .format(calendar.time)
+            .replaceFirstChar { it.titlecase(Locale.getDefault()) }
+    }
+
     /**
      * Localized date for screen-reader / UI use, optionally collapsing
      * today/yesterday to natural-language strings. Falls back to [formatDate]

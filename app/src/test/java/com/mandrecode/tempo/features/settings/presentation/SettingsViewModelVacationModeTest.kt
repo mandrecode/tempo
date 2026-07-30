@@ -4,15 +4,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.VacationModePreferencesImpl
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
 import com.mandrecode.tempo.features.backup.domain.usecase.ExportBackupUseCase
 import com.mandrecode.tempo.features.backup.domain.usecase.ImportBackupUseCase
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -164,9 +165,8 @@ class SettingsViewModelVacationModeTest {
             }
         val navigationPreferences =
             mockk<NavigationPreferencesRepository>(relaxed = true) {
-                coEvery { isRoutinesTabEnabled() } returns flowOf(true)
-                coEvery { isTasksTabEnabled() } returns flowOf(true)
-                coEvery { getDefaultTab() } returns flowOf(DEFAULT_TAB_ROUTINES)
+                coEvery { enabledTabs() } returns flowOf(TempoTab.entries.toSet())
+                coEvery { getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
             }
         val retentionPreferences =
             mockk<CompletedTaskRetentionPreferences>(relaxed = true) {
@@ -193,6 +193,10 @@ class SettingsViewModelVacationModeTest {
                 mockk<BackupFileDataSource>(relaxed = true),
             ),
             vacationModeRepository,
+            mockk<FocusSessionRepository>(relaxed = true) {
+                every { defaultLengthMinutes } returns MutableStateFlow(25)
+                every { breakLengthMinutes } returns MutableStateFlow(5)
+            },
             mockk<Context>(relaxed = true),
         )
     }

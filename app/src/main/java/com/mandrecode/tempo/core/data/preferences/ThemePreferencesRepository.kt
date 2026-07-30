@@ -10,5 +10,11 @@ interface ThemePreferencesRepository {
 
     fun getUseTempoColors(): Flow<Boolean>
 
+    /**
+     * The current value, without collecting. Notifications are built outside a composition and
+     * outside a coroutine, and still have to know which palette the app is wearing.
+     */
+    fun currentUseTempoColors(): Boolean
+
     fun setUseTempoColors(enabled: Boolean)
 }

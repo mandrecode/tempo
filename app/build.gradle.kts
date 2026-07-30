@@ -41,6 +41,11 @@ kover {
                     "com.mandrecode.tempo.features.settings.presentation.BackupSection*",
                     "com.mandrecode.tempo.features.settings.presentation.ImportModeDialog*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",
+                    "com.mandrecode.tempo.features.focus.presentation.FocusEditors*",
+                    // The onboarding page bodies, split out of OnboardingContent when it outgrew
+                    // the function limit. Same Compose UI, same instrumented tests, same reason as
+                    // the *Content* line above — only the file name changed.
+                    "com.mandrecode.tempo.features.onboarding.presentation.OnboardingEducationPages*",
                     "com.mandrecode.tempo.*.presentation.*Content*",
                     "com.mandrecode.tempo.*.presentation.*Screen*",
                     "com.mandrecode.tempo.*.presentation.*Contract*",
@@ -69,6 +74,12 @@ kover {
                     // Android-dependent classes (require Context/SDK, not unit-testable)
                     "com.mandrecode.tempo.infrastructure.permissions.*",
                     "com.mandrecode.tempo.infrastructure.reminders.scheduler.android.*",
+                    // Focus-session alarm scheduler and its end-of-session receiver: the same
+                    // AlarmManager/NotificationManager/PendingIntent shape as the reminder
+                    // scheduler and receivers excluded above, for the same reason. The session's
+                    // own logic — timing, banking, reconciliation — lives in FocusSessionUseCases
+                    // and FocusSession, both of which are unit-tested.
+                    "com.mandrecode.tempo.infrastructure.focus.*",
                     // Notification builder: NotificationManager/PendingIntent only, was previously
                     // inlined in the (excluded) TaskReminderReceiver.
                     "com.mandrecode.tempo.infrastructure.notifications.TaskReminderNotifier*",

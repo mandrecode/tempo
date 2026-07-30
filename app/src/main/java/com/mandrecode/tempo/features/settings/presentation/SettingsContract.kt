@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.settings.presentation
 
 import android.net.Uri
 import androidx.annotation.StringRes
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
@@ -9,7 +10,9 @@ import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
@@ -30,13 +33,14 @@ object SettingsContract {
             ),
         val useTempoColors: Boolean = false,
         val appVersion: String = "",
-        val isRoutinesTabEnabled: Boolean = true,
-        val isTasksTabEnabled: Boolean = true,
-        val defaultTab: DefaultTab = DefaultTab.ROUTINES,
+        val enabledTabs: ImmutableSet<TempoTab> = TempoTab.entries.toPersistentSet(),
+        val defaultTab: TempoTab = TempoTab.DEFAULT,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
         val missedReminderCatchUpEnabled: Boolean = MissedReminderPreferences.DEFAULT_ENABLED,
         val missedReminderCatchUpTime: LocalTime = MissedReminderPreferences.DEFAULT_CATCH_UP_TIME,
+        val focusSessionLengthMinutes: Int = 25,
+        val focusBreakLengthMinutes: Int = 5,
         val vacationModeActive: Boolean = false,
         val vacationStartDate: LocalDate? = null,
         val vacationEndDate: LocalDate? = null,
@@ -99,16 +103,13 @@ object SettingsContract {
             val enabled: Boolean,
         ) : UiEvent
 
-        data class RoutinesTabToggled(
-            val enabled: Boolean,
-        ) : UiEvent
-
-        data class TasksTabToggled(
+        data class TabToggled(
+            val tab: TempoTab,
             val enabled: Boolean,
         ) : UiEvent
 
         data class DefaultTabSelected(
-            val defaultTab: DefaultTab,
+            val defaultTab: TempoTab,
         ) : UiEvent
 
         data class AutoRemoveCompletedTasksToggled(
@@ -125,6 +126,14 @@ object SettingsContract {
 
         data class MissedReminderCatchUpTimeChanged(
             val time: LocalTime,
+        ) : UiEvent
+
+        data class FocusBreakLengthChanged(
+            val minutes: Int,
+        ) : UiEvent
+
+        data class FocusSessionLengthChanged(
+            val minutes: Int,
         ) : UiEvent
 
         data class VacationModeToggled(
@@ -180,13 +189,5 @@ object SettingsContract {
             @param:StringRes val message: Int,
             val formatArgs: List<Any> = emptyList(),
         ) : UiEffect
-    }
-
-    /**
-     * Represents the default tab option.
-     */
-    enum class DefaultTab {
-        ROUTINES,
-        TASKS,
     }
 }

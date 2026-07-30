@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.core.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -11,7 +10,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -33,41 +32,29 @@ import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 internal val TASK_ACTIONS_BUTTON_SIZE = 48.dp
 internal val TASK_ACTIONS_BUTTON_SPACING = 6.dp
 internal val TASK_ACTIONS_WIDTH = TASK_ACTIONS_BUTTON_SIZE * 2 + TASK_ACTIONS_BUTTON_SPACING
-internal val TASK_SORT_WITH_CLEAR_OFFSET = (TASK_ACTIONS_BUTTON_SIZE + TASK_ACTIONS_BUTTON_SPACING) / 2
 
 @Composable
 internal fun TaskActionButtons(
     tasksState: TasksFloatingBarState,
     showActions: Boolean,
 ) {
-    val sortOffset by animateDpAsState(
-        targetValue =
-            if (tasksState.hasCompletedTasks) {
-                TASK_SORT_WITH_CLEAR_OFFSET
-            } else {
-                0.dp
-            },
-        animationSpec = floatingControlsMotionSpec(),
-        label = "shell_tasks_sort_button_slot_offset",
-    )
-
-    Box(
-        modifier = Modifier.size(width = TASK_ACTIONS_WIDTH, height = TASK_ACTIONS_BUTTON_SIZE),
-        contentAlignment = Alignment.Center,
+    // Sized by what it actually shows, not by a reserved two-button slot: sort sits right against
+    // the navigation pill, and clear-completed expands in beside it, pushing the whole group back
+    // into balance. Reserving the slot left sort stranded mid-gutter whenever there was nothing to
+    // clear.
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(TASK_ACTIONS_BUTTON_SPACING),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         AnimatedVisibility(
             visible = showActions && tasksState.hasCompletedTasks,
-            modifier = Modifier.align(Alignment.CenterStart),
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {
-            ClearCompletedButton(
-                onClick = tasksState.onClearCompleted,
-            )
+            ClearCompletedButton(onClick = tasksState.onClearCompleted)
         }
         AnimatedVisibility(
             visible = showActions,
-            modifier = Modifier.offset(x = sortOffset),
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {

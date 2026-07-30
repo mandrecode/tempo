@@ -9,6 +9,7 @@ import com.mandrecode.tempo.core.data.entity.DEFAULT_INBOX_CATEGORY_ENTITY
 import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
+import com.mandrecode.tempo.core.domain.repository.DailyFocusActivityRepository
 import com.mandrecode.tempo.features.backup.data.BackupSettingsDataSource
 import com.mandrecode.tempo.features.backup.data.mapper.toDomain
 import com.mandrecode.tempo.features.backup.data.mapper.toDto
@@ -58,6 +59,7 @@ class BackupRepositoryImpl
         private val validator: BackupPayloadValidator,
         private val mergePlanner: MergePlanner,
         private val settingsDataSource: BackupSettingsDataSource,
+        private val dailyFocusActivityRepository: DailyFocusActivityRepository,
         private val encryptionService: BackupEncryptionService,
         @param:ApplicationContext private val context: Context,
     ) : BackupRepository {
@@ -146,6 +148,7 @@ class BackupRepositoryImpl
                     database.habitChainMemberDao().getAllMembersSync().map {
                         ChainMembership(chainId = it.chainId, habitId = it.habitId, sortOrder = it.sortOrder)
                     },
+                dailyFocusActivity = dailyFocusActivityRepository.getAll(),
             )
 
         /**
@@ -155,6 +158,7 @@ class BackupRepositoryImpl
          */
         private suspend fun replace(data: BackupData): ImportSummary {
             val summary = replaceDatabase(data)
+            dailyFocusActivityRepository.replaceAll(data.dailyFocusActivity)
             applySettingsBestEffort(settingsDataSource, data.settings)
             return summary
         }

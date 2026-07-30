@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.data.preferences.ActiveLiveActivityPreferences
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
@@ -43,6 +44,7 @@ class RescheduleRemindersWorkerTest {
     private lateinit var activeLiveActivityPreferences: ActiveLiveActivityPreferences
     private lateinit var habitChainLiveActivityManager: HabitChainLiveActivityManager
     private lateinit var missedReminderScheduler: MissedReminderScheduler
+    private val focusSessionUseCases = mockk<FocusSessionUseCases>(relaxed = true)
     private lateinit var worker: RescheduleRemindersWorker
     private lateinit var clock: Clock
 
@@ -77,6 +79,7 @@ class RescheduleRemindersWorkerTest {
                 activeLiveActivityPreferences,
                 habitChainLiveActivityManager,
                 missedReminderScheduler,
+                focusSessionUseCases,
                 clock,
             )
     }

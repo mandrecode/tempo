@@ -18,7 +18,7 @@
 
     <!-- TASKS FEATURE -->
     <string name="tasks">Tareas</string>
-    <string name="tasks_tab">Tareas</string>
+    <string name="focus">Enfoque</string>
     <string name="add_task">Añadir tarea</string>
     <string name="add_new_task">Añadir nueva tarea</string>
     <string name="add_subtask">Añadir subtarea</string>
@@ -79,7 +79,6 @@
 
     <!-- ROUTINES (HABITS & CHAINS) FEATURE -->
     <string name="routines">Rutinas</string>
-    <string name="routines_tab">Rutinas</string>
     <string name="habit">Hábito</string>
     <string name="add_habit">Añadir hábito</string>
     <string name="habit_title">Título del hábito</string>
@@ -510,6 +509,12 @@
     <string name="onboarding_skip">Saltar</string>
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar a usar Tempo</string>
+    <string name="onboarding_focus_title">Empieza con el día delante</string>
+    <string name="onboarding_focus_description">Focus es donde vive el hoy: las tareas, hábitos y cadenas que tocan ahora, en un solo sitio y con un temporizador para lo que tengas entre manos.</string>
+    <string name="onboarding_focus_today_concept_title">Hoy, no todo</string>
+    <string name="onboarding_focus_today_concept_description">Focus solo enseña lo de hoy, junto a lo que se te pasó y lo que merece la pena empezar ahora.</string>
+    <string name="onboarding_focus_session_concept_title">Trabaja por sesiones</string>
+    <string name="onboarding_focus_session_concept_description">Pon un temporizador en una tarea y Tempo lo cuenta, y te avisa cuando toca descansar.</string>
     <string name="onboarding_tasks_title">Despeja tu mente y organiza tu día</string>
     <string name="onboarding_tasks_description">Anota lo que tienes que hacer para saber siempre en qué centrarte. Usa categorías cuando quieras una vista más clara.</string>
     <string name="onboarding_tasks_concept_title">Ten claro qué viene después</string>
@@ -528,8 +533,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Tómate un descanso sin perder tu racha</string>
-    <string name="whats_new_description">Activa el modo vacaciones en Ajustes y tus hábitos se pausan: los días que te saltes no rompen la racha y no llegan recordatorios. Desactívalo — o pon una fecha de fin — y todo sigue donde lo dejaste.</string>
+    <string name="whats_new_title">Enfoque: tu día en una pantalla</string>
+    <string name="whats_new_description">Enfoque es una pestaña nueva que muestra solo lo de hoy — tareas, hábitos y cadenas juntos, con lo atrasado y lo siguiente que empezar. También lleva un temporizador para la tarea en curso. La app ahora se abre en Enfoque; puedes cambiar tu pestaña de inicio en Ajustes.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -639,4 +644,62 @@
     <!-- QUICK ADD TASK WIDGET -->
     <string name="widget_quick_add_task_label">Añadir tarea rápida</string>
     <string name="widget_quick_add_task_description">Añade una tarea a Tempo con un toque desde tu pantalla de inicio</string>
+    <string name="focus_headline_nothing_scheduled">Hoy no hay nada</string>
+    <string name="focus_headline_just_started">Tienes el día por delante</string>
+    <string name="focus_headline_under_way">Ya estás en marcha</string>
+    <string name="focus_headline_nearly_there">Casi está</string>
+    <string name="focus_headline_complete">Todo hecho por hoy</string>
+    <string name="focus_up_next">A continuación</string>
+    <string name="focus_section_overdue">Atrasado · %1$d</string>
+    <string name="focus_section_today">Hoy · %1$d</string>
+    <string name="focus_progress_description">%1$d de %2$d completados</string>
+    <string name="focus_history_description">Actividad de los últimos %1$d días</string>
+    <string name="focus_empty_title">Nada para hoy</string>
+    <string name="focus_empty_message">Aquí aparece lo que vence hoy y lo que está atrasado.</string>
+    <plurals name="focus_streak_days">
+        <item quantity="one">%1$d día de enfoque</item>
+        <item quantity="other">%1$d días de enfoque</item>
+    </plurals>
+    <plurals name="focus_undated_tasks">
+        <item quantity="one">%1$d tarea sin fecha</item>
+        <item quantity="other">%1$d tareas sin fecha</item>
+    </plurals>
+    <string name="focus_session_paused">En pausa</string>
+    <string name="focus_session_finished_title">%1$d minutos completados</string>
+    <string name="focus_break_finished_title">Fin del descanso, ¡a seguir!</string>
+    <string name="focus_session_start">Empezar %1$s</string>
+    <string name="focus_session_start_custom">Empezar con</string>
+    <string name="focus_session_length_decrease">Sesión más corta</string>
+    <string name="focus_session_length_increase">Sesión más larga</string>
+    <string name="focus_session_pause">Pausar</string>
+    <string name="focus_session_resume">Reanudar</string>
+    <string name="focus_session_stop">Parar</string>
+    <string name="focus_session_another">Otros %1$d minutos</string>
+    <string name="focus_session_take_break">Descanso de %1$d min</string>
+    <string name="focus_session_focusing">En curso</string>
+    <string name="focus_session_remaining">Quedan %1$s</string>
+    <string name="focus_session_length">Duración de la sesión</string>
+    <string name="focus_break_length">Duración del descanso</string>
+    <string name="focus_duration_hours">%1$d h</string>
+    <string name="focus_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="focus_session_length_minutes">%1$d min</string>
+    <string name="settings_focus">Enfoque</string>
+    <string name="notification_focus_session_channel_name">Sesiones de enfoque</string>
+    <string name="notification_focus_session_channel_description">La cuenta atrás de una sesión de enfoque en curso.</string>
+    <string name="focus_session_mark_done">Completar</string>
+    <string name="focus_session_break">En un descanso</string>
+    <string name="focus_session_finished_heading">Se acabó el tiempo</string>
+    <string name="focus_session_break_over_heading">Fin del descanso</string>
+    <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
+    <string name="focus_session_back_to_it">Retomar</string>
+    <string name="focus_replace_session_title">¿Cambiar de sesión?</string>
+    <string name="focus_replace_session_message">%1$s sigue en marcha. Empezar %2$s la termina y solo guarda los minutos que lleva.</string>
+    <string name="focus_replace_session_confirm">Empezar igualmente</string>
+    <string name="focus_session_not_started">Sin empezar</string>
+    <string name="focus_session_open_in_tasks">Abrir en Tareas</string>
+    <plurals name="focus_sessions_done">
+        <item quantity="one">%1$d sesión hecha</item>
+        <item quantity="other">%1$d sesiones hechas</item>
+    </plurals>
+    <string name="focus_today_minutes">%1$d min hoy</string>
 </resources>

@@ -4,9 +4,11 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -33,7 +35,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onSizeChanged
@@ -48,6 +52,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
 private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
 private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
@@ -65,6 +70,8 @@ internal fun PersistentFloatingBar(
     currentRoute: NavKey,
     topLevelRoute: NavKey,
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    focusSessionRepository: FocusSessionRepository,
+    onOpenSession: () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -76,10 +83,15 @@ internal fun PersistentFloatingBar(
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = topLevelRoute == TasksRoute
     val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
+    // The session sheet sits over whichever tab you opened it from, the same way the task and habit
+    // sheets do. Those never change the route, so the bar stays; this one does, and the bar was
+    // vanishing under it for no reason the user could see.
+    val barRoute = if (currentRoute == FocusSessionRoute) topLevelRoute else currentRoute
     val visible =
         when {
-            currentRoute == RoutinesRoute -> routinesState.visible
-            currentRoute == TasksRoute -> tasksState.visible
+            barRoute == FocusRoute -> true
+            barRoute == RoutinesRoute -> routinesState.visible
+            barRoute == TasksRoute -> tasksState.visible
             isRailSettingsDestination -> true
             else -> false
         }
@@ -88,10 +100,15 @@ internal fun PersistentFloatingBar(
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
-            currentRoute = currentRoute,
+            currentRoute = barRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
+            onOpenSession = onOpenSession,
+            // Only a Tasks tab that also has completed tasks to clear is actually short of room;
+            // with sort alone the bar still has space for the countdown.
+            hasContextualActions = isTasksRoute && tasksState.hasCompletedTasks,
         )
     }
 
@@ -107,6 +124,7 @@ internal fun PersistentFloatingBar(
         if (isRailLayout) {
             PersistentLandscapeFloatingBar(
                 isTasksRoute = isTasksRoute,
+                topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -116,6 +134,7 @@ internal fun PersistentFloatingBar(
         } else {
             PersistentPortraitFloatingBar(
                 isTasksRoute = isTasksRoute,
+                topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
                 routinesState = routinesState,
                 tasksState = tasksState,
@@ -128,13 +147,14 @@ internal fun PersistentFloatingBar(
 @Composable
 private fun PersistentLandscapeFloatingBar(
     isTasksRoute: Boolean,
+    topLevelRoute: NavKey,
     navigationContent: @Composable () -> Unit,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onOpenSettings: () -> Unit,
     settingsSelected: Boolean,
 ) {
-    val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
+    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
@@ -175,7 +195,7 @@ private fun RailScrollableContent(
     isTasksRoute: Boolean,
     navigationContent: @Composable () -> Unit,
     tasksState: TasksFloatingBarState,
-    addAction: AddAction,
+    addAction: AddAction?,
     isExpandedRail: Boolean,
     settingsSelected: Boolean,
     modifier: Modifier = Modifier,
@@ -197,24 +217,28 @@ private fun RailScrollableContent(
                     ),
             )
             AnimatedVisibility(
-                visible = !settingsSelected,
+                visible = !settingsSelected && addAction != null,
                 enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
                 exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
             ) {
-                TempoSoloActionButton(
-                    iconRes = R.drawable.ic_add,
-                    label = addAction.label,
-                    expanded = true,
-                    onClick = addAction.onClick,
-                )
+                if (addAction != null) {
+                    TempoSoloActionButton(
+                        iconRes = R.drawable.ic_add,
+                        label = addAction.label,
+                        expanded = true,
+                        onClick = addAction.onClick,
+                    )
+                }
             }
         } else {
             AnimatedVisibility(
-                visible = !settingsSelected,
+                visible = !settingsSelected && addAction != null,
                 enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
                 exit = shrinkVertically(shrinkTowards = Alignment.Top) + fadeOut(),
             ) {
-                AddActionButton(addAction)
+                if (addAction != null) {
+                    AddActionButton(addAction)
+                }
             }
         }
 
@@ -282,7 +306,7 @@ private fun SettingsRailButton(
 }
 
 @Composable
-private fun PersistentSingleTabPortraitFloatingBar(
+internal fun PersistentSingleTabPortraitFloatingBar(
     isTasksRoute: Boolean,
     addAction: AddAction,
     tasksState: TasksFloatingBarState,
@@ -337,60 +361,9 @@ private fun PersistentSingleTabPortraitFloatingBar(
 }
 
 @Composable
-private fun PersistentPortraitFloatingBar(
-    isTasksRoute: Boolean,
-    navigationContent: @Composable () -> Unit,
-    routinesState: RoutinesFloatingBarState,
-    tasksState: TasksFloatingBarState,
+internal fun FloatingBarMainControls(
     isSingleTabMode: Boolean,
-) {
-    val addAction = rememberAddAction(isTasksRoute, routinesState, tasksState)
-    if (isSingleTabMode) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
-    val (barOffset, actionOffset) =
-        taskFloatingOffsets(
-            showTaskActions = isTasksRoute,
-            hasCompletedTasks = tasksState.hasCompletedTasks,
-        )
-
-    Box(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        FloatingBarMainControls(
-            isSingleTabMode = isSingleTabMode,
-            addAction = addAction,
-            navigationContent = navigationContent,
-            modifier = Modifier.offset(x = barOffset),
-        )
-
-        Box(
-            modifier = Modifier.offset(x = barOffset - actionOffset),
-            contentAlignment = Alignment.Center,
-        ) {
-            TaskActionButtons(
-                tasksState = tasksState,
-                showActions = isTasksRoute,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FloatingBarMainControls(
-    isSingleTabMode: Boolean,
-    addAction: AddAction,
+    addAction: AddAction?,
     navigationContent: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -401,7 +374,7 @@ private fun FloatingBarMainControls(
         horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (isSingleTabMode) {
+        if (isSingleTabMode && addAction != null) {
             TempoSoloActionButton(
                 iconRes = R.drawable.ic_add,
                 label = addAction.label,
@@ -410,13 +383,21 @@ private fun FloatingBarMainControls(
             )
         } else {
             stableNavigationContent()
-            AddActionButton(addAction)
+            // (A) The add button joins and leaves the same way the task action buttons do, rather
+            // than appearing and vanishing instantly.
+            AnimatedVisibility(
+                visible = addAction != null,
+                enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
+                exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
+            ) {
+                addAction?.let { AddActionButton(it) }
+            }
         }
     }
 }
 
 @Composable
-private fun AddActionButton(addAction: AddAction) {
+internal fun AddActionButton(addAction: AddAction) {
     TempoBottomRailActionButton(
         iconRes = R.drawable.ic_add,
         contentDescription = addAction.label,
@@ -424,27 +405,46 @@ private fun AddActionButton(addAction: AddAction) {
     )
 }
 
+/**
+ * Holds on to the last non-null [value] so content on its way out of an [AnimatedVisibility] still
+ * has something to draw while it shrinks.
+ */
 @Composable
-private fun rememberAddAction(
-    isTasksRoute: Boolean,
+internal fun <T : Any> rememberLastNonNull(value: T?): T? {
+    var last by remember { mutableStateOf(value) }
+    if (value != null) last = value
+    return last
+}
+
+/**
+ * The primary add action for the active tab, or `null` for a tab that has none — Focus adds
+ * through the tab it is showing work from rather than owning a create action of its own.
+ */
+@Composable
+internal fun rememberAddAction(
+    topLevelRoute: NavKey,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-): AddAction =
-    if (isTasksRoute) {
-        AddAction(
-            label = stringResource(R.string.add_task),
-            compact = tasksState.compactSoloAction,
-            onClick = tasksState.onAddTask,
-        )
-    } else {
-        AddAction(
-            label = stringResource(R.string.add_habit),
-            compact = routinesState.compactSoloAction,
-            onClick = routinesState.onAddHabit,
-        )
+): AddAction? =
+    when (topLevelRoute) {
+        TasksRoute ->
+            AddAction(
+                label = stringResource(R.string.add_task),
+                compact = tasksState.compactSoloAction,
+                onClick = tasksState.onAddTask,
+            )
+
+        RoutinesRoute ->
+            AddAction(
+                label = stringResource(R.string.add_habit),
+                compact = routinesState.compactSoloAction,
+                onClick = routinesState.onAddHabit,
+            )
+
+        else -> null
     }
 
-private data class AddAction(
+internal data class AddAction(
     val label: String,
     val compact: Boolean,
     val onClick: () -> Unit,

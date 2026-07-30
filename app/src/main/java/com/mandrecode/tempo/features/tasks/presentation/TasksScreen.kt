@@ -445,7 +445,7 @@ private fun TasksContract.UiEffect.ShowSnackbar.toAnnotatedMessage(context: Cont
 }
 
 @Composable
-private fun TaskEditor(
+internal fun TaskEditor(
     uiState: TasksContract.UiState,
     onEvent: (TasksContract.UiEvent) -> Unit,
     placement: SheetPlacement,

@@ -3,7 +3,6 @@ package com.mandrecode.tempo.core.ui.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
@@ -12,16 +11,14 @@ import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +27,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavEntry
@@ -41,22 +37,17 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
-import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
-import com.mandrecode.tempo.core.ui.components.SettingsButton
-import com.mandrecode.tempo.core.ui.components.TempoTopBar
-import com.mandrecode.tempo.core.ui.theme.spacing
-import com.mandrecode.tempo.features.onboarding.presentation.OnboardingContract
-import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
-import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
-import com.mandrecode.tempo.features.routines.presentation.components.VacationModeTitleBadge
-import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
-import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.serialization.Serializable
+
+@Serializable
+object FocusRoute : NavKey
 
 @Serializable
 object RoutinesRoute : NavKey
@@ -66,6 +57,13 @@ object TasksRoute : NavKey
 
 @Serializable
 object SettingsRoute : NavKey
+
+/**
+ * The running focus session, presented as a slide-in overlay like Settings rather than a tab
+ * destination — it is somewhere the user goes and comes back from.
+ */
+@Serializable
+object FocusSessionRoute : NavKey
 
 @Serializable
 object RoutinesEditorRoute : EditorRoute {
@@ -102,13 +100,65 @@ sealed interface PendingNotificationAction {
     data object OpenNewTaskDialog : PendingNotificationAction
 }
 
-const val ROUTINES_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES
-const val TASKS_ROUTE_NAME = NavigationPreferencesRepository.DEFAULT_TAB_TASKS
-
 @OptIn(ExperimentalMaterial3Api::class)
+/**
+ * The two ways a task's editor is opened from outside the Tasks tab: a notification extra the
+ * activity received, and Focus asking in-app. Both travel the same channel rather than Focus
+ * getting a second way in, and the in-app request wins while set — a stale notification extra must
+ * not shadow the tap the user just made.
+ */
+@Stable
+private class TaskEditorRequests {
+    var inApp by mutableStateOf<PendingNotificationAction?>(null)
+        private set
+
+    fun request(taskId: Long) {
+        inApp = PendingNotificationAction.OpenTask(taskId, null)
+    }
+
+    fun consume(onConsumeExternal: () -> Unit) {
+        if (inApp != null) inApp = null else onConsumeExternal()
+    }
+}
+
+/**
+ * Onboarding (including a Settings-triggered replay) fully replaces the nav display content, so
+ * callers hosting overlays above [TempoNavHost] (e.g. a "what's new" sheet) need this signal to
+ * avoid showing on top of it. A replay is pushed onto whichever back stack is currently active
+ * (e.g. settingsBackStack) without changing navigator.section, so this keys off the resolved
+ * current route rather than the section alone.
+ */
+@Composable
+private fun OnboardingActiveEffect(
+    navigator: TempoNavigator,
+    onOnboardingActiveChange: (Boolean) -> Unit,
+) {
+    val currentOnOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
+    LaunchedEffect(navigator.currentRoute) {
+        currentOnOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
+    }
+}
+
+/**
+ * windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this horizontal
+ * inset as consumed for descendants, so NavDisplay/Scaffold don't apply the same safe-drawing inset
+ * a second time internally (a plain padding() modifier doesn't consume anything, which doubled this
+ * offset and visibly displaced the app-bar title).
+ */
+@Composable
+private fun rememberHorizontalInsetPadding(): Modifier =
+    Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+
+/** The session screen always sits on the Focus tab's stack, wherever the user opened it from. */
+private fun TempoNavigator.openSession() {
+    navigateToTopLevel(FocusRoute)
+    navigate(FocusSessionRoute)
+}
+
 @Composable
 fun TempoNavHost(
     navigationPreferencesRepository: NavigationPreferencesRepository,
+    focusSessionRepository: FocusSessionRepository,
     modifier: Modifier = Modifier,
     routinesNavigationTrigger: Long = 0L,
     tasksNavigationTrigger: Long = 0L,
@@ -119,18 +169,15 @@ fun TempoNavHost(
     onOnboardingActiveChange: (Boolean) -> Unit = {},
 ) {
     val navigator = rememberTempoNavigator(startDestination)
+    val taskEditorRequests = remember { TaskEditorRequests() }
+    val openTaskInTasks: (Long) -> Unit = { taskId ->
+        taskEditorRequests.request(taskId)
+        navigator.navigateToTopLevel(TasksRoute)
+    }
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
 
-    // Onboarding (including a Settings-triggered replay) fully replaces the nav display content,
-    // so callers hosting overlays above TempoNavHost (e.g. a "what's new" sheet) need this signal
-    // to avoid showing on top of it. A replay is pushed onto whichever back stack is currently
-    // active (e.g. settingsBackStack) without changing navigator.section, so this must key off the
-    // resolved current route rather than the section alone.
-    val currentOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
-    LaunchedEffect(navigator.currentRoute) {
-        currentOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
-    }
+    OnboardingActiveEffect(navigator, onOnboardingActiveChange)
 
     NotificationNavigationEffects(
         navigator = navigator,
@@ -144,25 +191,19 @@ fun TempoNavHost(
         rememberActiveEntries(
             navigator = navigator,
             navigationPreferencesRepository = navigationPreferencesRepository,
-            pendingNotificationAction = pendingNotificationAction,
-            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            pendingNotificationAction = taskEditorRequests.inApp ?: pendingNotificationAction,
+            onConsumePendingNotificationAction = {
+                taskEditorRequests.consume(onConsumePendingNotificationAction)
+            },
             onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
             onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
+            onOpenTaskInTasks = openTaskInTasks,
             includeEditorEntries = editorPaneEnabled,
         )
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
-    val openSettings: () -> Unit = { navigator.navigate(SettingsRoute) }
+    val insetPaddingModifier = rememberHorizontalInsetPadding()
 
-    // windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this
-    // horizontal inset as consumed for descendants, so NavDisplay/Scaffold don't apply the
-    // same safe-drawing inset a second time internally (a plain padding() modifier doesn't
-    // consume anything, which doubled this offset and visibly displaced the app-bar title).
-    val insetPaddingModifier =
-        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
-
-    Box(
-        modifier = modifier.fillMaxSize(),
-    ) {
+    Box(modifier = modifier.fillMaxSize()) {
         HorizontalInsetMarginStrips()
 
         TempoNavDisplay(
@@ -172,23 +213,19 @@ fun TempoNavHost(
             modifier = insetPaddingModifier,
         )
 
-        SettingsSlideOverlay(
-            visible = navigator.currentRoute == SettingsRoute,
-            onDismiss = { navigator.pop() },
-            modifier = insetPaddingModifier,
-        ) {
-            SettingsDestination(navigator = navigator)
-        }
+        SlideOverlays(navigator = navigator, onOpenTaskInTasks = openTaskInTasks)
 
         PersistentFloatingBar(
             modifier = insetPaddingModifier,
             currentRoute = navigator.currentRoute,
             topLevelRoute = navigator.topLevelRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
+            focusSessionRepository = focusSessionRepository,
+            onOpenSession = navigator::openSession,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,
-            onOpenSettings = openSettings,
+            onOpenSettings = { navigator.navigate(SettingsRoute) },
             onRouteChange = onRouteChange,
         )
     }
@@ -231,6 +268,34 @@ private fun BoxScope.HorizontalInsetMarginStrips() {
     }
 }
 
+/**
+ * Settings presents as a slide-in overlay rather than a NavDisplay scene, for the reason documented
+ * on [SettingsSlideOverlay]. The session is a bottom sheet, which brings its own scrim and window,
+ * so it needs no overlay of its own — only the route to decide when it is showing.
+ */
+@Composable
+private fun BoxScope.SlideOverlays(
+    navigator: TempoNavigator,
+    onOpenTaskInTasks: (Long) -> Unit,
+) {
+    // Computed here rather than passed in: two sibling overlays sharing one caller-supplied
+    // modifier trips the "modifiers are used once, by the root layout" rule.
+    val insetPadding =
+        Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal))
+
+    SettingsSlideOverlay(
+        visible = navigator.currentRoute == SettingsRoute,
+        onDismiss = { navigator.pop() },
+        modifier = insetPadding,
+    ) {
+        SettingsDestination(navigator = navigator)
+    }
+
+    if (navigator.currentRoute == FocusSessionRoute) {
+        FocusSessionDestination(navigator = navigator, onOpenTaskInTasks = onOpenTaskInTasks)
+    }
+}
+
 @Composable
 private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
@@ -256,6 +321,7 @@ private fun rememberActiveEntries(
     onConsumePendingNotificationAction: () -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
+    onOpenTaskInTasks: (Long) -> Unit,
     includeEditorEntries: Boolean,
 ): List<NavEntry<NavKey>> {
     val decorators =
@@ -264,45 +330,24 @@ private fun rememberActiveEntries(
             rememberViewModelStoreNavEntryDecorator(),
         )
     val entries =
-        entryProvider<NavKey> {
-            entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
-                RoutinesDestination(
-                    navigator = navigator,
-                    navigationPreferencesRepository = navigationPreferencesRepository,
-                    pendingNotificationAction = pendingNotificationAction,
-                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                    onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
-                )
-            }
-            entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
-                TasksDestination(
-                    navigator = navigator,
-                    navigationPreferencesRepository = navigationPreferencesRepository,
-                    pendingNotificationAction = pendingNotificationAction,
-                    onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-                    onFloatingBarStateChange = onTasksFloatingBarStateChange,
-                )
-            }
-            entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
-                OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
-            }
-            // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
-            // currently active, so this registration is needed for every section's entries, not
-            // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
-            // the resulting entry is filtered out before reaching NavDisplay (see below) since
-            // Settings is never rendered as a NavDisplay scene.
-            entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
-                SettingsDestination(navigator = navigator)
-            }
-            entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
-            entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
-        }
+        rememberNavEntryProvider(
+            navigator,
+            navigationPreferencesRepository,
+            pendingNotificationAction,
+            onConsumePendingNotificationAction,
+            onRoutinesFloatingBarStateChange,
+            onTasksFloatingBarStateChange,
+            onOpenTaskInTasks,
+        )
+
+    val focusEntries = rememberDecoratedNavEntries(navigator.focusBackStack, decorators, entries)
     val routinesEntries = rememberDecoratedNavEntries(navigator.routinesBackStack, decorators, entries)
     val tasksEntries = rememberDecoratedNavEntries(navigator.tasksBackStack, decorators, entries)
     val onboardingEntries = rememberDecoratedNavEntries(navigator.onboardingBackStack, decorators, entries)
     val settingsEntries = rememberDecoratedNavEntries(navigator.settingsBackStack, decorators, entries)
     val sectionEntries =
         when (navigator.section) {
+            TempoNavigator.Section.FOCUS -> focusEntries
             TempoNavigator.Section.ROUTINES -> routinesEntries
             TempoNavigator.Section.TASKS -> tasksEntries
             TempoNavigator.Section.SETTINGS -> settingsEntries
@@ -319,6 +364,55 @@ private fun rememberActiveEntries(
 }
 
 @Composable
+private fun rememberNavEntryProvider(
+    navigator: TempoNavigator,
+    navigationPreferencesRepository: NavigationPreferencesRepository,
+    pendingNotificationAction: PendingNotificationAction?,
+    onConsumePendingNotificationAction: () -> Unit,
+    onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
+    onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
+    onOpenTaskInTasks: (Long) -> Unit,
+) = entryProvider<NavKey> {
+    entry<FocusRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to FocusRoute)) {
+        FocusDestination(navigator = navigator)
+    }
+    entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
+        RoutinesDestination(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
+        )
+    }
+    entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
+        TasksDestination(
+            navigator = navigator,
+            navigationPreferencesRepository = navigationPreferencesRepository,
+            pendingNotificationAction = pendingNotificationAction,
+            onConsumePendingNotificationAction = onConsumePendingNotificationAction,
+            onFloatingBarStateChange = onTasksFloatingBarStateChange,
+        )
+    }
+    entry<OnboardingRoute>(metadata = mapOf(ONBOARDING_ROUTE_METADATA to true)) { route ->
+        OnboardingDestination(navigator = navigator, isReplay = route.isReplay)
+    }
+    // navigator.navigate(SettingsRoute) pushes onto whichever section's back stack is
+    // currently active, so this registration is needed for every section's entries, not
+    // just settingsBackStack's. It supplies SettingsDestination for SettingsSlideOverlay;
+    // the resulting entry is filtered out before reaching NavDisplay (see below) since
+    // Settings is never rendered as a NavDisplay scene.
+    entry<SettingsRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+        SettingsDestination(navigator = navigator)
+    }
+    entry<FocusSessionRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
+        FocusSessionDestination(navigator = navigator, onOpenTaskInTasks = onOpenTaskInTasks)
+    }
+    entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
+    entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
+}
+
+@Composable
 private fun NotificationNavigationEffects(
     navigator: TempoNavigator,
     routinesNavigationTrigger: Long,
@@ -330,153 +424,14 @@ private fun NotificationNavigationEffects(
     LaunchedEffect(routinesNavigationTrigger) {
         if (routinesNavigationTrigger > 0) {
             navigator.navigateToTopLevel(RoutinesRoute)
-            currentOnRouteChange(ROUTINES_ROUTE_NAME)
+            currentOnRouteChange(TempoTab.ROUTINES.preferenceValue)
         }
     }
 
     LaunchedEffect(tasksNavigationTrigger) {
         if (tasksNavigationTrigger > 0) {
             navigator.navigateToTopLevel(TasksRoute)
-            currentOnRouteChange(TASKS_ROUTE_NAME)
+            currentOnRouteChange(TempoTab.TASKS.preferenceValue)
         }
     }
-}
-
-@Composable
-private fun RoutinesDestination(
-    navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
-    pendingNotificationAction: PendingNotificationAction?,
-    onConsumePendingNotificationAction: () -> Unit,
-    onFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
-) {
-    val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    RoutinesScreen(
-        isSingleTabMode = isSingleTabMode,
-        topBar = { isVacationModeActive ->
-            RouteTopBarOrStatusInset(
-                title = stringResource(R.string.routines),
-                onOpenSettings = { navigator.navigate(SettingsRoute) },
-                titleBadge =
-                    if (isVacationModeActive) {
-                        { VacationModeTitleBadge() }
-                    } else {
-                        null
-                    },
-            )
-        },
-        // Always true: routines and tasks share one add action via the app's PersistentFloatingBar
-        // (see TasksDestination's matching showAddTaskRailButton), at every window tier
-        // including single-tab mode. RoutinesContent's own in-content FAB is suppressed as a
-        // result — it only renders when RoutinesContent is used standalone (tests, previews).
-        showAddHabitRailButton = true,
-        onFloatingBarStateChange = onFloatingBarStateChange,
-        pendingNotificationAction = pendingNotificationAction,
-        onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-        onDockedEditorVisibilityChange = { visible ->
-            navigator.setEditorVisible(RoutinesEditorRoute, visible)
-        },
-    )
-}
-
-@Composable
-private fun TasksDestination(
-    navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
-    pendingNotificationAction: PendingNotificationAction?,
-    onConsumePendingNotificationAction: () -> Unit,
-    onFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
-) {
-    val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
-    TasksScreen(
-        isSingleTabMode = isSingleTabMode,
-        topBar = {
-            RouteTopBarOrStatusInset(
-                title = stringResource(R.string.tasks),
-                onOpenSettings = { navigator.navigate(SettingsRoute) },
-            )
-        },
-        showAddTaskRailButton = true,
-        onFloatingBarStateChange = onFloatingBarStateChange,
-        pendingNotificationAction = pendingNotificationAction,
-        onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-        onDockedEditorVisibilityChange = { visible ->
-            navigator.setEditorVisible(TasksEditorRoute, visible)
-        },
-    )
-}
-
-@Composable
-private fun RouteTopBarOrStatusInset(
-    title: String,
-    onOpenSettings: () -> Unit,
-    titleBadge: @Composable (() -> Unit)? = null,
-) {
-    val isRailLayout = isFloatingNavigationRailLayout()
-    if (isExpandedFloatingRailLayout()) {
-        Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-    } else {
-        RouteTopBar(
-            title = title,
-            onOpenSettings = onOpenSettings,
-            showSettingsAction = !isRailLayout,
-            titleBadge = titleBadge,
-        )
-    }
-}
-
-@Composable
-private fun RouteTopBar(
-    title: String,
-    onOpenSettings: () -> Unit,
-    showSettingsAction: Boolean,
-    titleBadge: @Composable (() -> Unit)? = null,
-) {
-    val horizontalPadding = MaterialTheme.spacing.large
-    val titleStartPadding = horizontalPadding - MaterialTheme.spacing.default
-    val settingsEndPadding = horizontalPadding - MaterialTheme.spacing.extraSmall
-
-    TempoTopBar(
-        title = title,
-        titleModifier = Modifier.padding(start = titleStartPadding),
-        titleBadge = titleBadge,
-        actions = {
-            if (showSettingsAction) {
-                SettingsButton(onClick = onOpenSettings)
-                Spacer(modifier = Modifier.width(settingsEndPadding))
-            }
-        },
-    )
-}
-
-@Composable
-private fun SettingsDestination(navigator: TempoNavigator) {
-    val isRailLayout = isFloatingNavigationRailLayout()
-    SettingsScreen(
-        onBackClick = { navigator.pop() },
-        onOnboardingClick = { navigator.navigate(OnboardingRoute(isReplay = true)) },
-        showBackButton = !isRailLayout,
-        showTitle = !isExpandedFloatingRailLayout(),
-    )
-}
-
-@Composable
-private fun OnboardingDestination(
-    navigator: TempoNavigator,
-    isReplay: Boolean,
-) {
-    OnboardingScreen(
-        onExit = { defaultTab ->
-            if (isReplay) {
-                navigator.pop()
-            } else {
-                navigator.completeOnboarding(
-                    when (defaultTab) {
-                        OnboardingContract.DefaultTab.ROUTINES -> RoutinesRoute
-                        OnboardingContract.DefaultTab.TASKS -> TasksRoute
-                    },
-                )
-            }
-        },
-    )
 }

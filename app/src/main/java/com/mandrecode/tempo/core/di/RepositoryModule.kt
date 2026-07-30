@@ -1,7 +1,14 @@
 package com.mandrecode.tempo.core.di
 
+import com.mandrecode.tempo.core.data.repository.DailyFocusActivityRepositoryImpl
+import com.mandrecode.tempo.core.domain.repository.DailyFocusActivityRepository
+import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.backup.data.repository.BackupRepositoryImpl
 import com.mandrecode.tempo.features.backup.domain.repository.BackupRepository
+import com.mandrecode.tempo.features.focus.data.FocusSessionRepositoryImpl
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
+import com.mandrecode.tempo.features.focus.domain.scheduler.FocusSessionScheduler
+import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
 import com.mandrecode.tempo.features.routines.data.repository.HabitChainRepositoryImpl
 import com.mandrecode.tempo.features.routines.data.repository.HabitRepositoryImpl
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
@@ -10,6 +17,7 @@ import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImp
 import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.infrastructure.focus.AndroidFocusSessionScheduler
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -32,4 +40,20 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindBackupRepository(impl: BackupRepositoryImpl): BackupRepository
+
+    @Binds
+    abstract fun bindDailyFocusActivityRepository(impl: DailyFocusActivityRepositoryImpl): DailyFocusActivityRepository
+
+    /**
+     * Lets Tasks and Routines trigger a recount on completion without depending on the Focus
+     * feature: they inject the [DailyActivityRecorder] interface declared in `core/domain`.
+     */
+    @Binds
+    abstract fun bindDailyActivityRecorder(impl: RecordDailyActivityUseCase): DailyActivityRecorder
+
+    @Binds
+    abstract fun bindFocusSessionRepository(impl: FocusSessionRepositoryImpl): FocusSessionRepository
+
+    @Binds
+    abstract fun bindFocusSessionScheduler(impl: AndroidFocusSessionScheduler): FocusSessionScheduler
 }

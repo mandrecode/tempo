@@ -3,11 +3,12 @@ package com.mandrecode.tempo.features.onboarding.presentation
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_ROUTINES
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository.Companion.DEFAULT_TAB_TASKS
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -50,8 +51,7 @@ class OnboardingViewModel
                 is OnboardingContract.UiEvent.ThemeModeSelected ->
                     themePreferencesRepository.setThemeMode(event.mode)
 
-                is OnboardingContract.UiEvent.RoutinesTabToggled -> setRoutinesTabEnabled(event.enabled)
-                is OnboardingContract.UiEvent.TasksTabToggled -> setTasksTabEnabled(event.enabled)
+                is OnboardingContract.UiEvent.TabToggled -> setTabEnabled(event.tab, event.enabled)
                 is OnboardingContract.UiEvent.DefaultTabSelected -> setDefaultTab(event.defaultTab)
             }
         }
@@ -69,20 +69,16 @@ class OnboardingViewModel
             }
             viewModelScope.launch {
                 combine(
-                    navigationPreferencesRepository.isRoutinesTabEnabled(),
-                    navigationPreferencesRepository.isTasksTabEnabled(),
+                    navigationPreferencesRepository.enabledTabs(),
                     navigationPreferencesRepository.getDefaultTab(),
-                ) { routinesEnabled, tasksEnabled, defaultTab ->
-                    Triple(routinesEnabled, tasksEnabled, defaultTab)
-                }.collect { (routinesEnabled, tasksEnabled, defaultTab) ->
+                ) { enabledTabs, defaultTab ->
+                    enabledTabs to defaultTab
+                }.collect { (enabledTabs, defaultTab) ->
                     mutableUiState.update {
-                        val preferenceState =
-                            it.copy(
-                                isRoutinesTabEnabled = routinesEnabled,
-                                isTasksTabEnabled = tasksEnabled,
-                                defaultTab = defaultTab.toDefaultTab(),
-                            )
-                        preferenceState.copy(defaultTab = preferenceState.resolvedDefaultTab())
+                        it.copy(
+                            enabledTabs = enabledTabs.toPersistentSet(),
+                            defaultTab = TabPreferencesPolicy.resolveDefaultTab(defaultTab, enabledTabs),
+                        )
                     }
                 }
             }
@@ -100,91 +96,40 @@ class OnboardingViewModel
             }
         }
 
-        private fun setRoutinesTabEnabled(enabled: Boolean) {
+        private fun setTabEnabled(
+            tab: TempoTab,
+            enabled: Boolean,
+        ) {
             val state = mutableUiState.value
-            if (!enabled && !state.isTasksTabEnabled) return
+            if (!enabled && !TabPreferencesPolicy.canDisable(state.enabledTabs, tab)) return
 
-            val defaultTab =
-                if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.ROUTINES) {
-                    OnboardingContract.DefaultTab.TASKS
-                } else {
-                    state.defaultTab
-                }
+            val resolvedTabs = TabPreferencesPolicy.withTabEnabled(state.enabledTabs, tab, enabled)
+            val resolvedDefault = TabPreferencesPolicy.resolveDefaultTab(state.defaultTab, resolvedTabs)
             mutableUiState.update {
                 it.copy(
-                    isRoutinesTabEnabled = enabled,
-                    defaultTab = defaultTab,
+                    enabledTabs = resolvedTabs.toPersistentSet(),
+                    defaultTab = resolvedDefault,
                 )
             }
-            navigationPreferencesRepository.setRoutinesTabEnabled(enabled)
-            if (defaultTab != state.defaultTab) {
-                navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
+            navigationPreferencesRepository.setTabEnabled(tab, enabled)
+            if (resolvedDefault != state.defaultTab) {
+                navigationPreferencesRepository.setDefaultTab(resolvedDefault)
             }
         }
 
-        private fun setTasksTabEnabled(enabled: Boolean) {
-            val state = mutableUiState.value
-            if (!enabled && !state.isRoutinesTabEnabled) return
-
-            val defaultTab =
-                if (!enabled && state.defaultTab == OnboardingContract.DefaultTab.TASKS) {
-                    OnboardingContract.DefaultTab.ROUTINES
-                } else {
-                    state.defaultTab
-                }
-            mutableUiState.update {
-                it.copy(
-                    isTasksTabEnabled = enabled,
-                    defaultTab = defaultTab,
-                )
-            }
-            navigationPreferencesRepository.setTasksTabEnabled(enabled)
-            if (defaultTab != state.defaultTab) {
-                navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
-            }
-        }
-
-        private fun setDefaultTab(defaultTab: OnboardingContract.DefaultTab) {
-            val state = mutableUiState.value
-            val enabled =
-                when (defaultTab) {
-                    OnboardingContract.DefaultTab.ROUTINES -> state.isRoutinesTabEnabled
-                    OnboardingContract.DefaultTab.TASKS -> state.isTasksTabEnabled
-                }
-            if (!enabled) return
+        private fun setDefaultTab(defaultTab: TempoTab) {
+            if (defaultTab !in mutableUiState.value.enabledTabs) return
 
             mutableUiState.update { it.copy(defaultTab = defaultTab) }
-            navigationPreferencesRepository.setDefaultTab(defaultTab.preferenceValue)
+            navigationPreferencesRepository.setDefaultTab(defaultTab)
         }
 
         private fun completeOnboarding() {
-            val destination = mutableUiState.value.resolvedDefaultTab()
+            val state = mutableUiState.value
+            val destination = TabPreferencesPolicy.resolveDefaultTab(state.defaultTab, state.enabledTabs)
             onboardingPreferencesRepository.setCompleted()
             viewModelScope.launch {
                 effectChannel.send(OnboardingContract.UiEffect.Exit(destination))
             }
         }
-
-        private fun String.toDefaultTab(): OnboardingContract.DefaultTab =
-            if (this == DEFAULT_TAB_TASKS) {
-                OnboardingContract.DefaultTab.TASKS
-            } else {
-                OnboardingContract.DefaultTab.ROUTINES
-            }
-
-        private val OnboardingContract.DefaultTab.preferenceValue: String
-            get() =
-                when (this) {
-                    OnboardingContract.DefaultTab.ROUTINES -> DEFAULT_TAB_ROUTINES
-                    OnboardingContract.DefaultTab.TASKS -> DEFAULT_TAB_TASKS
-                }
-
-        private fun OnboardingContract.UiState.resolvedDefaultTab(): OnboardingContract.DefaultTab =
-            when {
-                defaultTab == OnboardingContract.DefaultTab.ROUTINES && isRoutinesTabEnabled -> defaultTab
-                defaultTab == OnboardingContract.DefaultTab.TASKS && isTasksTabEnabled -> defaultTab
-                isRoutinesTabEnabled -> OnboardingContract.DefaultTab.ROUTINES
-                isTasksTabEnabled -> OnboardingContract.DefaultTab.TASKS
-                else -> OnboardingContract.DefaultTab.ROUTINES
-            }
     }

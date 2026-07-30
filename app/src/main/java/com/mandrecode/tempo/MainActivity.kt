@@ -27,14 +27,15 @@ import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
-import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
-import com.mandrecode.tempo.core.ui.navigation.TasksRoute
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
+import com.mandrecode.tempo.core.ui.navigation.route
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
 import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
@@ -50,6 +51,9 @@ import javax.inject.Inject
 class MainActivity : ComponentActivity() {
     @Inject
     lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
+
+    @Inject
+    lateinit var focusSessionRepository: FocusSessionRepository
 
     @Inject
     lateinit var themePreferencesRepository: ThemePreferencesRepository
@@ -140,6 +144,7 @@ class MainActivity : ComponentActivity() {
                         ) {
                             TempoNavHost(
                                 navigationPreferencesRepository = navigationPreferencesRepository,
+                                focusSessionRepository = focusSessionRepository,
                                 routinesNavigationTrigger = routinesNavigationTrigger.longValue,
                                 tasksNavigationTrigger = tasksNavigationTrigger.longValue,
                                 pendingNotificationAction = pendingNotificationAction,
@@ -295,17 +300,9 @@ class MainActivity : ComponentActivity() {
 @Composable
 internal fun rememberStartDestination(state: MainUiState.Success): NavKey =
     remember {
-        when {
-            !state.isOnboardingCompleted -> OnboardingRoute()
-
-            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_ROUTINES &&
-                state.isRoutinesTabEnabled -> RoutinesRoute
-
-            state.defaultTab == NavigationPreferencesRepository.DEFAULT_TAB_TASKS &&
-                state.isTasksTabEnabled -> TasksRoute
-
-            state.isRoutinesTabEnabled -> RoutinesRoute
-            state.isTasksTabEnabled -> TasksRoute
-            else -> RoutinesRoute
+        if (!state.isOnboardingCompleted) {
+            OnboardingRoute()
+        } else {
+            TabPreferencesPolicy.resolveDefaultTab(state.defaultTab, state.enabledTabs).route
         }
     }

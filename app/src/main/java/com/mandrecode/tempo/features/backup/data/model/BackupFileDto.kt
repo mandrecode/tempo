@@ -23,6 +23,17 @@ data class BackupFileDto(
     val habitChains: List<HabitChainBackupDto> = emptyList(),
     val habitChainMembers: List<ChainMemberBackupDto> = emptyList(),
     val settings: SettingsBackupDto? = null,
+    /** Per-day activity history; absent in files written before Focus mode existed. */
+    val dailyFocusActivity: List<DailyFocusActivityBackupDto> = emptyList(),
+)
+
+/** One recorded day of activity. The quiet/some/all state is derived, so it is not stored. */
+@Serializable
+data class DailyFocusActivityBackupDto(
+    val date: String,
+    val scheduledCount: Int = 0,
+    val completedCount: Int = 0,
+    val focusMinutes: Int = 0,
 )
 
 /** App configuration section; absent in files written before it existed. */
@@ -30,8 +41,12 @@ data class BackupFileDto(
 data class SettingsBackupDto(
     val themeMode: String = "SYSTEM",
     val useTempoColors: Boolean = false,
+    // Superseded by [enabledTabs]. Still written on export so a file produced by this version
+    // still restores correctly on an older build that only understands two tabs.
     val routinesTabEnabled: Boolean = true,
     val tasksTabEnabled: Boolean = true,
+    // Absent in files written before Focus existed; [toDomain] falls back to the booleans above.
+    val enabledTabs: List<String>? = null,
     val defaultTab: String = "ROUTINES",
     val autoRemoveCompletedTasks: Boolean = false,
     val completedTaskRetentionDays: Int = 30,

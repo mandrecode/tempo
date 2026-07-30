@@ -7,20 +7,19 @@ internal fun OnboardingContract.UiState.toSettingsUiState(): SettingsContract.Ui
         selectedThemeMode = selectedThemeMode,
         availableThemeModes = availableThemeModes,
         useTempoColors = useTempoColors,
-        isRoutinesTabEnabled = isRoutinesTabEnabled,
-        isTasksTabEnabled = isTasksTabEnabled,
-        defaultTab = defaultTab.toSettingsDefaultTab(),
+        enabledTabs = enabledTabs,
+        defaultTab = defaultTab,
     )
 
 internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.UiEvent? =
     when (this) {
         is SettingsContract.UiEvent.ThemeModeSelected -> OnboardingContract.UiEvent.ThemeModeSelected(mode)
         is SettingsContract.UiEvent.TempoColorsToggled -> OnboardingContract.UiEvent.UseTempoColorsToggled(enabled)
-        is SettingsContract.UiEvent.RoutinesTabToggled -> OnboardingContract.UiEvent.RoutinesTabToggled(enabled)
-        is SettingsContract.UiEvent.TasksTabToggled -> OnboardingContract.UiEvent.TasksTabToggled(enabled)
-        is SettingsContract.UiEvent.DefaultTabSelected ->
-            OnboardingContract.UiEvent.DefaultTabSelected(defaultTab.toOnboardingDefaultTab())
+        is SettingsContract.UiEvent.TabToggled -> OnboardingContract.UiEvent.TabToggled(tab, enabled)
+        is SettingsContract.UiEvent.DefaultTabSelected -> OnboardingContract.UiEvent.DefaultTabSelected(defaultTab)
 
+        is SettingsContract.UiEvent.FocusSessionLengthChanged,
+        is SettingsContract.UiEvent.FocusBreakLengthChanged,
         is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled,
         is SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged,
         is SettingsContract.UiEvent.MissedReminderCatchUpToggled,
@@ -37,16 +36,4 @@ internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.Ui
         is SettingsContract.UiEvent.ImportModeChosen,
         is SettingsContract.UiEvent.BackupDialogDismissed,
         -> null
-    }
-
-private fun OnboardingContract.DefaultTab.toSettingsDefaultTab(): SettingsContract.DefaultTab =
-    when (this) {
-        OnboardingContract.DefaultTab.ROUTINES -> SettingsContract.DefaultTab.ROUTINES
-        OnboardingContract.DefaultTab.TASKS -> SettingsContract.DefaultTab.TASKS
-    }
-
-private fun SettingsContract.DefaultTab.toOnboardingDefaultTab(): OnboardingContract.DefaultTab =
-    when (this) {
-        SettingsContract.DefaultTab.ROUTINES -> OnboardingContract.DefaultTab.ROUTINES
-        SettingsContract.DefaultTab.TASKS -> OnboardingContract.DefaultTab.TASKS
     }

@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
+import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
@@ -19,6 +20,7 @@ class ToggleTaskCompletionUseCase
         private val taskRepository: TaskRepository,
         private val taskReminderScheduler: TaskReminderScheduler,
         private val updateTaskUseCase: UpdateTaskUseCase,
+        private val dailyActivityRecorder: DailyActivityRecorder,
     ) {
         sealed class Result {
             data class PeriodicCompleted(
@@ -38,16 +40,21 @@ class ToggleTaskCompletionUseCase
         suspend operator fun invoke(task: Task): Result {
             val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
 
-            return when {
-                task.periodicity != null && !task.isCompleted && task.parentTaskId == null ->
-                    completePeriodic(task, now)
-                task.parentTaskId == null && task.isCompleted && task.nextInstanceId != null ->
-                    detachPeriodicCompletion(task)
-                task.parentTaskId == null ->
-                    toggleNonPeriodicParent(task, now)
-                else ->
-                    toggleSubtask(task, now)
-            }
+            val result =
+                when {
+                    task.periodicity != null && !task.isCompleted && task.parentTaskId == null ->
+                        completePeriodic(task, now)
+                    task.parentTaskId == null && task.isCompleted && task.nextInstanceId != null ->
+                        detachPeriodicCompletion(task)
+                    task.parentTaskId == null ->
+                        toggleNonPeriodicParent(task, now)
+                    else ->
+                        toggleSubtask(task, now)
+                }
+
+            // Recorded after the toggle so the recount sees the new completion state.
+            dailyActivityRecorder.recordToday()
+            return result
         }
 
         private data class PeriodicCommit(
