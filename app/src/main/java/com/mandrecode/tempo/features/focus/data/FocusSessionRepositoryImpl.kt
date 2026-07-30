@@ -11,8 +11,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
@@ -21,6 +24,7 @@ class FocusSessionRepositoryImpl
     @Inject
     constructor(
         @ApplicationContext context: Context,
+        private val clock: Clock,
     ) : FocusSessionRepository {
         private val prefs: SharedPreferences =
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -141,11 +145,17 @@ class FocusSessionRepositoryImpl
         /**
          * A flat `id:sessions:minutes` list — small, and never queried by anything but this class.
          *
-         * The two-field `id:sessions` records written before minutes were tracked still parse, as
-         * a day with runs behind it and no time recorded; the next write brings them up to date.
+         * The stored date is checked here and not only when writing: the record outlives the day it
+         * belongs to, and an app opened the next morning would otherwise read yesterday's runs back
+         * and let every card claim work the day has not had.
+         *
+         * The two-field `id:sessions` records written before minutes were tracked still parse, as a
+         * day with runs behind it and no time recorded; the next write brings them up to date.
          */
-        private fun readFocusToday(): Map<Long, TaskFocusToday> =
-            prefs
+        private fun readFocusToday(): Map<Long, TaskFocusToday> {
+            val today = clock.todayIn(TimeZone.currentSystemDefault()).toString()
+            if (prefs.getString(KEY_SESSIONS_DATE, null) != today) return emptyMap()
+            return prefs
                 .getString(KEY_SESSIONS_BY_TASK, null)
                 .orEmpty()
                 .split(',')
@@ -156,6 +166,7 @@ class FocusSessionRepositoryImpl
                     val minutes = parts.getOrNull(2)?.toIntOrNull() ?: 0
                     taskId to TaskFocusToday(sessions = sessions, minutes = minutes)
                 }.toMap()
+        }
 
         private fun readDefaultLength(): Int {
             val fallback = FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt()

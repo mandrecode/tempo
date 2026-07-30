@@ -12,14 +12,25 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.junit.Test
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class FocusSessionRepositoryImplTest {
     private val start = Instant.fromEpochMilliseconds(1_800_000_000_000)
+
+    /** The clock's day, so the stored date stamp and the dates the tests pass agree. */
     private val today = LocalDate(2026, 7, 30)
+    private val clock =
+        object : Clock {
+            override fun now(): Instant = today.atStartOfDayIn(TimeZone.currentSystemDefault()) + 12.hours
+        }
 
     private lateinit var editor: SharedPreferences.Editor
     private lateinit var prefs: SharedPreferences
@@ -63,8 +74,15 @@ class FocusSessionRepositoryImplTest {
                 every { getBoolean(any(), any()) } answers { stored[firstArg()] as? Boolean ?: secondArg() }
             }
         val context = mockk<Context> { every { getSharedPreferences(any(), any()) } returns prefs }
-        return FocusSessionRepositoryImpl(context)
+        return FocusSessionRepositoryImpl(context, clock)
     }
+
+    /** A stored record already stamped with today, as a real day's writes would have left it. */
+    private fun storedDay(record: String): MutableMap<String, Any> =
+        mutableMapOf(
+            "sessions_today_date" to today.toString(),
+            "sessions_today_by_task" to record,
+        )
 
     @Test
     fun `no session is stored initially`() {
@@ -241,7 +259,7 @@ class FocusSessionRepositoryImplTest {
 
     @Test
     fun `a malformed stored entry is skipped rather than crashing the read`() {
-        val stored = mutableMapOf<String, Any>("sessions_today_by_task" to "7:2:30,rubbish,9:x,:,11:3:5")
+        val stored = storedDay("7:2:30,rubbish,9:x,:,11:3:5")
 
         val today = createRepository(stored).focusToday.value
 
@@ -251,8 +269,21 @@ class FocusSessionRepositoryImplTest {
     }
 
     @Test
+    fun `yesterday's record is not read back as today's`() {
+        val stored =
+            mutableMapOf<String, Any>(
+                "sessions_today_date" to today.minus(1, DateTimeUnit.DAY).toString(),
+                "sessions_today_by_task" to "7:2:50",
+            )
+
+        // The record outlives the day it belongs to, so an app opened the next morning has to
+        // discard it on the way in — not wait for a write to notice the date has moved.
+        assertThat(createRepository(stored).focusToday.value).isEmpty()
+    }
+
+    @Test
     fun `records written before minutes were tracked read back as sessions with no time`() {
-        val stored = mutableMapOf<String, Any>("sessions_today_by_task" to "7:2,9:1")
+        val stored = storedDay("7:2,9:1")
 
         assertThat(createRepository(stored).focusToday.value[7L])
             .isEqualTo(TaskFocusToday(sessions = 2, minutes = 0))
