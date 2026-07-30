@@ -251,6 +251,7 @@ private fun LazyListScope.runningSessionItem(
             },
             onStop = { onEvent(FocusContract.UiEvent.StopSession) },
             onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
+            onBackToWork = { onEvent(FocusContract.UiEvent.BackToWork) },
             modifier = Modifier.fillMaxWidth().animateItem(),
         )
     }

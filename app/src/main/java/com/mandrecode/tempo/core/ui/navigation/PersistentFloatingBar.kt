@@ -83,11 +83,15 @@ internal fun PersistentFloatingBar(
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = topLevelRoute == TasksRoute
     val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
+    // The session sheet sits over whichever tab you opened it from, the same way the task and habit
+    // sheets do. Those never change the route, so the bar stays; this one does, and the bar was
+    // vanishing under it for no reason the user could see.
+    val barRoute = if (currentRoute == FocusSessionRoute) topLevelRoute else currentRoute
     val visible =
         when {
-            currentRoute == FocusRoute -> true
-            currentRoute == RoutinesRoute -> routinesState.visible
-            currentRoute == TasksRoute -> tasksState.visible
+            barRoute == FocusRoute -> true
+            barRoute == RoutinesRoute -> routinesState.visible
+            barRoute == TasksRoute -> tasksState.visible
             isRailSettingsDestination -> true
             else -> false
         }
@@ -96,7 +100,7 @@ internal fun PersistentFloatingBar(
 
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
-            currentRoute = currentRoute,
+            currentRoute = barRoute,
             navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,

@@ -123,6 +123,7 @@ fun FocusSessionSheet(
             },
             onStop = { onEvent(FocusContract.UiEvent.StopSession) },
             onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
+            onBackToWork = { onEvent(FocusContract.UiEvent.BackToWork) },
             onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
             onEditSubtask = { onEvent(FocusContract.UiEvent.EditTask(it)) },
             onOpenInTasks = { task?.let { onOpenTaskInTasks(it.id) } },
