@@ -9,6 +9,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,6 +28,7 @@ class FocusSessionRepositoryImpl
         private val defaultLengthFlow = MutableStateFlow(readDefaultLength())
         private val breakLengthFlow = MutableStateFlow(readBreakLength())
         private val previewTaskIdFlow = MutableStateFlow<Long?>(null)
+        private val sessionsTodayFlow = MutableStateFlow(readSessionsToday())
 
         override val activeSession: StateFlow<FocusSession?> = sessionFlow.asStateFlow()
 
@@ -35,6 +37,30 @@ class FocusSessionRepositoryImpl
         override val breakLengthMinutes: StateFlow<Int> = breakLengthFlow.asStateFlow()
 
         override val previewTaskId: StateFlow<Long?> = previewTaskIdFlow.asStateFlow()
+
+        override val sessionsToday: StateFlow<Map<Long, Int>> = sessionsTodayFlow.asStateFlow()
+
+        override fun recordSessionFor(
+            taskId: Long,
+            today: LocalDate,
+        ) {
+            // Stamped with the date it belongs to, so yesterday's runs never colour today's card.
+            val current =
+                if (prefs.getString(KEY_SESSIONS_DATE, null) == today.toString()) {
+                    sessionsTodayFlow.value
+                } else {
+                    emptyMap()
+                }
+            val updated = current + (taskId to (current[taskId] ?: 0) + 1)
+            prefs.edit {
+                putString(KEY_SESSIONS_DATE, today.toString())
+                putString(
+                    KEY_SESSIONS_BY_TASK,
+                    updated.entries.joinToString(",") { (taskId, runs) -> "$taskId:$runs" },
+                )
+            }
+            sessionsTodayFlow.value = updated
+        }
 
         override fun setActiveSession(session: FocusSession?) {
             prefs.edit {
@@ -94,6 +120,19 @@ class FocusSessionRepositoryImpl
             )
         }
 
+        /** A flat `id:count,id:count` list — small, and never queried by anything but this class. */
+        private fun readSessionsToday(): Map<Long, Int> =
+            prefs
+                .getString(KEY_SESSIONS_BY_TASK, null)
+                .orEmpty()
+                .split(',')
+                .mapNotNull { pair ->
+                    val (id, count) = pair.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
+                    val taskId = id.toLongOrNull() ?: return@mapNotNull null
+                    val runs = count.toIntOrNull() ?: return@mapNotNull null
+                    taskId to runs
+                }.toMap()
+
         private fun readDefaultLength(): Int {
             val fallback = FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt()
             return prefs.getInt(KEY_DEFAULT_LENGTH, fallback).coerceIn(FocusSession.SESSION_LENGTH_RANGE)
@@ -114,6 +153,8 @@ class FocusSessionRepositoryImpl
             const val KEY_IS_BREAK = "session_is_break"
             const val KEY_DEFAULT_LENGTH = "session_default_length_minutes"
             const val KEY_BREAK_LENGTH = "session_break_length_minutes"
+            const val KEY_SESSIONS_DATE = "sessions_today_date"
+            const val KEY_SESSIONS_BY_TASK = "sessions_today_by_task"
             const val NOT_RUNNING = -1L
         }
     }

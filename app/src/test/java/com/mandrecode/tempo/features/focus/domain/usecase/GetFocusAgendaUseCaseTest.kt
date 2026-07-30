@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
@@ -13,6 +14,7 @@ import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
@@ -31,6 +33,8 @@ class GetFocusAgendaUseCaseTest {
     private val habitRepository = mockk<HabitRepository>()
     private val habitChainRepository = mockk<HabitChainRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
+    private val sessionsTodayFlow = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    private val sessionRepository = mockk<FocusSessionRepository>()
     private val useCase =
         GetFocusAgendaUseCase(
             taskRepository = taskRepository,
@@ -38,6 +42,7 @@ class GetFocusAgendaUseCaseTest {
             habitChainRepository = habitChainRepository,
             categoryRepository = categoryRepository,
             getUpNextItem = GetUpNextItemUseCase(),
+            sessionRepository = sessionRepository,
         )
 
     private fun task(
@@ -74,6 +79,7 @@ class GetFocusAgendaUseCaseTest {
         chains: List<HabitChain> = emptyList(),
         assertions: (com.mandrecode.tempo.features.focus.domain.model.FocusAgenda) -> Unit,
     ) {
+        every { sessionRepository.sessionsToday } returns sessionsTodayFlow
         every { taskRepository.getAllTasks() } returns flowOf(tasks)
         every { habitRepository.getAllHabits() } returns flowOf(habits)
         every { habitChainRepository.getAllHabitChains() } returns flowOf(chains)
@@ -81,7 +87,7 @@ class GetFocusAgendaUseCaseTest {
 
         useCase(today).test {
             assertions(awaitItem())
-            awaitComplete()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
@@ -201,6 +207,19 @@ class GetFocusAgendaUseCaseTest {
                 // The section keeps every item; the row is a separate view onto the same day.
                 val ids = it.today.map { entry -> entry.id }
                 assertThat(ids).containsExactly("task_2", "task_1", "habit_4", "task_3").inOrder()
+            }
+        }
+
+    @Test
+    fun `a task carries how many sessions it has had today`() =
+        runTest {
+            sessionsTodayFlow.value = mapOf(1L to 2)
+
+            agenda(tasks = listOf(task(1, today), task(2, today))) {
+                val entries = it.today.filterIsInstance<FocusAgendaItem.TaskEntry>()
+                assertThat(entries.first { e -> e.task.id == 1L }.sessionsToday).isEqualTo(2)
+                // Untouched work says nothing, rather than saying zero.
+                assertThat(entries.first { e -> e.task.id == 2L }.sessionsToday).isEqualTo(0)
             }
         }
 

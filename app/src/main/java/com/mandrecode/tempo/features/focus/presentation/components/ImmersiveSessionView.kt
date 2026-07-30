@@ -66,6 +66,7 @@ private const val FULLY_ROUNDED = 50
 internal fun SessionBody(
     session: FocusSession?,
     plannedLength: Duration,
+    sessionsToday: Int,
     subtasks: List<Task>,
     task: Task?,
     categoryName: String?,
@@ -144,6 +145,7 @@ internal fun SessionBody(
         SessionControls(
             session = session,
             plannedLength = plannedLength,
+            sessionsToday = sessionsToday,
             onStart = onStart,
             onPauseResume = onPauseResume,
             onStop = onStop,
@@ -164,8 +166,20 @@ internal fun SessionBody(
 private fun ColumnScope.PreStartControls(
     plannedLength: Duration,
     colors: SessionActionColors,
+    sessionsToday: Int,
     onStart: (Int) -> Unit,
+    onComplete: () -> Unit,
 ) {
+    if (sessionsToday > 0) {
+        WorkedOnControls(
+            plannedLength = plannedLength,
+            colors = colors,
+            onStart = onStart,
+            onComplete = onComplete,
+        )
+        return
+    }
+
     val standardMinutes = plannedLength.inWholeMinutes.toInt()
     var customMinutes by remember(standardMinutes) { mutableIntStateOf(standardMinutes) }
 
@@ -212,6 +226,41 @@ private fun ColumnScope.PreStartControls(
             increaseDescription = stringResource(R.string.focus_session_length_increase),
         )
     }
+}
+
+/**
+ * What a task that has already had a run at it offers.
+ *
+ * Worked on, not untouched: picking it back up is the same act as starting, so the standard button
+ * says so and finishing joins it — the pair the finished-break sheet offers, in the place that
+ * would otherwise have said "Start 25 min" as though nothing had happened.
+ */
+@Composable
+private fun ColumnScope.WorkedOnControls(
+    plannedLength: Duration,
+    colors: SessionActionColors,
+    onStart: (Int) -> Unit,
+    onComplete: () -> Unit,
+) {
+    SessionActionGroup(
+        actions =
+            listOf(
+                SessionAction(
+                    label = stringResource(R.string.focus_session_back_to_it),
+                    iconRes = R.drawable.ic_play_arrow,
+                    emphasis = ButtonEmphasis.FILLED,
+                    onClick = { onStart(plannedLength.inWholeMinutes.toInt()) },
+                ),
+                SessionAction(
+                    label = stringResource(R.string.focus_session_mark_done),
+                    iconRes = R.drawable.ic_check,
+                    emphasis = ButtonEmphasis.TONAL,
+                    onClick = onComplete,
+                ),
+            ),
+        colors = colors,
+        modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+    )
 }
 
 /** What the session is on: its description, the ring, and the task's category, priority and time. */
@@ -334,6 +383,7 @@ private fun SessionRingStatus(
 private fun SessionControls(
     session: FocusSession?,
     plannedLength: Duration,
+    sessionsToday: Int,
     onStart: (Int) -> Unit,
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
@@ -347,7 +397,9 @@ private fun SessionControls(
             PreStartControls(
                 plannedLength = plannedLength,
                 colors = colors,
+                sessionsToday = sessionsToday,
                 onStart = onStart,
+                onComplete = onComplete,
             )
         } else {
             // Finishing and pausing are the two you reach for while working, so they sit together

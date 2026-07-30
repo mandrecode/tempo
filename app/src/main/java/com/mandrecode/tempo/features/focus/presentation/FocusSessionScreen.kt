@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
 
 /**
@@ -49,6 +50,10 @@ fun FocusSessionRoute(
     // visit open on a task the user did not pick.
     DisposableEffect(Unit) {
         onDispose { viewModel.onEvent(FocusContract.UiEvent.ClearSessionPreview) }
+    }
+
+    uiState.pendingStart?.let { pending ->
+        ReplaceSessionDialog(pending = pending, onEvent = viewModel::onEvent)
     }
 
     uiState.taskEditor?.let { target ->
@@ -108,6 +113,7 @@ fun FocusSessionSheet(
             plannedLength =
                 session?.plannedLength
                     ?: FocusSession.lengthOf(uiState.defaultSessionLengthMinutes),
+            sessionsToday = uiState.sessionEntry?.sessionsToday ?: 0,
             subtasks = uiState.sessionSubtasks,
             task = task,
             categoryName = uiState.sessionEntry?.categoryName,

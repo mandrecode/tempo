@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.focus.domain.repository
 
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.datetime.LocalDate
 
 /**
  * The single active focus session, or `null` when none is running.
@@ -29,7 +30,22 @@ interface FocusSessionRepository {
      */
     val previewTaskId: StateFlow<Long?>
 
+    /**
+     * How many focus sessions each task has had today, by task id.
+     *
+     * Kept here beside the session rather than in the day's activity record: that record is history
+     * and only ever needs totals, while this is a fact about right now — whether the work you are
+     * looking at has already had a run at it. It resets with the date.
+     */
+    val sessionsToday: StateFlow<Map<Long, Int>>
+
     fun setActiveSession(session: FocusSession?)
+
+    /** Counts one finished focus session against [taskId]. Breaks are not sessions. */
+    fun recordSessionFor(
+        taskId: Long,
+        today: LocalDate,
+    )
 
     fun setDefaultLengthMinutes(minutes: Int)
 
