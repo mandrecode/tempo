@@ -83,12 +83,27 @@ object FocusContract {
         }
 
         /**
-         * The entry the session screen is showing: the running session's task, or the one being
-         * previewed before a session starts.
+         * The task the session screen is about.
+         *
+         * A preview wins over the running session, not the other way round: tapping a queued card
+         * is asking for *that* task, and answering with whatever happens to be counting down was
+         * the screen refusing to open the thing that was tapped.
+         */
+        val sessionTaskId: Long? get() = previewTaskId ?: session?.taskId
+
+        /**
+         * The session that screen should count down — none while previewing another task, so the
+         * ring stands still on the work you are looking at rather than on the work under way.
+         */
+        val screenSession: FocusSession? get() = session?.takeIf { it.taskId == sessionTaskId }
+
+        /**
+         * The entry the session screen is showing: the task being previewed, or the one the running
+         * session is on.
          */
         val sessionEntry: FocusAgendaItem.TaskEntry?
             get() {
-                val taskId = session?.taskId ?: previewTaskId ?: return null
+                val taskId = sessionTaskId ?: return null
                 // The row is searched too, not only the sections. It normally mirrors them, but
                 // this is a lookup and a duplicate costs nothing, whereas missing the task the
                 // session is on costs the screen its subject.

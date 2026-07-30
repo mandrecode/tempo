@@ -382,6 +382,65 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
+    fun `marking a previewed task done leaves the session running on its own task`() =
+        runTest {
+            val running = task(4, "Cocinar")
+            val looked = task(9, "Tarea")
+            stubDay(
+                agendaOf(
+                    upNext = FocusAgendaItem.TaskEntry(running),
+                    todayItems = listOf(FocusAgendaItem.TaskEntry(looked)),
+                ),
+            )
+            sessionFlow.value = FocusSession.start(4, "Cocinar", nowInstant)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext(9))
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(looked) }
+            // The timer was never on this task, so finishing it has no timer to end.
+            coVerify(exactly = 0) { focusSessionUseCases.end() }
+        }
+
+    @Test
+    fun `marking done clears the preview, so the screen never lingers on finished work`() =
+        runTest {
+            val open = task(9, "Tarea")
+            stubDay(agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(open))))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.PreviewUpNext(9))
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.previewTaskId).isNull()
+        }
+
+    @Test
+    fun `reaching for the running session drops a preview left on another card`() =
+        runTest {
+            val running = task(4, "Cocinar")
+            stubDay(agendaOf(upNext = FocusAgendaItem.TaskEntry(running)))
+            sessionFlow.value = FocusSession.start(4, "Cocinar", nowInstant)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            previewFlow.value = 9
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.OpenSessionScreen)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.previewTaskId).isNull()
+            assertThat(viewModel.uiState.value.sessionTaskId).isEqualTo(4)
+        }
+
+    @Test
     fun `another session restarts on the task the last one ran`() =
         runTest {
             stubDay()

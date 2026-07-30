@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -33,15 +35,20 @@ fun FocusSessionRoute(
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val session = uiState.session
+    // Not `uiState.session`: while another task is being previewed this screen is about that task,
+    // and whatever is counting down elsewhere is none of its business.
+    val session = uiState.screenSession
     val entry = uiState.sessionEntry
     val currentOnBack by rememberUpdatedState(onBack)
 
-    // Nothing left to show once the session is over and no task is being previewed — leave rather
-    // than stranding an empty screen. Keyed off the raw preview id, not the resolved entry: the
-    // agenda this screen looks the task up in has not loaded on the first composition, and reading
-    // that as "nothing to show" would close the screen the moment it opened.
-    val hasSomethingToShow = session != null || uiState.previewTaskId != null
+    // The screen is about one task, fixed the moment it opens. Once that task stops being the
+    // subject — its session ended, or it was ticked off — there is nothing left to show, and
+    // quietly falling back to whatever else happens to be running would swap the subject under the
+    // user's hands. Keyed off the raw ids, not the resolved entry: the agenda this screen looks the
+    // task up in has not loaded on the first composition, and reading that as "nothing to show"
+    // would close the screen the moment it opened.
+    val subjectTaskId = rememberSaveable { mutableStateOf(uiState.sessionTaskId) }.value
+    val hasSomethingToShow = subjectTaskId != null && uiState.sessionTaskId == subjectTaskId
     LaunchedEffect(hasSomethingToShow) {
         if (!hasSomethingToShow) currentOnBack()
     }

@@ -92,7 +92,11 @@ class FocusSessionUseCases
             if (minutes > 0) {
                 activityRepository.addFocusMinutes(today, minutes)
             }
-            if (!session.isBreak) {
+            // A run at the task is one that went the distance. Stopping early is the user saying
+            // this was not it, so the card goes back to offering a fresh start rather than
+            // reporting a session done — and having run out is the same test the finished-session
+            // sheet uses, so the two never disagree about what counted.
+            if (!session.isBreak && session.hasExpired(now)) {
                 sessionRepository.recordSessionFor(session.taskId, today)
             }
             return session

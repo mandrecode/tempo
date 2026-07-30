@@ -63,7 +63,9 @@ must end green on `./gradlew ktlintFormat && ./gradlew ktlintCheck && ./gradlew 
       band-selected headline, seven-day row, and a determinate `CircularWavyProgressIndicator`
 - [x] 3.7 Build `UpNextCard` on `tertiaryContainer`, collapsing entirely when nothing qualifies
       (revised: a swipeable row of up to five cards, drawn from the sections rather than
-      lifted out of them, with every card one height so the day below does not shift)
+      lifted out of them, each card as tall as its own content — a running session, a task
+      already worked on and an untouched one carry different controls, so one height for all
+      of them only padded the short ones out)
 - [x] 3.8 Build `FocusContent` with the two-block seam, `WavyDivider` section headers for Overdue and
       Today with counts, and interleaved task/habit/chain rows carrying type and category pills
 - [x] 3.9 Add the undated-task footer count navigating to the Tasks tab
