@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/mandrecode/tempo/compare/v1.10.0...v1.11.0) (2026-07-30)
+
+
+### Features
+
+* **#42:** add Focus — a third tab for today, with sessions ([#315](https://github.com/mandrecode/tempo/issues/315)) ([7d2a3b3](https://github.com/mandrecode/tempo/commit/7d2a3b3b91f1f6e144ea5325eb3e949ecbdc6650))
+
 ## [1.10.0](https://github.com/mandrecode/tempo/compare/v1.9.0...v1.10.0) (2026-07-28)
 
 
