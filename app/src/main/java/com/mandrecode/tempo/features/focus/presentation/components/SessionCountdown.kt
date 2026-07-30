@@ -1,10 +1,14 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import kotlinx.coroutines.delay
 import kotlin.time.Clock
@@ -67,3 +71,17 @@ internal fun Duration.asCountdownLabel(): String {
 private const val TICK_MILLIS = 1_000L
 private const val SECONDS_PER_MINUTE = 60
 private const val SECONDS_PER_HOUR = 60 * 60
+
+/**
+ * The tick that means done on every Focus surface the app draws itself.
+ *
+ * The bare check the task and habit cards already tick work off with — not `ic_check`, which draws
+ * its own ring. Focus was the only place in the app where finishing something looked different
+ * depending on which surface you finished it from.
+ *
+ * Not the notifications: an action icon there has to be a real drawable, so the session's
+ * notification keeps `ic_check` — and it sits among other notification actions rather than among
+ * these.
+ */
+@Composable
+internal fun doneIcon(): Painter = rememberVectorPainter(Icons.Filled.Check)

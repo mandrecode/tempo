@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,7 +17,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -227,10 +224,9 @@ internal fun WorkedOnActions(
             filled = true,
         )
         WorkedOnButton(
-            // The bare tick, not the ringed `ic_check` the labelled buttons carry: the disc around
-            // it is the button's, so a glyph drawing its own would have put a circle inside a
-            // circle — which is what made this read as an icon a size too small for its container.
-            icon = rememberVectorPainter(Icons.Filled.Check),
+            // The same tick the labelled buttons carry — and the disc around it is the button's,
+            // so a glyph drawing its own ring would have put a circle inside a circle.
+            icon = doneIcon(),
             contentDescription = stringResource(R.string.focus_session_mark_done),
             onClick = onComplete,
             filled = false,

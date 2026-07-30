@@ -189,7 +189,7 @@ private fun ColumnScope.PreStartControls(
         action =
             SessionAction(
                 label = stringResource(R.string.focus_session_start, sessionLengthLabel(standardMinutes)),
-                iconRes = R.drawable.ic_play_arrow,
+                icon = painterResource(R.drawable.ic_play_arrow),
                 emphasis = ButtonEmphasis.FILLED,
                 onClick = { onStart(standardMinutes) },
             ),
@@ -208,7 +208,7 @@ private fun ColumnScope.PreStartControls(
             action =
                 SessionAction(
                     label = stringResource(R.string.focus_session_start_custom),
-                    iconRes = R.drawable.ic_play_arrow,
+                    icon = painterResource(R.drawable.ic_play_arrow),
                     emphasis = ButtonEmphasis.QUIET,
                     onClick = { onStart(customMinutes) },
                 ),
@@ -249,13 +249,13 @@ private fun ColumnScope.WorkedOnControls(
             listOf(
                 SessionAction(
                     label = stringResource(R.string.focus_session_back_to_it),
-                    iconRes = R.drawable.ic_play_arrow,
+                    icon = painterResource(R.drawable.ic_play_arrow),
                     emphasis = ButtonEmphasis.FILLED,
                     onClick = { onStart(plannedLength.inWholeMinutes.toInt()) },
                 ),
                 SessionAction(
                     label = stringResource(R.string.focus_session_mark_done),
-                    iconRes = R.drawable.ic_check,
+                    icon = doneIcon(),
                     emphasis = ButtonEmphasis.TONAL,
                     onClick = onComplete,
                 ),
