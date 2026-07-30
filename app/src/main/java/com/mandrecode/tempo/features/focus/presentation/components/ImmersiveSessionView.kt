@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,7 +94,8 @@ internal fun SessionBody(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+                // No background of its own. The sheet already has one, and painting a second over
+                // it drew a seam across the top where the handle and title sat on a different tone.
                 .verticalScroll(rememberScrollState())
                 // Matches the inset the top app bar gives its title, so the description below it
                 // starts on the same line rather than stepping in.
@@ -194,7 +194,6 @@ private fun ColumnScope.PreStartControls(
                 ),
             colors = colors,
             modifier = Modifier.weight(1f),
-            compact = true,
         )
         ValueStepper(
             value = customMinutes,
@@ -202,6 +201,9 @@ private fun ColumnScope.PreStartControls(
             onValueChange = { customMinutes = it },
             range = FocusSession.SESSION_LENGTH_RANGE,
             step = FocusSession.LENGTH_STEP_MINUTES,
+            // Matched to the buttons either side of it, so the row is one band rather than a tall
+            // control with two short ones tucked against it.
+            buttonHeight = SessionControlHeight,
         )
     }
 }
@@ -429,8 +431,10 @@ private fun SessionTaskMetadata(
             SessionMetadataPill(
                 iconRes = R.drawable.ic_checklist,
                 label = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface,
+                // Distinct from the sheet's own surface, which the container tones now sit
+                // level with since the body stopped painting a background of its own.
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -472,5 +476,8 @@ private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val SessionHorizontalPadding = 16.dp
 private val SubtaskRadius = 14.dp
+
+/** One height for everything in the session's control rows, buttons and stepper alike. */
+private val SessionControlHeight = 52.dp
 private val SubtaskColumnMaxWidth = 420.dp
 private val TextButtonRadius = 24.dp

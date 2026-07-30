@@ -5,6 +5,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -258,6 +259,9 @@ private fun SessionActionSurface(
     modifier: Modifier = Modifier,
     compact: Boolean = false,
 ) {
+    // A floor rather than a fixed height: a wrapped label still gets the room it needs, but the
+    // short ones stop sitting lower than whatever they are lined up beside.
+    val sized = modifier.heightIn(min = if (compact) CompactMinHeight else StandardMinHeight)
     val haptic = LocalHapticFeedback.current
 
     Surface(
@@ -272,7 +276,7 @@ private fun SessionActionSurface(
             )
             action.onClick()
         },
-        modifier = modifier,
+        modifier = sized,
         interactionSource = interactionSource,
         shape = shape,
         color =
@@ -340,5 +344,7 @@ private val PillRadius = 24.dp
 private val PillPressedRadius = 12.dp
 private val InnerRadius = 6.dp
 private val GroupItemSpacing: Dp = 2.dp
+private val StandardMinHeight = 52.dp
+private val CompactMinHeight = 44.dp
 private const val DISCARD_BORDER_ALPHA = 0.4f
 private const val TONAL_ALPHA = 0.12f
