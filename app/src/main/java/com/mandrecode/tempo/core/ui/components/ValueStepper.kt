@@ -41,6 +41,9 @@ fun ValueStepper(
     step: Int = 1,
     enabled: Boolean = true,
     buttonHeight: Dp = StepperButtonHeight,
+    /** Announced by screen readers; default to the interval wording the repeat picker uses. */
+    decreaseDescription: String = stringResource(R.string.decrease_interval),
+    increaseDescription: String = stringResource(R.string.increase_interval),
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -49,7 +52,7 @@ fun ValueStepper(
     ) {
         StepperButton(
             iconRes = R.drawable.ic_remove,
-            contentDescription = stringResource(R.string.decrease_interval),
+            contentDescription = decreaseDescription,
             enabled = enabled && value - step >= range.first,
             height = buttonHeight,
             onClick = { onValueChange((value - step).coerceIn(range)) },
@@ -64,7 +67,7 @@ fun ValueStepper(
 
         StepperButton(
             iconRes = R.drawable.ic_add,
-            contentDescription = stringResource(R.string.increase_interval),
+            contentDescription = increaseDescription,
             enabled = enabled && value + step <= range.last,
             height = buttonHeight,
             onClick = { onValueChange((value + step).coerceIn(range)) },

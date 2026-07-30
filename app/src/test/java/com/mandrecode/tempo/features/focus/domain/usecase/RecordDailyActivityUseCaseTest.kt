@@ -3,6 +3,8 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.repository.DailyFocusActivityRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
@@ -22,11 +24,13 @@ class RecordDailyActivityUseCaseTest {
 
     private val taskRepository = mockk<TaskRepository>()
     private val habitRepository = mockk<HabitRepository>()
+    private val habitChainRepository = mockk<HabitChainRepository>()
     private val activityRepository = mockk<DailyFocusActivityRepository>(relaxed = true)
     private val useCase =
         RecordDailyActivityUseCase(
             taskRepository = taskRepository,
             habitRepository = habitRepository,
+            habitChainRepository = habitChainRepository,
             activityRepository = activityRepository,
             clock = Clock.System,
         )
@@ -58,14 +62,51 @@ class RecordDailyActivityUseCaseTest {
         completionHistory = completionHistory,
     )
 
+    private fun chain(
+        id: Long,
+        habitIds: List<Long>,
+        completionHistory: String = "",
+    ) = HabitChain(
+        id = id,
+        title = "Chain $id",
+        habitIds = habitIds,
+        createdDate = LocalDateTime(today, kotlinx.datetime.LocalTime(0, 0)),
+        completionHistory = completionHistory,
+    )
+
     private suspend fun record(
         tasks: List<Task> = emptyList(),
         habits: List<Habit> = emptyList(),
+        chains: List<HabitChain> = emptyList(),
     ) {
         every { taskRepository.getAllTasks() } returns flowOf(tasks)
         every { habitRepository.getAllHabits() } returns flowOf(habits)
+        every { habitChainRepository.getAllHabitChains() } returns flowOf(chains)
         useCase(today)
     }
+
+    @Test
+    fun `a chain counts once, not once per habit inside it`() =
+        runTest {
+            record(
+                habits = listOf(habit(1), habit(2), habit(3)),
+                chains = listOf(chain(10, habitIds = listOf(1, 2))),
+            )
+
+            // The chain and the loose habit: two things, exactly what Focus draws.
+            coVerify { activityRepository.recordCounts(today, scheduledCount = 2, completedCount = 0) }
+        }
+
+    @Test
+    fun `a completed chain counts as done, however its habits stand`() =
+        runTest {
+            record(
+                habits = listOf(habit(1), habit(2)),
+                chains = listOf(chain(10, habitIds = listOf(1, 2), completionHistory = today.toString())),
+            )
+
+            coVerify { activityRepository.recordCounts(today, scheduledCount = 1, completedCount = 1) }
+        }
 
     @Test
     fun `counts today's tasks and habits`() =
