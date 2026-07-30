@@ -79,10 +79,6 @@ fun TempoBottomNavigation(
 
     // A running session takes over the Focus tab's own slot rather than adding an element beside
     // it: the tab it would sit next to is the one it belongs to, and the bar has no width to spare.
-    // It expands to show the countdown only away from Focus — where you are already looking at the
-    // session card — and only when the tab is not also carrying its own action buttons, which is
-    // the case the bar actually runs out of room in. The expanded rail is the exception: its rows
-    // are wide and labelled, so a bare icon there would be the one row saying nothing.
     val sessionSlot: (@Composable (Modifier) -> Unit)? =
         activeSession?.let { session ->
             { slotModifier ->
@@ -90,8 +86,7 @@ fun TempoBottomNavigation(
                     session = session,
                     onClick = onOpenSession,
                     modifier = slotModifier,
-                    compact =
-                        !isExpandedRail && (currentRoute == FocusRoute || hasContextualActions),
+                    compact = isSessionChipCompact(isRailLayout, isExpandedRail, currentRoute, hasContextualActions),
                     selected = currentRoute == FocusRoute,
                 )
             }
@@ -330,3 +325,28 @@ private fun ExpandedRailNavigationRow(
         }
     }
 }
+
+/**
+ * Whether the session slot shows the countdown or only its icon.
+ *
+ * The countdown needs room, and how much room there is depends on the shape of the bar rather than
+ * on where you happen to be:
+ *
+ * - An expanded rail has wide, labelled rows. A bare icon there would be the one row saying nothing.
+ * - A narrow rail is one icon wide by construction, so there is nowhere for a countdown to go —
+ *   expanding pushed the pill straight out of the rail and over the content behind it.
+ * - On the bottom bar it expands away from Focus, where you are not already looking at the session
+ *   card, and only when the bar is not also carrying a tab's own action buttons — which is the case
+ *   it actually runs out of width in.
+ */
+internal fun isSessionChipCompact(
+    isRailLayout: Boolean,
+    isExpandedRail: Boolean,
+    currentRoute: NavKey,
+    hasContextualActions: Boolean,
+): Boolean =
+    when {
+        isExpandedRail -> false
+        isRailLayout -> true
+        else -> currentRoute == FocusRoute || hasContextualActions
+    }
