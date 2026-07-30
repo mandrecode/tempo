@@ -144,6 +144,9 @@ internal fun runningGroupActions(
             emphasis = ButtonEmphasis.TONAL,
             onClick = onPauseResume,
         )
+    // A break has two ways out, and abandoning it is neither: either you go back to the work or
+    // the work is done. Stopping the break said nothing about the task and left it exactly as it
+    // was, which is why "Stop here" read as doing nothing here.
     if (session.isBreak) {
         return listOf(
             SessionAction(
@@ -151,6 +154,12 @@ internal fun runningGroupActions(
                 iconRes = R.drawable.ic_play_arrow,
                 emphasis = ButtonEmphasis.FILLED,
                 onClick = onBackToWork,
+            ),
+            SessionAction(
+                label = stringResource(R.string.focus_session_mark_done),
+                iconRes = R.drawable.ic_check,
+                emphasis = ButtonEmphasis.TONAL,
+                onClick = onComplete,
             ),
         )
     }

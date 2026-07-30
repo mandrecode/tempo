@@ -660,6 +660,7 @@
     </plurals>
     <string name="focus_session_paused">En pausa</string>
     <string name="focus_session_finished_title">%1$d minutos completados</string>
+    <string name="focus_break_finished_title">Fin del descanso, ¡a seguir!</string>
     <string name="focus_session_start">Empezar %1$s</string>
     <string name="focus_session_start_custom">Empezar con</string>
     <string name="focus_session_length_decrease">Sesión más corta</string>
@@ -684,7 +685,6 @@
     <string name="focus_session_finished_heading">Se acabó el tiempo</string>
     <string name="focus_session_break_over_heading">Fin del descanso</string>
     <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
-    <string name="focus_session_finished_done">Dejarlo aquí</string>
     <string name="focus_session_back_to_it">Retomar</string>
     <string name="focus_session_not_started">Sin empezar</string>
     <string name="focus_session_open_in_tasks">Abrir en Tareas</string>

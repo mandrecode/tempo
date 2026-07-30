@@ -358,11 +358,13 @@ private fun SessionControls(
                 colors = colors,
                 modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
             )
-            SessionActionButton(
-                action = stopSessionAction(onStop),
-                colors = colors,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+            if (!session.isBreak) {
+                SessionActionButton(
+                    action = stopSessionAction(onStop),
+                    colors = colors,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
         }
     }
 }

@@ -125,7 +125,8 @@ private fun SessionCardActions(
     val colors = sessionCardActionColors()
 
     val running = runningGroupActions(session, onComplete, onPauseResume, onBackToWork)
-    val stop = stopSessionAction(onStop)
+    // A break's two choices are the whole set; a session keeps its way out.
+    val stop = stopSessionAction(onStop).takeUnless { session.isBreak }
 
     // All three across one row where they fit, unlike the session screen's two-plus-one: the card
     // is a summary sitting above the rest of the day, and a second row of controls would cost it
@@ -134,7 +135,7 @@ private fun SessionCardActions(
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         if (maxWidth >= ThreeAcrossMinWidth) {
             SessionActionGroup(
-                actions = running + stop,
+                actions = running + listOfNotNull(stop),
                 colors = colors,
                 modifier = Modifier.fillMaxWidth(),
                 compact = true,
@@ -147,7 +148,7 @@ private fun SessionCardActions(
                     modifier = Modifier.fillMaxWidth(),
                     compact = true,
                 )
-                SessionActionButton(action = stop, colors = colors, compact = true)
+                stop?.let { SessionActionButton(action = it, colors = colors, compact = true) }
             }
         }
     }

@@ -137,15 +137,7 @@ class FocusViewModel
                 FocusContract.UiEvent.StopSession -> viewModelScope.launch { finishSession() }
 
                 FocusContract.UiEvent.CompleteSessionTask ->
-                    viewModelScope.launch {
-                        // Finishing the work, not just the timer: a session you cut short is not
-                        // the same as a job done, so completing has to be its own action.
-                        val entry = mutableUiState.value.sessionEntry
-                        if (entry != null && !entry.task.isCompleted) {
-                            toggleTaskCompletion(entry.task)
-                            finishSession()
-                        }
-                    }
+                    viewModelScope.launch { completeSessionTask() }
 
                 FocusContract.UiEvent.OpenSessionScreen ->
                     sendEffect(FocusContract.UiEffect.OpenSessionScreen)
@@ -236,6 +228,23 @@ class FocusViewModel
             }
         }
 
+        /**
+         * Finishing the work, not just the timer: a session you cut short is not the same as a job
+         * done, so completing has to be its own action.
+         *
+         * Falls back to the task the last session ran on, because the completion sheet offers this
+         * after the session has already ended — by then there is no running session to read from.
+         */
+        private suspend fun completeSessionTask() {
+            val state = mutableUiState.value
+            val entry = state.sessionEntry ?: state.lastSessionEntry
+            if (entry != null && !entry.task.isCompleted) {
+                toggleTaskCompletion(entry.task)
+                finishSession()
+            }
+            dismissFinishedSession()
+        }
+
         private fun dismissFinishedSession() {
             mutableUiState.update { it.copy(finishedSession = null) }
         }
@@ -315,16 +324,14 @@ class FocusViewModel
             chainId: Long,
             isCompleted: Boolean,
         ) {
-            val chain = mutableUiState.value.chainEntry(chainId) ?: return
+            val chain =
+                (mutableUiState.value.overdue + mutableUiState.value.todayItems)
+                    .filterIsInstance<FocusAgendaItem.ChainEntry>()
+                    .firstOrNull { it.chain.id == chainId } ?: return
             chain.habits.forEach { habit ->
                 toggleHabitCompletion(habit.id, isCompleted, today)
             }
         }
-
-        private fun FocusContract.UiState.chainEntry(chainId: Long) =
-            (overdue + todayItems)
-                .filterIsInstance<FocusAgendaItem.ChainEntry>()
-                .firstOrNull { it.chain.id == chainId }
 
         private fun sendEffect(effect: FocusContract.UiEffect) {
             viewModelScope.launch { effectChannel.send(effect) }

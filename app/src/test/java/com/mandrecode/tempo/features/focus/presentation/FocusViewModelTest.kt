@@ -672,6 +672,43 @@ class FocusViewModelTest {
         }
 
     @Test
+    fun `the completion sheet can finish the task once the session has already ended`() =
+        runTest {
+            val open = task(9, "Report")
+            stubDay(agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(open))))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // The sheet offers this after expiry, when there is no running session left to read
+            // the task from — it has to fall back to the one the last session ran on.
+            runSessionOut(taskId = 9)
+            assertThat(viewModel.uiState.value.finishedSession).isNotNull()
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(open) }
+            assertThat(viewModel.uiState.value.finishedSession).isNull()
+        }
+
+    @Test
+    fun `finishing from the sheet is a no-op when the task is already done`() =
+        runTest {
+            val done = task(9, "Report", isCompleted = true)
+            stubDay(agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(done))))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            runSessionOut(taskId = 9)
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { toggleTaskCompletion(any()) }
+            // The sheet still closes: the choice was made either way.
+            assertThat(viewModel.uiState.value.finishedSession).isNull()
+        }
+
+    @Test
     fun `marking the session's task done completes it and ends the session`() =
         runTest {
             val open = task(4, "Report")
