@@ -50,6 +50,7 @@ import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitCard
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
+import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
@@ -155,7 +156,7 @@ private fun FocusAgendaList(
                     entry = entry,
                     today = today,
                     expandedChainIds = uiState.expandedChainIds,
-                    collapsedTaskIds = uiState.collapsedTaskIds,
+                    expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
                 )
             }
@@ -173,7 +174,7 @@ private fun FocusAgendaList(
                     entry = entry,
                     today = today,
                     expandedChainIds = uiState.expandedChainIds,
-                    collapsedTaskIds = uiState.collapsedTaskIds,
+                    expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
                 )
             }
@@ -219,7 +220,7 @@ private fun LazyListScope.upNextSection(
     // The card transforms in place rather than being replaced, so starting a session
     // does not shift everything below it.
     if (session != null) {
-        runningSessionItem(session, onEvent)
+        runningSessionItem(session, uiState.sessionSubtasks, onEvent)
     } else {
         upNextRow(upNext, uiState.defaultSessionLengthMinutes, onEvent)
     }
@@ -227,11 +228,13 @@ private fun LazyListScope.upNextSection(
 
 private fun LazyListScope.runningSessionItem(
     session: FocusSession,
+    subtasks: List<Task>,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     item(key = "running_session") {
         RunningSessionCard(
             session = session,
+            subtasks = subtasks,
             onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
             onPauseResume = {
                 onEvent(
@@ -314,7 +317,7 @@ private fun AgendaRow(
     entry: FocusAgendaItem,
     today: LocalDate,
     expandedChainIds: ImmutableList<Long>,
-    collapsedTaskIds: ImmutableList<Long>,
+    expandedTaskIds: ImmutableList<Long>,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     when (entry) {
@@ -326,7 +329,7 @@ private fun AgendaRow(
                 onEdit = { onEvent(FocusContract.UiEvent.EditTask(it)) },
                 // Without both of these the card is pinned open: its default is expanded and its
                 // toggle goes nowhere, so the chevron did nothing at all here.
-                isSubtasksExpanded = entry.task.id !in collapsedTaskIds,
+                isSubtasksExpanded = entry.task.id in expandedTaskIds,
                 onToggleSubtasksExpansion = {
                     onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(entry.task.id))
                 },

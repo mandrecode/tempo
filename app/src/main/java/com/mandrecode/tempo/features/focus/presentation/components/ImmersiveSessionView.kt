@@ -106,7 +106,6 @@ internal fun SessionBody(
             session = session,
             task = task,
             categoryName = categoryName,
-            subtasks = subtasks,
             progress = progress,
             countdownLabel = remaining.asCountdownLabel(),
             onOpenInTasks = onOpenInTasks,
@@ -214,7 +213,6 @@ private fun ColumnScope.SessionSubject(
     session: FocusSession?,
     task: Task?,
     categoryName: String?,
-    subtasks: List<Task>,
     progress: Float,
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
@@ -249,7 +247,6 @@ private fun ColumnScope.SessionSubject(
         SessionTaskMetadata(
             task = task,
             categoryName = categoryName,
-            subtasks = subtasks,
             modifier = Modifier.padding(top = 24.dp),
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
@@ -391,7 +388,6 @@ private fun ImmersiveTextButton(
 private fun SessionTaskMetadata(
     task: Task,
     categoryName: String?,
-    subtasks: List<Task>,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -423,18 +419,6 @@ private fun SessionTaskMetadata(
                 label = DateTimeFormatter.formatTimeOfDay(reminder.time, context),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-        }
-        // How much of the task is broken down, alongside its other properties. The checklist itself
-        // is further down the screen, so the count says it is there before you scroll to it.
-        if (subtasks.isNotEmpty()) {
-            SessionMetadataPill(
-                iconRes = R.drawable.ic_checklist,
-                label = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
-                // Distinct from the sheet's own surface, which the container tones now sit
-                // level with since the body stopped painting a background of its own.
-                containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

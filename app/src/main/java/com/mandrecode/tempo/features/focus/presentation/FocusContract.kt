@@ -28,10 +28,10 @@ object FocusContract {
         val undatedTaskCount: Int = 0,
         val expandedChainIds: ImmutableList<Long> = persistentListOf(),
         /**
-         * Tasks whose subtasks are folded away. Collapsed rather than expanded ids, because open is
-         * the resting state here — the day's point is seeing the work, not opening it one by one.
+         * Tasks whose subtasks are unfolded. Folded is the resting state: the day is a list of what
+         * is on today, and every step of every task opened by default buried that under itself.
          */
-        val collapsedTaskIds: ImmutableList<Long> = persistentListOf(),
+        val expandedTaskIds: ImmutableList<Long> = persistentListOf(),
         val session: FocusSession? = null,
         /** Set when a session has just finished, driving the completion sheet. */
         val finishedSession: FinishedSession? = null,

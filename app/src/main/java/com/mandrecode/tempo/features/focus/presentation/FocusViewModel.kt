@@ -86,7 +86,7 @@ class FocusViewModel
 
                 is FocusContract.UiEvent.ToggleSubtasksExpanded ->
                     mutableUiState.update {
-                        it.copy(collapsedTaskIds = it.collapsedTaskIds.toggling(event.taskId))
+                        it.copy(expandedTaskIds = it.expandedTaskIds.toggling(event.taskId))
                     }
 
                 is FocusContract.UiEvent.EditTask ->

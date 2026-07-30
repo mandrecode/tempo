@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -19,14 +21,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlin.time.Clock
 
 private val CardCornerRadius = 22.dp
@@ -48,6 +53,7 @@ internal fun RunningSessionCard(
     onStop: () -> Unit,
     onComplete: () -> Unit,
     modifier: Modifier = Modifier,
+    subtasks: List<Task> = emptyList(),
     clock: Clock = Clock.System,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -77,29 +83,20 @@ internal fun RunningSessionCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(14.dp),
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    CircularWavyProgressIndicator(
-                        progress = { progress },
-                        modifier = Modifier.size(RingSize),
-                        color = MaterialTheme.colorScheme.onTertiaryContainer,
-                        trackColor =
-                            MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TRACK_ALPHA),
-                        // The wave is the session's heartbeat: it travels while time is running
-                        // down and stands still the moment the user pauses.
-                        waveSpeed = if (session.isPaused) STILL else WaveSpeed,
-                    )
-                    Text(
-                        text = remaining.asCountdownLabel(),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold,
-                    )
-                }
+                SessionRing(progress = progress, session = session, label = remaining.asCountdownLabel())
 
                 SessionTitleBlock(
                     title = session.taskTitle,
                     isPaused = session.isPaused,
                     modifier = Modifier.weight(1f),
                 )
+
+                // Balances the ring on the other end of the row, and costs no height of its own —
+                // which is what it was doing on the session sheet, where it took a whole line to
+                // say two numbers.
+                if (subtasks.isNotEmpty()) {
+                    SubtaskCount(subtasks = subtasks)
+                }
             }
 
             SessionCardActions(
@@ -158,6 +155,52 @@ private fun SessionCardActions(
  */
 private val ThreeAcrossMinWidth = 340.dp
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SessionRing(
+    progress: Float,
+    session: FocusSession,
+    label: String,
+) {
+    Box(contentAlignment = Alignment.Center) {
+        CircularWavyProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.size(RingSize),
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            trackColor = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = TRACK_ALPHA),
+            // The wave is the session's heartbeat: it travels while time is running down and
+            // stands still the moment the user pauses.
+            waveSpeed = if (session.isPaused) STILL else WaveSpeed,
+        )
+        Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    }
+}
+
+/** How much of the task is broken down: done over total, no more than that. */
+@Composable
+private fun SubtaskCount(subtasks: List<Task>) {
+    Row(
+        modifier =
+            Modifier
+                .clip(RoundedCornerShape(percent = FULLY_ROUNDED))
+                .background(MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = COUNT_CONTAINER_ALPHA))
+                .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_checklist),
+            contentDescription = null,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            text = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Bold,
+        )
+    }
+}
+
 @Composable
 private fun SessionTitleBlock(
     title: String,
@@ -187,6 +230,8 @@ private fun SessionTitleBlock(
     }
 }
 
+private const val FULLY_ROUNDED = 50
+private const val COUNT_CONTAINER_ALPHA = 0.12f
 private val STILL = 0.dp
 private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.24f
