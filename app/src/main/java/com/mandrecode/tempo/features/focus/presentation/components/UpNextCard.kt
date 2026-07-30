@@ -18,7 +18,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -228,9 +227,9 @@ internal fun WorkedOnActions(
             filled = true,
         )
         WorkedOnButton(
-            // The bare tick the task and habit cards already use to mean done, not the ringed one
-            // the labelled buttons carry: with no container of its own left, a glyph that draws its
-            // own circle would just have put the circle back.
+            // The bare tick, not the ringed `ic_check` the labelled buttons carry: the disc around
+            // it is the button's, so a glyph drawing its own would have put a circle inside a
+            // circle — which is what made this read as an icon a size too small for its container.
             icon = rememberVectorPainter(Icons.Filled.Check),
             contentDescription = stringResource(R.string.focus_session_mark_done),
             onClick = onComplete,
@@ -240,10 +239,10 @@ internal fun WorkedOnActions(
 }
 
 /**
- * [filled] is the one being suggested — picking the work back up. Done is the quieter of the two
- * and carries no container at all: a tick sitting inside its own faint disc read as an icon that
- * had been dropped into something a size too big for it, and the disc was saying nothing the icon
- * was not already saying. It keeps the full-size tap target, just not the paint.
+ * Both actions are discs of the same size, so the pair reads as a pair. [filled] is the one being
+ * suggested — picking the work back up — and takes the card's ink; done is the quieter of the two
+ * and takes a faint wash of it instead, present enough to be a button without competing with the
+ * one beside it.
  */
 @Composable
 private fun WorkedOnButton(
@@ -267,7 +266,9 @@ private fun WorkedOnButton(
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
         color =
-            if (filled) MaterialTheme.colorScheme.onTertiaryContainer else Color.Transparent,
+            MaterialTheme.colorScheme.onTertiaryContainer.let {
+                if (filled) it else it.copy(alpha = QUIET_CONTAINER_ALPHA)
+            },
         contentColor =
             if (filled) {
                 MaterialTheme.colorScheme.tertiaryContainer
@@ -279,7 +280,7 @@ private fun WorkedOnButton(
             Icon(
                 painter = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(if (filled) FilledIconSize else BareIconSize),
+                modifier = Modifier.size(WorkedOnIconSize),
             )
         }
     }
@@ -287,10 +288,10 @@ private fun WorkedOnButton(
 
 /** One height for every action a queued card can offer, so every such card is the same card. */
 private val UpNextActionHeight = 40.dp
-private val FilledIconSize = 18.dp
+private val WorkedOnIconSize = 18.dp
 
-/** With no container around it the tick has to carry itself, so it stands a little larger. */
-private val BareIconSize = 22.dp
+/** Enough to draw the disc, not enough to read as a second filled button. */
+private const val QUIET_CONTAINER_ALPHA = 0.18f
 private const val METADATA_ALPHA = 0.75f
 private val PillRadius = 20.dp
 private val PillPressedRadius = 10.dp
