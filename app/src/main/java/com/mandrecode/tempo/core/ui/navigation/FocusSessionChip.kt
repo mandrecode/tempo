@@ -75,7 +75,12 @@ internal fun FocusSessionChip(
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
-        SessionChipContent(label = label, compact = compact, selected = selected)
+        SessionChipContent(
+            label = label,
+            compact = compact,
+            selected = selected,
+            session = session,
+        )
     }
 }
 
@@ -84,6 +89,7 @@ private fun SessionChipContent(
     label: String,
     compact: Boolean,
     selected: Boolean,
+    session: FocusSession,
 ) {
     Row(
         modifier =
@@ -96,7 +102,14 @@ private fun SessionChipContent(
         Icon(
             painter =
                 painterResource(
-                    id = if (selected) R.drawable.ic_focus else R.drawable.ic_focus_outlined,
+                    // A break is not focus time, and the pill is the only part of it visible from
+                    // another tab — so it says which of the two is running.
+                    id =
+                        when {
+                            session.isBreak -> R.drawable.ic_coffee
+                            selected -> R.drawable.ic_focus
+                            else -> R.drawable.ic_focus_outlined
+                        },
                 ),
             contentDescription = null,
             // The same size the tab icons beside it use. It stands in for the Focus tab, so a

@@ -52,6 +52,7 @@ internal fun RunningSessionCard(
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
+    onBackToWork: () -> Unit,
     modifier: Modifier = Modifier,
     subtasks: List<Task> = emptyList(),
     clock: Clock = Clock.System,
@@ -105,6 +106,7 @@ internal fun RunningSessionCard(
                 onPauseResume = onPauseResume,
                 onStop = onStop,
                 onComplete = onComplete,
+                onBackToWork = onBackToWork,
                 modifier = Modifier.padding(top = 12.dp),
             )
         }
@@ -117,11 +119,12 @@ private fun SessionCardActions(
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
+    onBackToWork: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val colors = sessionCardActionColors()
 
-    val running = runningGroupActions(session, onComplete, onPauseResume)
+    val running = runningGroupActions(session, onComplete, onPauseResume, onBackToWork)
     val stop = stopSessionAction(onStop)
 
     // All three across one row where they fit, unlike the session screen's two-plus-one: the card

@@ -124,7 +124,13 @@ class FocusViewModel
          */
         private fun onSessionEvent(event: FocusContract.UiEvent) {
             when (event) {
-                is FocusContract.UiEvent.StartSession -> startSession(event)
+                is FocusContract.UiEvent.StartSession ->
+                    startSessionOn(event.taskId, event.lengthMinutes)
+
+                FocusContract.UiEvent.BackToWork ->
+                    mutableUiState.value.session
+                        ?.takeIf { it.isBreak }
+                        ?.let { startSessionOn(taskId = it.taskId, lengthMinutes = null) }
 
                 FocusContract.UiEvent.PauseSession -> focusSessionUseCases.pause()
                 FocusContract.UiEvent.ResumeSession -> focusSessionUseCases.resume()
@@ -202,12 +208,16 @@ class FocusViewModel
 
         /**
          * Starts on the card that was tapped, or on whatever the screen is already showing when
-         * nothing names a task — the session screen's own button has only one candidate.
+         * nothing names one. Also the way out of a break: starting replaces whatever is running,
+         * and a break banks no minutes, so cutting one short costs nothing.
          */
-        private fun startSession(event: FocusContract.UiEvent.StartSession) {
+        private fun startSessionOn(
+            taskId: Long?,
+            lengthMinutes: Int?,
+        ) {
             val state = mutableUiState.value
             val task =
-                event.taskId
+                taskId
                     ?.let { id -> state.upNext.firstOrNull { it.task.id == id } }
                     ?.task
                     ?: (state.sessionEntry ?: state.upNext.firstOrNull())?.task
@@ -217,7 +227,7 @@ class FocusViewModel
                 focusSessionUseCases.start(
                     taskId = task.id,
                     taskTitle = task.title,
-                    lengthMinutes = event.lengthMinutes,
+                    lengthMinutes = lengthMinutes,
                 )
                 focusSessionRepository.setPreviewTaskId(null)
                 // Starting is a commitment to the work, so the app follows the user into it rather

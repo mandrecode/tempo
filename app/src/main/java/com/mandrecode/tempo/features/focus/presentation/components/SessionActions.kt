@@ -118,12 +118,19 @@ internal data class SessionAction(
     val onClick: () -> Unit,
 )
 
-/** Done and pause for a running session — or pause alone on a break, which has no work to finish. */
+/**
+ * Done and pause for a running session; for a break, the way back to the work.
+ *
+ * A break has no work to finish and little worth pausing — stopping the clock on a rest is a
+ * distinction without a difference — so the reversible action there is cutting it short and
+ * starting again, which is the thing people actually want halfway through one.
+ */
 @Composable
 internal fun runningGroupActions(
     session: FocusSession,
     onComplete: () -> Unit,
     onPauseResume: () -> Unit,
+    onBackToWork: () -> Unit,
 ): List<SessionAction> {
     val pause =
         SessionAction(
@@ -137,7 +144,16 @@ internal fun runningGroupActions(
             emphasis = ButtonEmphasis.TONAL,
             onClick = onPauseResume,
         )
-    if (session.isBreak) return listOf(pause)
+    if (session.isBreak) {
+        return listOf(
+            SessionAction(
+                label = stringResource(R.string.focus_session_back_to_it),
+                iconRes = R.drawable.ic_play_arrow,
+                emphasis = ButtonEmphasis.FILLED,
+                onClick = onBackToWork,
+            ),
+        )
+    }
 
     return listOf(
         SessionAction(

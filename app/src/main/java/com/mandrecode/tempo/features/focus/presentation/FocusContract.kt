@@ -185,6 +185,9 @@ object FocusContract {
 
         data object TakeBreak : UiEvent
 
+        /** Ends the break early and starts a fresh session on the same task. */
+        data object BackToWork : UiEvent
+
         data object DismissFinishedSession : UiEvent
     }
 

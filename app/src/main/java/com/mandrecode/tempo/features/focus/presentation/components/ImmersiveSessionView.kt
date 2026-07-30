@@ -73,6 +73,7 @@ internal fun SessionBody(
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
+    onBackToWork: () -> Unit,
     onToggleSubtask: (Task) -> Unit,
     onEditSubtask: (Task) -> Unit,
     onOpenInTasks: () -> Unit,
@@ -147,6 +148,7 @@ internal fun SessionBody(
             onPauseResume = onPauseResume,
             onStop = onStop,
             onComplete = onComplete,
+            onBackToWork = onBackToWork,
         )
     }
 }
@@ -336,6 +338,7 @@ private fun SessionControls(
     onPauseResume: () -> Unit,
     onStop: () -> Unit,
     onComplete: () -> Unit,
+    onBackToWork: () -> Unit,
 ) {
     val colors = sessionScreenActionColors()
 
@@ -351,7 +354,7 @@ private fun SessionControls(
             // as one control. Stopping throws the session away, so it stays on its own line where
             // it cannot be hit by aiming slightly wide.
             SessionActionGroup(
-                actions = runningGroupActions(session, onComplete, onPauseResume),
+                actions = runningGroupActions(session, onComplete, onPauseResume, onBackToWork),
                 colors = colors,
                 modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
             )
