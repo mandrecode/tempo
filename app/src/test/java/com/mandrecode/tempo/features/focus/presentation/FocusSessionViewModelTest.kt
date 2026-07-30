@@ -502,4 +502,76 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
             assertThat(viewModel.uiState.value.pendingStart).isNull()
             coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any(), any()) }
         }
+
+    @Test
+    fun `confirming the replacement starts the session that was waiting on it`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+            sessionFlow.value = FocusSession.start(4, "Something else", nowInstant)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.StartSession(taskId = 9, lengthMinutes = 45))
+            advanceUntilIdle()
+            assertThat(
+                viewModel.uiState.value.pendingStart
+                    ?.taskId,
+            ).isEqualTo(9)
+
+            viewModel.onEvent(FocusContract.UiEvent.ConfirmPendingStart)
+            advanceUntilIdle()
+
+            // The length the user picked survives the question — the dialog holds the start, it
+            // does not rewrite it.
+            assertThat(viewModel.uiState.value.pendingStart).isNull()
+            coVerify { focusSessionUseCases.start(taskId = 9, taskTitle = "Report", lengthMinutes = 45) }
+        }
+
+    @Test
+    fun `confirming with nothing waiting starts nothing`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.ConfirmPendingStart)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `back to work cuts the break short and restarts on the same task`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+            sessionFlow.value = FocusSession.start(9, "Report", nowInstant, isBreak = true)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.BackToWork)
+            advanceUntilIdle()
+
+            coVerify { focusSessionUseCases.start(taskId = 9, taskTitle = "Report", lengthMinutes = null) }
+        }
+
+    @Test
+    fun `back to work does nothing when the session is not a break`() =
+        runTest {
+            val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
+            stubDay(agendaOf(upNext = entry, todayItems = listOf(entry)))
+            sessionFlow.value = FocusSession.start(9, "Report", nowInstant)
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            // There is no break to come back from, and restarting would throw away the minutes the
+            // running session has earned.
+            viewModel.onEvent(FocusContract.UiEvent.BackToWork)
+            advanceUntilIdle()
+
+            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any(), any()) }
+        }
 }
