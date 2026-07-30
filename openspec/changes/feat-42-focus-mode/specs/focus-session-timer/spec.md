@@ -102,13 +102,25 @@ reports focus time accumulated across sessions rather than only the current one.
 - **WHEN** the user ends a session after ten minutes
 - **THEN** ten minutes are recorded for that day
 
-### Requirement: The default session length is configurable
-Settings SHALL offer a default focus session length, defaulting to 25 minutes, and the chosen length
-SHALL apply to sessions started afterwards. The break length SHALL be fixed at 5 minutes.
+### Requirement: Both lengths are configurable
+Settings SHALL offer a default focus session length, defaulting to 25 minutes, and a break length,
+defaulting to 5 minutes. Each SHALL be set on a clock face in hours and minutes, and the chosen
+values SHALL apply to sessions and breaks started afterwards.
+
+A session SHALL also be startable at a length chosen for that start alone, which SHALL NOT change
+the configured default.
 
 #### Scenario: Changing the default length
 - **WHEN** the user sets the default session length to 45 minutes and starts a session
 - **THEN** the session runs for 45 minutes
+
+#### Scenario: Changing the break length
+- **WHEN** the user sets the break length to 15 minutes and takes a break
+- **THEN** the break runs for 15 minutes
+
+#### Scenario: A length chosen for one session only
+- **WHEN** the user starts a session at 40 minutes from the session surface
+- **THEN** that session runs for 40 minutes and the configured default is unchanged
 
 #### Scenario: Change does not affect a running session
 - **WHEN** the default length is changed while a session is running

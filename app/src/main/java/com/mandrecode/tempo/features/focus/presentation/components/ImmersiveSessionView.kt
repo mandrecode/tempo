@@ -203,6 +203,8 @@ private fun ColumnScope.PreStartControls(
             // Matched to the buttons either side of it, so the row is one band rather than a tall
             // control with two short ones tucked against it.
             buttonHeight = SessionControlHeight,
+            decreaseDescription = stringResource(R.string.focus_session_length_decrease),
+            increaseDescription = stringResource(R.string.focus_session_length_increase),
         )
     }
 }

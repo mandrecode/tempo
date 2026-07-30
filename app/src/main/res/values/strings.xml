@@ -658,6 +658,8 @@
     <string name="focus_session_finished_title">%1$d minutes done</string>
     <string name="focus_session_start">Start %1$s</string>
     <string name="focus_session_start_custom">Start with</string>
+    <string name="focus_session_length_decrease">Shorter session</string>
+    <string name="focus_session_length_increase">Longer session</string>
     <string name="focus_session_pause">Pause</string>
     <string name="focus_session_resume">Resume</string>
     <string name="focus_session_stop">Stop here</string>
