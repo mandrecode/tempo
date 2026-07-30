@@ -2,6 +2,8 @@ package com.mandrecode.tempo.features.focus.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
@@ -40,6 +42,7 @@ class FocusViewModel
         private val focusSessionRepository: FocusSessionRepository,
         private val focusSessionUseCases: FocusSessionUseCases,
         private val toggleHabitCompletion: ToggleHabitCompletionUseCase,
+        private val vacationModeRepository: VacationModeRepository,
         private val clock: Clock,
     ) : ViewModel() {
         private val mutableUiState = MutableStateFlow(FocusContract.UiState())
@@ -339,18 +342,24 @@ class FocusViewModel
         private fun observeDay() {
             viewModelScope.launch {
                 val day = today
+                // The vacation periods are collected here rather than on their own, because the
+                // streak is counted on their terms: pausing while this screen is open has to move
+                // the number as well as the badge, and two collectors would have let the badge
+                // appear beside a streak still counted the old way.
                 combine(
                     getFocusAgenda(day),
                     getFocusHistory(day),
-                ) { agenda, history ->
-                    agenda to history
-                }.collect { (agenda, history) ->
+                    vacationModeRepository.periods,
+                ) { agenda, history, periods ->
+                    Triple(agenda, history, periods)
+                }.collect { (agenda, history, periods) ->
                     val streak = getFocusStreak(day)
                     mutableUiState.update { state ->
                         state.copy(
                             isLoading = false,
                             today = day,
                             streakDays = streak,
+                            isVacationModeActive = VacationPeriod.activeOn(periods, day) != null,
                             history = history.toPersistentList(),
                             scheduledCount = agenda.scheduledCount,
                             completedCount = agenda.completedCount,

@@ -84,6 +84,31 @@ streak behavior for days outside a habit's repeat days.
 - **WHEN** a day had scheduled items and none were completed
 - **THEN** the streak restarts after that day
 
+### Requirement: Vacation mode protects the focus streak
+Vacation mode is an app-wide "relax without breaking streaks" toggle rather than a habits-only one,
+so the focus streak SHALL treat a paused day on the same terms the habit streak already gives it:
+optional rather than out of scope. A paused day with no activity SHALL NOT break the streak, and a
+paused day with activity SHALL still count towards it. Focus SHALL indicate an active vacation
+period on its own surface, as Routines does. Recorded activity is unchanged; only the reading of it
+differs.
+
+#### Scenario: A vacation does not break a streak that spans it
+- **WHEN** a run of completed days is followed by a vacation period with no activity recorded, and
+  then by further completed days
+- **THEN** the streak spans the vacation, counting the completed days either side of it
+
+#### Scenario: Work done while away still counts
+- **WHEN** a day inside a vacation period had a scheduled item completed
+- **THEN** that day counts towards the streak rather than being skipped
+
+#### Scenario: A vacation that has ended excuses nothing
+- **WHEN** a day with no activity falls outside every vacation period
+- **THEN** the streak breaks at that day as it would with vacation mode never used
+
+#### Scenario: Focus says when the day is paused
+- **WHEN** today falls inside a vacation period
+- **THEN** the Focus title carries the same vacation badge the Routines title does
+
 ### Requirement: Daily activity is persisted independently of task retention
 The app SHALL record per-day scheduled counts, completed counts, and focus minutes in durable
 storage so that summary history is unaffected by the deletion of completed tasks.

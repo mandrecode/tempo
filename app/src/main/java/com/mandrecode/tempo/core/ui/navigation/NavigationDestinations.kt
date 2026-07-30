@@ -26,10 +26,16 @@ import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
 @Composable
 internal fun FocusDestination(navigator: TempoNavigator) {
     FocusScreen(
-        topBar = {
+        topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
                 title = stringResource(R.string.focus),
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
+                titleBadge =
+                    if (isVacationModeActive) {
+                        { VacationModeTitleBadge() }
+                    } else {
+                        null
+                    },
             )
         },
         onNavigateToTasks = { navigator.navigateToTopLevel(TasksRoute) },

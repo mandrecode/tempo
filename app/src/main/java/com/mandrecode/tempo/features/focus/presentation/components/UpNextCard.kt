@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -15,6 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -183,18 +189,23 @@ internal fun StartSessionButton(
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
-        modifier = modifier,
+        // The same height the worked-on pair stands at, so a card with one line of title is one
+        // card whichever action it happens to be offering. Two heights for the same shape of card
+        // made the row jog as it scrolled past.
+        modifier = modifier.height(UpNextActionHeight),
         shape = RoundedCornerShape(cornerRadius.value),
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         contentColor = MaterialTheme.colorScheme.tertiaryContainer,
         interactionSource = interactionSource,
     ) {
-        Text(
-            text = stringResource(R.string.focus_session_start, sessionLengthLabel(minutes)),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-        )
+        Box(contentAlignment = Alignment.Center) {
+            Text(
+                text = stringResource(R.string.focus_session_start, sessionLengthLabel(minutes)),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(horizontal = 14.dp),
+            )
+        }
     }
 }
 
@@ -211,13 +222,16 @@ internal fun WorkedOnActions(
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         WorkedOnButton(
-            iconRes = R.drawable.ic_play_arrow,
+            icon = painterResource(R.drawable.ic_play_arrow),
             contentDescription = stringResource(R.string.focus_session_back_to_it),
             onClick = onBackToWork,
             filled = true,
         )
         WorkedOnButton(
-            iconRes = R.drawable.ic_check,
+            // The bare tick the task and habit cards already use to mean done, not the ringed one
+            // the labelled buttons carry: with no container of its own left, a glyph that draws its
+            // own circle would just have put the circle back.
+            icon = rememberVectorPainter(Icons.Filled.Check),
             contentDescription = stringResource(R.string.focus_session_mark_done),
             onClick = onComplete,
             filled = false,
@@ -225,9 +239,15 @@ internal fun WorkedOnActions(
     }
 }
 
+/**
+ * [filled] is the one being suggested — picking the work back up. Done is the quieter of the two
+ * and carries no container at all: a tick sitting inside its own faint disc read as an icon that
+ * had been dropped into something a size too big for it, and the disc was saying nothing the icon
+ * was not already saying. It keeps the full-size tap target, just not the paint.
+ */
 @Composable
 private fun WorkedOnButton(
-    iconRes: Int,
+    icon: Painter,
     contentDescription: String,
     onClick: () -> Unit,
     filled: Boolean,
@@ -243,15 +263,11 @@ private fun WorkedOnButton(
             )
             onClick()
         },
-        modifier = Modifier.size(WorkedOnButtonSize),
+        modifier = Modifier.size(UpNextActionHeight),
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
         color =
-            if (filled) {
-                MaterialTheme.colorScheme.onTertiaryContainer
-            } else {
-                MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = METADATA_ALPHA / 4)
-            },
+            if (filled) MaterialTheme.colorScheme.onTertiaryContainer else Color.Transparent,
         contentColor =
             if (filled) {
                 MaterialTheme.colorScheme.tertiaryContainer
@@ -261,15 +277,20 @@ private fun WorkedOnButton(
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
-                painter = painterResource(iconRes),
+                painter = icon,
                 contentDescription = contentDescription,
-                modifier = Modifier.size(18.dp),
+                modifier = Modifier.size(if (filled) FilledIconSize else BareIconSize),
             )
         }
     }
 }
 
-private val WorkedOnButtonSize = 40.dp
+/** One height for every action a queued card can offer, so every such card is the same card. */
+private val UpNextActionHeight = 40.dp
+private val FilledIconSize = 18.dp
+
+/** With no container around it the tick has to carry itself, so it stands a little larger. */
+private val BareIconSize = 22.dp
 private const val METADATA_ALPHA = 0.75f
 private val PillRadius = 20.dp
 private val PillPressedRadius = 10.dp

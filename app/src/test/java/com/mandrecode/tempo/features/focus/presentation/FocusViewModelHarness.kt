@@ -1,6 +1,8 @@
 package com.mandrecode.tempo.features.focus.presentation
 
 import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
+import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgenda
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
@@ -66,6 +68,10 @@ abstract class FocusViewModelHarness {
             every { setPreviewTaskId(any()) } answers { previewFlow.value = firstArg() }
         }
 
+    protected val vacationPeriods = MutableStateFlow<List<VacationPeriod>>(emptyList())
+    protected val vacationModeRepository =
+        mockk<VacationModeRepository> { every { periods } returns vacationPeriods }
+
     protected val clock =
         object : Clock {
             // Fixed so "today" is deterministic; the date is what the ViewModel reads.
@@ -107,6 +113,7 @@ abstract class FocusViewModelHarness {
             focusSessionRepository = focusSessionRepository,
             focusSessionUseCases = focusSessionUseCases,
             toggleHabitCompletion = toggleHabitCompletion,
+            vacationModeRepository = vacationModeRepository,
             clock = clock,
         )
 
