@@ -7,6 +7,7 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import io.mockk.coEvery
 import io.mockk.coVerify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -280,5 +281,24 @@ class FocusViewModelTest : FocusViewModelHarness() {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.isVacationModeActive).isFalse()
+        }
+
+    @Test
+    fun `pausing while Focus is open recounts the streak, not just the badge`() =
+        runTest {
+            stubDay()
+            coEvery { getFocusStreak(any()) } returns 3
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.streakDays).isEqualTo(3)
+
+            // The streak is counted on the vacation periods' terms, so a pause taken without
+            // leaving the screen has to move the number, not only raise the badge beside it.
+            coEvery { getFocusStreak(any()) } returns 9
+            vacationPeriods.value = listOf(VacationPeriod(start = today))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.streakDays).isEqualTo(9)
+            assertThat(viewModel.uiState.value.isVacationModeActive).isTrue()
         }
 }

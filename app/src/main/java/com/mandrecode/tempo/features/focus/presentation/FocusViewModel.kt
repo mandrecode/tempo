@@ -340,29 +340,26 @@ class FocusViewModel
         }
 
         private fun observeDay() {
-            // Hosted here rather than in its own observer: whether the day is paused is a fact
-            // about the day, and the view model is already at the function count its own rules
-            // allow.
-            viewModelScope.launch {
-                vacationModeRepository.periods.collect { periods ->
-                    val paused = VacationPeriod.activeOn(periods, today) != null
-                    mutableUiState.update { it.copy(isVacationModeActive = paused) }
-                }
-            }
             viewModelScope.launch {
                 val day = today
+                // The vacation periods are collected here rather than on their own, because the
+                // streak is counted on their terms: pausing while this screen is open has to move
+                // the number as well as the badge, and two collectors would have let the badge
+                // appear beside a streak still counted the old way.
                 combine(
                     getFocusAgenda(day),
                     getFocusHistory(day),
-                ) { agenda, history ->
-                    agenda to history
-                }.collect { (agenda, history) ->
+                    vacationModeRepository.periods,
+                ) { agenda, history, periods ->
+                    Triple(agenda, history, periods)
+                }.collect { (agenda, history, periods) ->
                     val streak = getFocusStreak(day)
                     mutableUiState.update { state ->
                         state.copy(
                             isLoading = false,
                             today = day,
                             streakDays = streak,
+                            isVacationModeActive = VacationPeriod.activeOn(periods, day) != null,
                             history = history.toPersistentList(),
                             scheduledCount = agenda.scheduledCount,
                             completedCount = agenda.completedCount,
