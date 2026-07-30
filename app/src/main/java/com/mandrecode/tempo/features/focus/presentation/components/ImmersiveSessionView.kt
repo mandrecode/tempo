@@ -224,11 +224,15 @@ private fun ColumnScope.SessionSubject(
         label = countdownLabel,
         isPaused = session?.isPaused ?: true,
         statusLabel =
-            when {
-                session == null -> stringResource(R.string.focus_session_not_started)
-                session.isPaused -> stringResource(R.string.focus_session_paused)
-                else -> stringResource(R.string.focus_session_focusing)
-            },
+            stringResource(
+                when {
+                    session == null -> R.string.focus_session_not_started
+                    session.isPaused -> R.string.focus_session_paused
+                    session.isBreak -> R.string.focus_session_break
+                    else -> R.string.focus_session_focusing
+                },
+            ),
+        statusIconRes = R.drawable.ic_coffee.takeIf { session?.isBreak == true },
         modifier = Modifier.padding(top = 24.dp),
     )
 
@@ -270,6 +274,7 @@ private fun SessionRing(
     isPaused: Boolean,
     statusLabel: String,
     modifier: Modifier = Modifier,
+    statusIconRes: Int? = null,
 ) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         CircularWavyProgressIndicator(
@@ -286,13 +291,37 @@ private fun SessionRing(
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
             )
-            Text(
-                text = statusLabel,
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            SessionRingStatus(
+                label = statusLabel,
+                iconRes = statusIconRes,
             )
         }
+    }
+}
+
+@Composable
+private fun SessionRingStatus(
+    label: String,
+    iconRes: Int?,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        iconRes?.let {
+            Icon(
+                painter = painterResource(it),
+                contentDescription = null,
+                modifier = Modifier.size(14.dp),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            fontWeight = FontWeight.SemiBold,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
