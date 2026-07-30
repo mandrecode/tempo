@@ -101,27 +101,33 @@ object FocusContract {
          * The entry the session screen is showing: the task being previewed, or the one the running
          * session is on.
          */
-        val sessionEntry: FocusAgendaItem.TaskEntry?
-            get() {
-                val taskId = sessionTaskId ?: return null
-                // The row is searched too, not only the sections. It normally mirrors them, but
-                // this is a lookup and a duplicate costs nothing, whereas missing the task the
-                // session is on costs the screen its subject.
-                return (upNext + overdue + todayItems)
-                    .filterIsInstance<FocusAgendaItem.TaskEntry>()
-                    .firstOrNull { it.task.id == taskId }
-            }
+        val sessionEntry: FocusAgendaItem.TaskEntry? get() = entryFor(sessionTaskId)
 
         val sessionSubtasks: List<Task> get() = sessionEntry?.subtasks.orEmpty()
 
+        /**
+         * The entry for the task the timer is actually on, for the card that counts it down.
+         *
+         * Not [sessionEntry], which follows the screen's subject: while the sheet sits open on some
+         * other task the card underneath is still the running one, and it should go on describing
+         * the work it is timing.
+         */
+        val runningEntry: FocusAgendaItem.TaskEntry? get() = entryFor(session?.taskId)
+
         /** The task the last session ran on, for the choices offered once it has ended. */
-        val lastSessionEntry: FocusAgendaItem.TaskEntry?
-            get() {
-                val taskId = lastSessionTaskId ?: return null
-                return (upNext + overdue + todayItems)
-                    .filterIsInstance<FocusAgendaItem.TaskEntry>()
-                    .firstOrNull { it.task.id == taskId }
-            }
+        val lastSessionEntry: FocusAgendaItem.TaskEntry? get() = entryFor(lastSessionTaskId)
+
+        /**
+         * The row is searched too, not only the sections. It normally mirrors them, but this is a
+         * lookup and a duplicate costs nothing, whereas missing the task the session is on costs
+         * the screen its subject.
+         */
+        private fun entryFor(taskId: Long?): FocusAgendaItem.TaskEntry? {
+            if (taskId == null) return null
+            return (upNext + overdue + todayItems)
+                .filterIsInstance<FocusAgendaItem.TaskEntry>()
+                .firstOrNull { it.task.id == taskId }
+        }
     }
 
     /** A start that would replace a running session, waiting to be confirmed. */

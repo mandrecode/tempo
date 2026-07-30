@@ -695,4 +695,5 @@
         <item quantity="one">%1$d sesión hecha</item>
         <item quantity="other">%1$d sesiones hechas</item>
     </plurals>
+    <string name="focus_today_minutes">%1$d min hoy</string>
 </resources>

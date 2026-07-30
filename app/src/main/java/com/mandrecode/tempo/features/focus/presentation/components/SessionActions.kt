@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 
 /**
  * How much weight a session action carries.
@@ -109,6 +110,24 @@ internal fun sessionLengthLabel(minutes: Int): String =
     }
 
 private const val MINUTES_PER_HOUR = 60
+
+/**
+ * What the session is doing, and what the task has already had out of today — `Focusing`, or
+ * `Focusing · 2 sessions done`.
+ *
+ * One line for both, on the card and on the session screen alike. A timer counting down says
+ * nothing about whether this is the first go at the work or the fourth, and that is the difference
+ * between a standing start and picking something back up.
+ */
+@Composable
+internal fun sessionStatusLine(
+    statusRes: Int,
+    focusToday: TaskFocusToday,
+): String {
+    val status = stringResource(statusRes)
+    val soFar = focusToday.soFarTodayLabel() ?: return status
+    return "$status · $soFar"
+}
 
 /** One action's label, icon and weight, so a group can be described as data. */
 internal data class SessionAction(

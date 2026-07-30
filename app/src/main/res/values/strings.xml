@@ -691,4 +691,5 @@
         <item quantity="one">%1$d session done</item>
         <item quantity="other">%1$d sessions done</item>
     </plurals>
+    <string name="focus_today_minutes">%1$d min today</string>
 </resources>

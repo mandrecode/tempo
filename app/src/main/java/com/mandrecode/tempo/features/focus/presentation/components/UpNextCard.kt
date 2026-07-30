@@ -28,6 +28,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.util.DateTimeFormatter
 
 private val UpNextCornerRadius = 22.dp
@@ -129,9 +130,9 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
             // matters, where it belongs, when it is due.
             // Leads the line: that the work is already under way outranks what kind of work it is.
             (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
-                ?.sessionsToday
-                ?.takeIf { it > 0 }
-                ?.let { add(pluralStringResource(R.plurals.focus_sessions_done, it, it).uppercase()) }
+                ?.focusToday
+                ?.soFarTodayLabel()
+                ?.let { add(it.uppercase()) }
             priority?.let { add(stringResource(it.titleResId).uppercase()) }
             (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
                 ?.categoryName
@@ -141,6 +142,21 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
         }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(SEPARATOR)
 }
+
+/**
+ * What this task has already had out of today, in one phrase.
+ *
+ * The runs it finished, or — when it finished none but was worked on anyway — the minutes it took.
+ * A session stopped early leaves no run behind, and saying nothing at all about it would lose the
+ * only trace of the work; the finished runs are the stronger fact when there are any, so they win.
+ */
+@Composable
+internal fun TaskFocusToday.soFarTodayLabel(): String? =
+    when {
+        sessions > 0 -> pluralStringResource(R.plurals.focus_sessions_done, sessions, sessions)
+        minutes > 0 -> stringResource(R.string.focus_today_minutes, minutes)
+        else -> null
+    }
 
 private const val SEPARATOR = " · "
 private val MetadataIconSize = 12.dp

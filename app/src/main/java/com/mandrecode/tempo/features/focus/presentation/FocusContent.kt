@@ -40,6 +40,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearance
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
@@ -261,7 +262,10 @@ private fun LazyListScope.upNextRow(
                     item(key = "running_session") {
                         RunningSessionCard(
                             session = session,
-                            subtasks = uiState.sessionSubtasks,
+                            // The running task's own row, not the screen's subject: a sheet open on
+                            // some other card must not relabel the one still counting down.
+                            subtasks = uiState.runningEntry?.subtasks.orEmpty(),
+                            focusToday = uiState.runningEntry?.focusToday ?: TaskFocusToday(),
                             onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
                             onPauseResume = {
                                 onEvent(

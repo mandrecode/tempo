@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
 
@@ -41,16 +42,22 @@ fun FocusSessionRoute(
     val entry = uiState.sessionEntry
     val currentOnBack by rememberUpdatedState(onBack)
 
-    // The screen is about one task, fixed the moment it opens. Once that task stops being the
-    // subject — its session ended, or it was ticked off — there is nothing left to show, and
-    // quietly falling back to whatever else happens to be running would swap the subject under the
-    // user's hands. Keyed off the raw ids, not the resolved entry: the agenda this screen looks the
-    // task up in has not loaded on the first composition, and reading that as "nothing to show"
-    // would close the screen the moment it opened.
-    val subjectTaskId = rememberSaveable { mutableStateOf(uiState.sessionTaskId) }.value
+    // The screen is about one task, latched the first time it hears of one. Once that task stops
+    // being the subject — its session ended, or it was ticked off — there is nothing left to show,
+    // and quietly falling back to whatever else happens to be running would swap the subject under
+    // the user's hands.
+    //
+    // Latched on the first id that arrives rather than on the value at first composition: this
+    // destination has its own ViewModel, and the state it reads is filled in by collectors that
+    // ViewModel starts in its own init. Reading "nothing yet" as "nothing to show" would close the
+    // screen the moment it opened. Raw ids, not the resolved entry, for the same reason — the
+    // agenda the task is looked up in loads later still.
+    val subject = rememberSaveable { mutableStateOf<Long?>(null) }
+    subject.value = subject.value ?: uiState.sessionTaskId
+    val subjectTaskId = subject.value
     val hasSomethingToShow = subjectTaskId != null && uiState.sessionTaskId == subjectTaskId
-    LaunchedEffect(hasSomethingToShow) {
-        if (!hasSomethingToShow) currentOnBack()
+    LaunchedEffect(subjectTaskId, hasSomethingToShow) {
+        if (subjectTaskId != null && !hasSomethingToShow) currentOnBack()
     }
 
     // The preview is this screen's own state: keeping it alive after leaving would make the next
@@ -120,7 +127,7 @@ fun FocusSessionSheet(
             plannedLength =
                 session?.plannedLength
                     ?: FocusSession.lengthOf(uiState.defaultSessionLengthMinutes),
-            sessionsToday = uiState.sessionEntry?.sessionsToday ?: 0,
+            focusToday = uiState.sessionEntry?.focusToday ?: TaskFocusToday(),
             subtasks = uiState.sessionSubtasks,
             task = task,
             categoryName = uiState.sessionEntry?.categoryName,

@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlin.time.Clock
 
@@ -55,6 +56,7 @@ internal fun RunningSessionCard(
     onBackToWork: () -> Unit,
     modifier: Modifier = Modifier,
     subtasks: List<Task> = emptyList(),
+    focusToday: TaskFocusToday = TaskFocusToday(),
     clock: Clock = Clock.System,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -90,6 +92,7 @@ internal fun RunningSessionCard(
                     title = session.taskTitle,
                     isPaused = session.isPaused,
                     isBreak = session.isBreak,
+                    focusToday = focusToday,
                     modifier = Modifier.weight(1f),
                 )
 
@@ -223,6 +226,7 @@ private fun SessionTitleBlock(
     title: String,
     isPaused: Boolean,
     isBreak: Boolean,
+    focusToday: TaskFocusToday,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier) {
@@ -235,14 +239,20 @@ private fun SessionTitleBlock(
         )
         // A break is time away from the task, not time spent on it. Saying "Focusing" through one
         // told the user the opposite of what was happening.
+        //
+        // What the task has already had out of today rides on the same line: a session is rarely
+        // the first go at something, and a card that says only "Focusing" makes every one of them
+        // look like a standing start.
         Text(
             text =
-                stringResource(
-                    when {
-                        isPaused -> R.string.focus_session_paused
-                        isBreak -> R.string.focus_session_break
-                        else -> R.string.focus_session_focusing
-                    },
+                sessionStatusLine(
+                    statusRes =
+                        when {
+                            isPaused -> R.string.focus_session_paused
+                            isBreak -> R.string.focus_session_break
+                            else -> R.string.focus_session_focusing
+                        },
+                    focusToday = focusToday,
                 ),
             style = MaterialTheme.typography.labelSmall,
             fontWeight = FontWeight.SemiBold,

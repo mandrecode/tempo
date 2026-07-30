@@ -166,7 +166,31 @@ class FocusSessionUseCasesTest {
             // The minutes are still banked — they were worked. What the card must not do is report
             // a session done for one the user cut short.
             coVerify { activityRepository.addFocusMinutes(any<LocalDate>(), 12) }
+            coVerify { sessionRepository.addFocusMinutesFor(taskId = 1, minutes = 12, today = any()) }
             coVerify(exactly = 0) { sessionRepository.recordSessionFor(any(), any()) }
+        }
+
+    @Test
+    fun `minutes are banked against the task as well as the day`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report")
+            now = start + 25.minutes
+
+            useCases.end()
+
+            coVerify { activityRepository.addFocusMinutes(any<LocalDate>(), 25) }
+            coVerify { sessionRepository.addFocusMinutesFor(taskId = 1, minutes = 25, today = any()) }
+        }
+
+    @Test
+    fun `a break banks no minutes against the task either`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report", isBreak = true)
+            now = start + 5.minutes
+
+            useCases.end()
+
+            coVerify(exactly = 0) { sessionRepository.addFocusMinutesFor(any(), any(), any()) }
         }
 
     @Test
