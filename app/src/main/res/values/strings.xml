@@ -682,6 +682,13 @@
     <string name="focus_session_break_over_heading">Break\'s over</string>
     <string name="focus_session_finished_subtitle">%1$s · %2$d min</string>
     <string name="focus_session_back_to_it">Back to it</string>
+    <string name="focus_replace_session_title">Replace the running session?</string>
+    <string name="focus_replace_session_message">%1$s is still running. Starting %2$s ends it and keeps only the minutes it earned.</string>
+    <string name="focus_replace_session_confirm">Start anyway</string>
     <string name="focus_session_not_started">Not started</string>
     <string name="focus_session_open_in_tasks">Open in Tasks</string>
+    <plurals name="focus_sessions_done">
+        <item quantity="one">%1$d session done</item>
+        <item quantity="other">%1$d sessions done</item>
+    </plurals>
 </resources>

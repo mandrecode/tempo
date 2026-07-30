@@ -85,10 +85,15 @@ class FocusSessionUseCases
             scheduler.clearOngoingNotification()
             sessionRepository.setActiveSession(null)
 
-            // A break is time away from the work, so it is never banked as focus time.
+            // A break is time away from the work, so it is never banked as focus time, and it is
+            // not a run at the task either.
+            val today = clock.todayIn(TimeZone.currentSystemDefault())
             val minutes = if (session.isBreak) 0 else session.bankableMinutes(now)
             if (minutes > 0) {
-                activityRepository.addFocusMinutes(clock.todayIn(TimeZone.currentSystemDefault()), minutes)
+                activityRepository.addFocusMinutes(today, minutes)
+            }
+            if (!session.isBreak) {
+                sessionRepository.recordSessionFor(session.taskId, today)
             }
             return session
         }

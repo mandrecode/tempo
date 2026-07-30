@@ -49,6 +49,12 @@ object FocusContract {
          */
         val taskEditor: TaskEditorTarget? = null,
         val editingHabit: Habit? = null,
+        /**
+         * A start waiting on the user's word, because taking it would end the session already
+         * running. Held rather than acted on: replacing a session is not something to discover
+         * afterwards.
+         */
+        val pendingStart: PendingStart? = null,
         val defaultSessionLengthMinutes: Int = 25,
         val breakLengthMinutes: Int = 5,
     ) {
@@ -102,6 +108,14 @@ object FocusContract {
                     .firstOrNull { it.task.id == taskId }
             }
     }
+
+    /** A start that would replace a running session, waiting to be confirmed. */
+    data class PendingStart(
+        val taskId: Long,
+        val taskTitle: String,
+        val lengthMinutes: Int?,
+        val replacingTaskTitle: String,
+    )
 
     /** Why the task editor is open: to change a task, or to add a subtask beneath one. */
     sealed interface TaskEditorTarget {
@@ -158,6 +172,10 @@ object FocusContract {
         data class AddSubtask(
             val parentTaskId: Long,
         ) : UiEvent
+
+        data object ConfirmPendingStart : UiEvent
+
+        data object DismissPendingStart : UiEvent
 
         data object DismissEditor : UiEvent
 

@@ -41,16 +41,15 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearance
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
-import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
 import com.mandrecode.tempo.features.focus.presentation.components.StartSessionButton
 import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
+import com.mandrecode.tempo.features.focus.presentation.components.WorkedOnActions
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitCard
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
-import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
@@ -221,40 +220,10 @@ private fun LazyListScope.upNextSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    // The card transforms in place rather than being replaced, so starting a session
-    // does not shift everything below it.
-    if (session != null) {
-        runningSessionItem(session, uiState.sessionSubtasks, onEvent)
-    } else {
-        upNextRow(upNext, uiState.defaultSessionLengthMinutes, onEvent)
-    }
-}
-
-private fun LazyListScope.runningSessionItem(
-    session: FocusSession,
-    subtasks: List<Task>,
-    onEvent: (FocusContract.UiEvent) -> Unit,
-) {
-    item(key = "running_session") {
-        RunningSessionCard(
-            session = session,
-            subtasks = subtasks,
-            onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
-            onPauseResume = {
-                onEvent(
-                    if (session.isPaused) {
-                        FocusContract.UiEvent.ResumeSession
-                    } else {
-                        FocusContract.UiEvent.PauseSession
-                    },
-                )
-            },
-            onStop = { onEvent(FocusContract.UiEvent.StopSession) },
-            onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
-            onBackToWork = { onEvent(FocusContract.UiEvent.BackToWork) },
-            modifier = Modifier.fillMaxWidth().animateItem(),
-        )
-    }
+    // One row whatever is happening: the running card is pinned first and the rest of the
+    // shortlist stays beside it, so you can still see what is queued without ending what you are
+    // doing to look.
+    upNextRow(uiState, onEvent)
 }
 
 /**
@@ -263,47 +232,95 @@ private fun LazyListScope.runningSessionItem(
  * A row rather than a single card, because the best next thing is not always the one you are ready
  * to do, and the alternative was leaving the screen to find the one you are. Cards stop short of
  * the full width so the next one shows at the edge — the only honest way to say there is more.
+ *
+ * A running session takes the first place and keeps it: it is the one card you must be able to
+ * reach without hunting, and the queue reads as what comes after it.
  */
 private fun LazyListScope.upNextRow(
-    upNext: ImmutableList<FocusAgendaItem.TaskEntry>,
-    defaultSessionLengthMinutes: Int,
+    uiState: FocusContract.UiState,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
+    val session = uiState.session
+    val queued = uiState.upNext.filterNot { it.task.id == session?.taskId }
+
     item(key = "up_next_row") {
         val listState = rememberLazyListState()
         BoxWithConstraints(modifier = Modifier.fillMaxWidth().animateItem()) {
-            val cardWidth =
-                if (upNext.size > 1) maxWidth * SINGLE_PEEK_FRACTION else maxWidth
+            val cardCount = queued.size + if (session != null) 1 else 0
+            val cardWidth = if (cardCount > 1) maxWidth * SINGLE_PEEK_FRACTION else maxWidth
             LazyRow(
                 state = listState,
                 flingBehavior = rememberSnapFlingBehavior(listState),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(upNext, key = { it.id }) { entry ->
+                if (session != null) {
+                    item(key = "running_session") {
+                        RunningSessionCard(
+                            session = session,
+                            subtasks = uiState.sessionSubtasks,
+                            onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
+                            onPauseResume = {
+                                onEvent(
+                                    if (session.isPaused) {
+                                        FocusContract.UiEvent.ResumeSession
+                                    } else {
+                                        FocusContract.UiEvent.PauseSession
+                                    },
+                                )
+                            },
+                            onStop = { onEvent(FocusContract.UiEvent.StopSession) },
+                            onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
+                            onBackToWork = { onEvent(FocusContract.UiEvent.BackToWork) },
+                            modifier = Modifier.width(cardWidth),
+                        )
+                    }
+                }
+                items(queued, key = { it.id }) { entry ->
                     UpNextCard(
                         title = entry.displayTitle(),
                         metadata = entry.upNextMetadata(),
                         metadataIconRes = R.drawable.ic_flag.takeIf { entry.priority != null },
-                        // Opening the card looks at the work with the timer waiting; starting is
-                        // the separate, deliberate tap beside it.
                         onClick = {
                             onEvent(FocusContract.UiEvent.PreviewUpNext(entry.task.id))
                         },
                         modifier = Modifier.width(cardWidth).height(UpNextCardHeight),
                         trailingContent = {
-                            StartSessionButton(
-                                minutes = defaultSessionLengthMinutes,
-                                onClick = {
-                                    onEvent(
-                                        FocusContract.UiEvent.StartSession(taskId = entry.task.id),
-                                    )
-                                },
+                            UpNextAction(
+                                entry = entry,
+                                defaultSessionLengthMinutes = uiState.defaultSessionLengthMinutes,
+                                onEvent = onEvent,
                             )
                         },
                     )
                 }
             }
         }
+    }
+}
+
+/**
+ * What a queued card offers: starting, or picking back up work that already had a run at it.
+ *
+ * A task with sessions behind it and no tick is neither untouched nor finished, and offering
+ * "Start 25 min" as though nothing had happened lost that — which is exactly what dismissing the
+ * break sheet without choosing used to do.
+ */
+@Composable
+private fun UpNextAction(
+    entry: FocusAgendaItem.TaskEntry,
+    defaultSessionLengthMinutes: Int,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    if (entry.sessionsToday > 0) {
+        WorkedOnActions(
+            onBackToWork = { onEvent(FocusContract.UiEvent.StartSession(taskId = entry.task.id)) },
+            onComplete = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(entry.task)) },
+        )
+    } else {
+        StartSessionButton(
+            minutes = defaultSessionLengthMinutes,
+            onClick = { onEvent(FocusContract.UiEvent.StartSession(taskId = entry.task.id)) },
+        )
     }
 }
 

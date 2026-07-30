@@ -89,6 +89,16 @@ class FocusViewModel
                         it.copy(expandedTaskIds = it.expandedTaskIds.toggling(event.taskId))
                     }
 
+                FocusContract.UiEvent.UndatedTasksClicked ->
+                    sendEffect(FocusContract.UiEffect.OpenTasksTab)
+
+                else -> onEditorEvent(event)
+            }
+        }
+
+        /** Which sheet or dialog is open — state changes only, no work behind them. */
+        private fun onEditorEvent(event: FocusContract.UiEvent) {
+            when (event) {
                 is FocusContract.UiEvent.EditTask ->
                     mutableUiState.update {
                         it.copy(
@@ -111,8 +121,14 @@ class FocusViewModel
                 FocusContract.UiEvent.DismissEditor ->
                     mutableUiState.update { it.copy(taskEditor = null, editingHabit = null) }
 
-                FocusContract.UiEvent.UndatedTasksClicked ->
-                    sendEffect(FocusContract.UiEffect.OpenTasksTab)
+                FocusContract.UiEvent.DismissPendingStart ->
+                    mutableUiState.update { it.copy(pendingStart = null) }
+
+                FocusContract.UiEvent.ConfirmPendingStart -> {
+                    val pending = mutableUiState.value.pendingStart ?: return
+                    mutableUiState.update { it.copy(pendingStart = null) }
+                    startSessionOn(pending.taskId, pending.lengthMinutes, force = true)
+                }
 
                 else -> onSessionEvent(event)
             }
@@ -163,7 +179,7 @@ class FocusViewModel
             when (event) {
                 FocusContract.UiEvent.StartAnotherSession ->
                     viewModelScope.launch {
-                        dismissFinishedSession()
+                        mutableUiState.update { it.copy(finishedSession = null) }
                         if (finished != null && taskId != null) {
                             focusSessionUseCases.start(taskId, finished.taskTitle)
                             sendEffect(FocusContract.UiEffect.OpenSessionScreen)
@@ -172,7 +188,7 @@ class FocusViewModel
 
                 FocusContract.UiEvent.TakeBreak ->
                     viewModelScope.launch {
-                        dismissFinishedSession()
+                        mutableUiState.update { it.copy(finishedSession = null) }
                         if (finished != null && taskId != null) {
                             // A real countdown, not a dismissal: the break notifies when it is over
                             // so the user is not the one who has to remember to come back.
@@ -180,7 +196,8 @@ class FocusViewModel
                         }
                     }
 
-                FocusContract.UiEvent.DismissFinishedSession -> dismissFinishedSession()
+                FocusContract.UiEvent.DismissFinishedSession ->
+                    mutableUiState.update { it.copy(finishedSession = null) }
                 else -> Unit
             }
         }
@@ -206,6 +223,7 @@ class FocusViewModel
         private fun startSessionOn(
             taskId: Long?,
             lengthMinutes: Int?,
+            force: Boolean = false,
         ) {
             val state = mutableUiState.value
             val task =
@@ -214,6 +232,27 @@ class FocusViewModel
                     ?.task
                     ?: (state.sessionEntry ?: state.upNext.firstOrNull())?.task
                     ?: return
+
+            // Starting replaces whatever is running and banks only what it earned, so swapping
+            // tasks mid-session is a real loss of the current one's remaining time. Ask first —
+            // unless it is the same task, where "starting" is just carrying on.
+            // Only a focus session on a different task is at risk of being thrown away; the same
+            // task is carrying on, and a break has nothing to lose.
+            val replaced = state.session?.takeIf { !it.isBreak && it.taskId != task.id }
+            if (!force && replaced != null) {
+                mutableUiState.update {
+                    it.copy(
+                        pendingStart =
+                            FocusContract.PendingStart(
+                                taskId = task.id,
+                                taskTitle = task.title,
+                                lengthMinutes = lengthMinutes,
+                                replacingTaskTitle = replaced.taskTitle,
+                            ),
+                    )
+                }
+                return
+            }
 
             viewModelScope.launch {
                 focusSessionUseCases.start(
@@ -242,10 +281,6 @@ class FocusViewModel
                 toggleTaskCompletion(entry.task)
                 finishSession()
             }
-            dismissFinishedSession()
-        }
-
-        private fun dismissFinishedSession() {
             mutableUiState.update { it.copy(finishedSession = null) }
         }
 

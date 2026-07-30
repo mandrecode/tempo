@@ -9,12 +9,16 @@ import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.plus
 import org.junit.Test
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class FocusSessionRepositoryImplTest {
     private val start = Instant.fromEpochMilliseconds(1_800_000_000_000)
+    private val today = LocalDate(2026, 7, 30)
 
     private lateinit var editor: SharedPreferences.Editor
     private lateinit var prefs: SharedPreferences
@@ -169,5 +173,39 @@ class FocusSessionRepositoryImplTest {
         val stored = mutableMapOf<String, Any>("session_default_length_minutes" to 15)
 
         assertThat(createRepository(stored).defaultLengthMinutes.value).isEqualTo(15)
+    }
+
+    @Test
+    fun `session counts accumulate per task and survive a fresh read`() {
+        val stored = mutableMapOf<String, Any>()
+        val repository = createRepository(stored)
+
+        repository.recordSessionFor(taskId = 7, today = today)
+        repository.recordSessionFor(taskId = 7, today = today)
+        repository.recordSessionFor(taskId = 9, today = today)
+
+        assertThat(repository.sessionsToday).isNotNull()
+        assertThat(repository.sessionsToday.value).containsExactly(7L, 2, 9L, 1)
+        // The format is hand-rolled, so a fresh instance reading it back is the real test.
+        assertThat(createRepository(stored).sessionsToday.value).containsExactly(7L, 2, 9L, 1)
+    }
+
+    @Test
+    fun `a new day starts the counts over`() {
+        val stored = mutableMapOf<String, Any>()
+        val repository = createRepository(stored)
+        repository.recordSessionFor(taskId = 7, today = today)
+
+        repository.recordSessionFor(taskId = 7, today = today.plus(1, DateTimeUnit.DAY))
+
+        // Yesterday's runs do not colour today's card.
+        assertThat(repository.sessionsToday.value).containsExactly(7L, 1)
+    }
+
+    @Test
+    fun `a malformed stored entry is skipped rather than crashing the read`() {
+        val stored = mutableMapOf<String, Any>("sessions_today_by_task" to "7:2,rubbish,9:x,:,11:3")
+
+        assertThat(createRepository(stored).sessionsToday.value).containsExactly(7L, 2, 11L, 3)
     }
 }

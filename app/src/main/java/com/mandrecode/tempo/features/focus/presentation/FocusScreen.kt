@@ -19,6 +19,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
+import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -70,6 +71,10 @@ fun FocusScreen(
     }
 
     val dismissEditor = { viewModel.onEvent(FocusContract.UiEvent.DismissEditor) }
+    uiState.pendingStart?.let { pending ->
+        ReplaceSessionDialog(pending = pending, onEvent = viewModel::onEvent)
+    }
+
     uiState.taskEditor?.let { target ->
         FocusTaskEditor(target = target, onDismiss = dismissEditor)
     }

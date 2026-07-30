@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgenda
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
@@ -32,6 +33,7 @@ class GetFocusAgendaUseCase
         private val habitChainRepository: HabitChainRepository,
         private val categoryRepository: CategoryRepository,
         private val getUpNextItem: GetUpNextItemUseCase,
+        private val sessionRepository: FocusSessionRepository,
     ) {
         operator fun invoke(today: LocalDate): Flow<FocusAgenda> =
             combine(
@@ -39,8 +41,16 @@ class GetFocusAgendaUseCase
                 habitRepository.getAllHabits(),
                 habitChainRepository.getAllHabitChains(),
                 categoryRepository.getAllCategories(),
-            ) { tasks, habits, chains, categories ->
-                build(today, tasks, habits, chains, categories.associateBy { it.id })
+                sessionRepository.sessionsToday,
+            ) { tasks, habits, chains, categories, sessionsByTask ->
+                build(
+                    today = today,
+                    tasks = tasks,
+                    habits = habits,
+                    chains = chains,
+                    categoriesById = categories.associateBy { it.id },
+                    sessionsByTask = sessionsByTask,
+                )
             }
 
         private fun build(
@@ -49,6 +59,7 @@ class GetFocusAgendaUseCase
             habits: List<Habit>,
             chains: List<HabitChain>,
             categoriesById: Map<Long, Category>,
+            sessionsByTask: Map<Long, Int>,
         ): FocusAgenda {
             val subtasksByParent = tasks.filter { it.parentTaskId != null }.groupBy { it.parentTaskId }
             val topLevelTasks = tasks.filter { it.parentTaskId == null }
@@ -58,12 +69,12 @@ class GetFocusAgendaUseCase
                     .filter { task ->
                         val dueDate = task.reminderDate?.date
                         dueDate != null && dueDate < today && !task.isCompleted
-                    }.map { it.toEntry(subtasksByParent, categoriesById) }
+                    }.map { it.toEntry(subtasksByParent, categoriesById, sessionsByTask) }
 
             val todayTasks =
                 topLevelTasks
                     .filter { it.reminderDate?.date == today }
-                    .map { it.toEntry(subtasksByParent, categoriesById) }
+                    .map { it.toEntry(subtasksByParent, categoriesById, sessionsByTask) }
 
             // Habits inside a chain are shown by the chain's own card, not as separate rows.
             val chainedHabitIds = chains.flatMap { it.habitIds }.toSet()
@@ -105,10 +116,12 @@ class GetFocusAgendaUseCase
         private fun Task.toEntry(
             subtasksByParent: Map<Long?, List<Task>>,
             categoriesById: Map<Long, Category>,
+            sessionsByTask: Map<Long, Int>,
         ) = FocusAgendaItem.TaskEntry(
             task = this,
             subtasks = subtasksByParent[id].orEmpty(),
             categoryName = categoriesById[categoryId]?.name,
+            sessionsToday = sessionsByTask[id] ?: 0,
         )
 
         /** Timed items first in clock order, then untimed ones, with completed work sinking last. */

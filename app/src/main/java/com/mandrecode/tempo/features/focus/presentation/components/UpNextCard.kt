@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -125,6 +127,11 @@ internal fun FocusAgendaItem.upNextMetadata(): String? {
         buildList {
             // Priority, then category, then time — the order the eye needs them in: how much this
             // matters, where it belongs, when it is due.
+            // Leads the line: that the work is already under way outranks what kind of work it is.
+            (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
+                ?.sessionsToday
+                ?.takeIf { it > 0 }
+                ?.let { add(pluralStringResource(R.plurals.focus_sessions_done, it, it).uppercase()) }
             priority?.let { add(stringResource(it.titleResId).uppercase()) }
             (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
                 ?.categoryName
@@ -175,6 +182,78 @@ internal fun StartSessionButton(
     }
 }
 
+/**
+ * Back to it, or done — the same pair the finished-break sheet offers.
+ *
+ * A task that has had a run at it and no tick is worked on, not untouched, and these are the only
+ * two things left to say about it.
+ */
+@Composable
+internal fun WorkedOnActions(
+    onBackToWork: () -> Unit,
+    onComplete: () -> Unit,
+) {
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        WorkedOnButton(
+            iconRes = R.drawable.ic_play_arrow,
+            contentDescription = stringResource(R.string.focus_session_back_to_it),
+            onClick = onBackToWork,
+            filled = true,
+        )
+        WorkedOnButton(
+            iconRes = R.drawable.ic_check,
+            contentDescription = stringResource(R.string.focus_session_mark_done),
+            onClick = onComplete,
+            filled = false,
+        )
+    }
+}
+
+@Composable
+private fun WorkedOnButton(
+    iconRes: Int,
+    contentDescription: String,
+    onClick: () -> Unit,
+    filled: Boolean,
+) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) =
+        rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
+
+    Surface(
+        onClick = {
+            haptic.performHapticFeedback(
+                if (filled) HapticFeedbackType.TextHandleMove else HapticFeedbackType.LongPress,
+            )
+            onClick()
+        },
+        modifier = Modifier.size(WorkedOnButtonSize),
+        interactionSource = interactionSource,
+        shape = RoundedCornerShape(cornerRadius.value),
+        color =
+            if (filled) {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = METADATA_ALPHA / 4)
+            },
+        contentColor =
+            if (filled) {
+                MaterialTheme.colorScheme.tertiaryContainer
+            } else {
+                MaterialTheme.colorScheme.onTertiaryContainer
+            },
+    ) {
+        Box(contentAlignment = Alignment.Center) {
+            Icon(
+                painter = painterResource(iconRes),
+                contentDescription = contentDescription,
+                modifier = Modifier.size(18.dp),
+            )
+        }
+    }
+}
+
+private val WorkedOnButtonSize = 40.dp
 private const val METADATA_ALPHA = 0.75f
 private val PillRadius = 20.dp
 private val PillPressedRadius = 10.dp

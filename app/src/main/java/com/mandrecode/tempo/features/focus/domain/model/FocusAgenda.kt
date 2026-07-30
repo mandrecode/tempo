@@ -25,6 +25,12 @@ sealed interface FocusAgendaItem {
         val subtasks: List<Task> = emptyList(),
         /** Resolved once in the use case so the card does not have to look it up. */
         val categoryName: String? = null,
+        /**
+         * Focus sessions run against this task today. A task with runs behind it and no tick is a
+         * state of its own: worked on, not finished — and the card says so instead of offering to
+         * start as if nothing had happened.
+         */
+        val sessionsToday: Int = 0,
     ) : FocusAgendaItem {
         override val id: String = "task_${task.id}"
         override val isCompleted: Boolean = task.isCompleted
