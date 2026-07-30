@@ -8,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -18,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
 
@@ -33,17 +36,28 @@ fun FocusSessionRoute(
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val session = uiState.session
+    // Not `uiState.session`: while another task is being previewed this screen is about that task,
+    // and whatever is counting down elsewhere is none of its business.
+    val session = uiState.screenSession
     val entry = uiState.sessionEntry
     val currentOnBack by rememberUpdatedState(onBack)
 
-    // Nothing left to show once the session is over and no task is being previewed — leave rather
-    // than stranding an empty screen. Keyed off the raw preview id, not the resolved entry: the
-    // agenda this screen looks the task up in has not loaded on the first composition, and reading
-    // that as "nothing to show" would close the screen the moment it opened.
-    val hasSomethingToShow = session != null || uiState.previewTaskId != null
-    LaunchedEffect(hasSomethingToShow) {
-        if (!hasSomethingToShow) currentOnBack()
+    // The screen is about one task, latched the first time it hears of one. Once that task stops
+    // being the subject — its session ended, or it was ticked off — there is nothing left to show,
+    // and quietly falling back to whatever else happens to be running would swap the subject under
+    // the user's hands.
+    //
+    // Latched on the first id that arrives rather than on the value at first composition: this
+    // destination has its own ViewModel, and the state it reads is filled in by collectors that
+    // ViewModel starts in its own init. Reading "nothing yet" as "nothing to show" would close the
+    // screen the moment it opened. Raw ids, not the resolved entry, for the same reason — the
+    // agenda the task is looked up in loads later still.
+    val subject = rememberSaveable { mutableStateOf<Long?>(null) }
+    subject.value = subject.value ?: uiState.sessionTaskId
+    val subjectTaskId = subject.value
+    val hasSomethingToShow = subjectTaskId != null && uiState.sessionTaskId == subjectTaskId
+    LaunchedEffect(subjectTaskId, hasSomethingToShow) {
+        if (subjectTaskId != null && !hasSomethingToShow) currentOnBack()
     }
 
     // The preview is this screen's own state: keeping it alive after leaving would make the next
@@ -113,7 +127,7 @@ fun FocusSessionSheet(
             plannedLength =
                 session?.plannedLength
                     ?: FocusSession.lengthOf(uiState.defaultSessionLengthMinutes),
-            sessionsToday = uiState.sessionEntry?.sessionsToday ?: 0,
+            focusToday = uiState.sessionEntry?.focusToday ?: TaskFocusToday(),
             subtasks = uiState.sessionSubtasks,
             task = task,
             categoryName = uiState.sessionEntry?.categoryName,

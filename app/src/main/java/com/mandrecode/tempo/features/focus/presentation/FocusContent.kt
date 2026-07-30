@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,6 +40,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearance
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.presentation.components.FocusSummaryHero
 import com.mandrecode.tempo.features.focus.presentation.components.RunningSessionCard
 import com.mandrecode.tempo.features.focus.presentation.components.SessionFinishedSheet
@@ -252,12 +252,20 @@ private fun LazyListScope.upNextRow(
                 state = listState,
                 flingBehavior = rememberSnapFlingBehavior(listState),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
+                // Cards start on the same line and end wherever their content does. A running
+                // session is a deeper card than a queued one, and a task already worked on carries
+                // two buttons where an untouched one carries a single pill — one height for all of
+                // them meant padding the short ones out to match the tallest thing on screen.
+                verticalAlignment = Alignment.Top,
             ) {
                 if (session != null) {
                     item(key = "running_session") {
                         RunningSessionCard(
                             session = session,
-                            subtasks = uiState.sessionSubtasks,
+                            // The running task's own row, not the screen's subject: a sheet open on
+                            // some other card must not relabel the one still counting down.
+                            subtasks = uiState.runningEntry?.subtasks.orEmpty(),
+                            focusToday = uiState.runningEntry?.focusToday ?: TaskFocusToday(),
                             onExpand = { onEvent(FocusContract.UiEvent.OpenSessionScreen) },
                             onPauseResume = {
                                 onEvent(
@@ -283,7 +291,7 @@ private fun LazyListScope.upNextRow(
                         onClick = {
                             onEvent(FocusContract.UiEvent.PreviewUpNext(entry.task.id))
                         },
-                        modifier = Modifier.width(cardWidth).height(UpNextCardHeight),
+                        modifier = Modifier.width(cardWidth),
                         trailingContent = {
                             UpNextAction(
                                 entry = entry,
@@ -326,13 +334,6 @@ private fun UpNextAction(
 
 /** Leaves the next card showing at the edge, so the row reads as a row. */
 private const val SINGLE_PEEK_FRACTION = 0.88f
-
-/**
- * One height for every card, whether or not it has a metadata line and however long its title runs.
- * The row is as tall as its tallest card, so letting them differ made the whole day below shift up
- * and down as you swiped.
- */
-private val UpNextCardHeight = 100.dp
 
 @Composable
 private fun AgendaRow(

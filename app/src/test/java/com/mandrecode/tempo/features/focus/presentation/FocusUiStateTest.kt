@@ -105,4 +105,50 @@ class FocusUiStateTest {
 
         assertThat(state.sessionSubtasks).isEmpty()
     }
+
+    @Test
+    fun `the card you tapped is the one the screen is about, not the one counting down`() {
+        val state =
+            FocusContract.UiState(
+                session = FocusSession.start(taskId = 1, taskTitle = "Task 1", now = now),
+                previewTaskId = 4,
+                todayItems =
+                    persistentListOf(
+                        FocusAgendaItem.TaskEntry(task(1)),
+                        FocusAgendaItem.TaskEntry(task(4)),
+                    ),
+            )
+
+        assertThat(state.sessionTaskId).isEqualTo(4)
+        assertThat(state.sessionEntry?.task?.id).isEqualTo(4)
+        // And no countdown: the ring belongs to the task it is running on, not to the one being
+        // looked at.
+        assertThat(state.screenSession).isNull()
+    }
+
+    @Test
+    fun `the running session is the subject once nothing else is being previewed`() {
+        val session = FocusSession.start(taskId = 1, taskTitle = "Task 1", now = now)
+        val state =
+            FocusContract.UiState(
+                session = session,
+                todayItems = persistentListOf(FocusAgendaItem.TaskEntry(task(1))),
+            )
+
+        assertThat(state.sessionTaskId).isEqualTo(1)
+        assertThat(state.screenSession).isEqualTo(session)
+    }
+
+    @Test
+    fun `previewing the running session's own task still counts down`() {
+        val session = FocusSession.start(taskId = 1, taskTitle = "Task 1", now = now)
+        val state =
+            FocusContract.UiState(
+                session = session,
+                previewTaskId = 1,
+                todayItems = persistentListOf(FocusAgendaItem.TaskEntry(task(1))),
+            )
+
+        assertThat(state.screenSession).isEqualTo(session)
+    }
 }

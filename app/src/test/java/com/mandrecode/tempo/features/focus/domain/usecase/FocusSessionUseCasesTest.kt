@@ -23,11 +23,13 @@ class FocusSessionUseCasesTest {
 
     private val sessionFlow = MutableStateFlow<FocusSession?>(null)
     private val lengthFlow = MutableStateFlow(25)
+    private val breakLengthFlow = MutableStateFlow(5)
 
     private val sessionRepository =
         mockk<FocusSessionRepository>(relaxed = true) {
             every { activeSession } returns sessionFlow
             every { defaultLengthMinutes } returns lengthFlow
+            every { breakLengthMinutes } returns breakLengthFlow
             every { setActiveSession(any()) } answers { sessionFlow.value = firstArg() }
         }
     private val activityRepository = mockk<DailyFocusActivityRepository>(relaxed = true)
@@ -140,6 +142,66 @@ class FocusSessionUseCasesTest {
     fun `ending when nothing runs is a no-op`() =
         runTest {
             assertThat(useCases.end()).isNull()
+        }
+
+    @Test
+    fun `a session that ran out counts as a run at the task`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report")
+            now = start + 25.minutes
+
+            useCases.end()
+
+            coVerify { sessionRepository.recordSessionFor(taskId = 1, today = any()) }
+        }
+
+    @Test
+    fun `stopping early does not count as a run at the task`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report")
+            now = start + 12.minutes
+
+            useCases.end()
+
+            // The minutes are still banked — they were worked. What the card must not do is report
+            // a session done for one the user cut short.
+            coVerify { activityRepository.addFocusMinutes(any<LocalDate>(), 12) }
+            coVerify { sessionRepository.addFocusMinutesFor(taskId = 1, minutes = 12, today = any()) }
+            coVerify(exactly = 0) { sessionRepository.recordSessionFor(any(), any()) }
+        }
+
+    @Test
+    fun `minutes are banked against the task as well as the day`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report")
+            now = start + 25.minutes
+
+            useCases.end()
+
+            coVerify { activityRepository.addFocusMinutes(any<LocalDate>(), 25) }
+            coVerify { sessionRepository.addFocusMinutesFor(taskId = 1, minutes = 25, today = any()) }
+        }
+
+    @Test
+    fun `a break banks no minutes against the task either`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report", isBreak = true)
+            now = start + 5.minutes
+
+            useCases.end()
+
+            coVerify(exactly = 0) { sessionRepository.addFocusMinutesFor(any(), any(), any()) }
+        }
+
+    @Test
+    fun `a break never counts as a run at the task, however long it goes`() =
+        runTest {
+            useCases.start(taskId = 1, taskTitle = "Report", isBreak = true)
+            now = start + 30.minutes
+
+            useCases.end()
+
+            coVerify(exactly = 0) { sessionRepository.recordSessionFor(any(), any()) }
         }
 
     @Test

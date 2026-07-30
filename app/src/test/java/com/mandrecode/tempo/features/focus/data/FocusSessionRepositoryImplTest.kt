@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
@@ -11,14 +12,25 @@ import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.junit.Test
+import kotlin.time.Clock
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Instant
 
 class FocusSessionRepositoryImplTest {
     private val start = Instant.fromEpochMilliseconds(1_800_000_000_000)
+
+    /** The clock's day, so the stored date stamp and the dates the tests pass agree. */
     private val today = LocalDate(2026, 7, 30)
+    private val clock =
+        object : Clock {
+            override fun now(): Instant = today.atStartOfDayIn(TimeZone.currentSystemDefault()) + 12.hours
+        }
 
     private lateinit var editor: SharedPreferences.Editor
     private lateinit var prefs: SharedPreferences
@@ -62,8 +74,15 @@ class FocusSessionRepositoryImplTest {
                 every { getBoolean(any(), any()) } answers { stored[firstArg()] as? Boolean ?: secondArg() }
             }
         val context = mockk<Context> { every { getSharedPreferences(any(), any()) } returns prefs }
-        return FocusSessionRepositoryImpl(context)
+        return FocusSessionRepositoryImpl(context, clock)
     }
+
+    /** A stored record already stamped with today, as a real day's writes would have left it. */
+    private fun storedDay(record: String): MutableMap<String, Any> =
+        mutableMapOf(
+            "sessions_today_date" to today.toString(),
+            "sessions_today_by_task" to record,
+        )
 
     @Test
     fun `no session is stored initially`() {
@@ -184,10 +203,43 @@ class FocusSessionRepositoryImplTest {
         repository.recordSessionFor(taskId = 7, today = today)
         repository.recordSessionFor(taskId = 9, today = today)
 
-        assertThat(repository.sessionsToday).isNotNull()
-        assertThat(repository.sessionsToday.value).containsExactly(7L, 2, 9L, 1)
+        assertThat(repository.focusToday.value[7L]?.sessions).isEqualTo(2)
+        assertThat(repository.focusToday.value[9L]?.sessions).isEqualTo(1)
         // The format is hand-rolled, so a fresh instance reading it back is the real test.
-        assertThat(createRepository(stored).sessionsToday.value).containsExactly(7L, 2, 9L, 1)
+        assertThat(createRepository(stored).focusToday.value[7L]?.sessions).isEqualTo(2)
+    }
+
+    @Test
+    fun `minutes accumulate per task alongside the counts and survive a fresh read`() {
+        val stored = mutableMapOf<String, Any>()
+        val repository = createRepository(stored)
+
+        repository.addFocusMinutesFor(taskId = 7, minutes = 12, today = today)
+        repository.recordSessionFor(taskId = 7, today = today)
+        repository.addFocusMinutesFor(taskId = 7, minutes = 25, today = today)
+
+        assertThat(createRepository(stored).focusToday.value[7L])
+            .isEqualTo(TaskFocusToday(sessions = 1, minutes = 37))
+    }
+
+    @Test
+    fun `minutes with no finished session still leave a trace`() {
+        val repository = createRepository(mutableMapOf())
+
+        // What a session stopped early leaves behind: real time worked, and no run to its name.
+        repository.addFocusMinutesFor(taskId = 7, minutes = 12, today = today)
+
+        assertThat(repository.focusToday.value[7L])
+            .isEqualTo(TaskFocusToday(sessions = 0, minutes = 12))
+    }
+
+    @Test
+    fun `nothing is recorded for a session that banked no whole minute`() {
+        val repository = createRepository(mutableMapOf())
+
+        repository.addFocusMinutesFor(taskId = 7, minutes = 0, today = today)
+
+        assertThat(repository.focusToday.value).isEmpty()
     }
 
     @Test
@@ -195,17 +247,45 @@ class FocusSessionRepositoryImplTest {
         val stored = mutableMapOf<String, Any>()
         val repository = createRepository(stored)
         repository.recordSessionFor(taskId = 7, today = today)
+        repository.addFocusMinutesFor(taskId = 7, minutes = 25, today = today)
 
-        repository.recordSessionFor(taskId = 7, today = today.plus(1, DateTimeUnit.DAY))
+        repository.addFocusMinutesFor(taskId = 7, minutes = 5, today = today.plus(1, DateTimeUnit.DAY))
 
-        // Yesterday's runs do not colour today's card.
-        assertThat(repository.sessionsToday.value).containsExactly(7L, 1)
+        // Yesterday's runs do not colour today's card — and the two numbers roll over together,
+        // rather than one of them carrying the day across midnight.
+        assertThat(repository.focusToday.value[7L])
+            .isEqualTo(TaskFocusToday(sessions = 0, minutes = 5))
     }
 
     @Test
     fun `a malformed stored entry is skipped rather than crashing the read`() {
-        val stored = mutableMapOf<String, Any>("sessions_today_by_task" to "7:2,rubbish,9:x,:,11:3")
+        val stored = storedDay("7:2:30,rubbish,9:x,:,11:3:5")
 
-        assertThat(createRepository(stored).sessionsToday.value).containsExactly(7L, 2, 11L, 3)
+        val today = createRepository(stored).focusToday.value
+
+        assertThat(today[7L]).isEqualTo(TaskFocusToday(sessions = 2, minutes = 30))
+        assertThat(today[11L]).isEqualTo(TaskFocusToday(sessions = 3, minutes = 5))
+        assertThat(today).hasSize(2)
+    }
+
+    @Test
+    fun `yesterday's record is not read back as today's`() {
+        val stored =
+            mutableMapOf<String, Any>(
+                "sessions_today_date" to today.minus(1, DateTimeUnit.DAY).toString(),
+                "sessions_today_by_task" to "7:2:50",
+            )
+
+        // The record outlives the day it belongs to, so an app opened the next morning has to
+        // discard it on the way in — not wait for a write to notice the date has moved.
+        assertThat(createRepository(stored).focusToday.value).isEmpty()
+    }
+
+    @Test
+    fun `records written before minutes were tracked read back as sessions with no time`() {
+        val stored = storedDay("7:2,9:1")
+
+        assertThat(createRepository(stored).focusToday.value[7L])
+            .isEqualTo(TaskFocusToday(sessions = 2, minutes = 0))
     }
 }

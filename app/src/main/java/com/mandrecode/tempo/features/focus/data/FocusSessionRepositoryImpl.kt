@@ -4,14 +4,18 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.time.Clock
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Instant
 
@@ -20,6 +24,7 @@ class FocusSessionRepositoryImpl
     @Inject
     constructor(
         @ApplicationContext context: Context,
+        private val clock: Clock,
     ) : FocusSessionRepository {
         private val prefs: SharedPreferences =
             context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
@@ -28,7 +33,7 @@ class FocusSessionRepositoryImpl
         private val defaultLengthFlow = MutableStateFlow(readDefaultLength())
         private val breakLengthFlow = MutableStateFlow(readBreakLength())
         private val previewTaskIdFlow = MutableStateFlow<Long?>(null)
-        private val sessionsTodayFlow = MutableStateFlow(readSessionsToday())
+        private val focusTodayFlow = MutableStateFlow(readFocusToday())
 
         override val activeSession: StateFlow<FocusSession?> = sessionFlow.asStateFlow()
 
@@ -38,28 +43,45 @@ class FocusSessionRepositoryImpl
 
         override val previewTaskId: StateFlow<Long?> = previewTaskIdFlow.asStateFlow()
 
-        override val sessionsToday: StateFlow<Map<Long, Int>> = sessionsTodayFlow.asStateFlow()
+        override val focusToday: StateFlow<Map<Long, TaskFocusToday>> = focusTodayFlow.asStateFlow()
 
         override fun recordSessionFor(
             taskId: Long,
             today: LocalDate,
+        ) = update(taskId, today) { it.copy(sessions = it.sessions + 1) }
+
+        override fun addFocusMinutesFor(
+            taskId: Long,
+            minutes: Int,
+            today: LocalDate,
         ) {
-            // Stamped with the date it belongs to, so yesterday's runs never colour today's card.
+            if (minutes <= 0) return
+            update(taskId, today) { it.copy(minutes = it.minutes + minutes) }
+        }
+
+        /**
+         * One writer for both numbers, so they can never fall on opposite sides of midnight: the
+         * whole record is stamped with the date it belongs to and starts over when that date moves,
+         * rather than yesterday's runs colouring today's card.
+         */
+        private fun update(
+            taskId: Long,
+            today: LocalDate,
+            change: (TaskFocusToday) -> TaskFocusToday,
+        ) {
             val current =
                 if (prefs.getString(KEY_SESSIONS_DATE, null) == today.toString()) {
-                    sessionsTodayFlow.value
+                    focusTodayFlow.value
                 } else {
                     emptyMap()
                 }
-            val updated = current + (taskId to (current[taskId] ?: 0) + 1)
+            val updated =
+                current + (taskId to change(current[taskId] ?: TaskFocusToday()))
             prefs.edit {
                 putString(KEY_SESSIONS_DATE, today.toString())
-                putString(
-                    KEY_SESSIONS_BY_TASK,
-                    updated.entries.joinToString(",") { (taskId, runs) -> "$taskId:$runs" },
-                )
+                putString(KEY_SESSIONS_BY_TASK, updated.serialize())
             }
-            sessionsTodayFlow.value = updated
+            focusTodayFlow.value = updated
         }
 
         override fun setActiveSession(session: FocusSession?) {
@@ -120,18 +142,31 @@ class FocusSessionRepositoryImpl
             )
         }
 
-        /** A flat `id:count,id:count` list — small, and never queried by anything but this class. */
-        private fun readSessionsToday(): Map<Long, Int> =
-            prefs
+        /**
+         * A flat `id:sessions:minutes` list — small, and never queried by anything but this class.
+         *
+         * The stored date is checked here and not only when writing: the record outlives the day it
+         * belongs to, and an app opened the next morning would otherwise read yesterday's runs back
+         * and let every card claim work the day has not had.
+         *
+         * The two-field `id:sessions` records written before minutes were tracked still parse, as a
+         * day with runs behind it and no time recorded; the next write brings them up to date.
+         */
+        private fun readFocusToday(): Map<Long, TaskFocusToday> {
+            val today = clock.todayIn(TimeZone.currentSystemDefault()).toString()
+            if (prefs.getString(KEY_SESSIONS_DATE, null) != today) return emptyMap()
+            return prefs
                 .getString(KEY_SESSIONS_BY_TASK, null)
                 .orEmpty()
                 .split(',')
-                .mapNotNull { pair ->
-                    val (id, count) = pair.split(':').takeIf { it.size == 2 } ?: return@mapNotNull null
-                    val taskId = id.toLongOrNull() ?: return@mapNotNull null
-                    val runs = count.toIntOrNull() ?: return@mapNotNull null
-                    taskId to runs
+                .mapNotNull { record ->
+                    val parts = record.split(':').takeIf { it.size in 2..3 } ?: return@mapNotNull null
+                    val taskId = parts[0].toLongOrNull() ?: return@mapNotNull null
+                    val sessions = parts[1].toIntOrNull() ?: return@mapNotNull null
+                    val minutes = parts.getOrNull(2)?.toIntOrNull() ?: 0
+                    taskId to TaskFocusToday(sessions = sessions, minutes = minutes)
                 }.toMap()
+        }
 
         private fun readDefaultLength(): Int {
             val fallback = FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt()
@@ -158,3 +193,7 @@ class FocusSessionRepositoryImpl
             const val NOT_RUNNING = -1L
         }
     }
+
+/** The stored form of a day: `id:sessions:minutes`, one record per task. */
+private fun Map<Long, TaskFocusToday>.serialize(): String =
+    entries.joinToString(",") { (taskId, day) -> "$taskId:${day.sessions}:${day.minutes}" }

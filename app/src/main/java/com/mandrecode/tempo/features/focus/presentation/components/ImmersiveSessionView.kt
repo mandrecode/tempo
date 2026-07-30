@@ -44,6 +44,7 @@ import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.SubtaskItem
 import com.mandrecode.tempo.util.DateTimeFormatter
@@ -66,7 +67,7 @@ private const val FULLY_ROUNDED = 50
 internal fun SessionBody(
     session: FocusSession?,
     plannedLength: Duration,
-    sessionsToday: Int,
+    focusToday: TaskFocusToday,
     subtasks: List<Task>,
     task: Task?,
     categoryName: String?,
@@ -111,6 +112,7 @@ internal fun SessionBody(
             session = session,
             task = task,
             categoryName = categoryName,
+            focusToday = focusToday,
             progress = progress,
             countdownLabel = remaining.asCountdownLabel(),
             onOpenInTasks = onOpenInTasks,
@@ -145,7 +147,7 @@ internal fun SessionBody(
         SessionControls(
             session = session,
             plannedLength = plannedLength,
-            sessionsToday = sessionsToday,
+            sessionsToday = focusToday.sessions,
             onStart = onStart,
             onPauseResume = onPauseResume,
             onStop = onStop,
@@ -269,6 +271,7 @@ private fun ColumnScope.SessionSubject(
     session: FocusSession?,
     task: Task?,
     categoryName: String?,
+    focusToday: TaskFocusToday,
     progress: Float,
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
@@ -277,14 +280,18 @@ private fun ColumnScope.SessionSubject(
         progress = progress,
         label = countdownLabel,
         isPaused = session?.isPaused ?: true,
+        // The same line the card carries, so what the day has already put into this task reads the
+        // same whether you are glancing at the row or standing in the session itself.
         statusLabel =
-            stringResource(
-                when {
-                    session == null -> R.string.focus_session_not_started
-                    session.isPaused -> R.string.focus_session_paused
-                    session.isBreak -> R.string.focus_session_break
-                    else -> R.string.focus_session_focusing
-                },
+            sessionStatusLine(
+                statusRes =
+                    when {
+                        session == null -> R.string.focus_session_not_started
+                        session.isPaused -> R.string.focus_session_paused
+                        session.isBreak -> R.string.focus_session_break
+                        else -> R.string.focus_session_focusing
+                    },
+                focusToday = focusToday,
             ),
         statusIconRes = R.drawable.ic_coffee.takeIf { session?.isBreak == true },
         modifier = Modifier.padding(top = 24.dp),
@@ -307,6 +314,7 @@ private fun ColumnScope.SessionSubject(
         SessionTaskMetadata(
             task = task,
             categoryName = categoryName,
+            minutesToday = focusToday.minutes,
             modifier = Modifier.padding(top = 24.dp),
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
@@ -479,6 +487,7 @@ private fun ImmersiveTextButton(
 private fun SessionTaskMetadata(
     task: Task,
     categoryName: String?,
+    minutesToday: Int,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -488,6 +497,17 @@ private fun SessionTaskMetadata(
         horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        // Leads the row: what this task has already taken out of the day is the one thing here the
+        // task's own card cannot tell you, and it is the reason you might choose a longer session
+        // or call it finished.
+        if (minutesToday > 0) {
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_timer,
+                label = stringResource(R.string.focus_today_minutes, minutesToday),
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }
         categoryName?.takeIf { it.isNotBlank() }?.let { name ->
             SessionMetadataPill(
                 iconRes = R.drawable.ic_category,

@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -33,7 +34,7 @@ class GetFocusAgendaUseCaseTest {
     private val habitRepository = mockk<HabitRepository>()
     private val habitChainRepository = mockk<HabitChainRepository>()
     private val categoryRepository = mockk<CategoryRepository>()
-    private val sessionsTodayFlow = MutableStateFlow<Map<Long, Int>>(emptyMap())
+    private val focusTodayFlow = MutableStateFlow<Map<Long, TaskFocusToday>>(emptyMap())
     private val sessionRepository = mockk<FocusSessionRepository>()
     private val useCase =
         GetFocusAgendaUseCase(
@@ -79,7 +80,7 @@ class GetFocusAgendaUseCaseTest {
         chains: List<HabitChain> = emptyList(),
         assertions: (com.mandrecode.tempo.features.focus.domain.model.FocusAgenda) -> Unit,
     ) {
-        every { sessionRepository.sessionsToday } returns sessionsTodayFlow
+        every { sessionRepository.focusToday } returns focusTodayFlow
         every { taskRepository.getAllTasks() } returns flowOf(tasks)
         every { habitRepository.getAllHabits() } returns flowOf(habits)
         every { habitChainRepository.getAllHabitChains() } returns flowOf(chains)
@@ -211,15 +212,17 @@ class GetFocusAgendaUseCaseTest {
         }
 
     @Test
-    fun `a task carries how many sessions it has had today`() =
+    fun `a task carries what it has had out of today`() =
         runTest {
-            sessionsTodayFlow.value = mapOf(1L to 2)
+            focusTodayFlow.value = mapOf(1L to TaskFocusToday(sessions = 2, minutes = 50))
 
             agenda(tasks = listOf(task(1, today), task(2, today))) {
                 val entries = it.today.filterIsInstance<FocusAgendaItem.TaskEntry>()
-                assertThat(entries.first { e -> e.task.id == 1L }.sessionsToday).isEqualTo(2)
+                val worked = entries.first { e -> e.task.id == 1L }
+                assertThat(worked.sessionsToday).isEqualTo(2)
+                assertThat(worked.minutesToday).isEqualTo(50)
                 // Untouched work says nothing, rather than saying zero.
-                assertThat(entries.first { e -> e.task.id == 2L }.sessionsToday).isEqualTo(0)
+                assertThat(entries.first { e -> e.task.id == 2L }.focusToday.hasHistory).isFalse()
             }
         }
 

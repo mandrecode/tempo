@@ -155,8 +155,12 @@ class FocusViewModel
                 FocusContract.UiEvent.CompleteSessionTask ->
                     viewModelScope.launch { completeSessionTask() }
 
-                FocusContract.UiEvent.OpenSessionScreen ->
+                FocusContract.UiEvent.OpenSessionScreen -> {
+                    // Reaching for the running session is asking for it by name, so a preview left
+                    // over from some other card must not be what opens instead.
+                    focusSessionRepository.setPreviewTaskId(null)
                     sendEffect(FocusContract.UiEffect.OpenSessionScreen)
+                }
 
                 is FocusContract.UiEvent.PreviewUpNext -> {
                     // Look at the work first: the screen opens on the task with its timer at full
@@ -279,8 +283,14 @@ class FocusViewModel
             val entry = state.sessionEntry ?: state.lastSessionEntry
             if (entry != null && !entry.task.isCompleted) {
                 toggleTaskCompletion(entry.task)
-                finishSession()
+                // Only the timer that was on this work: finishing a task you had merely opened to
+                // look at must not end the session running on another one.
+                if (state.session?.taskId == entry.task.id) finishSession()
             }
+            // Whether or not there was anything left to tick, the screen has said its piece. Leaving
+            // the preview standing on a finished task left the button there with nothing to do,
+            // which read as it being broken.
+            focusSessionRepository.setPreviewTaskId(null)
             mutableUiState.update { it.copy(finishedSession = null) }
         }
 
