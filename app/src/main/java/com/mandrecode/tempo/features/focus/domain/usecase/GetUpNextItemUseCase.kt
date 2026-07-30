@@ -4,19 +4,15 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import jakarta.inject.Inject
 
 /**
- * Orders the tasks the Up next row offers: highest priority first, earliest due time second.
+ * Picks the tasks the Up next row offers, in the order the day already puts them in.
  *
- * A queue rather than a single pick, because the best next thing is not always the one you are
- * ready to do — the row lets you swipe past it to the one you are, without leaving the screen.
+ * Deliberately does no sorting of its own. The row sits directly above the list it shortlists, and
+ * a row that disagreed with the list about what comes first made one of them look wrong — so the
+ * caller hands over the agenda already ordered and this only chooses what belongs in the row.
  *
- * Tasks only. The card's whole purpose is to be the one thing you start a session on, and a habit
- * is not something you sit down and run a timer against — it is ticked off in passing. A habit in
- * that slot offers a start button that cannot start, so habits stay in the day's list where they
- * belong.
- *
- * Priority outranks time on purpose — a high-priority task due this afternoon matters more than an
- * unprioritised one due this morning. Tasks with no time sort after timed ones, and completed tasks
- * are never candidates.
+ * Tasks only. The row's whole purpose is the one thing you start a session on, and a habit is not
+ * something you sit down and run a timer against — it is ticked off in passing. Completed work is
+ * never a candidate.
  */
 class GetUpNextItemUseCase
     @Inject
@@ -26,21 +22,13 @@ class GetUpNextItemUseCase
                 .asSequence()
                 .filterIsInstance<FocusAgendaItem.TaskEntry>()
                 .filterNot { it.isCompleted }
-                .sortedWith(
-                    compareBy<FocusAgendaItem.TaskEntry> { it.priority?.sortOrder ?: UNPRIORITISED }
-                        .thenBy { it.dueTime == null }
-                        .thenBy { it.dueTime }
-                        .thenBy { it.id },
-                ).take(MAX_UP_NEXT)
+                .take(MAX_UP_NEXT)
                 .toList()
 
         private companion object {
-            /** Sorts after every real priority, whatever their sort orders are. */
-            const val UNPRIORITISED = Int.MAX_VALUE
-
             /**
              * Enough to swipe past what you are not ready for, few enough that the row stays a
-             * shortlist and the day's own list still has something left in it.
+             * shortlist rather than a second copy of the day.
              */
             const val MAX_UP_NEXT = 5
         }

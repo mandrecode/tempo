@@ -67,6 +67,13 @@ fun FocusSessionRoute(
         onDispose { viewModel.onEvent(FocusContract.UiEvent.ClearSessionPreview) }
     }
 
+    uiState.taskEditor?.let { target ->
+        FocusTaskEditor(
+            target = target,
+            onDismiss = { viewModel.onEvent(FocusContract.UiEvent.DismissEditor) },
+        )
+    }
+
     if (hasSomethingToShow) {
         FocusSessionScreen(
             session = session,
@@ -151,6 +158,7 @@ fun FocusSessionScreen(
             onStop = { onEvent(FocusContract.UiEvent.StopSession) },
             onComplete = { onEvent(FocusContract.UiEvent.CompleteSessionTask) },
             onToggleSubtask = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
+            onEditSubtask = { onEvent(FocusContract.UiEvent.EditTask(it)) },
             onOpenInTasks = { task?.let { onOpenTaskInTasks(it.id) } },
             modifier = Modifier.padding(innerPadding),
         )

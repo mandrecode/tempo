@@ -15,7 +15,6 @@ import com.mandrecode.tempo.features.routines.presentation.HabitEditor
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitConfirmDialog
-import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TaskEditor
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
@@ -35,15 +34,23 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
  */
 @Composable
 internal fun FocusTaskEditor(
-    task: Task,
+    target: FocusContract.TaskEditorTarget,
     onDismiss: () -> Unit,
     viewModel: TasksViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
-    LaunchedEffect(task.id) {
-        viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task))
+    LaunchedEffect(target) {
+        viewModel.onEvent(
+            when (target) {
+                is FocusContract.TaskEditorTarget.Existing ->
+                    TasksContract.UiEvent.ShowTaskDialog(task = target.task)
+
+                is FocusContract.TaskEditorTarget.NewSubtask ->
+                    TasksContract.UiEvent.ShowTaskDialog(parentTaskId = target.parentTaskId)
+            },
+        )
     }
 
     // The sheet closing is the editor closing — Focus tracks the same thing its own way, and both

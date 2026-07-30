@@ -500,15 +500,27 @@ class FocusViewModelTest {
             viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
             advanceUntilIdle()
 
-            assertThat(
-                viewModel.uiState.value.editingTask
-                    ?.id,
-            ).isEqualTo(2)
+            assertThat(viewModel.uiState.value.taskEditor)
+                .isEqualTo(FocusContract.TaskEditorTarget.Existing(task(2)))
 
             viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
             advanceUntilIdle()
 
-            assertThat(viewModel.uiState.value.editingTask).isNull()
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
+    fun `adding a subtask opens the editor on the parent rather than on a task`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.AddSubtask(7))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskEditor)
+                .isEqualTo(FocusContract.TaskEditorTarget.NewSubtask(7))
         }
 
     @Test
@@ -569,7 +581,7 @@ class FocusViewModelTest {
                 viewModel.uiState.value.editingHabit
                     ?.id,
             ).isEqualTo(5)
-            assertThat(viewModel.uiState.value.editingTask).isNull()
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
         }
 
     private fun focusHabit(id: Long) =

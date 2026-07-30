@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -142,14 +143,14 @@ private fun FocusAgendaList(
     ) {
         upNextSection(uiState = uiState, onEvent = onEvent)
 
-        if (uiState.overdue.isNotEmpty()) {
+        if (uiState.visibleOverdue.isNotEmpty()) {
             item(key = "overdue_header") {
                 SectionHeader(
-                    label = stringResource(R.string.focus_section_overdue, uiState.overdue.size),
+                    label = stringResource(R.string.focus_section_overdue, uiState.visibleOverdue.size),
                     modifier = Modifier.animateItem(),
                 )
             }
-            items(uiState.overdue, key = { it.id }) { entry ->
+            items(uiState.visibleOverdue, key = { it.id }) { entry ->
                 AgendaRow(
                     entry = entry,
                     today = today,
@@ -160,14 +161,14 @@ private fun FocusAgendaList(
             }
         }
 
-        if (uiState.todayItems.isNotEmpty()) {
+        if (uiState.visibleToday.isNotEmpty()) {
             item(key = "today_header") {
                 SectionHeader(
-                    label = stringResource(R.string.focus_section_today, uiState.todayItems.size),
+                    label = stringResource(R.string.focus_section_today, uiState.visibleToday.size),
                     modifier = Modifier.animateItem(),
                 )
             }
-            items(uiState.todayItems, key = { it.id }) { entry ->
+            items(uiState.visibleToday, key = { it.id }) { entry ->
                 AgendaRow(
                     entry = entry,
                     today = today,
@@ -280,7 +281,7 @@ private fun LazyListScope.upNextRow(
                         onClick = {
                             onEvent(FocusContract.UiEvent.PreviewUpNext(entry.task.id))
                         },
-                        modifier = Modifier.width(cardWidth),
+                        modifier = Modifier.width(cardWidth).height(UpNextCardHeight),
                         trailingContent = {
                             StartSessionButton(
                                 minutes = defaultSessionLengthMinutes,
@@ -300,6 +301,13 @@ private fun LazyListScope.upNextRow(
 
 /** Leaves the next card showing at the edge, so the row reads as a row. */
 private const val SINGLE_PEEK_FRACTION = 0.88f
+
+/**
+ * One height for every card, whether or not it has a metadata line and however long its title runs.
+ * The row is as tall as its tallest card, so letting them differ made the whole day below shift up
+ * and down as you swiped.
+ */
+private val UpNextCardHeight = 100.dp
 
 @Composable
 private fun AgendaRow(
@@ -322,6 +330,7 @@ private fun AgendaRow(
                 onToggleSubtasksExpansion = {
                     onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(entry.task.id))
                 },
+                onAddSubtask = { onEvent(FocusContract.UiEvent.AddSubtask(it)) },
             )
 
         is FocusAgendaItem.HabitEntry ->

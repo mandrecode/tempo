@@ -38,17 +38,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.ValueStepper
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.presentation.components.cards.SubtaskItem
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlin.time.Clock
 import kotlin.time.Duration
@@ -77,10 +75,12 @@ internal fun SessionBody(
     onStop: () -> Unit,
     onComplete: () -> Unit,
     onToggleSubtask: (Task) -> Unit,
+    onEditSubtask: (Task) -> Unit,
     onOpenInTasks: () -> Unit,
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
+    val haptic = LocalHapticFeedback.current
     val counted by rememberSessionCountdown(session, clock)
     // Before it starts there is nothing to count down, so the ring shows the whole session ahead.
     val remaining = if (session == null) plannedLength else counted
@@ -106,6 +106,7 @@ internal fun SessionBody(
             session = session,
             task = task,
             categoryName = categoryName,
+            subtasks = subtasks,
             progress = progress,
             countdownLabel = remaining.asCountdownLabel(),
             onOpenInTasks = onOpenInTasks,
@@ -122,8 +123,17 @@ internal fun SessionBody(
                         .padding(top = 28.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
+                // The Tasks screen's own row, not a copy of it: same labels, same checkbox
+                // animation, and tapping one opens the same editor it opens there. A subtask that
+                // behaved differently depending on the screen you found it on would be a different
+                // thing wearing the same name.
                 subtasks.forEach { subtask ->
-                    SubtaskRow(subtask = subtask, onToggle = { onToggleSubtask(subtask) })
+                    SubtaskItem(
+                        subtask = subtask,
+                        onToggleCompletion = onToggleSubtask,
+                        onEdit = onEditSubtask,
+                        haptic = haptic,
+                    )
                 }
             }
         }
@@ -200,6 +210,7 @@ private fun ColumnScope.SessionSubject(
     session: FocusSession?,
     task: Task?,
     categoryName: String?,
+    subtasks: List<Task>,
     progress: Float,
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
@@ -234,6 +245,7 @@ private fun ColumnScope.SessionSubject(
         SessionTaskMetadata(
             task = task,
             categoryName = categoryName,
+            subtasks = subtasks,
             modifier = Modifier.padding(top = 24.dp),
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
@@ -375,6 +387,7 @@ private fun ImmersiveTextButton(
 private fun SessionTaskMetadata(
     task: Task,
     categoryName: String?,
+    subtasks: List<Task>,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -408,6 +421,16 @@ private fun SessionTaskMetadata(
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
             )
         }
+        // How much of the task is broken down, alongside its other properties. The checklist itself
+        // is further down the screen, so the count says it is there before you scroll to it.
+        if (subtasks.isNotEmpty()) {
+            SessionMetadataPill(
+                iconRes = R.drawable.ic_checklist,
+                label = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+            )
+        }
     }
 }
 
@@ -437,53 +460,6 @@ private fun SessionMetadataPill(
                 text = label,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,
-            )
-        }
-    }
-}
-
-@Composable
-private fun SubtaskRow(
-    subtask: Task,
-    onToggle: () -> Unit,
-) {
-    val haptic = LocalHapticFeedback.current
-
-    // A card of its own rather than a bare full-bleed row: the ripple used to spread the whole
-    // screen width as a rectangle, which read as the page reacting rather than the line you
-    // touched. Clipping to the shape keeps the press inside the row it belongs to.
-    Surface(
-        onClick = {
-            // Same weight as ticking the checkbox itself, which the row stands in for.
-            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-            onToggle()
-        },
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(SubtaskRadius),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        contentColor = MaterialTheme.colorScheme.onSurface,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            TaskCompletionCheckbox(
-                isCompleted = subtask.isCompleted,
-                onToggle = { onToggle() },
-            )
-            Text(
-                text = subtask.title,
-                style = MaterialTheme.typography.bodyMedium,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textDecoration = if (subtask.isCompleted) TextDecoration.LineThrough else null,
-                color =
-                    if (subtask.isCompleted) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    },
             )
         }
     }

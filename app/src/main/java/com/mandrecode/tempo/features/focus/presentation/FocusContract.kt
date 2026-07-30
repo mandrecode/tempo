@@ -43,11 +43,11 @@ object FocusContract {
          */
         val previewTaskId: Long? = null,
         /**
-         * The item whose editor Focus is showing. Focus hosts the sheets itself rather than
+         * What the task editor is open on, if anything. Focus hosts the sheets itself rather than
          * sending you to the owning tab: opening an item should not move you off the day you were
          * looking at.
          */
-        val editingTask: Task? = null,
+        val taskEditor: TaskEditorTarget? = null,
         val editingHabit: Habit? = null,
         val defaultSessionLengthMinutes: Int = 25,
         val breakLengthMinutes: Int = 5,
@@ -60,6 +60,21 @@ object FocusContract {
             get() = if (scheduledCount <= 0) 0f else (completedCount.toFloat() / scheduledCount).coerceIn(0f, 1f)
 
         val isDayEmpty: Boolean get() = overdue.isEmpty() && todayItems.isEmpty()
+
+        /**
+         * The day's sections without whatever the running session is on.
+         *
+         * That task already has the card above, counting down. Leaving it in the list as well read
+         * as two things when it is one, and as work still waiting when it is under way.
+         */
+        val visibleOverdue: List<FocusAgendaItem> get() = overdue.withoutSessionTask()
+
+        val visibleToday: List<FocusAgendaItem> get() = todayItems.withoutSessionTask()
+
+        private fun List<FocusAgendaItem>.withoutSessionTask(): List<FocusAgendaItem> {
+            val taskId = session?.taskId ?: return this
+            return filterNot { it is FocusAgendaItem.TaskEntry && it.task.id == taskId }
+        }
 
         /**
          * The entry the session screen is showing: the running session's task, or the one being
@@ -77,6 +92,17 @@ object FocusContract {
             }
 
         val sessionSubtasks: List<Task> get() = sessionEntry?.subtasks.orEmpty()
+    }
+
+    /** Why the task editor is open: to change a task, or to add a subtask beneath one. */
+    sealed interface TaskEditorTarget {
+        data class Existing(
+            val task: Task,
+        ) : TaskEditorTarget
+
+        data class NewSubtask(
+            val parentTaskId: Long,
+        ) : TaskEditorTarget
     }
 
     /** What the completion sheet reports: plain facts, no score and no streak. */
@@ -118,6 +144,10 @@ object FocusContract {
 
         data class EditHabit(
             val habit: Habit,
+        ) : UiEvent
+
+        data class AddSubtask(
+            val parentTaskId: Long,
         ) : UiEvent
 
         data object DismissEditor : UiEvent

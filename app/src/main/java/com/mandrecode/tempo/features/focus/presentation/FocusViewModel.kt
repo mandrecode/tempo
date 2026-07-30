@@ -90,13 +90,26 @@ class FocusViewModel
                     }
 
                 is FocusContract.UiEvent.EditTask ->
-                    mutableUiState.update { it.copy(editingTask = event.task, editingHabit = null) }
+                    mutableUiState.update {
+                        it.copy(
+                            taskEditor = FocusContract.TaskEditorTarget.Existing(event.task),
+                            editingHabit = null,
+                        )
+                    }
+
+                is FocusContract.UiEvent.AddSubtask ->
+                    mutableUiState.update {
+                        it.copy(
+                            taskEditor = FocusContract.TaskEditorTarget.NewSubtask(event.parentTaskId),
+                            editingHabit = null,
+                        )
+                    }
 
                 is FocusContract.UiEvent.EditHabit ->
-                    mutableUiState.update { it.copy(editingHabit = event.habit, editingTask = null) }
+                    mutableUiState.update { it.copy(editingHabit = event.habit, taskEditor = null) }
 
                 FocusContract.UiEvent.DismissEditor ->
-                    mutableUiState.update { it.copy(editingTask = null, editingHabit = null) }
+                    mutableUiState.update { it.copy(taskEditor = null, editingHabit = null) }
 
                 FocusContract.UiEvent.UndatedTasksClicked ->
                     sendEffect(FocusContract.UiEffect.OpenTasksTab)
