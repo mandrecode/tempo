@@ -10,12 +10,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
-import com.mandrecode.tempo.core.ui.theme.settingsTopBarTitleCollapsed
+import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
 
@@ -91,9 +92,12 @@ fun FocusSessionSheet(
     TempoModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier) { _ ->
         val task = uiState.sessionEntry?.task
 
+        // The style the task and habit editors give their titles, so a session reads as another
+        // sheet about one item rather than a screen with its own heading.
         Text(
             text = title,
-            style = MaterialTheme.typography.settingsTopBarTitleCollapsed,
+            style = MaterialTheme.typography.inputTitle,
+            textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth().padding(horizontal = SheetTitlePadding),

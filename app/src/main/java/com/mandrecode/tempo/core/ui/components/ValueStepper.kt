@@ -21,6 +21,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 
@@ -39,6 +40,7 @@ fun ValueStepper(
     range: IntRange = 1..Int.MAX_VALUE,
     step: Int = 1,
     enabled: Boolean = true,
+    buttonHeight: Dp = StepperButtonHeight,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -49,6 +51,7 @@ fun ValueStepper(
             iconRes = R.drawable.ic_remove,
             contentDescription = stringResource(R.string.decrease_interval),
             enabled = enabled && value - step >= range.first,
+            height = buttonHeight,
             onClick = { onValueChange((value - step).coerceIn(range)) },
         )
 
@@ -63,6 +66,7 @@ fun ValueStepper(
             iconRes = R.drawable.ic_add,
             contentDescription = stringResource(R.string.increase_interval),
             enabled = enabled && value + step <= range.last,
+            height = buttonHeight,
             onClick = { onValueChange((value + step).coerceIn(range)) },
         )
     }
@@ -73,6 +77,7 @@ private fun StepperButton(
     iconRes: Int,
     contentDescription: String,
     enabled: Boolean,
+    height: Dp,
     onClick: () -> Unit,
 ) {
     val haptic = LocalHapticFeedback.current
@@ -85,7 +90,7 @@ private fun StepperButton(
             },
         modifier =
             Modifier
-                .size(width = StepperButtonWidth, height = StepperButtonHeight)
+                .size(width = StepperButtonWidth, height = height)
                 .minimumInteractiveComponentSize()
                 .clip(RoundedCornerShape(STEPPER_CORNER_PERCENT))
                 .clickable(enabled = enabled) {

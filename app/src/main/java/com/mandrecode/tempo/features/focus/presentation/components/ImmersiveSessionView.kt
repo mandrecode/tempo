@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -95,7 +94,8 @@ internal fun SessionBody(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.surface)
+                // No background of its own. The sheet already has one, and painting a second over
+                // it drew a seam across the top where the handle and title sat on a different tone.
                 .verticalScroll(rememberScrollState())
                 // Matches the inset the top app bar gives its title, so the description below it
                 // starts on the same line rather than stepping in.
@@ -106,7 +106,6 @@ internal fun SessionBody(
             session = session,
             task = task,
             categoryName = categoryName,
-            subtasks = subtasks,
             progress = progress,
             countdownLabel = remaining.asCountdownLabel(),
             onOpenInTasks = onOpenInTasks,
@@ -194,7 +193,6 @@ private fun ColumnScope.PreStartControls(
                 ),
             colors = colors,
             modifier = Modifier.weight(1f),
-            compact = true,
         )
         ValueStepper(
             value = customMinutes,
@@ -202,6 +200,9 @@ private fun ColumnScope.PreStartControls(
             onValueChange = { customMinutes = it },
             range = FocusSession.SESSION_LENGTH_RANGE,
             step = FocusSession.LENGTH_STEP_MINUTES,
+            // Matched to the buttons either side of it, so the row is one band rather than a tall
+            // control with two short ones tucked against it.
+            buttonHeight = SessionControlHeight,
         )
     }
 }
@@ -212,24 +213,10 @@ private fun ColumnScope.SessionSubject(
     session: FocusSession?,
     task: Task?,
     categoryName: String?,
-    subtasks: List<Task>,
     progress: Float,
     countdownLabel: String,
     onOpenInTasks: () -> Unit,
 ) {
-    // Description sits above the timer: it is context for the work, and the title it belongs to is
-    // already the screen's own title in the bar above — so it reads as a continuation of that
-    // title, left-aligned under it, not as a centred caption.
-    task?.description?.takeIf { it.isNotBlank() }?.let { description ->
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Start,
-            modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-        )
-    }
-
     SessionRing(
         progress = progress,
         label = countdownLabel,
@@ -243,11 +230,23 @@ private fun ColumnScope.SessionSubject(
         modifier = Modifier.padding(top = 24.dp),
     )
 
+    // Below the ring rather than above it: the countdown is what this sheet is for, and pushing it
+    // down the page behind a paragraph buried the one thing you opened it to see. Here the
+    // description reads as the first of the task's details rather than a preamble to the timer.
+    task?.description?.takeIf { it.isNotBlank() }?.let { description ->
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(top = 20.dp),
+        )
+    }
+
     if (task != null) {
         SessionTaskMetadata(
             task = task,
             categoryName = categoryName,
-            subtasks = subtasks,
             modifier = Modifier.padding(top = 24.dp),
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
@@ -389,7 +388,6 @@ private fun ImmersiveTextButton(
 private fun SessionTaskMetadata(
     task: Task,
     categoryName: String?,
-    subtasks: List<Task>,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -421,16 +419,6 @@ private fun SessionTaskMetadata(
                 label = DateTimeFormatter.formatTimeOfDay(reminder.time, context),
                 containerColor = MaterialTheme.colorScheme.tertiaryContainer,
                 contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-        }
-        // How much of the task is broken down, alongside its other properties. The checklist itself
-        // is further down the screen, so the count says it is there before you scroll to it.
-        if (subtasks.isNotEmpty()) {
-            SessionMetadataPill(
-                iconRes = R.drawable.ic_checklist,
-                label = "${subtasks.count { it.isCompleted }}/${subtasks.size}",
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                contentColor = MaterialTheme.colorScheme.onSurface,
             )
         }
     }
@@ -472,5 +460,8 @@ private val WaveSpeed = 10.dp
 private const val TRACK_ALPHA = 0.22f
 private val SessionHorizontalPadding = 16.dp
 private val SubtaskRadius = 14.dp
+
+/** One height for everything in the session's control rows, buttons and stepper alike. */
+private val SessionControlHeight = 52.dp
 private val SubtaskColumnMaxWidth = 420.dp
 private val TextButtonRadius = 24.dp
