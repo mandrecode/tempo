@@ -36,6 +36,9 @@ import com.mandrecode.tempo.features.focus.presentation.components.rememberSessi
  * Leaving Focus should not hide a session the user started — the chip carries the remaining time
  * and returns to Focus when tapped. It sits in the session's own tertiary colour so it reads as
  * belonging to the session rather than to navigation.
+ *
+ * It takes over the Focus tab's own slot rather than adding an element beside it: the tab it would
+ * sit next to is the one it belongs to, and the bar has no width to spare.
  */
 @Composable
 internal fun FocusSessionChip(
