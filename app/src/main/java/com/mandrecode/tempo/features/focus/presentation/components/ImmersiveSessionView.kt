@@ -83,12 +83,15 @@ internal fun SessionBody(
     val counted by rememberSessionCountdown(session, clock)
     // Before it starts there is nothing to count down, so the ring shows the whole session ahead.
     val remaining = if (session == null) plannedLength else counted
-    val progress =
+    val elapsedFraction =
         if (session == null || session.plannedLength.inWholeSeconds <= 0) {
             0f
         } else {
             1f - (remaining.inWholeSeconds.toFloat() / session.plannedLength.inWholeSeconds)
         }.coerceIn(0f, 1f)
+    // A break drains where a session fills, the same way the card's ring does. The two surfaces
+    // show the same countdown, so they have to run the same direction.
+    val progress = if (session?.isBreak == true) 1f - elapsedFraction else elapsedFraction
 
     Column(
         modifier =
