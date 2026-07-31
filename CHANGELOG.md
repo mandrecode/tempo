@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/mandrecode/tempo/compare/v1.11.0...v1.11.1) (2026-07-31)
+
+
+### Bug Fixes
+
+* **#343:** open habit chains from Focus, steady the bar, style the undated hand-off ([#348](https://github.com/mandrecode/tempo/issues/348)) ([2d33a8b](https://github.com/mandrecode/tempo/commit/2d33a8b6d5c51f536e9d4f9f22c668ed615b39b5))
+
 ## [1.11.0](https://github.com/mandrecode/tempo/compare/v1.10.0...v1.11.0) (2026-07-30)
 
 
