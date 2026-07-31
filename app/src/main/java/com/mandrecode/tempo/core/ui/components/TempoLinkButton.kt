@@ -32,6 +32,10 @@ private val LinkButtonIconSize = 18.dp
  * Shared rather than copied per screen, because the two places that hand off to Tasks — the
  * session screen and the Focus agenda's undated footer — are the same promise made twice, and a
  * second implementation is how the two would come to look different.
+ *
+ * [iconContentDescription] is for callers whose icon carries meaning the label does not. The icon
+ * is decorative by default and silent to a screen reader, so a caller that lets the icon say where
+ * the button goes has to name the destination here or it is lost.
  */
 @Composable
 fun TempoLinkButton(
@@ -39,6 +43,7 @@ fun TempoLinkButton(
     iconRes: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    iconContentDescription: String? = null,
 ) {
     val haptic = LocalHapticFeedback.current
 
@@ -59,10 +64,11 @@ fun TempoLinkButton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // The icon is the promise that this leaves the screen, so the label alone never has to
-            // carry that on its own.
+            // carry that on its own — and where that promise is the only place the destination is
+            // named, it has to be spoken too.
             Icon(
                 painter = painterResource(iconRes),
-                contentDescription = null,
+                contentDescription = iconContentDescription,
                 modifier = Modifier.size(LinkButtonIconSize),
                 tint = MaterialTheme.colorScheme.primary,
             )

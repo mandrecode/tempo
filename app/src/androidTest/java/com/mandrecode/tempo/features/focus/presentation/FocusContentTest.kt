@@ -222,6 +222,19 @@ class FocusContentTest {
         assertThat((message.bottom - message.top).value).isLessThan(SINGLE_LINE_MAX_DP)
     }
 
+    /**
+     * The icon is what tells a sighted user the footer leaves for Tasks, and TalkBack does not see
+     * icons. Without a description of its own the button announced only the count.
+     */
+    @Test
+    fun undatedFooter_tellsAScreenReaderWhereItGoes() {
+        setContent(stateWith(items = listOf(chainEntry()), undatedTaskCount = 3)) { }
+
+        // The label still reads as the count, and the destination is spoken alongside it.
+        composeTestRule.onNodeWithText("3 tasks without a date").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Open in Tasks").assertExists()
+    }
+
     @Test
     fun emptyDay_stillOffersTheHandOff() {
         val events = mutableListOf<FocusContract.UiEvent>()

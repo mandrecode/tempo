@@ -42,6 +42,11 @@ The Focus screen SHALL present its "N tasks without a date" affordance as a roun
 - **THEN** the footer shows the undated-task count alongside an open-in-new icon
 - **AND** the footer is drawn as a rounded, self-contained control
 
+#### Scenario: A screen reader hears where the footer goes
+
+- **WHEN** the undated-tasks footer is read by a screen reader
+- **THEN** it announces the destination as well as the count, rather than the count alone
+
 #### Scenario: Tapping the footer opens the Tasks tab
 
 - **WHEN** the user taps the undated-tasks footer

@@ -461,6 +461,9 @@ private fun UndatedTasksFooter(
             label = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
             iconRes = R.drawable.ic_open_in_new,
             onClick = onClick,
+            // The count is the label, so the icon is the only thing naming the destination — and an
+            // icon says nothing to a screen reader unless it is described.
+            iconContentDescription = stringResource(R.string.focus_session_open_in_tasks),
         )
     }
 }
