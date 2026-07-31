@@ -200,10 +200,26 @@ class FocusContentTest {
         setContent(stateWith(items = emptyList())) { }
 
         val root = composeTestRule.onRoot().getUnclippedBoundsInRoot()
-        val title = composeTestRule.onNodeWithText("Nothing due today").getUnclippedBoundsInRoot()
+        val title = composeTestRule.onNodeWithText("A clear day", substring = true).getUnclippedBoundsInRoot()
         val titleCentre = ((title.top + title.bottom) / 2f).value
 
         assertThat(titleCentre).isLessThan(((root.bottom - root.top) / 2f).value)
+    }
+
+    /**
+     * The invitation is one line. Two lines under a one-line headline read as a paragraph, which
+     * is not what the other tabs' empty states look like.
+     */
+    @Test
+    fun emptyDay_invitationFitsOnOneLine() {
+        setContent(stateWith(items = emptyList())) { }
+
+        val message =
+            composeTestRule
+                .onNodeWithText("Plan a task or routine", substring = true)
+                .getUnclippedBoundsInRoot()
+
+        assertThat((message.bottom - message.top).value).isLessThan(SINGLE_LINE_MAX_DP)
     }
 
     @Test
@@ -232,3 +248,6 @@ private const val MIN_STEPS = 4
 
 /** No frame may carry this much of the journey. A teleport carries all of it. */
 private const val MAX_STEP_FRACTION = 0.6f
+
+/** One line of bodyMedium is about 20dp; two lines clear 40dp. */
+private const val SINGLE_LINE_MAX_DP = 30f

@@ -102,3 +102,9 @@ levels of muting, and the same position above the vertical middle.
 
 - **WHEN** the Focus agenda is empty
 - **THEN** its headline sits above the vertical middle of the content area, as the Tasks and Routines empty states do
+
+#### Scenario: It does not restate what the hero already said
+
+- **WHEN** the Focus agenda is empty
+- **THEN** the hero states that nothing is scheduled, and the empty state below it does not say the same thing again
+- **AND** the empty state's second line says where work comes from instead

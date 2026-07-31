@@ -52,3 +52,5 @@
 - [x] 7.1 Restyle `FocusEmptyState` on the shared empty-state pattern: `emptyStateTitle` at 0.6 alpha, `bodyMedium` at 0.4, and `TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS` instead of dead centre
 - [x] 7.2 `FocusContentTest`: the empty state's headline sits above the vertical middle
 - [x] 7.3 Fix `PortraitFloatingBarMotionTest` failing on CI's device by 1.0dp — the assertion compared the rest position to the final one, but the defect is a round trip (rest → +4.19dp → hold → back to the same place), so it now asserts the group does not move at all once it stops
+- [x] 7.4 Re-word the empty state on one line in both locales: the hero already says nothing is scheduled, so the headline stops repeating it and carries the emoji-and-exclamation beat Routines and Tasks use, with the second line pointing at where work comes from (en + es)
+- [x] 7.5 `FocusContentTest`: the invitation renders on a single line; verified on device in English and Spanish (694px of 936px available in the longer one)

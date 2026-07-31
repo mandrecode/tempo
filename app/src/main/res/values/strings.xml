@@ -650,8 +650,8 @@
     <string name="focus_section_today">Today · %1$d</string>
     <string name="focus_progress_description">%1$d of %2$d done</string>
     <string name="focus_history_description">Activity over the last %1$d days</string>
-    <string name="focus_empty_title">Nothing due today</string>
-    <string name="focus_empty_message">Work due today, and anything overdue, shows up here.</string>
+    <string name="focus_empty_title">🌤️ A clear day!</string>
+    <string name="focus_empty_message">Plan a task or routine and it shows up here</string>
     <plurals name="focus_streak_days">
         <item quantity="one">%1$d day focusing</item>
         <item quantity="other">%1$d days focusing</item>
