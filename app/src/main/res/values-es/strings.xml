@@ -655,7 +655,7 @@
     <string name="focus_progress_description">%1$d de %2$d completados</string>
     <string name="focus_history_description">Actividad de los últimos %1$d días</string>
     <string name="focus_empty_title">🌤️ ¡Un día despejado!</string>
-    <string name="focus_empty_message">Planifica una tarea o rutina y aparece aquí</string>
+    <string name="focus_empty_message">Planifica una tarea o rutina para hoy</string>
     <plurals name="focus_streak_days">
         <item quantity="one">%1$d día de enfoque</item>
         <item quantity="other">%1$d días de enfoque</item>

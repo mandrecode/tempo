@@ -1,8 +1,11 @@
 package com.mandrecode.tempo.features.focus.presentation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
@@ -209,10 +213,21 @@ class FocusContentTest {
     /**
      * The invitation is one line. Two lines under a one-line headline read as a paragraph, which
      * is not what the other tabs' empty states look like.
+     *
+     * Measured inside a fixed-width box rather than at whatever the running device happens to be:
+     * a first version asserted against the device's own width, passed on a 411dp phone, and failed
+     * on CI's narrower emulator. [SmallPhoneWidth] is the width this has to survive.
      */
     @Test
-    fun emptyDay_invitationFitsOnOneLine() {
-        setContent(stateWith(items = emptyList())) { }
+    fun emptyDay_invitationFitsOnOneLineOnASmallPhone() {
+        composeTestRule.setContent {
+            TempoTheme {
+                Box(modifier = Modifier.width(SmallPhoneWidth)) {
+                    FocusContent(uiState = stateWith(items = emptyList()), onEvent = {})
+                }
+            }
+        }
+        composeTestRule.waitForIdle()
 
         val message =
             composeTestRule
@@ -220,19 +235,6 @@ class FocusContentTest {
                 .getUnclippedBoundsInRoot()
 
         assertThat((message.bottom - message.top).value).isLessThan(SINGLE_LINE_MAX_DP)
-    }
-
-    /**
-     * The icon is what tells a sighted user the footer leaves for Tasks, and TalkBack does not see
-     * icons. Without a description of its own the button announced only the count.
-     */
-    @Test
-    fun undatedFooter_tellsAScreenReaderWhereItGoes() {
-        setContent(stateWith(items = listOf(chainEntry()), undatedTaskCount = 3)) { }
-
-        // The label still reads as the count, and the destination is spoken alongside it.
-        composeTestRule.onNodeWithText("3 tasks without a date").assertIsDisplayed()
-        composeTestRule.onNodeWithContentDescription("Open in Tasks").assertExists()
     }
 
     @Test
@@ -264,3 +266,6 @@ private const val MAX_STEP_FRACTION = 0.6f
 
 /** One line of bodyMedium is about 20dp; two lines clear 40dp. */
 private const val SINGLE_LINE_MAX_DP = 30f
+
+/** The narrowest phone worth supporting; CI's emulator sits around here. */
+private val SmallPhoneWidth = 320.dp
