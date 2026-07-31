@@ -435,8 +435,10 @@ fun HabitCard(
     val selectionElevation = selectableCardElevation(isSelected)
 
     Row(
+        // As in HabitChainCard: the parameter existed but never reached the root, so a caller's
+        // item animation was silently dropped.
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.Start,

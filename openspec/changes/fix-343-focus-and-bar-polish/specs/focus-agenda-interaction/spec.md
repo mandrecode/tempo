@@ -56,3 +56,38 @@ The Focus screen SHALL present its "N tasks without a date" affordance as a roun
 
 - **WHEN** the day is empty and undated tasks exist
 - **THEN** the empty state shows the same rounded open-in-Tasks control as the populated agenda
+
+### Requirement: The agenda's rows move out of each other's way
+
+When a row of the Focus agenda changes height — a chain folding out, a task's subtasks unfolding —
+the rows below it SHALL slide to their new positions rather than being relocated in a single frame,
+matching how the Routines and Tasks lists already behave.
+
+#### Scenario: Expanding a chain pushes the rows below it
+
+- **WHEN** the user expands a habit chain that has rows beneath it in the agenda
+- **THEN** those rows travel to their new positions over the course of the expansion
+- **AND** no single frame carries the majority of that travel
+
+#### Scenario: A card honours the modifier it is given
+
+- **WHEN** a habit card or a habit chain card is given a modifier by its caller
+- **THEN** that modifier applies to the card's root, so a list can animate the card's placement
+
+### Requirement: A chain's habits read in the chain's own order
+
+The Focus agenda SHALL list a chain's habits in the order the chain holds them, which is the order
+its editor was left in — the same order the Routines tab shows. A habit named by a chain but no
+longer present SHALL simply be absent rather than displacing the rest.
+
+#### Scenario: Chain order wins over habit order
+
+- **WHEN** a chain holds its habits in an order different from the order the habits themselves are stored in
+- **AND** the user expands that chain in Focus
+- **THEN** the habits are listed in the chain's order
+- **AND** the order matches what the Routines tab shows for the same chain
+
+#### Scenario: A missing habit is skipped
+
+- **WHEN** a chain names a habit that no longer exists
+- **THEN** the remaining habits are listed in the chain's order, without a gap

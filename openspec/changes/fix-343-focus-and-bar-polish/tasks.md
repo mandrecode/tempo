@@ -35,3 +35,14 @@
 - [x] 5.3 `./gradlew ktlintFormat` then `./gradlew ktlintCheck :app:detekt` (baseline must not grow)
 - [x] 5.4 `./gradlew lintDebug` not needed — no string resource changed (the footer reuses `focus_undated_tasks`)
 - [x] 5.5 Manual pass on device: chain opens from Focus, bar transition lands without a late shift, footer reads as a hand-off
+
+## 6. #343 follow-ups — agenda motion and chain order
+
+- [x] 6.1 Make `HabitCard` and `HabitChainCard` apply their `modifier` to the card root; both declared the parameter and dropped it, so a caller's item animation never arrived
+- [x] 6.2 Give `AgendaRow` a `modifier` parameter and forward it to the task, habit and chain cards
+- [x] 6.3 Pass `Modifier.animateItem()` from both agenda `items` blocks, matching Routines' `TimelineItemCard`
+- [x] 6.4 Order a chain's habits by `chain.habitIds` in `GetFocusAgendaUseCase` instead of filtering the habits list, which kept that list's order
+- [x] 6.5 `GetFocusAgendaUseCaseTest`: chain order wins over habit order, and a chain naming a missing habit just drops it (both verified to fail against the old filter)
+- [x] 6.6 `FocusContentTest`: an expanding chain slides the row below it — no frame carries more than 60% of the travel (verified to fail against the unfixed layout, which took 184dp of a 168dp journey in one frame)
+- [x] 6.7 `RoutineCardModifierTest`: both cards apply the caller's modifier (both verified to fail before the fix)
+- [x] 6.8 Manual pass on the Pixel 10 AVD: a chain built as Charlie/Alpha/Bravo reads in that order in Focus, matching Routines

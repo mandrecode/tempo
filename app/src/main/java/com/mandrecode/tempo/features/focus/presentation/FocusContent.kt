@@ -155,6 +155,10 @@ private fun FocusAgendaList(
                     expandedChainIds = uiState.expandedChainIds,
                     expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
+                    // Rows slide out of each other's way when one grows, the way they do in
+                    // Routines and Tasks. Without this an expanding card teleported everything
+                    // below it, which read as the list jumping rather than the card opening.
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -173,6 +177,10 @@ private fun FocusAgendaList(
                     expandedChainIds = uiState.expandedChainIds,
                     expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
+                    // Rows slide out of each other's way when one grows, the way they do in
+                    // Routines and Tasks. Without this an expanding card teleported everything
+                    // below it, which read as the list jumping rather than the card opening.
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -340,10 +348,12 @@ private fun AgendaRow(
     expandedChainIds: ImmutableList<Long>,
     expandedTaskIds: ImmutableList<Long>,
     onEvent: (FocusContract.UiEvent) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     when (entry) {
         is FocusAgendaItem.TaskEntry ->
             TaskItem(
+                modifier = modifier,
                 task = entry.task,
                 subtasks = entry.subtasks,
                 onToggleCompletion = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
@@ -362,6 +372,7 @@ private fun AgendaRow(
             // surface — HabitItem is only the row inside it, and on its own renders an uncoloured
             // habit as bare text on the background.
             HabitCard(
+                modifier = modifier,
                 habit = entry.habit,
                 selectedDate = today,
                 onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit)) },
@@ -375,6 +386,7 @@ private fun AgendaRow(
 
         is FocusAgendaItem.ChainEntry ->
             HabitChainCard(
+                modifier = modifier,
                 habitChain = entry.chain,
                 chainHabits = entry.habits,
                 selectedDate = today,

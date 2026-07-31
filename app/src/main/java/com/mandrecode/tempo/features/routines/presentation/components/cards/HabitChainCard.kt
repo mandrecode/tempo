@@ -185,8 +185,10 @@ fun HabitChainCard(
     )
 
     Row(
+        // The caller's modifier reaches the root, which it never used to: the parameter was
+        // declared and dropped, so a list handing this card an item animation got nothing back.
         modifier =
-            Modifier
+            modifier
                 .fillMaxWidth()
                 .height(IntrinsicSize.Max),
         horizontalArrangement = Arrangement.Start,
