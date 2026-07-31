@@ -91,3 +91,14 @@ longer present SHALL simply be absent rather than displacing the rest.
 
 - **WHEN** a chain names a habit that no longer exists
 - **THEN** the remaining habits are listed in the chain's order, without a gap
+
+### Requirement: The empty day looks like the app's other empty days
+
+When the Focus agenda has nothing on it, the screen SHALL present its headline and explanation in
+the same style Tasks and Routines use for theirs — the shared empty-state headline, the same two
+levels of muting, and the same position above the vertical middle.
+
+#### Scenario: The empty state sits where the others do
+
+- **WHEN** the Focus agenda is empty
+- **THEN** its headline sits above the vertical middle of the content area, as the Tasks and Routines empty states do

@@ -8,6 +8,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
@@ -189,6 +190,21 @@ class FocusContentTest {
     }
 
     private fun rowTop(text: String) = composeTestRule.onNodeWithText(text).getUnclippedBoundsInRoot().top
+
+    /**
+     * The empty day sits above the middle, as Tasks' and Routines' empty states do — dead centre
+     * was the one thing marking Focus out as a different screen.
+     */
+    @Test
+    fun emptyDay_sitsAboveTheMiddleLikeTheOtherTabs() {
+        setContent(stateWith(items = emptyList())) { }
+
+        val root = composeTestRule.onRoot().getUnclippedBoundsInRoot()
+        val title = composeTestRule.onNodeWithText("Nothing due today").getUnclippedBoundsInRoot()
+        val titleCentre = ((title.top + title.bottom) / 2f).value
+
+        assertThat(titleCentre).isLessThan(((root.bottom - root.top) / 2f).value)
+    }
 
     @Test
     fun emptyDay_stillOffersTheHandOff() {

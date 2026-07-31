@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.pluralStringResource
@@ -35,6 +38,8 @@ import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
+import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
@@ -53,6 +58,10 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
 
 private val ContentBlockTopCornerRadius = 28.dp
+
+/** The two levels of muting Tasks and Routines use for their own empty states. */
+private const val EMPTY_STATE_TITLE_ALPHA = 0.6f
+private const val EMPTY_STATE_MESSAGE_ALPHA = 0.4f
 
 @Composable
 fun FocusContent(
@@ -456,31 +465,44 @@ private fun UndatedTasksFooter(
     }
 }
 
+/**
+ * The empty day, in the same words and the same shape Tasks and Routines use for theirs: the
+ * headline style they share, the same two levels of muting, and sitting above the middle rather
+ * than dead centre, so an empty Focus reads as the same app as an empty anything else.
+ */
 @Composable
 private fun FocusEmptyState(
     undatedTaskCount: Int,
     onUndatedClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment =
+            BiasAlignment(
+                horizontalBias = 0f,
+                verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
+            ),
     ) {
-        Text(
-            text = stringResource(R.string.focus_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.focus_empty_message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        if (undatedTaskCount > 0) {
-            UndatedTasksFooter(count = undatedTaskCount, onClick = onUndatedClick)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.focus_empty_title),
+                style = MaterialTheme.typography.emptyStateTitle,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = EMPTY_STATE_TITLE_ALPHA),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.focus_empty_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = EMPTY_STATE_MESSAGE_ALPHA),
+                textAlign = TextAlign.Center,
+            )
+            if (undatedTaskCount > 0) {
+                UndatedTasksFooter(count = undatedTaskCount, onClick = onUndatedClick)
+            }
         }
     }
 }

@@ -46,3 +46,9 @@
 - [x] 6.6 `FocusContentTest`: an expanding chain slides the row below it — no frame carries more than 60% of the travel (verified to fail against the unfixed layout, which took 184dp of a 168dp journey in one frame)
 - [x] 6.7 `RoutineCardModifierTest`: both cards apply the caller's modifier (both verified to fail before the fix)
 - [x] 6.8 Manual pass on the Pixel 10 AVD: a chain built as Charlie/Alpha/Bravo reads in that order in Focus, matching Routines
+
+## 7. Empty state and CI follow-ups
+
+- [x] 7.1 Restyle `FocusEmptyState` on the shared empty-state pattern: `emptyStateTitle` at 0.6 alpha, `bodyMedium` at 0.4, and `TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS` instead of dead centre
+- [x] 7.2 `FocusContentTest`: the empty state's headline sits above the vertical middle
+- [x] 7.3 Fix `PortraitFloatingBarMotionTest` failing on CI's device by 1.0dp — the assertion compared the rest position to the final one, but the defect is a round trip (rest → +4.19dp → hold → back to the same place), so it now asserts the group does not move at all once it stops

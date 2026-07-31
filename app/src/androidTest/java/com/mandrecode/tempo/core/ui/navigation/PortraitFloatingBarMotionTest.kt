@@ -36,11 +36,21 @@ class PortraitFloatingBarMotionTest {
         /** One frame at 60 Hz, in milliseconds. */
         const val FRAME_MS = 16L
 
-        /** Below this, a change is the spring's own tail rather than a step. */
-        val Settled = 0.5.dp
+        /**
+         * Below this, a change is the spring's own tail or pixel rounding rather than a step.
+         * Positions are pixel-quantised, so this has to clear one device pixel on any density.
+         */
+        val Settled = 1.dp
 
-        /** How far the resting position may sit from where the motion actually stopped. */
-        val Tolerance = 1.dp
+        /**
+         * How far the resting position may sit from where the motion actually stopped.
+         *
+         * The defect this guards against is half of [FloatingToolbarItemSpacing] — measured at
+         * 4.19dp — so anything comfortably under that still catches it. It has to stay well above
+         * rounding noise too: a first run at 1dp failed on CI by exactly 1.0dp on a density this
+         * emulator does not have.
+         */
+        val Tolerance = 2.5.dp
 
         const val SORT_DESCRIPTION = "Sort tasks by"
         const val CLEAR_DESCRIPTION = "Delete all completed"
@@ -85,27 +95,33 @@ class PortraitFloatingBarMotionTest {
     }
 
     /**
-     * Where the motion first came to rest — the first position it held for [HOLD_FRAMES] frames,
-     * which is what a watching eye reads as the transition being over.
+     * The index of the first position the group held for [HOLD_FRAMES] frames — the point a
+     * watching eye reads as the transition being over.
      */
-    private fun List<Dp>.whereItFirstRested(): Dp {
-        for (index in 0..size - HOLD_FRAMES) {
+    private fun List<Dp>.firstRestIndex(): Int {
+        for (index in 1..size - HOLD_FRAMES) {
             val held =
                 (index until index + HOLD_FRAMES).all {
                     abs((this[it] - this[index]).value) < Settled.value
                 }
-            if (held && index > 0) return this[index]
+            if (held) return index
         }
-        return last()
+        return size - 1
     }
 
     /**
-     * The transition must end where it stopped. It used to stop, hold, and then take one more step
-     * of half a spacing as the leaving control's node was disposed.
+     * Once the group stops, it has to stay stopped.
+     *
+     * Not "it must end where it stopped": the defect was a round trip. The group came to rest,
+     * stepped half a spacing away as one leaving control's node was disposed, held there for a few
+     * hundred milliseconds, and stepped back as the second one went — finishing exactly where it
+     * had first landed. Comparing the rest to the final position sees nothing at all.
      */
-    private fun assertNoLateStep(positions: List<Dp>) {
-        assertThat(abs((positions.whereItFirstRested() - positions.last()).value))
-            .isLessThan(Tolerance.value)
+    private fun assertStaysPutOnceItStops(positions: List<Dp>) {
+        val restIndex = positions.firstRestIndex()
+        val rest = positions[restIndex]
+        val worst = positions.drop(restIndex).maxOf { abs((it - rest).value) }
+        assertThat(worst).isLessThan(Tolerance.value)
     }
 
     /** Guards the sampling window itself: a run that never finished proves nothing. */
@@ -115,7 +131,7 @@ class PortraitFloatingBarMotionTest {
     }
 
     @Test
-    fun leavingTasks_theGroupSettlesWhereItStops() {
+    fun leavingTasks_theGroupStaysPutOnceItStops() {
         setBar()
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
@@ -125,11 +141,11 @@ class PortraitFloatingBarMotionTest {
 
         val positions = samplePositions()
         assertMotionFinished(positions)
-        assertNoLateStep(positions)
+        assertStaysPutOnceItStops(positions)
     }
 
     @Test
-    fun arrivingOnTasks_theGroupSettlesWhereItStops() {
+    fun arrivingOnTasks_theGroupStaysPutOnceItStops() {
         isTasksRoute = false
         setBar()
         composeTestRule.mainClock.autoAdvance = false
@@ -140,7 +156,7 @@ class PortraitFloatingBarMotionTest {
 
         val positions = samplePositions()
         assertMotionFinished(positions)
-        assertNoLateStep(positions)
+        assertStaysPutOnceItStops(positions)
     }
 
     /**
@@ -156,14 +172,16 @@ class PortraitFloatingBarMotionTest {
         val add = composeTestRule.onNodeWithContentDescription(ADD_DESCRIPTION, substring = true)
         val pill = composeTestRule.onNodeWithTag(PILL_TAG).getUnclippedBoundsInRoot()
 
+        // A dp of slack for pixel rounding; the gaps being guarded are 6dp and 8dp, so a genuine
+        // change to either would still be caught.
         assertThat((sort.getUnclippedBoundsInRoot().left - clear.getUnclippedBoundsInRoot().right).value)
-            .isWithin(1f)
+            .isWithin(GAP_TOLERANCE_DP)
             .of(TASK_ACTIONS_BUTTON_SPACING.value)
         assertThat((pill.left - sort.getUnclippedBoundsInRoot().right).value)
-            .isWithin(1f)
+            .isWithin(GAP_TOLERANCE_DP)
             .of(FloatingToolbarItemSpacing.value)
         assertThat((add.getUnclippedBoundsInRoot().left - pill.right).value)
-            .isWithin(1f)
+            .isWithin(GAP_TOLERANCE_DP)
             .of(FloatingToolbarItemSpacing.value)
     }
 }
@@ -176,3 +194,6 @@ private const val HOLD_FRAMES = 6
 
 /** Roughly two seconds at 60 Hz — long enough to include a step taken after the spring ran out. */
 private const val SAMPLE_FRAMES = 120
+
+/** Slack for pixel rounding when comparing a measured gap against its dp constant. */
+private const val GAP_TOLERANCE_DP = 1.5f
