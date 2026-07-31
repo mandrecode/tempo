@@ -194,6 +194,42 @@ class GetFocusAgendaUseCaseTest {
         }
 
     @Test
+    fun `a chain's habits keep the chain's own order, not the habit list's`() =
+        runTest {
+            // The chain runs 3, 1, 2 — the order its editor was left in. The habits arrive in id
+            // order, which is what the screen used to show instead.
+            val chain =
+                HabitChain(
+                    id = 1,
+                    title = "Morning Routine",
+                    habitIds = listOf(3, 1, 2),
+                    createdDate = LocalDateTime(today, LocalTime(0, 0)),
+                )
+
+            agenda(habits = listOf(habit(1), habit(2), habit(3)), chains = listOf(chain)) {
+                val entry = it.today.single() as FocusAgendaItem.ChainEntry
+                assertThat(entry.habits.map(Habit::id)).containsExactly(3L, 1L, 2L).inOrder()
+            }
+        }
+
+    @Test
+    fun `a chain naming a habit that no longer exists just drops it`() =
+        runTest {
+            val chain =
+                HabitChain(
+                    id = 1,
+                    title = "Morning Routine",
+                    habitIds = listOf(3, 99, 1),
+                    createdDate = LocalDateTime(today, LocalTime(0, 0)),
+                )
+
+            agenda(habits = listOf(habit(1), habit(3)), chains = listOf(chain)) {
+                val entry = it.today.single() as FocusAgendaItem.ChainEntry
+                assertThat(entry.habits.map(Habit::id)).containsExactly(3L, 1L).inOrder()
+            }
+        }
+
+    @Test
     fun `timed work sorts before untimed, and completed work sinks last`() =
         runTest {
             agenda(

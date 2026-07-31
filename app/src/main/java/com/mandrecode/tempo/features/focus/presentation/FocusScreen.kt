@@ -83,7 +83,7 @@ fun FocusScreen(
     uiState.taskEditor?.let { target ->
         FocusTaskEditor(target = target, onDismiss = dismissEditor)
     }
-    uiState.editingHabit?.let { habit ->
-        FocusHabitEditor(habit = habit, onDismiss = dismissEditor)
+    uiState.routineEditor?.let { target ->
+        FocusRoutineEditor(target = target, onDismiss = dismissEditor)
     }
 }

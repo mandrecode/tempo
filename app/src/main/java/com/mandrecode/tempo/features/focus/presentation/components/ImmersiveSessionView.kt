@@ -6,12 +6,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -30,7 +28,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -39,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.ValueStepper
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
@@ -319,7 +317,7 @@ private fun ColumnScope.SessionSubject(
         )
         // Sits with the task's own details, not down among the timer controls: leaving the screen
         // by accident when reaching for stop or done would cost the session.
-        ImmersiveTextButton(
+        TempoLinkButton(
             label = stringResource(R.string.focus_session_open_in_tasks),
             iconRes = R.drawable.ic_open_in_new,
             onClick = onOpenInTasks,
@@ -430,52 +428,6 @@ private fun SessionControls(
 }
 
 /**
- * The quiet way off this screen, styled like the editors' own "Delete task" and "Delete habit"
- * actions: a transparent surface with a plain ripple, so a secondary action looks the same
- * wherever the app offers one.
- */
-@Composable
-private fun ImmersiveTextButton(
-    label: String,
-    iconRes: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val haptic = LocalHapticFeedback.current
-
-    Surface(
-        onClick = {
-            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-            onClick()
-        },
-        modifier = modifier,
-        shape = RoundedCornerShape(TextButtonRadius),
-        color = Color.Transparent,
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // The icon is the promise that this leaves the screen, so the label alone never has to
-            // carry that on its own.
-            Icon(
-                painter = painterResource(iconRes),
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-                tint = MaterialTheme.colorScheme.primary,
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
-    }
-}
-
-/**
  * Category, priority and reminder for the task under way, as the full pills the task editor uses
  * rather than the compact badges its card shows — this screen has the room, and the editor's
  * vocabulary is the one that names each property outright.
@@ -575,4 +527,3 @@ private val SubtaskRadius = 14.dp
 /** One height for everything in the session's control rows, buttons and stepper alike. */
 private val SessionControlHeight = 52.dp
 private val SubtaskColumnMaxWidth = 420.dp
-private val TextButtonRadius = 24.dp

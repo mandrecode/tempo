@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,8 +8,10 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,10 +24,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,9 +34,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing
+import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
@@ -55,6 +58,10 @@ import kotlinx.collections.immutable.ImmutableList
 import kotlinx.datetime.LocalDate
 
 private val ContentBlockTopCornerRadius = 28.dp
+
+/** The two levels of muting Tasks and Routines use for their own empty states. */
+private const val EMPTY_STATE_TITLE_ALPHA = 0.6f
+private const val EMPTY_STATE_MESSAGE_ALPHA = 0.4f
 
 @Composable
 fun FocusContent(
@@ -157,6 +164,10 @@ private fun FocusAgendaList(
                     expandedChainIds = uiState.expandedChainIds,
                     expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
+                    // Rows slide out of each other's way when one grows, the way they do in
+                    // Routines and Tasks. Without this an expanding card teleported everything
+                    // below it, which read as the list jumping rather than the card opening.
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -175,6 +186,10 @@ private fun FocusAgendaList(
                     expandedChainIds = uiState.expandedChainIds,
                     expandedTaskIds = uiState.expandedTaskIds,
                     onEvent = onEvent,
+                    // Rows slide out of each other's way when one grows, the way they do in
+                    // Routines and Tasks. Without this an expanding card teleported everything
+                    // below it, which read as the list jumping rather than the card opening.
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -342,10 +357,12 @@ private fun AgendaRow(
     expandedChainIds: ImmutableList<Long>,
     expandedTaskIds: ImmutableList<Long>,
     onEvent: (FocusContract.UiEvent) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     when (entry) {
         is FocusAgendaItem.TaskEntry ->
             TaskItem(
+                modifier = modifier,
                 task = entry.task,
                 subtasks = entry.subtasks,
                 onToggleCompletion = { onEvent(FocusContract.UiEvent.ToggleTaskCompletion(it)) },
@@ -364,6 +381,7 @@ private fun AgendaRow(
             // surface — HabitItem is only the row inside it, and on its own renders an uncoloured
             // habit as bare text on the background.
             HabitCard(
+                modifier = modifier,
                 habit = entry.habit,
                 selectedDate = today,
                 onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit)) },
@@ -377,11 +395,15 @@ private fun AgendaRow(
 
         is FocusAgendaItem.ChainEntry ->
             HabitChainCard(
+                modifier = modifier,
                 habitChain = entry.chain,
                 chainHabits = entry.habits,
                 selectedDate = today,
                 isExpanded = entry.chain.id in expandedChainIds,
-                onEdit = { },
+                // A chain opens like everything else on the day. It was the one card whose body
+                // answered a tap with nothing, which read as the row being broken rather than as
+                // Focus having decided chains are not editable from here.
+                onEdit = { onEvent(FocusContract.UiEvent.EditChain(entry.chain)) },
                 onToggleExpansion = {
                     onEvent(FocusContract.UiEvent.ToggleChainExpanded(entry.chain.id))
                 },
@@ -417,53 +439,73 @@ private fun SectionHeader(
     }
 }
 
+/**
+ * The one hand-off Focus really does make: the undated list has no Focus equivalent, so this
+ * leaves for Tasks.
+ *
+ * The same control the session screen uses to say the same thing — rounded, its ripple bounded to
+ * itself rather than to the width of the list, and carrying the icon that promises you are about
+ * to land somewhere else.
+ */
 @Composable
 private fun UndatedTasksFooter(
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val haptic = LocalHapticFeedback.current
-    Text(
-        text = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                }.padding(vertical = 20.dp),
-    )
+    Box(
+        modifier = modifier.fillMaxWidth().padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        TempoLinkButton(
+            label = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
+            iconRes = R.drawable.ic_open_in_new,
+            onClick = onClick,
+            // The count is the label, so the icon is the only thing naming the destination — and an
+            // icon says nothing to a screen reader unless it is described.
+            iconContentDescription = stringResource(R.string.focus_session_open_in_tasks),
+        )
+    }
 }
 
+/**
+ * The empty day, in the same words and the same shape Tasks and Routines use for theirs: the
+ * headline style they share, the same two levels of muting, and sitting above the middle rather
+ * than dead centre, so an empty Focus reads as the same app as an empty anything else.
+ */
 @Composable
 private fun FocusEmptyState(
     undatedTaskCount: Int,
     onUndatedClick: () -> Unit,
 ) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(32.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment =
+            BiasAlignment(
+                horizontalBias = 0f,
+                verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
+            ),
     ) {
-        Text(
-            text = stringResource(R.string.focus_empty_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.focus_empty_message),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp),
-        )
-        if (undatedTaskCount > 0) {
-            UndatedTasksFooter(count = undatedTaskCount, onClick = onUndatedClick)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.padding(32.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.focus_empty_title),
+                style = MaterialTheme.typography.emptyStateTitle,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = EMPTY_STATE_TITLE_ALPHA),
+                textAlign = TextAlign.Center,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.focus_empty_message),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = EMPTY_STATE_MESSAGE_ALPHA),
+                textAlign = TextAlign.Center,
+            )
+            if (undatedTaskCount > 0) {
+                UndatedTasksFooter(count = undatedTaskCount, onClick = onUndatedClick)
+            }
         }
     }
 }
@@ -474,11 +516,4 @@ private fun FocusAgendaItem.displayTitle(): String =
         is FocusAgendaItem.TaskEntry -> task.title
         is FocusAgendaItem.HabitEntry -> habit.title
         is FocusAgendaItem.ChainEntry -> chain.title
-    }
-
-private fun FocusAgendaItem.editEvent(): FocusContract.UiEvent =
-    when (this) {
-        is FocusAgendaItem.TaskEntry -> FocusContract.UiEvent.EditTask(task)
-        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit)
-        is FocusAgendaItem.ChainEntry -> FocusContract.UiEvent.ToggleChainExpanded(chain.id)
     }

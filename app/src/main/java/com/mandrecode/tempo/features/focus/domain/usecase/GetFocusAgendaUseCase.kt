@@ -90,13 +90,17 @@ class GetFocusAgendaUseCase
                         )
                     }
 
+            // A chain is an ordered thing — the editor lets you drag its steps into the order you
+            // do them in. Filtering the habits list kept that list's order instead of the chain's,
+            // so Focus showed the same steps in a different sequence from Routines.
+            val habitsById = habits.associateBy { it.id }
             val todayChains =
                 chains
                     .filter { CompletionHistoryUtil.isScheduledOn(today, it.repeatDays) }
                     .map { chain ->
                         FocusAgendaItem.ChainEntry(
                             chain = chain,
-                            habits = habits.filter { it.id in chain.habitIds },
+                            habits = chain.habitIds.mapNotNull { habitsById[it] },
                             isCompleted = chain.wasCompletedOn(today),
                         )
                     }
