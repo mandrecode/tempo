@@ -2,13 +2,10 @@ package com.mandrecode.tempo.core.ui.navigation
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +31,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -53,11 +49,6 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
-
-private val TASK_ACTIONS_TO_NAV_OFFSET = 126.dp
-private val TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET = 153.dp
-private val TASK_ACTIONS_CENTERING_OFFSET = 29.dp
-private val TASK_ACTIONS_WITH_CLEAR_CENTERING_OFFSET = 58.dp
 
 internal fun floatingControlsMotionSpec() =
     spring<Dp>(
@@ -361,42 +352,6 @@ internal fun PersistentSingleTabPortraitFloatingBar(
 }
 
 @Composable
-internal fun FloatingBarMainControls(
-    isSingleTabMode: Boolean,
-    addAction: AddAction?,
-    navigationContent: @Composable () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val stableNavigationContent = remember(navigationContent) { movableContentOf(navigationContent) }
-
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (isSingleTabMode && addAction != null) {
-            TempoSoloActionButton(
-                iconRes = R.drawable.ic_add,
-                label = addAction.label,
-                expanded = !addAction.compact,
-                onClick = addAction.onClick,
-            )
-        } else {
-            stableNavigationContent()
-            // (A) The add button joins and leaves the same way the task action buttons do, rather
-            // than appearing and vanishing instantly.
-            AnimatedVisibility(
-                visible = addAction != null,
-                enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
-                exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
-            ) {
-                addAction?.let { AddActionButton(it) }
-            }
-        }
-    }
-}
-
-@Composable
 internal fun AddActionButton(addAction: AddAction) {
     TempoBottomRailActionButton(
         iconRes = R.drawable.ic_add,
@@ -449,32 +404,3 @@ internal data class AddAction(
     val compact: Boolean,
     val onClick: () -> Unit,
 )
-
-@Composable
-private fun taskFloatingOffsets(
-    showTaskActions: Boolean,
-    hasCompletedTasks: Boolean,
-): Pair<Dp, Dp> {
-    val targetActionOffset =
-        when {
-            !showTaskActions -> 0.dp
-            hasCompletedTasks -> TASK_ACTIONS_WITH_CLEAR_TO_NAV_OFFSET
-            else -> TASK_ACTIONS_TO_NAV_OFFSET
-        }
-    val actionOffset by animateDpAsState(
-        targetValue = targetActionOffset,
-        animationSpec = floatingControlsMotionSpec(),
-        label = "shell_task_action_buttons_offset",
-    )
-    val barOffset by animateDpAsState(
-        targetValue =
-            when {
-                !showTaskActions -> 0.dp
-                hasCompletedTasks -> TASK_ACTIONS_WITH_CLEAR_CENTERING_OFFSET
-                else -> TASK_ACTIONS_CENTERING_OFFSET
-            },
-        animationSpec = floatingControlsMotionSpec(),
-        label = "shell_floating_bar_centering_offset",
-    )
-    return barOffset to actionOffset
-}
