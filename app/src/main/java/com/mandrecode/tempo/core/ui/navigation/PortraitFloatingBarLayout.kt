@@ -5,7 +5,6 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -55,16 +54,22 @@ internal fun PersistentPortraitFloatingBar(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+        // No `spacedBy` here, deliberately: it spaces *children*, and a child that has shrunk to
+        // zero width is still a child. The gap outlived the button all the way to the frame the
+        // node was disposed on, then went in one step — half of it as a jump of the centred group,
+        // which is the twitch the transition ended on. Each button carries its own gap instead, so
+        // the gap shrinks with the button it belongs to and there is nothing left to drop.
+        Row(verticalAlignment = Alignment.CenterVertically) {
             AnimatedVisibility(
                 visible = isTasksRoute,
                 enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
                 exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
             ) {
-                TaskActionButtons(tasksState = tasksState, showActions = isTasksRoute)
+                TaskActionButtons(
+                    tasksState = tasksState,
+                    showActions = isTasksRoute,
+                    modifier = Modifier.padding(end = FloatingToolbarItemSpacing),
+                )
             }
 
             navigationContent()
@@ -74,7 +79,11 @@ internal fun PersistentPortraitFloatingBar(
                 enter = expandHorizontally(expandFrom = Alignment.Start) + fadeIn(),
                 exit = shrinkHorizontally(shrinkTowards = Alignment.Start) + fadeOut(),
             ) {
-                exitingAddAction?.let { AddActionButton(it) }
+                exitingAddAction?.let {
+                    Box(modifier = Modifier.padding(start = FloatingToolbarItemSpacing)) {
+                        AddActionButton(it)
+                    }
+                }
             }
         }
     }

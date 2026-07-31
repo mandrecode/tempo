@@ -106,7 +106,7 @@ class FocusViewModel
                     mutableUiState.update {
                         it.copy(
                             taskEditor = FocusContract.TaskEditorTarget.Existing(event.task),
-                            editingHabit = null,
+                            routineEditor = null,
                         )
                     }
 
@@ -114,15 +114,29 @@ class FocusViewModel
                     mutableUiState.update {
                         it.copy(
                             taskEditor = FocusContract.TaskEditorTarget.NewSubtask(event.parentTaskId),
-                            editingHabit = null,
+                            routineEditor = null,
                         )
                     }
 
+                // One sheet at a time: opening a routine closes whatever the task editor had.
                 is FocusContract.UiEvent.EditHabit ->
-                    mutableUiState.update { it.copy(editingHabit = event.habit, taskEditor = null) }
+                    mutableUiState.update {
+                        it.copy(
+                            routineEditor = FocusContract.RoutineEditorTarget.SingleHabit(event.habit),
+                            taskEditor = null,
+                        )
+                    }
+
+                is FocusContract.UiEvent.EditChain ->
+                    mutableUiState.update {
+                        it.copy(
+                            routineEditor = FocusContract.RoutineEditorTarget.Chain(event.chain),
+                            taskEditor = null,
+                        )
+                    }
 
                 FocusContract.UiEvent.DismissEditor ->
-                    mutableUiState.update { it.copy(taskEditor = null, editingHabit = null) }
+                    mutableUiState.update { it.copy(taskEditor = null, routineEditor = null) }
 
                 FocusContract.UiEvent.DismissPendingStart ->
                     mutableUiState.update { it.copy(pendingStart = null) }

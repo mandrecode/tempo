@@ -13,6 +13,7 @@ import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
@@ -155,4 +156,14 @@ abstract class FocusViewModelHarness {
             description = "",
             createdDate = LocalDateTime(today, LocalTime(9, 0)),
         )
+
+    protected fun focusChain(
+        id: Long,
+        habitIds: List<Long> = emptyList(),
+    ) = HabitChain(
+        id = id,
+        title = "Chain $id",
+        habitIds = habitIds,
+        createdDate = LocalDateTime(today, LocalTime(9, 0)),
+    )
 }

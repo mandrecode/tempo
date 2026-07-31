@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenu
@@ -37,21 +38,25 @@ internal val TASK_ACTIONS_WIDTH = TASK_ACTIONS_BUTTON_SIZE * 2 + TASK_ACTIONS_BU
 internal fun TaskActionButtons(
     tasksState: TasksFloatingBarState,
     showActions: Boolean,
+    modifier: Modifier = Modifier,
 ) {
     // Sized by what it actually shows, not by a reserved two-button slot: sort sits right against
     // the navigation pill, and clear-completed expands in beside it, pushing the whole group back
     // into balance. Reserving the slot left sort stranded mid-gutter whenever there was nothing to
     // clear.
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(TASK_ACTIONS_BUTTON_SPACING),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    //
+    // The gap between them belongs to clear-completed rather than to the row, for the same reason
+    // it does one level up: a `spacedBy` gap outlives the button it separates and then vanishes in
+    // a single frame.
+    Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
         AnimatedVisibility(
             visible = showActions && tasksState.hasCompletedTasks,
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {
-            ClearCompletedButton(onClick = tasksState.onClearCompleted)
+            Box(modifier = Modifier.padding(end = TASK_ACTIONS_BUTTON_SPACING)) {
+                ClearCompletedButton(onClick = tasksState.onClearCompleted)
+            }
         }
         AnimatedVisibility(
             visible = showActions,

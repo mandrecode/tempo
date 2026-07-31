@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,8 +24,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
@@ -381,7 +379,10 @@ private fun AgendaRow(
                 chainHabits = entry.habits,
                 selectedDate = today,
                 isExpanded = entry.chain.id in expandedChainIds,
-                onEdit = { },
+                // A chain opens like everything else on the day. It was the one card whose body
+                // answered a tap with nothing, which read as the row being broken rather than as
+                // Focus having decided chains are not editable from here.
+                onEdit = { onEvent(FocusContract.UiEvent.EditChain(entry.chain)) },
                 onToggleExpansion = {
                     onEvent(FocusContract.UiEvent.ToggleChainExpanded(entry.chain.id))
                 },
@@ -417,26 +418,30 @@ private fun SectionHeader(
     }
 }
 
+/**
+ * The one hand-off Focus really does make: the undated list has no Focus equivalent, so this
+ * leaves for Tasks.
+ *
+ * The same control the session screen uses to say the same thing — rounded, its ripple bounded to
+ * itself rather than to the width of the list, and carrying the icon that promises you are about
+ * to land somewhere else.
+ */
 @Composable
 private fun UndatedTasksFooter(
     count: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val haptic = LocalHapticFeedback.current
-    Text(
-        text = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center,
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .clickable {
-                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                    onClick()
-                }.padding(vertical = 20.dp),
-    )
+    Box(
+        modifier = modifier.fillMaxWidth().padding(vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        TempoLinkButton(
+            label = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
+            iconRes = R.drawable.ic_open_in_new,
+            onClick = onClick,
+        )
+    }
 }
 
 @Composable
@@ -474,11 +479,4 @@ private fun FocusAgendaItem.displayTitle(): String =
         is FocusAgendaItem.TaskEntry -> task.title
         is FocusAgendaItem.HabitEntry -> habit.title
         is FocusAgendaItem.ChainEntry -> chain.title
-    }
-
-private fun FocusAgendaItem.editEvent(): FocusContract.UiEvent =
-    when (this) {
-        is FocusAgendaItem.TaskEntry -> FocusContract.UiEvent.EditTask(task)
-        is FocusAgendaItem.HabitEntry -> FocusContract.UiEvent.EditHabit(habit)
-        is FocusAgendaItem.ChainEntry -> FocusContract.UiEvent.ToggleChainExpanded(chain.id)
     }

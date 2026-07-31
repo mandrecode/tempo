@@ -10,10 +10,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
-import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.presentation.HabitEditor
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract
 import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
+import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitChainConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitConfirmDialog
 import com.mandrecode.tempo.features.tasks.presentation.TaskEditor
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
@@ -21,7 +21,7 @@ import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteTaskConfirmDialog
 
 /**
- * The task and habit editors, opened from Focus without leaving it.
+ * The task, habit and chain editors, opened from Focus without leaving it.
  *
  * They are the owning tabs' own editors driven by the owning tabs' own view models, not copies:
  * Focus holds a second instance of each view model, so the form logic, validation, auto-save and
@@ -78,18 +78,32 @@ internal fun FocusTaskEditor(
     }
 }
 
-/** The habit half of [FocusTaskEditor], on the same terms. */
+/**
+ * The routines half of [FocusTaskEditor], on the same terms.
+ *
+ * One editor for habits and chains rather than two, because Routines itself has one: its habit
+ * form holds either, and a second view model here would have each observing the same flows while
+ * only one of them knew what the sheet was showing.
+ */
 @Composable
-internal fun FocusHabitEditor(
-    habit: Habit,
+internal fun FocusRoutineEditor(
+    target: FocusContract.RoutineEditorTarget,
     onDismiss: () -> Unit,
     viewModel: RoutinesViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
-    LaunchedEffect(habit.id) {
-        viewModel.onEvent(RoutinesContract.UiEvent.ShowHabitBottomSheet(habit))
+    LaunchedEffect(target) {
+        viewModel.onEvent(
+            when (target) {
+                is FocusContract.RoutineEditorTarget.SingleHabit ->
+                    RoutinesContract.UiEvent.ShowHabitBottomSheet(target.habit)
+
+                is FocusContract.RoutineEditorTarget.Chain ->
+                    RoutinesContract.UiEvent.ShowHabitChainBottomSheet(target.chain)
+            },
+        )
     }
 
     DismissWhenClosed(isOpen = uiState.habitForm.isVisible, onClose = currentOnDismiss)
@@ -108,6 +122,18 @@ internal fun FocusHabitEditor(
             onCancel = { viewModel.onEvent(RoutinesContract.UiEvent.HideDeleteHabitConfirmation) },
             onConfirm = { viewModel.onEvent(RoutinesContract.UiEvent.DeleteHabit) },
             habitToDelete = uiState.habitToDelete,
+        )
+    }
+
+    // The sheet offers deleting a chain whenever it is editing one, so the question it asks has to
+    // be answerable here too — otherwise the button would be there with nothing behind it.
+    if (uiState.showDeleteHabitChainConfirmationDialog) {
+        DeleteHabitChainConfirmDialog(
+            onCancel = { viewModel.onEvent(RoutinesContract.UiEvent.HideDeleteHabitChainConfirmation) },
+            onConfirm = { deleteHabits ->
+                viewModel.onEvent(RoutinesContract.UiEvent.DeleteHabitChain(deleteHabits))
+            },
+            habitChainToDelete = uiState.habitChainToDelete,
         )
     }
 }

@@ -165,11 +165,55 @@ class FocusViewModelTest : FocusViewModelHarness() {
             viewModel.onEvent(FocusContract.UiEvent.EditHabit(focusHabit(5)))
             advanceUntilIdle()
 
-            assertThat(
-                viewModel.uiState.value.editingHabit
-                    ?.id,
-            ).isEqualTo(5)
+            val target = viewModel.uiState.value.routineEditor
+            assertThat(target).isInstanceOf(FocusContract.RoutineEditorTarget.SingleHabit::class.java)
+            assertThat((target as FocusContract.RoutineEditorTarget.SingleHabit).habit.id).isEqualTo(5)
             assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
+    fun `editing a chain opens the same editor, on the chain`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
+            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
+            advanceUntilIdle()
+
+            val target = viewModel.uiState.value.routineEditor
+            assertThat(target).isInstanceOf(FocusContract.RoutineEditorTarget.Chain::class.java)
+            assertThat((target as FocusContract.RoutineEditorTarget.Chain).chain.id).isEqualTo(7)
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
+    fun `dismissing closes whichever editor was open`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
+            viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.routineEditor).isNull()
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
+    fun `opening a chain leaves its expansion alone`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.expandedChainIds).doesNotContain(7L)
         }
 
     @Test

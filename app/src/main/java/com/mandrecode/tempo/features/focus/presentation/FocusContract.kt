@@ -5,6 +5,7 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.routines.domain.model.Habit
+import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -48,7 +49,12 @@ object FocusContract {
          * looking at.
          */
         val taskEditor: TaskEditorTarget? = null,
-        val editingHabit: Habit? = null,
+        /**
+         * What the routine editor is open on: a habit, or a chain. One field rather than two,
+         * because the sheet can only show one of them and two nullables would encode a state it
+         * cannot render.
+         */
+        val routineEditor: RoutineEditorTarget? = null,
         /**
          * A start waiting on the user's word, because taking it would end the session already
          * running. Held rather than acted on: replacing a session is not something to discover
@@ -155,6 +161,20 @@ object FocusContract {
         ) : TaskEditorTarget
     }
 
+    /**
+     * What the routine editor is open on. Routines drives both from one form, so Focus does too
+     * rather than standing up a second view model for chains.
+     */
+    sealed interface RoutineEditorTarget {
+        data class SingleHabit(
+            val habit: Habit,
+        ) : RoutineEditorTarget
+
+        data class Chain(
+            val chain: HabitChain,
+        ) : RoutineEditorTarget
+    }
+
     /** What the completion sheet reports: plain facts, no score and no streak. */
     data class FinishedSession(
         val taskTitle: String,
@@ -194,6 +214,14 @@ object FocusContract {
 
         data class EditHabit(
             val habit: Habit,
+        ) : UiEvent
+
+        /**
+         * Opening a chain is opening its card, the same way a task or a habit opens. The chevron
+         * beside it still only folds the chain out; the two are different questions.
+         */
+        data class EditChain(
+            val chain: HabitChain,
         ) : UiEvent
 
         data class AddSubtask(
