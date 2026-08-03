@@ -45,13 +45,15 @@ class CreateTaskUseCase
             val adjustedTask = TaskReminderDateUtil.advanceReminderIfNeeded(trimmedTask)
             val reminderAdvanced = adjustedTask.reminderDate != trimmedTask.reminderDate
             val pastReminderWithoutPeriodicity = TaskReminderDateUtil.isPastReminderWithoutPeriodicity(trimmedTask)
+            val parentId = adjustedTask.parentTaskId?.let { topLevelAncestorOf(it) }
             val maxSortOrder =
-                if (adjustedTask.parentTaskId != null) {
-                    taskRepository.getMaxSubtaskSortOrder(adjustedTask.parentTaskId)
+                if (parentId != null) {
+                    taskRepository.getMaxSubtaskSortOrder(parentId)
                 } else {
                     taskRepository.getMaxSortOrder(adjustedTask.categoryId)
                 }
-            val taskWithSortOrder = adjustedTask.copy(sortOrder = maxSortOrder + 1)
+            val taskWithSortOrder =
+                adjustedTask.copy(parentTaskId = parentId, sortOrder = maxSortOrder + 1)
             val newTaskId = taskRepository.insertTask(taskWithSortOrder)
             val taskWithId = taskWithSortOrder.copy(id = newTaskId)
 
@@ -62,5 +64,28 @@ class CreateTaskUseCase
                     ScheduleResult.Skipped
                 }
             return Result.Success(newTaskId, scheduleResult, reminderAdvanced, pastReminderWithoutPeriodicity)
+        }
+
+        /**
+         * The task a new subtask should actually hang off: [parentId] itself, or its top-level
+         * ancestor when [parentId] is a subtask.
+         *
+         * Tasks nests exactly one level — only top-level tasks become cards, and a subtask row
+         * draws no children of its own — so a task created beneath a subtask would exist with
+         * nowhere in Tasks to show it. Nothing in the app asks for one, and this is what keeps that
+         * true no matter which screen grows an "add subtask" affordance next: the new task becomes
+         * a sibling of the subtask rather than a child of it.
+         */
+        private suspend fun topLevelAncestorOf(parentId: Long): Long {
+            val seen = mutableSetOf<Long>()
+            var candidate = parentId
+            while (seen.add(candidate)) {
+                // A parent that is not there is left as asked — the insert answers for that, the
+                // same way it did before this walk existed.
+                candidate = taskRepository.getTaskById(candidate)?.parentTaskId ?: return candidate
+            }
+            // Only a corrupt snapshot links parents in a loop, and no task in one is a real root,
+            // so there is nothing better to offer than what was asked for.
+            return parentId
         }
     }
