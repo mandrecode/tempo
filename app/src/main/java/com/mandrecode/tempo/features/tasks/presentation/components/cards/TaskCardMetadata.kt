@@ -45,8 +45,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -440,6 +440,11 @@ private fun MetadataOverflowRow(
  *
  * The icon is decorative here — the name is right next to it, and a screen reader announcing
  * "briefcase, Work" would be saying the same thing twice — so the name carries the description.
+ *
+ * The badge speaks with one voice, and nothing inside it speaks at all. Merely describing the row
+ * would leave the name underneath still contributing its own text, and this badge lives inside a
+ * clickable card that merges everything below it into a single announcement — where the category
+ * would then be read twice, once as "Category: Work" and again as "Work".
  */
 @Composable
 private fun CategoryBadge(category: Category) {
@@ -458,7 +463,8 @@ private fun CategoryBadge(category: Category) {
             modifier =
                 Modifier
                     .padding(horizontal = 6.dp, vertical = 2.dp)
-                    .semantics(mergeDescendants = true) { contentDescription = label },
+                    .testTag(TASK_METADATA_CATEGORY_TAG)
+                    .clearAndSetSemantics { contentDescription = label },
         ) {
             if (iconRes != null) {
                 Icon(
@@ -475,7 +481,6 @@ private fun CategoryBadge(category: Category) {
                 style = MaterialTheme.typography.metadataLabel,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag(TASK_METADATA_CATEGORY_TAG),
             )
         }
     }

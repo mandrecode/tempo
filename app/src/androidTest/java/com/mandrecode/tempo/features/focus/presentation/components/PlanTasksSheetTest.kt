@@ -111,9 +111,10 @@ class PlanTasksSheetTest {
 
         composeTestRule.onNodeWithText("Renew the passport").assertIsDisplayed()
         composeTestRule.onNodeWithText("Fix the shelf").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Work").assertIsDisplayed()
+        // The badge speaks as one label, so it is found by what it says, not by the name inside it.
+        composeTestRule.onNodeWithContentDescription("Category: Work").assertIsDisplayed()
         // A category with no icon still names itself.
-        composeTestRule.onNodeWithText("Home").assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Category: Home").assertIsDisplayed()
     }
 
     @Test
@@ -293,18 +294,23 @@ class PlanTasksSheetTest {
             width = width,
         )
 
-        listOf("Today", "Tomorrow", "Pick a date", "Work").forEach { label ->
+        listOf("Today", "Tomorrow", "Pick a date").forEach { label ->
             val bounds = composeTestRule.onNodeWithText(label).getUnclippedBoundsInRoot()
             assertThat(bounds.left.value).isAtLeast(0f)
             assertThat(bounds.right.value).isAtMost(width.value)
         }
+
+        val badge = composeTestRule.onNodeWithContentDescription("Category: Work").getUnclippedBoundsInRoot()
+        assertThat(badge.left.value).isAtLeast(0f)
+        assertThat(badge.right.value).isAtMost(width.value)
     }
 
     @Test
     fun row_survives360dpWithNoCategoryIcon() {
         setRow(row(1, "Fix the shelf in the spare room", category = home), width = 360.dp)
 
-        val badge = composeTestRule.onNodeWithText("Home").getUnclippedBoundsInRoot()
+        val badge =
+            composeTestRule.onNodeWithContentDescription("Category: Home").getUnclippedBoundsInRoot()
         assertThat(badge.right.value).isAtMost(360f)
         composeTestRule.onNodeWithText("Fix the shelf in the spare room").assertIsDisplayed()
     }
