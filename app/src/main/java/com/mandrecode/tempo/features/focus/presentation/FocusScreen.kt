@@ -31,6 +31,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.features.focus.presentation.components.PlanTasksSheet
 import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,24 +144,30 @@ private fun FocusEffects(
             when (effect) {
                 FocusContract.UiEffect.OpenSessionScreen -> currentOnOpenSession()
 
-                is FocusContract.UiEffect.PlanBatchConfirmed -> {
-                    val result =
-                        snackbarHostState.showSnackbar(
-                            message =
-                                currentResources.getQuantityString(
-                                    R.plurals.plan_tasks_undo_message,
-                                    effect.count,
-                                    effect.count,
-                                ),
-                            actionLabel = undoLabel,
-                            withDismissAction = true,
-                        )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        // The batch came with the offer, so it is still the one this snackbar was
-                        // raised for even if another sheet has opened and closed in the meantime.
-                        currentOnEvent(FocusContract.UiEvent.UndoPlanBatch(effect.batch))
+                // Launched rather than awaited. A snackbar stands for seconds, and this collector
+                // is also where navigation arrives — awaiting it would leave a session started
+                // from Up next running with no screen opening until the notice about the planning
+                // had gone. Concurrent shows still queue on the host's own mutex, so nothing is
+                // lost by not waiting here.
+                is FocusContract.UiEffect.PlanBatchConfirmed ->
+                    launch {
+                        val result =
+                            snackbarHostState.showSnackbar(
+                                message =
+                                    currentResources.getQuantityString(
+                                        R.plurals.plan_tasks_undo_message,
+                                        effect.count,
+                                        effect.count,
+                                    ),
+                                actionLabel = undoLabel,
+                                withDismissAction = true,
+                            )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            // The batch came with the offer, so it is still the one this snackbar
+                            // was raised for even if another sheet has been and gone since.
+                            currentOnEvent(FocusContract.UiEvent.UndoPlanBatch(effect.batch))
+                        }
                     }
-                }
             }
         }
     }
