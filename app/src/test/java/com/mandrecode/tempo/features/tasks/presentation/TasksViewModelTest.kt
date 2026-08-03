@@ -1791,5 +1791,77 @@ class TasksViewModelTest {
             assertThat(grouped[ActiveGroupKey.Flat]).hasSize(2)
         }
 
+    @Test
+    fun `reorderableRuns covers tasks the sort cannot tell apart`() =
+        runTest {
+            val sameMoment = LocalDateTime(2025, 6, 1, 9, 0)
+            val tiedFirst =
+                Task(
+                    id = 1,
+                    title = "Tied first",
+                    description = "",
+                    priority = Priority.HIGH,
+                    reminderDate = sameMoment,
+                    categoryId = DEFAULT_INBOX_CATEGORY.id,
+                    sortOrder = 0,
+                )
+            val tiedSecond = tiedFirst.copy(id = 2, title = "Tied second", sortOrder = 1)
+            val distinguishable =
+                tiedFirst.copy(
+                    id = 3,
+                    title = "Due later",
+                    reminderDate = LocalDateTime(2025, 6, 2, 9, 0),
+                    sortOrder = 2,
+                )
+
+            coEvery { taskRepository.getAllTasks() } returns
+                flowOf(listOf(tiedFirst, tiedSecond, distinguishable))
+            coEvery { categoryRepository.getAllCategories() } returns
+                flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_PRIORITY
+
+            viewModel = createViewModel()
+
+            advanceUntilIdle()
+            val runs = viewModel.uiState.value.reorderableRuns
+
+            assertThat(runs.keys).containsExactly(1L, 2L)
+            assertThat(runs.getValue(1L).key).isEqualTo(runs.getValue(2L).key)
+            assertThat(runs.getValue(1L).indexInRun).isEqualTo(0)
+            assertThat(runs.getValue(2L).indexInRun).isEqualTo(1)
+            assertThat(runs.getValue(2L).tasks.map { it.id }).containsExactly(1L, 2L).inOrder()
+        }
+
+    @Test
+    fun `reorderableRuns spans every active task when sorted manually`() =
+        runTest {
+            val task1 =
+                Task(
+                    id = 1,
+                    title = "Task 1",
+                    description = "",
+                    priority = Priority.HIGH,
+                    categoryId = DEFAULT_INBOX_CATEGORY.id,
+                    sortOrder = 0,
+                )
+            val task2 = task1.copy(id = 2, title = "Task 2", priority = null, sortOrder = 1)
+            val completed =
+                task1.copy(id = 3, title = "Done", isCompleted = true, sortOrder = 2)
+
+            coEvery { taskRepository.getAllTasks() } returns
+                flowOf(listOf(task1, task2, completed))
+            coEvery { categoryRepository.getAllCategories() } returns
+                flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.MANUAL
+
+            viewModel = createViewModel()
+
+            advanceUntilIdle()
+            val runs = viewModel.uiState.value.reorderableRuns
+
+            // Completed tasks are never reorderable, so only the two active ones are in the run.
+            assertThat(runs.keys).containsExactly(1L, 2L)
+        }
+
     // endregion
 }
