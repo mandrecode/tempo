@@ -205,8 +205,10 @@ class PortraitFloatingBarMotionTest {
 
     /**
      * With something to clear the pill does move — the left side ends up heavier — but it only ever
-     * moves that one way. The same nested animation used to send it the *other* way first, so the
-     * transition read as a bounce before it went where it was going.
+     * moves that one way.
+     *
+     * Guarding the direction, not a known defect: a transition that sets off the opposite way
+     * before turning around reads as a bounce, however it comes about.
      */
     @Test
     fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
