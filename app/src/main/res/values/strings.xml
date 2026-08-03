@@ -669,7 +669,7 @@
     <string name="plan_tasks_section_planned">Planned</string>
     <string name="plan_tasks_section_unplanned">Unplanned</string>
     <string name="plan_tasks_pick_date">Pick a date</string>
-    <string name="plan_tasks_close">Close</string>
+    <string name="plan_tasks_unplan_action">%1$s, selected. Tap to remove the date</string>
     <string name="plan_tasks_done">Done</string>
     <plurals name="plan_tasks_undo_message">
         <item quantity="one">%1$d task planned</item>

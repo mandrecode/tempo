@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 
@@ -25,9 +26,10 @@ internal fun FocusViewModel.onPlanSheetEvent(event: FocusContract.UiEvent) {
         is FocusContract.UiEvent.PlanTask ->
             viewModelScope.launch { planTask(event.taskId, event.date) }
 
-        FocusContract.UiEvent.DismissPlanSheet -> closePlanSheet()
+        is FocusContract.UiEvent.UnplanTask ->
+            viewModelScope.launch { setReminder(event.taskId, reminderDate = null) }
 
-        FocusContract.UiEvent.ConfirmPlanSheet -> {
+        FocusContract.UiEvent.ClosePlanSheet -> {
             val sheet = mutableUiState.value.planSheet ?: return
             val changed = sheet.changedTaskIds
             // Only what moved, and only as it was: a task the sheet never touched has no
@@ -35,6 +37,8 @@ internal fun FocusViewModel.onPlanSheetEvent(event: FocusContract.UiEvent) {
             undoableBatch =
                 changed.associateWith { id -> sheet.originalReminders[id] }.takeIf { it.isNotEmpty() }
             closePlanSheet()
+            // Nothing happened, nothing to say. A sheet opened and closed without a change should
+            // not leave a notice behind claiming otherwise.
             if (changed.isNotEmpty()) {
                 sendEffect(FocusContract.UiEffect.PlanBatchConfirmed(changed.size))
             }
@@ -90,15 +94,27 @@ private suspend fun FocusViewModel.planTask(
     taskId: Long,
     date: LocalDate,
 ) {
+    val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+    setReminder(taskId, PlanReminderTimeUtil.resolve(date, now))
+}
+
+/**
+ * Writes a row's reminder, or takes it away when [reminderDate] is null.
+ *
+ * Planning and unplanning are the same write with a different value, and both go through the use
+ * case the editor writes with — which is what cancels the alarm on the way out, as well as arming
+ * it on the way in.
+ */
+private suspend fun FocusViewModel.setReminder(
+    taskId: Long,
+    reminderDate: LocalDateTime?,
+) {
     val task =
         mutableUiState.value.planSheet
             ?.rows
             ?.firstOrNull { it.task.id == taskId }
             ?.task ?: return
-    val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    // Through the same use case the editor writes with, so the reminder is scheduled,
-    // rescheduled and validated by the one piece of code that knows how.
-    updateTask(task.copy(reminderDate = PlanReminderTimeUtil.resolve(date, now)))
+    updateTask(task.copy(reminderDate = reminderDate))
 }
 
 /**

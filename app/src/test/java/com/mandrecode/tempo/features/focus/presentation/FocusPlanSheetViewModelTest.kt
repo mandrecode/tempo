@@ -40,10 +40,75 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
                     ?.map { it.task.id },
             ).containsExactly(1L, 2L)
 
-            viewModel.onEvent(FocusContract.UiEvent.DismissPlanSheet)
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.planSheet).isNull()
+        }
+
+    @Test
+    fun `unplanning takes the date back off and returns the task to unplanned`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1), undatedRow(2))
+            val viewModel = openSheet()
+
+            viewModel.plan(taskId = 1)
+            advanceUntilIdle()
+            assertThat(
+                viewModel.uiState.value.planSheet
+                    ?.planned
+                    ?.map { it.task.id },
+            ).containsExactly(1L)
+
+            viewModel.unplan(taskId = 1)
+            advanceUntilIdle()
+
+            val sheet = requireNotNull(viewModel.uiState.value.planSheet)
+            assertThat(sheet.planned).isEmpty()
+            assertThat(sheet.unplanned.map { it.task.id }).containsExactly(1L, 2L)
+        }
+
+    @Test
+    fun `unplanning clears the reminder through the update use case`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1))
+            val viewModel = openSheet()
+
+            viewModel.plan(taskId = 1)
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.UnplanTask(1))
+            advanceUntilIdle()
+
+            val written = mutableListOf<Task>()
+            coVerify { updateTask(capture(written)) }
+            assertThat(written.last().reminderDate).isNull()
+        }
+
+    /** Planned then unplanned is where it started, so there is nothing to take back. */
+    @Test
+    fun `planning then unplanning leaves nothing to undo`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1))
+            val viewModel = openSheet()
+
+            viewModel.plan(taskId = 1)
+            viewModel.unplan(taskId = 1)
+            advanceUntilIdle()
+
+            assertThat(
+                viewModel.uiState.value.planSheet
+                    ?.hasChanges,
+            ).isFalse()
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
+                advanceUntilIdle()
+
+                expectNoEvents()
+            }
         }
 
     @Test
@@ -102,7 +167,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
-    fun `confirming is barred until something has actually moved`() =
+    fun `the sheet knows whether closing has anything to offer back`() =
         runTest {
             stubDay()
             undatedTasks.value = listOf(undatedRow(1))
@@ -110,7 +175,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             assertThat(
                 viewModel.uiState.value.planSheet
-                    ?.canConfirm,
+                    ?.hasChanges,
             ).isFalse()
 
             viewModel.plan(taskId = 1)
@@ -118,12 +183,12 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             assertThat(
                 viewModel.uiState.value.planSheet
-                    ?.canConfirm,
+                    ?.hasChanges,
             ).isTrue()
         }
 
     @Test
-    fun `confirming closes the sheet and offers the batch back`() =
+    fun `closing the sheet offers the batch back`() =
         runTest {
             stubDay()
             undatedTasks.value = listOf(undatedRow(1), undatedRow(2), undatedRow(3))
@@ -134,7 +199,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             advanceUntilIdle()
 
             viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.ConfirmPlanSheet)
+                viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
                 advanceUntilIdle()
 
                 assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.PlanBatchConfirmed(2))
@@ -144,14 +209,14 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
-    fun `confirming without a change closes quietly`() =
+    fun `closing without a change goes quietly`() =
         runTest {
             stubDay()
             undatedTasks.value = listOf(undatedRow(1))
             val viewModel = openSheet()
 
             viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.ConfirmPlanSheet)
+                viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
                 advanceUntilIdle()
 
                 expectNoEvents()
@@ -169,7 +234,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             viewModel.plan(taskId = 1)
             viewModel.plan(taskId = 3)
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.ConfirmPlanSheet)
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
             advanceUntilIdle()
 
             viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
@@ -192,7 +257,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             viewModel.plan(taskId = 1)
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.ConfirmPlanSheet)
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
             viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
             advanceUntilIdle()
 
@@ -210,7 +275,7 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             viewModel.plan(taskId = 1)
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.ConfirmPlanSheet)
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
             viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
             viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
             advanceUntilIdle()
@@ -225,6 +290,15 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
         viewModel.onEvent(FocusContract.UiEvent.UndatedTasksClicked)
         advanceUntilIdle()
         return viewModel
+    }
+
+    /** The mirror of [plan]: the chip pressed a second time, and the write landing. */
+    private fun FocusViewModel.unplan(taskId: Long) {
+        onEvent(FocusContract.UiEvent.UnplanTask(taskId))
+        undatedTasks.value =
+            undatedTasks.value.map { row ->
+                if (row.task.id == taskId) row.copy(task = row.task.copy(reminderDate = null)) else row
+            }
     }
 
     /**

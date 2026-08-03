@@ -673,7 +673,7 @@
     <string name="plan_tasks_section_planned">Planificadas</string>
     <string name="plan_tasks_section_unplanned">Sin planificar</string>
     <string name="plan_tasks_pick_date">Elegir fecha</string>
-    <string name="plan_tasks_close">Cerrar</string>
+    <string name="plan_tasks_unplan_action">%1$s, seleccionado. Toca para quitar la fecha</string>
     <string name="plan_tasks_done">Listo</string>
     <plurals name="plan_tasks_undo_message">
         <item quantity="one">%1$d tarea planificada</item>

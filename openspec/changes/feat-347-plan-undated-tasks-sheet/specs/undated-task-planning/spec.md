@@ -77,6 +77,17 @@ step, through the same update path that schedules reminders elsewhere in the app
 - **WHEN** the user taps "Tomorrow" on an unplanned row
 - **THEN** the task's reminder is set to the following day at the default planning time
 
+#### Scenario: Pressing the chosen chip again takes the date back off
+
+- **WHEN** the user taps a quick-plan chip that is already selected on a row
+- **THEN** that task's reminder is cleared
+- **AND** it returns to the unplanned section
+
+#### Scenario: Pressing a different chip re-plans rather than clearing
+
+- **WHEN** a task is planned for today and the user taps its "Tomorrow" chip
+- **THEN** the task is planned for tomorrow, and stays in the planned section
+
 #### Scenario: Pick a date opens the date picker
 
 - **WHEN** the user taps "Pick a date" on an unplanned row
@@ -152,28 +163,36 @@ chips do not cover.
 - **WHEN** the user sets a reminder in that editor and closes it
 - **THEN** the task appears under "Planned" in the sheet
 
-### Requirement: Done and Close, with batch undo
+### Requirement: One way out, with batch undo
 
-The sheet SHALL offer two end-aligned footer actions: **Close**, always enabled, and **Done**,
-enabled only once at least one task has been planned from the sheet. Both dismiss the sheet.
-Choosing **Done** SHALL additionally raise a snackbar offering to undo the whole batch, which
-restores every reminder the sheet set.
+The sheet SHALL offer a single footer action, **Done**, always enabled and carrying a leading check
+icon. It SHALL NOT offer a Cancel or Close alongside it: nothing is staged, so there is nothing such
+a button could throw away.
 
-#### Scenario: Done is disabled until something is planned
+Closing the sheet by any means — Done, the drag handle, back, the scrim, or Escape — SHALL behave
+identically: the planning stays, and a snackbar offers to undo the whole batch. The snackbar SHALL
+be raised only when the sheet actually changed something.
+
+#### Scenario: Done is the only footer action
+
+- **WHEN** the sheet is open
+- **THEN** Done is shown and enabled, and no Cancel or Close action is present
+
+#### Scenario: Done stays available with nothing planned
 
 - **WHEN** the sheet opens and nothing has been planned yet
-- **THEN** the Done action is disabled and Close is enabled
+- **THEN** Done is still enabled, because it is the way out rather than a confirmation
 
-#### Scenario: Done becomes available after a plan
+#### Scenario: Closing offers the batch back
 
-- **WHEN** the user plans at least one task
-- **THEN** the Done action becomes enabled
-
-#### Scenario: Done confirms and offers undo
-
-- **WHEN** the user chooses Done after planning two tasks
+- **WHEN** the user closes the sheet after planning two tasks
 - **THEN** the sheet closes
 - **AND** a snackbar appears offering to undo the planning
+
+#### Scenario: Dismissing without the button behaves the same
+
+- **WHEN** the user closes the sheet with the drag handle, back, the scrim or Escape after planning
+- **THEN** the same undo snackbar is offered, because leaving is leaving however it is done
 
 #### Scenario: Undo restores every reminder the sheet set
 
@@ -181,15 +200,19 @@ restores every reminder the sheet set.
 - **THEN** every task the sheet planned returns to having no reminder
 - **AND** the reminders scheduled for them are cancelled
 
-#### Scenario: Close keeps what was planned
+#### Scenario: Closing without a change says nothing
 
-- **WHEN** the user closes the sheet with the Close action, the drag handle, back, or the scrim
-- **THEN** the sheet dismisses and everything already planned stays planned
-- **AND** no undo snackbar is shown
+- **WHEN** the user opens the sheet and closes it without planning anything
+- **THEN** no undo snackbar is shown
+
+#### Scenario: Planning then unplanning is not a change
+
+- **WHEN** the user plans a task and then presses the same chip again before closing
+- **THEN** no undo snackbar is shown, because the task is where it started
 
 #### Scenario: Undo after further edits only touches what the sheet set
 
-- **WHEN** a task planned in the sheet had its reminder changed again in the editor before Done
+- **WHEN** a task planned in the sheet had its reminder changed again in the editor before closing
 - **THEN** undo restores that task to the reminder it had when the sheet opened
 
 ### Requirement: The sheet adapts to the window it is shown in

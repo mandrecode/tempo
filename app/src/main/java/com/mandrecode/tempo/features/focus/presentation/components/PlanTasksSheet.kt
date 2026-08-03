@@ -5,13 +5,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
@@ -22,11 +31,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -37,9 +48,10 @@ import com.mandrecode.tempo.core.ui.components.TempoDatePickerDialog
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.components.WavyDivider
-import com.mandrecode.tempo.core.ui.editor.EditorBottomSheetFooter
+import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sheetTitle
+import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
@@ -51,6 +63,7 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 internal const val PLAN_SHEET_TAG = "plan_tasks_sheet"
+internal const val PLAN_SHEET_DONE_TAG = "plan_tasks_done"
 internal const val PLAN_SHEET_PLANNED_HEADER_TAG = "plan_sheet_planned_header"
 internal const val PLAN_SHEET_UNPLANNED_HEADER_TAG = "plan_sheet_unplanned_header"
 
@@ -78,7 +91,7 @@ internal fun PlanTasksSheet(
     modifier: Modifier = Modifier,
     clock: Clock = Clock.System,
 ) {
-    val dismiss = { onEvent(FocusContract.UiEvent.DismissPlanSheet) }
+    val close = { onEvent(FocusContract.UiEvent.ClosePlanSheet) }
     val today = clock.todayIn(TimeZone.currentSystemDefault())
 
     // Held rather than acted on: the first plan of a session has to get past the permission
@@ -94,23 +107,24 @@ internal fun PlanTasksSheet(
     }
 
     TempoModalBottomSheet(
-        onDismissRequest = dismiss,
+        // Every way out is the same way out. The handle, back, the scrim, Escape and the button all
+        // leave the planning in place and offer it back, so none of them is the one that loses work.
+        onDismissRequest = close,
         modifier =
             modifier.testTag(PLAN_SHEET_TAG).onPreviewKeyEvent { event ->
                 // Large windows come with keyboards, and Escape is what a keyboard expects to close
                 // a modal with.
                 val isEscape = event.type == KeyEventType.KeyUp && event.key == Key.Escape
-                if (isEscape) dismiss()
+                if (isEscape) close()
                 isEscape
             },
         adaptivePlacement = true,
-    ) { onRequestDismiss ->
+    ) { _ ->
         PlanSheetBody(
             state = state,
             today = today,
             onPlan = requestPlan,
             onEvent = onEvent,
-            onRequestDismiss = onRequestDismiss,
         )
     }
 
@@ -141,7 +155,6 @@ private fun ColumnScope.PlanSheetBody(
     today: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
     onEvent: (FocusContract.UiEvent) -> Unit,
-    onRequestDismiss: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
         PlanSheetHeader(remainingCount = state.unplanned.size, isLoading = state.isLoading)
@@ -156,6 +169,7 @@ private fun ColumnScope.PlanSheetBody(
                 state = state,
                 today = today,
                 onPlan = onPlan,
+                onUnplan = { taskId -> onEvent(FocusContract.UiEvent.UnplanTask(taskId)) },
                 onEdit = { task -> onEvent(FocusContract.UiEvent.EditTask(task)) },
                 onToggleCompletion = { task ->
                     onEvent(FocusContract.UiEvent.ToggleTaskCompletion(task))
@@ -164,18 +178,48 @@ private fun ColumnScope.PlanSheetBody(
             )
         }
 
-        EditorBottomSheetFooter(
-            hasDeleteAction = false,
-            deleteLabel = "",
-            onDelete = null,
-            autoSaveEnabled = false,
-            confirmEnabled = state.canConfirm,
-            confirmLabel = stringResource(R.string.plan_tasks_done),
-            dismissLabel = stringResource(R.string.plan_tasks_close),
-            topSpacing = 16.dp,
-            onRequestDismiss = onRequestDismiss,
-            onConfirmClick = { onEvent(FocusContract.UiEvent.ConfirmPlanSheet) },
-        )
+        PlanSheetDoneButton(onClick = { onEvent(FocusContract.UiEvent.ClosePlanSheet) })
+    }
+}
+
+/**
+ * One button, and no way to lose anything by pressing it.
+ *
+ * A Cancel beside it would be lying: there is nothing staged to throw away, because every chip has
+ * already written. Two buttons where one of them cannot do what its name says is worse than one
+ * button — so the sheet has Done, always available, and closing by any other means does exactly the
+ * same thing. What protects a mis-tap is the undo that follows, not a button that promises to.
+ */
+@Composable
+private fun PlanSheetDoneButton(onClick: () -> Unit) {
+    val haptic = LocalHapticFeedback.current
+    val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
+
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        Button(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+            shape = RoundedCornerShape(cornerRadius.value),
+            interactionSource = interactionSource,
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            modifier = Modifier.height(48.dp).testTag(PLAN_SHEET_DONE_TAG),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Check,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.plan_tasks_done),
+                style = MaterialTheme.typography.dialogAction,
+            )
+        }
     }
 }
 
@@ -253,6 +297,7 @@ private fun PlanSheetRows(
     state: FocusContract.PlanSheetState,
     today: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
+    onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
     onToggleCompletion: (Task) -> Unit,
     modifier: Modifier = Modifier,
@@ -272,7 +317,7 @@ private fun PlanSheetRows(
                 )
             }
         }
-        planRows(state.unplanned, today, onPlan, onEdit, onToggleCompletion)
+        planRows(state.unplanned, today, onPlan, onUnplan, onEdit, onToggleCompletion)
 
         if (state.showsSectionHeaders) {
             fullWidthItem(key = "planned_header") {
@@ -282,7 +327,7 @@ private fun PlanSheetRows(
                 )
             }
         }
-        planRows(state.planned, today, onPlan, onEdit, onToggleCompletion)
+        planRows(state.planned, today, onPlan, onUnplan, onEdit, onToggleCompletion)
     }
 }
 
@@ -295,6 +340,7 @@ private fun LazyGridScope.planRows(
     rows: List<UndatedTask>,
     today: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
+    onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
     onToggleCompletion: (Task) -> Unit,
 ) = items(count = rows.size, key = { index -> rows[index].task.id }) { index ->
@@ -302,6 +348,7 @@ private fun LazyGridScope.planRows(
         row = rows[index],
         today = today,
         onPlan = onPlan,
+        onUnplan = onUnplan,
         onEdit = onEdit,
         onToggleCompletion = onToggleCompletion,
         modifier = Modifier.animateItem(),

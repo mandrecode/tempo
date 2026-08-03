@@ -184,8 +184,8 @@ object FocusContract {
                     .filter { it.task.reminderDate != originalReminders[it.task.id] }
                     .map { it.task.id }
 
-        /** Nothing to confirm until something has actually moved. */
-        val canConfirm: Boolean get() = changedTaskIds.isNotEmpty()
+        /** Whether closing has anything to offer back. */
+        val hasChanges: Boolean get() = changedTaskIds.isNotEmpty()
 
         /**
          * A sheet where nothing is planned yet is one plain list: headers that only ever say
@@ -295,11 +295,23 @@ object FocusContract {
             val date: LocalDate,
         ) : UiEvent
 
-        /** Closes the sheet and leaves everything planned as it is. */
-        data object DismissPlanSheet : UiEvent
+        /**
+         * Takes a task's date back off, returning it to the unplanned section.
+         *
+         * The same chip that set the day, pressed again. Planning several tasks at speed means
+         * mis-tapping some of them, and a choice that cannot be taken back is one people make
+         * slowly.
+         */
+        data class UnplanTask(
+            val taskId: Long,
+        ) : UiEvent
 
-        /** Closes the sheet and offers to take the whole batch back. */
-        data object ConfirmPlanSheet : UiEvent
+        /**
+         * Closes the sheet, however it was closed — the button, the handle, back, the scrim or
+         * Escape. All of them leave the planning in place and offer to take the batch back, because
+         * every one of them is the same act: leaving, having planned something.
+         */
+        data object ClosePlanSheet : UiEvent
 
         data object UndoPlanBatch : UiEvent
 

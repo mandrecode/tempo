@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -21,9 +20,11 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.plus
 import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Clock
@@ -86,6 +87,7 @@ class PlanTasksSheetTest {
         row: UndatedTask,
         width: Dp,
         onPlan: (Long, LocalDate?) -> Unit = { _, _ -> },
+        onUnplan: (Long) -> Unit = {},
     ) {
         composeTestRule.setContent {
             TempoTheme {
@@ -94,6 +96,7 @@ class PlanTasksSheetTest {
                         row = row,
                         today = today,
                         onPlan = onPlan,
+                        onUnplan = onUnplan,
                         onEdit = {},
                         onToggleCompletion = {},
                     )
@@ -161,7 +164,7 @@ class PlanTasksSheetTest {
     @Test
     fun tappingToday_plansThatTaskForToday() {
         val planned = mutableListOf<Pair<Long, LocalDate?>>()
-        setRow(row(7, "Renew the passport"), width = 360.dp) { id, date -> planned += id to date }
+        setRow(row(7, "Renew the passport"), width = 360.dp, onPlan = { id, date -> planned += id to date })
 
         composeTestRule.onNodeWithText("Today").performClick()
         composeTestRule.waitForIdle()
@@ -172,7 +175,7 @@ class PlanTasksSheetTest {
     @Test
     fun tappingPickADate_asksForOneRatherThanChoosing() {
         val planned = mutableListOf<Pair<Long, LocalDate?>>()
-        setRow(row(7, "Renew the passport"), width = 360.dp) { id, date -> planned += id to date }
+        setRow(row(7, "Renew the passport"), width = 360.dp, onPlan = { id, date -> planned += id to date })
 
         composeTestRule.onNodeWithText("Pick a date").performClick()
         composeTestRule.waitForIdle()
@@ -209,30 +212,73 @@ class PlanTasksSheetTest {
         composeTestRule.onNodeWithText("Unplanned").assertDoesNotExist()
     }
 
+    /**
+     * One button, always available. A Cancel beside it would be lying — every chip has already
+     * written — and there is no state in which the only way out is greyed out.
+     */
     @Test
-    fun done_isDisabledUntilSomethingHasBeenPlanned() {
+    fun done_isTheOnlyFooterActionAndIsAlwaysAvailable() {
         setSheet(sheetOf(row(1, "Renew the passport")))
 
-        composeTestRule.onNodeWithText("Done").assertIsNotEnabled()
-        composeTestRule.onNodeWithText("Close").assertIsEnabled()
+        composeTestRule.onNodeWithText("Done").assertIsEnabled()
+        composeTestRule.onNodeWithText("Close").assertDoesNotExist()
+        composeTestRule.onNodeWithText("Cancel").assertDoesNotExist()
     }
 
     @Test
-    fun done_isEnabledOnceATaskCarriesADate() {
+    fun done_isStillAvailableOnceSomethingIsPlanned() {
         setSheet(sheetOf(row(1, "Renew the passport", plannedFor = today)))
 
         composeTestRule.onNodeWithText("Done").assertIsEnabled()
     }
 
     @Test
-    fun done_confirmsTheBatch() {
+    fun done_closesTheSheet() {
         val events = mutableListOf<FocusContract.UiEvent>()
         setSheet(sheetOf(row(1, "Renew the passport", plannedFor = today))) { events += it }
 
         composeTestRule.onNodeWithText("Done").performClick()
         composeTestRule.waitForIdle()
 
-        assertThat(events).contains(FocusContract.UiEvent.ConfirmPlanSheet)
+        assertThat(events).contains(FocusContract.UiEvent.ClosePlanSheet)
+    }
+
+    /** The chip that is already lit takes the date back off rather than setting it again. */
+    @Test
+    fun tappingTheSelectedChip_unplansTheTask() {
+        val unplanned = mutableListOf<Long>()
+        val planned = mutableListOf<Pair<Long, LocalDate?>>()
+        setRow(
+            row(7, "Renew the passport", plannedFor = today),
+            width = 360.dp,
+            onPlan = { id, date -> planned += id to date },
+            onUnplan = { unplanned += it },
+        )
+
+        composeTestRule.onNodeWithText("Today").performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(unplanned).containsExactly(7L)
+        assertThat(planned).isEmpty()
+    }
+
+    /** An unlit chip still plans — only the selected one reverses. */
+    @Test
+    fun tappingAnUnselectedChip_stillPlans() {
+        val unplanned = mutableListOf<Long>()
+        val planned = mutableListOf<Pair<Long, LocalDate?>>()
+        setRow(
+            row(7, "Renew the passport", plannedFor = today),
+            width = 360.dp,
+            onPlan = { id, date -> planned += id to date },
+            onUnplan = { unplanned += it },
+        )
+
+        composeTestRule.onNodeWithText("Tomorrow").performClick()
+        composeTestRule.waitForIdle()
+
+        assertThat(planned).containsExactly(7L to today.plus(1, DateTimeUnit.DAY))
+        assertThat(unplanned).isEmpty()
     }
 
     /**

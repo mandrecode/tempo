@@ -7,6 +7,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
@@ -31,6 +33,7 @@ internal fun PlanTaskRow(
     row: UndatedTask,
     today: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
+    onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
     onToggleCompletion: (Task) -> Unit,
     modifier: Modifier = Modifier,
@@ -50,6 +53,7 @@ internal fun PlanTaskRow(
                 plannedFor = row.task.reminderDate?.date,
                 today = today,
                 onPlan = { date -> onPlan(row.task.id, date) },
+                onUnplan = { onUnplan(row.task.id) },
             )
         },
     )
@@ -64,12 +68,17 @@ internal fun PlanTaskRow(
  *
  * Each chip is rounded on both ends rather than segment-joined: a connected group that wraps mid-
  * run reads as broken, and these are three separate offers, not one control with three positions.
+ *
+ * Every one of them toggles. Pressing the chip that is already lit takes the date back off and
+ * returns the task to Unplanned — planning a list at speed means mis-tapping some of it, and a
+ * choice you cannot take back is one people stop making quickly.
  */
 @Composable
 private fun QuickPlanChips(
     plannedFor: LocalDate?,
     today: LocalDate,
     onPlan: (LocalDate?) -> Unit,
+    onUnplan: () -> Unit,
 ) {
     val tomorrow = remember(today) { today.plus(1, DateTimeUnit.DAY) }
 
@@ -81,17 +90,22 @@ private fun QuickPlanChips(
         QuickPlanChip(
             label = stringResource(R.string.today),
             isSelected = plannedFor == today,
-            onClick = { onPlan(today) },
+            onPlan = { onPlan(today) },
+            onUnplan = onUnplan,
         )
         QuickPlanChip(
             label = stringResource(R.string.tomorrow),
             isSelected = plannedFor == tomorrow,
-            onClick = { onPlan(tomorrow) },
+            onPlan = { onPlan(tomorrow) },
+            onUnplan = onUnplan,
         )
+        // Lit when the task carries a day these two do not name — the only state in which this chip
+        // stands for a value rather than for opening the picker.
         QuickPlanChip(
             label = stringResource(R.string.plan_tasks_pick_date),
             isSelected = plannedFor != null && plannedFor != today && plannedFor != tomorrow,
-            onClick = { onPlan(null) },
+            onPlan = { onPlan(null) },
+            onUnplan = onUnplan,
         )
     }
 }
@@ -100,15 +114,26 @@ private fun QuickPlanChips(
 private fun QuickPlanChip(
     label: String,
     isSelected: Boolean,
-    onClick: () -> Unit,
+    onPlan: () -> Unit,
+    onUnplan: () -> Unit,
 ) {
+    val unplanLabel = stringResource(R.string.plan_tasks_unplan_action, label)
+
     ExpressiveChip(
         label = label,
         isSelected = isSelected,
-        onClick = onClick,
+        onClick = if (isSelected) onUnplan else onPlan,
         isFirst = true,
         isLast = true,
         height = QuickPlanChipHeight,
         horizontalPadding = 14.dp,
+        // A lit chip and an unlit one do the opposite things, and a screen reader reading the same
+        // word for both would be describing only half of the control.
+        modifier =
+            if (isSelected) {
+                Modifier.semantics { contentDescription = unplanLabel }
+            } else {
+                Modifier
+            },
     )
 }
