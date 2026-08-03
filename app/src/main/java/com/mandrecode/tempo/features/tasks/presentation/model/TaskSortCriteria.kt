@@ -40,12 +40,18 @@ enum class TaskSortCriterion(
  * the sort can actually distinguish it from, and the next emission would silently undo the drag.
  */
 object TaskSortCriteria {
+    // Held as constants rather than built per call: areTied() runs once per adjacent pair of
+    // active tasks on every emission of the tasks flow.
+    private val byDate = listOf(TaskSortCriterion.REMINDER_DATE, TaskSortCriterion.PRIORITY)
+    private val byPriority = listOf(TaskSortCriterion.PRIORITY, TaskSortCriterion.REMINDER_DATE)
+    private val byTitle = listOf(TaskSortCriterion.TITLE)
+
     /** The criteria applied before manual order. Empty for [SortOption.MANUAL] — it *is* manual order. */
     fun criteriaFor(sortOption: SortOption): List<TaskSortCriterion> =
         when (sortOption) {
-            SortOption.BY_DATE -> listOf(TaskSortCriterion.REMINDER_DATE, TaskSortCriterion.PRIORITY)
-            SortOption.BY_PRIORITY -> listOf(TaskSortCriterion.PRIORITY, TaskSortCriterion.REMINDER_DATE)
-            SortOption.BY_TITLE -> listOf(TaskSortCriterion.TITLE)
+            SortOption.BY_DATE -> byDate
+            SortOption.BY_PRIORITY -> byPriority
+            SortOption.BY_TITLE -> byTitle
             SortOption.MANUAL -> emptyList()
         }
 
