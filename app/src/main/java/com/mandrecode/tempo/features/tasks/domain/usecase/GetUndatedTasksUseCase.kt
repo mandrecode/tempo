@@ -12,10 +12,10 @@ import kotlinx.coroutines.flow.combine
 /**
  * The loose ends: open, top-level work carrying no date at all.
  *
- * The same population `GetFocusAgendaUseCase` counts for the "N tasks without a date" footer, so
- * the sheet that footer opens lists exactly what it promised. A step with no time of its own is
- * deliberately not one of them — it is part of whatever its parent is, not a task waiting to be
- * planned on its own.
+ * The same population `GetFocusAgendaUseCase` counts for the Focus footer offering to give them a
+ * day, so the sheet that footer opens lists exactly what it promised. A step with no time of its
+ * own is deliberately not one of them — it is part of whatever its parent is, not a task waiting
+ * to be planned on its own.
  */
 class GetUndatedTasksUseCase
     @Inject

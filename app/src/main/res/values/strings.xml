@@ -657,8 +657,8 @@
         <item quantity="other">%1$d days focusing</item>
     </plurals>
     <plurals name="focus_undated_tasks">
-        <item quantity="one">%1$d task without a date</item>
-        <item quantity="other">%1$d tasks without a date</item>
+        <item quantity="one">Give %1$d task a day</item>
+        <item quantity="other">Give %1$d tasks a day</item>
     </plurals>
     <string name="plan_tasks_title">Plan your tasks</string>
     <plurals name="plan_tasks_subtitle">

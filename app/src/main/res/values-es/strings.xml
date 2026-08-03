@@ -661,8 +661,8 @@
         <item quantity="other">%1$d días de enfoque</item>
     </plurals>
     <plurals name="focus_undated_tasks">
-        <item quantity="one">%1$d tarea sin fecha</item>
-        <item quantity="other">%1$d tareas sin fecha</item>
+        <item quantity="one">Dale un día a %1$d tarea</item>
+        <item quantity="other">Dale un día a %1$d tareas</item>
     </plurals>
     <string name="plan_tasks_title">Planifica tus tareas</string>
     <plurals name="plan_tasks_subtitle">

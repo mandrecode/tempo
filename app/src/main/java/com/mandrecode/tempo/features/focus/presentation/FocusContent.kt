@@ -454,8 +454,13 @@ private fun SectionHeader(
  * plan, and answering that by moving them to another tab — where the same tasks are scattered
  * through a list sorted for something else — spent their willingness on finding them again.
  *
- * The same control the session screen uses, and now a calendar rather than an open-in-new arrow:
- * the icon has to promise what actually happens, and nothing leaves Focus any more.
+ * The same control the session screen uses, and a calendar being added to rather than an
+ * open-in-new arrow: the icon has to promise what actually happens, and nothing leaves Focus any
+ * more — these tasks are about to be put on a day.
+ *
+ * The label is a verb, not a headcount. "3 tasks without a date" stated a fact and left the reader
+ * to work out that the fact was tappable; naming the offer instead means the row asks for the one
+ * thing it can actually do something about.
  */
 @Composable
 private fun UndatedTasksFooter(
@@ -469,11 +474,11 @@ private fun UndatedTasksFooter(
     ) {
         TempoLinkButton(
             label = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
-            iconRes = R.drawable.ic_calendar,
+            iconRes = R.drawable.ic_calendar_add_on,
             onClick = onClick,
-            // The count is the label, so the icon is the only thing naming what this does — and an
-            // icon says nothing to a screen reader unless it is described.
-            iconContentDescription = stringResource(R.string.plan_tasks_title),
+            // Decorative now. The label is a verb, so it already says what happens; describing the
+            // icon as well would have a screen reader make the same offer twice.
+            iconContentDescription = null,
         )
     }
 }
