@@ -52,6 +52,13 @@ lead its metadata row with the task's category, shown as the category's icon fol
 
 - **WHEN** the same task is rendered in the Tasks list
 - **THEN** its metadata row carries no category badge
+- **AND** it still offers its add-subtask action
+
+#### Scenario: The sheet does not offer adding a subtask
+
+- **WHEN** a task is rendered in the plan sheet
+- **THEN** no add-subtask action is shown on its card, because the sheet asks one question of every
+  row and breaking a task down is a different job
 
 ### Requirement: Quick-plan chips assign a date in one tap
 

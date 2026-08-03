@@ -150,6 +150,12 @@ fun TaskItem(
      * action for a task sitting on no task in particular.
      */
     footer: (@Composable () -> Unit)? = null,
+    /**
+     * On by default, because in a list of work "break this down" is always a reasonable next move.
+     * Off where the card is on screen to be answered rather than worked on — a surface asking one
+     * question of every row has no business offering a second.
+     */
+    showAddSubtaskAction: Boolean = true,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -415,16 +421,18 @@ fun TaskItem(
                         }
                     }
 
-                    IconButton(
-                        onClick = { onAddSubtask(task.id) },
-                        modifier = Modifier.size(48.dp),
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_add_row_below),
-                            contentDescription = stringResource(R.string.add_subtask),
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                        )
+                    if (showAddSubtaskAction) {
+                        IconButton(
+                            onClick = { onAddSubtask(task.id) },
+                            modifier = Modifier.size(48.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.ic_add_row_below),
+                                contentDescription = stringResource(R.string.add_subtask),
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                            )
+                        }
                     }
                 }
             }

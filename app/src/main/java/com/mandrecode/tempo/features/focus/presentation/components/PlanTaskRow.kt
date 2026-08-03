@@ -41,6 +41,10 @@ internal fun PlanTaskRow(
         onEdit = onEdit,
         modifier = modifier,
         category = row.category,
+        // The sheet asks one question of every row — which day? — and an "add a step" button beside
+        // the answer is a different job offered in the middle of this one. The full editor is still
+        // a tap on the card away for anyone who wants it.
+        showAddSubtaskAction = false,
         footer = {
             QuickPlanChips(
                 plannedFor = row.task.reminderDate?.date,

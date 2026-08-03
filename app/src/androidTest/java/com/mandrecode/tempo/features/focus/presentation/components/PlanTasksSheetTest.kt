@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
@@ -118,6 +119,14 @@ class PlanTasksSheetTest {
 
         composeTestRule.onNodeWithText("Plan your tasks").assertIsDisplayed()
         composeTestRule.onNodeWithText("2 still need a day").assertIsDisplayed()
+    }
+
+    /** One question per row. Breaking a task down is a different job, and the editor still has it. */
+    @Test
+    fun sheet_doesNotOfferAddSubtask() {
+        setSheet(sheetOf(row(1, "Renew the passport"), row(2, "Fix the shelf")))
+
+        composeTestRule.onNodeWithContentDescription("Add Subtask").assertDoesNotExist()
     }
 
     @Test

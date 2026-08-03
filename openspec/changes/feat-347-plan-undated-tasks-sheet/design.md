@@ -77,6 +77,11 @@ made cheap.
   `Category`'s three relevant fields. The badge resolves the icon (`TempoIcon.fromName`) and colour
   (`resolveColor`) itself, so call sites pass what they already have.
 - `footer: (@Composable () -> Unit)?` — rendered inside the card, below the content row.
+- `showAddSubtaskAction: Boolean = true` — off in the sheet. Reusing `TaskItem` means inheriting its
+  trailing actions, and "add a step" beside a row whose whole purpose is answering *which day?* is a
+  second job offered in the middle of the first. The expand control stays, because it reveals what
+  the task already is rather than starting something new, and the full editor is a tap on the card
+  away for anyone who does want to break the task down.
 
 Alternative rejected: composing the chips *outside* the card, in the sheet's own `Column`. The chips
 would then float between cards, belonging to neither, and the tap target for "this task's date"
