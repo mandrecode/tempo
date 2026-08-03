@@ -58,6 +58,7 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
@@ -66,8 +67,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCompletedConfirmationDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteTaskConfirmDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SortBottomSheet
-
-private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -273,14 +272,7 @@ fun TasksScreen(
                                 Modifier
                                     .fillMaxSize()
                                     .navigationBarsPadding()
-                                    .padding(
-                                        bottom =
-                                            if (isRailLayout) {
-                                                20.dp
-                                            } else {
-                                                FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
-                                            },
-                                    ),
+                                    .padding(bottom = floatingNavigationSnackbarBottomPadding()),
                             contentAlignment = Alignment.BottomCenter,
                         ) {
                             ExpressiveSnackbarHost(snackbarHostState)
