@@ -49,7 +49,7 @@ class FocusSessionRepositoryImpl
         override fun focusOn(
             taskId: Long,
             date: LocalDate,
-        ): TaskFocusToday = prefs.readFocusOn(date)[taskId] ?: TaskFocusToday()
+        ): TaskFocusToday = prefs.readFocusOn(taskId, date)
 
         override fun recordSessionFor(
             taskId: Long,
@@ -182,7 +182,7 @@ private fun Map<Long, TaskFocusToday>.serialize(): String =
     entries.joinToString(",") { (taskId, day) -> "$taskId:${day.sessions}:${day.minutes}" }
 
 /**
- * The stored day, but only if it is [date]'s.
+ * The stored day's records, one per task, but only if the stored day is [date]'s.
  *
  * A flat `id:sessions:minutes` list — small, and never read by anything but this file. The date is
  * checked on the way in rather than only when writing: the record outlives the day it belongs to,
@@ -191,17 +191,31 @@ private fun Map<Long, TaskFocusToday>.serialize(): String =
  *
  * The two-field `id:sessions` records written before minutes were tracked still parse, as a day with
  * runs behind it and no time recorded; the next write brings them up to date.
+ *
+ * A sequence so a caller after one task can stop at it. The missed-reminder sweep asks this once per
+ * overdue task, and building the whole day's map each time to throw all but one entry away made a
+ * per-task question cost the length of the day.
  */
-private fun SharedPreferences.readFocusOn(date: LocalDate): Map<Long, TaskFocusToday> {
-    if (getString(KEY_SESSIONS_DATE, null) != date.toString()) return emptyMap()
+private fun SharedPreferences.focusRecordsOn(date: LocalDate): Sequence<Pair<Long, TaskFocusToday>> {
+    if (getString(KEY_SESSIONS_DATE, null) != date.toString()) return emptySequence()
     return getString(KEY_SESSIONS_BY_TASK, null)
         .orEmpty()
-        .split(',')
+        .splitToSequence(',')
         .mapNotNull { record ->
             val parts = record.split(':').takeIf { it.size in 2..3 } ?: return@mapNotNull null
             val taskId = parts[0].toLongOrNull() ?: return@mapNotNull null
             val sessions = parts[1].toIntOrNull() ?: return@mapNotNull null
             val minutes = parts.getOrNull(2)?.toIntOrNull() ?: 0
             taskId to TaskFocusToday(sessions = sessions, minutes = minutes)
-        }.toMap()
+        }
 }
+
+private fun SharedPreferences.readFocusOn(date: LocalDate): Map<Long, TaskFocusToday> = focusRecordsOn(date).toMap()
+
+private fun SharedPreferences.readFocusOn(
+    taskId: Long,
+    date: LocalDate,
+): TaskFocusToday =
+    focusRecordsOn(date)
+        .firstOrNull { (id, _) -> id == taskId }
+        ?.second ?: TaskFocusToday()

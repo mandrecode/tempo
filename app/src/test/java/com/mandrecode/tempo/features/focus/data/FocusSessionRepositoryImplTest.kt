@@ -290,6 +290,15 @@ class FocusSessionRepositoryImplTest {
     }
 
     @Test
+    fun `a single task's day survives a malformed record ahead of it`() {
+        // The single-task read stops at its match, so it has to keep skipping rubbish on the way.
+        val stored = storedDay("rubbish,9:x,7:2:30")
+
+        assertThat(createRepository(stored).focusOn(taskId = 7, date = today))
+            .isEqualTo(TaskFocusToday(sessions = 2, minutes = 30))
+    }
+
+    @Test
     fun `a task with nothing stored has had nothing out of the day`() {
         val stored = storedDay("7:2:30")
 
