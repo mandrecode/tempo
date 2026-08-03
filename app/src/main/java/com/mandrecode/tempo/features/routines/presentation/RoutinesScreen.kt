@@ -52,6 +52,7 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.routines.presentation.components.HabitBottomSheet
@@ -59,8 +60,6 @@ import com.mandrecode.tempo.features.routines.presentation.components.dialogs.Cl
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitChainConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.DeleteHabitConfirmDialog
 import com.mandrecode.tempo.features.routines.presentation.components.dialogs.EmptyHabitChainConfirmDialog
-
-private val FLOATING_BAR_SNACKBAR_BOTTOM_PADDING = 88.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -209,10 +208,7 @@ fun RoutinesScreen(
                         onEvent = viewModel::onEvent,
                     )
 
-                    RoutinesSnackbar(
-                        snackbarHostState = snackbarHostState,
-                        isRailLayout = isRailLayout,
-                    )
+                    RoutinesSnackbar(snackbarHostState = snackbarHostState)
                 }
             }
         }
@@ -440,23 +436,13 @@ private fun RoutinesDialogs(
 }
 
 @Composable
-private fun RoutinesSnackbar(
-    snackbarHostState: SnackbarHostState,
-    isRailLayout: Boolean,
-) {
+private fun RoutinesSnackbar(snackbarHostState: SnackbarHostState) {
     Box(
         modifier =
             Modifier
                 .fillMaxSize()
                 .navigationBarsPadding()
-                .padding(
-                    bottom =
-                        if (isRailLayout) {
-                            16.dp
-                        } else {
-                            FLOATING_BAR_SNACKBAR_BOTTOM_PADDING
-                        },
-                ),
+                .padding(bottom = floatingNavigationSnackbarBottomPadding()),
         contentAlignment = Alignment.BottomCenter,
     ) {
         ExpressiveSnackbarHost(snackbarHostState)
