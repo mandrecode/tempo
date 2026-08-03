@@ -59,18 +59,17 @@ internal fun PersistentPortraitFloatingBar(
         // node was disposed on, then went in one step — half of it as a jump of the centred group,
         // which is the twitch the transition ended on. Each button carries its own gap instead, so
         // the gap shrinks with the button it belongs to and there is nothing left to drop.
+        // No wrapper animation around the task actions either, for a related reason: the buttons
+        // inside animate themselves, so a wrapper that also animates is a second spring chasing a
+        // target the first one is still growing. The left side reached full width long after the
+        // right side did, the group was right-heavy in between, and centring it dragged the pill
+        // left before it went where it was actually going — see issue #355.
         Row(verticalAlignment = Alignment.CenterVertically) {
-            AnimatedVisibility(
-                visible = isTasksRoute,
-                enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
-                exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
-            ) {
-                TaskActionButtons(
-                    tasksState = tasksState,
-                    showActions = isTasksRoute,
-                    modifier = Modifier.padding(end = FloatingToolbarItemSpacing),
-                )
-            }
+            TaskActionButtons(
+                tasksState = tasksState,
+                showActions = isTasksRoute,
+                trailingGap = FloatingToolbarItemSpacing,
+            )
 
             navigationContent()
 

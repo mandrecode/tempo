@@ -160,26 +160,62 @@ class PortraitFloatingBarMotionTest {
     }
 
     /**
-     * With nothing to clear, Tasks flanks the pill with one button on each side — so the pill has
-     * to end up exactly where Focus, which flanks it with none, had it.
+     * With nothing to clear, Tasks flanks the pill with one button on each side, and the two are
+     * the same size on the same spring — so the pill sits where Focus, which flanks it with none,
+     * had it, and it stays there for every frame in between rather than only at the two ends.
      *
-     * It did not: the add button was 4dp wider than sort, and centring the group put half of that
-     * on the pill. Two dp is under the [Tolerance] the motion tests run at, so it took a rest-to-
-     * rest comparison to see at all — see issue #355.
+     * Both halves of that were broken, for unrelated reasons:
+     *  - at rest, the add button was 4dp wider than sort, and centring the group put half of that
+     *    on the pill;
+     *  - in flight, the task actions were wrapped in an `AnimatedVisibility` on top of the ones
+     *    the buttons already had, so the left side was a spring chasing a target a second spring
+     *    was still growing while the right side was a single spring around a fixed-size button.
+     *    The right arrived first, the group leaned on it, and the pill lurched about 13dp left
+     *    and wobbled back.
+     *
+     * See issue #355. The clock is stepped by hand rather than left to `waitForIdle`: idle is not
+     * settled, and a first version of this test read the pill mid-lurch and failed by 12dp on CI.
      */
     @Test
-    fun withNothingToClear_theFlankingButtonsLeaveThePillWhereFocusHadIt() {
+    fun withNothingToClear_thePillStaysWhereFocusHadItThroughout() {
         isTasksRoute = false
         setBar(hasCompletedTasks = false)
+        composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val onFocus = pillLeft()
 
         isTasksRoute = true
-        composeTestRule.waitForIdle()
+        composeTestRule.mainClock.advanceTimeByFrame()
 
-        // Both rests are pixel-quantised, so they can differ by rounding; they cannot differ by the
-        // 2dp the mismatched buttons were worth.
-        assertThat(abs((pillLeft() - onFocus).value)).isLessThan(Settled.value)
+        val positions = samplePositions()
+        assertMotionFinished(positions)
+        // Nothing on the way may lean either side of where Focus had it...
+        assertThat(positions.maxOf { abs((it - onFocus).value) }).isLessThan(Tolerance.value)
+        // ...and the rest has to land back on it, bar pixel rounding.
+        assertThat(abs((positions.last() - onFocus).value)).isLessThan(Settled.value)
+    }
+
+    /**
+     * With something to clear the pill does move — the left side ends up heavier — but it only ever
+     * moves that one way. The same nested animation used to send it the *other* way first, so the
+     * transition read as a bounce before it went where it was going.
+     */
+    @Test
+    fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
+        isTasksRoute = false
+        setBar(hasCompletedTasks = true)
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.waitForIdle()
+        val start = pillLeft()
+
+        isTasksRoute = true
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        val positions = samplePositions()
+        assertMotionFinished(positions)
+        // It settles to the right of where it started, so nothing on the way may sit to the left.
+        assertThat((positions.last() - start).value).isGreaterThan(Tolerance.value)
+        assertThat(positions.minOf { (it - start).value }).isGreaterThan(-Tolerance.value)
     }
 
     /**
