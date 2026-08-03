@@ -44,8 +44,8 @@ JDK 21 required. Version is read from `version.txt` at repo root.
 ## CI / Quality Gates
 
 - **detekt and ktlint are blocking.** The `📐 Static Analysis` job in `.github/workflows/ci.yml` fails the build if `./gradlew ktlintCheck` or `./gradlew :app:detekt` fail. Run `./gradlew ktlintFormat` and `./gradlew :app:detekt` locally before pushing.
-- **The detekt baseline is frozen at 189 and may only decrease.** `app/detekt-baseline.xml` is the suppression ceiling. A CI guard counts `<ID>` entries and fails if the count exceeds 189. Do **not** add new suppressions to grow the baseline — fix the issue instead.
-- **When you fix detekt issues**, regenerate/shrink the baseline (e.g. `./gradlew :app:detektBaseline` then prune resolved entries) and lower the `MAX=189` ceiling in the CI guard accordingly so the gate ratchets down.
+- **The detekt baseline is frozen at 155 and may only decrease.** `app/detekt-baseline.xml` is the suppression ceiling. A CI guard counts `<ID>` entries and fails if the count exceeds 155. Do **not** add new suppressions to grow the baseline — fix the issue instead.
+- **When you fix detekt issues**, regenerate/shrink the baseline (e.g. `./gradlew :app:detektBaseline` then prune resolved entries) and lower the `MAX=` ceiling in the CI guard accordingly so the gate ratchets down.
 
 ## Local Instrumented Tests
 
