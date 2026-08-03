@@ -24,11 +24,15 @@ class HasFocusTimeTodayUseCase
         private val clock: Clock,
     ) {
         operator fun invoke(taskId: Long): Boolean {
+            // The running session first: it is a field read, where the day's record is a stored one,
+            // and the sweep asks this once per overdue task.
+            //
+            // Asked at all because minutes are only banked when a session ends — the record alone
+            // would let a reminder through five minutes into a run. A break counts too: it is the
+            // rest half of the work that just happened on this task, not a gap in it.
+            if (sessionRepository.activeSession.value?.taskId == taskId) return true
+
             val today = clock.todayIn(TimeZone.currentSystemDefault())
-            if (sessionRepository.focusOn(taskId, today).hasHistory) return true
-            // Minutes are only banked when a session ends, so the record alone would let a reminder
-            // through five minutes into a run. A break counts too: it is the rest half of the work
-            // that just happened on this task, not a gap in it.
-            return sessionRepository.activeSession.value?.taskId == taskId
+            return sessionRepository.focusOn(taskId, today).hasHistory
         }
     }

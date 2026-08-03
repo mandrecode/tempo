@@ -6,6 +6,7 @@ import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
@@ -80,6 +81,16 @@ class HasFocusTimeTodayUseCaseTest {
     @Test
     fun `an untouched task has had no focus time`() {
         assertThat(useCase(TASK_ID)).isFalse()
+    }
+
+    @Test
+    fun `a running session answers without reaching for the stored day`() {
+        activeSession.value = session(taskId = TASK_ID)
+
+        assertThat(useCase(TASK_ID)).isTrue()
+
+        // The sweep asks this once per overdue task; the field read is the cheaper of the two.
+        verify(exactly = 0) { repository.focusOn(any(), any()) }
     }
 
     private fun session(
