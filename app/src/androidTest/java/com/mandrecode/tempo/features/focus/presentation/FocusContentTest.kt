@@ -62,8 +62,16 @@ class FocusContentTest {
         title: String,
         subtasks: List<Task> = emptyList(),
         due: LocalDateTime? = null,
+        parentTaskId: Long? = null,
     ) = FocusAgendaItem.TaskEntry(
-        task = Task(id = id, title = title, description = "", reminderDate = due),
+        task =
+            Task(
+                id = id,
+                title = title,
+                description = "",
+                reminderDate = due,
+                parentTaskId = parentTaskId,
+            ),
         subtasks = subtasks,
     )
 
@@ -172,6 +180,26 @@ class FocusContentTest {
         setContent(stateWith(items = listOf(taskEntry(2, "Call the bank")))) { }
 
         composeTestRule.onNodeWithText("Call the bank").assertIsDisplayed()
+    }
+
+    /**
+     * The one thing a promoted subtask's card must not offer. Tasks nests exactly one level, so a
+     * task added beneath a subtask exists with nowhere in Tasks to show it — reachable only from
+     * Focus, and only while its grandparent stays off the day.
+     */
+    @Test
+    fun promotedSubtask_doesNotOfferToAddASubtaskBeneathItself() {
+        val promoted = taskEntry(2, "Call the bank", parentTaskId = 1)
+        setContent(stateWith(items = listOf(promoted))) { }
+
+        composeTestRule.onNodeWithContentDescription("Add Subtask").assertDoesNotExist()
+    }
+
+    @Test
+    fun topLevelRow_stillOffersToAddASubtask() {
+        setContent(stateWith(items = listOf(taskEntry(1, "Write the report")))) { }
+
+        composeTestRule.onNodeWithContentDescription("Add Subtask").assertIsDisplayed()
     }
 
     @Test
