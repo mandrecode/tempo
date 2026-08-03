@@ -31,19 +31,19 @@ class PortraitFloatingBarMotionTest {
 
     private companion object {
         const val PILL_TAG = "nav_pill"
-        val PillWidth = 200.dp
 
         /**
-         * A pill narrow enough that the bar still fits the narrowest screen Android ships.
+         * Narrow enough that the bar still fits the narrowest screen Android ships.
          *
-         * Centring is only a property the layout can have when there is room to centre in. At
-         * 200dp the row comes to 344dp with both flanks and their gaps, which overflows a 320dp
-         * screen: the row fills the bar, centring stops happening, and the pill sits at the
-         * padding edge instead. That is a different condition from the one these tests are about,
-         * and it is what made a first version fail by exactly 12dp on CI — whose emulator is
-         * 320dp wide — while passing on every local device.
+         * Centring is only a property the layout can have when there is room to centre in. At the
+         * 200dp this used to be, the row comes to 344dp with both flanks and their gaps, which
+         * overflows a 320dp screen: the row fills the bar, centring stops happening, and the pill
+         * sits at the padding edge instead. Every test here would then be measuring overflow
+         * rather than the centred group — silently, since "it stays put once it stops" is trivially
+         * true when nothing can move. It is also what made one of these fail by exactly 12dp on
+         * CI, whose emulator is 320dp wide, while passing on every local device.
          */
-        val FittingPillWidth = 120.dp
+        val PillWidth = 120.dp
 
         /** One frame at 60 Hz, in milliseconds. */
         const val FRAME_MS = 16L
@@ -71,10 +71,7 @@ class PortraitFloatingBarMotionTest {
 
     private var isTasksRoute by mutableStateOf(true)
 
-    private fun setBar(
-        hasCompletedTasks: Boolean = true,
-        pillWidth: Dp = PillWidth,
-    ) {
+    private fun setBar(hasCompletedTasks: Boolean = true) {
         composeTestRule.setContent {
             TempoTheme {
                 val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
@@ -82,7 +79,7 @@ class PortraitFloatingBarMotionTest {
                     isTasksRoute = isTasksRoute,
                     topLevelRoute = route,
                     navigationContent = {
-                        Box(modifier = Modifier.size(pillWidth).testTag(PILL_TAG))
+                        Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
                     },
                     routinesState = RoutinesFloatingBarState(),
                     tasksState = TasksFloatingBarState(hasCompletedTasks = hasCompletedTasks),
@@ -188,7 +185,7 @@ class PortraitFloatingBarMotionTest {
     @Test
     fun withNothingToClear_thePillStaysWhereFocusHadItThroughout() {
         isTasksRoute = false
-        setBar(hasCompletedTasks = false, pillWidth = FittingPillWidth)
+        setBar(hasCompletedTasks = false)
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val onFocus = pillLeft()
@@ -214,7 +211,7 @@ class PortraitFloatingBarMotionTest {
     @Test
     fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
         isTasksRoute = false
-        setBar(hasCompletedTasks = true, pillWidth = FittingPillWidth)
+        setBar(hasCompletedTasks = true)
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val start = pillLeft()
