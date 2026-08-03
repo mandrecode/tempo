@@ -2,11 +2,11 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 
 import com.mandrecode.tempo.core.domain.repository.DailyFocusActivityRepository
 import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
+import com.mandrecode.tempo.features.focus.domain.model.isOnFocusDay
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
-import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.util.CompletionHistoryUtil
 import jakarta.inject.Inject
@@ -43,10 +43,13 @@ class RecordDailyActivityUseCase
 
             // Counted the way the Focus agenda shows the day, or the heatmap and the hero would
             // disagree about the same date: a chain is one thing on screen, so it is one thing
-            // here, and the habits inside it are not counted again on their own.
+            // here, and the habits inside it are not counted again on their own. Tasks are counted
+            // by the agenda's own membership rule for the same reason — a subtask counts when, and
+            // only when, it is the thing showing on the day rather than a step inside a parent.
             val chainedHabitIds = chains.flatMap { it.habitIds }.toSet()
 
-            val countedTasks = tasks.filter { it.countsTowards(today) }
+            val tasksById = tasks.associateBy { it.id }
+            val countedTasks = tasks.filter { it.isOnFocusDay(today, tasksById) }
             val countedHabits =
                 habits.filter {
                     it.id !in chainedHabitIds &&
@@ -63,20 +66,6 @@ class RecordDailyActivityUseCase
                         countedHabits.count { it.wasCompletedOn(today) } +
                         countedChains.count { it.wasCompletedOn(today) },
             )
-        }
-
-        /**
-         * Subtasks are excluded: they are counted through their parent, so including both would
-         * make a task with five subtasks weigh six times a task with none.
-         *
-         * A task counts for today when it is due today, or when it is overdue and still open —
-         * matching what the Focus agenda puts in front of the user.
-         */
-        private fun Task.countsTowards(today: LocalDate): Boolean {
-            val dueDate = reminderDate?.date
-            return parentTaskId == null &&
-                dueDate != null &&
-                (dueDate == today || (dueDate < today && !isCompleted))
         }
 
         private fun Habit.wasCompletedOn(today: LocalDate): Boolean =

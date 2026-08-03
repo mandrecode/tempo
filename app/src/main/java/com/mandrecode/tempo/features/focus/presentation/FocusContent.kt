@@ -150,49 +150,25 @@ private fun FocusAgendaList(
     ) {
         upNextSection(uiState = uiState, onEvent = onEvent)
 
-        if (uiState.visibleOverdue.isNotEmpty()) {
-            item(key = "overdue_header") {
-                SectionHeader(
-                    label = stringResource(R.string.focus_section_overdue, uiState.visibleOverdue.size),
-                    modifier = Modifier.animateItem(),
-                )
-            }
-            items(uiState.visibleOverdue, key = { it.id }) { entry ->
-                AgendaRow(
-                    entry = entry,
-                    today = today,
-                    expandedChainIds = uiState.expandedChainIds,
-                    expandedTaskIds = uiState.expandedTaskIds,
-                    onEvent = onEvent,
-                    // Rows slide out of each other's way when one grows, the way they do in
-                    // Routines and Tasks. Without this an expanding card teleported everything
-                    // below it, which read as the list jumping rather than the card opening.
-                    modifier = Modifier.animateItem(),
-                )
-            }
-        }
+        // Today above Overdue. Both are the day, but only one of them is the day you are in, and
+        // opening Focus onto last week's leftovers put the work you came for below the fold.
+        agendaSection(
+            key = "today",
+            label = { stringResource(R.string.focus_section_today, uiState.visibleToday.size) },
+            entries = uiState.visibleToday,
+            uiState = uiState,
+            today = today,
+            onEvent = onEvent,
+        )
 
-        if (uiState.visibleToday.isNotEmpty()) {
-            item(key = "today_header") {
-                SectionHeader(
-                    label = stringResource(R.string.focus_section_today, uiState.visibleToday.size),
-                    modifier = Modifier.animateItem(),
-                )
-            }
-            items(uiState.visibleToday, key = { it.id }) { entry ->
-                AgendaRow(
-                    entry = entry,
-                    today = today,
-                    expandedChainIds = uiState.expandedChainIds,
-                    expandedTaskIds = uiState.expandedTaskIds,
-                    onEvent = onEvent,
-                    // Rows slide out of each other's way when one grows, the way they do in
-                    // Routines and Tasks. Without this an expanding card teleported everything
-                    // below it, which read as the list jumping rather than the card opening.
-                    modifier = Modifier.animateItem(),
-                )
-            }
-        }
+        agendaSection(
+            key = "overdue",
+            label = { stringResource(R.string.focus_section_overdue, uiState.visibleOverdue.size) },
+            entries = uiState.visibleOverdue,
+            uiState = uiState,
+            today = today,
+            onEvent = onEvent,
+        )
 
         if (uiState.undatedTaskCount > 0) {
             item(key = "undated_footer") {
@@ -203,6 +179,38 @@ private fun FocusAgendaList(
                 )
             }
         }
+    }
+}
+
+/**
+ * One headed block of the day. Both sections are the same thing rendered twice, so they are written
+ * once — the only difference between them is which list they read and the order they are called in.
+ */
+private fun LazyListScope.agendaSection(
+    key: String,
+    label: @Composable () -> String,
+    entries: List<FocusAgendaItem>,
+    uiState: FocusContract.UiState,
+    today: LocalDate,
+    onEvent: (FocusContract.UiEvent) -> Unit,
+) {
+    if (entries.isEmpty()) return
+
+    item(key = "${key}_header") {
+        SectionHeader(label = label(), modifier = Modifier.animateItem())
+    }
+    items(entries, key = { it.id }) { entry ->
+        AgendaRow(
+            entry = entry,
+            today = today,
+            expandedChainIds = uiState.expandedChainIds,
+            expandedTaskIds = uiState.expandedTaskIds,
+            onEvent = onEvent,
+            // Rows slide out of each other's way when one grows, the way they do in Routines and
+            // Tasks. Without this an expanding card teleported everything below it, which read as
+            // the list jumping rather than the card opening.
+            modifier = Modifier.animateItem(),
+        )
     }
 }
 
@@ -301,7 +309,7 @@ private fun LazyListScope.upNextRow(
                 items(queued, key = { it.id }) { entry ->
                     UpNextCard(
                         title = entry.displayTitle(),
-                        metadata = entry.upNextMetadata(),
+                        metadata = entry.upNextMetadata(uiState.today),
                         metadataIconRes = R.drawable.ic_flag.takeIf { entry.priority != null },
                         onClick = {
                             onEvent(FocusContract.UiEvent.PreviewUpNext(entry.task.id))

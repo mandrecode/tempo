@@ -32,6 +32,7 @@ import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.util.DateTimeFormatter
+import kotlinx.datetime.LocalDate
 
 private val UpNextCornerRadius = 22.dp
 
@@ -122,25 +123,39 @@ internal fun UpNextCard(
 /**
  * The metadata line: due time when the item has one, in the user's 12h/24h preference. Kept
  * deliberately terse — the card is a prompt, not a detail view.
+ *
+ * Work carried over from a previous day says so instead of showing its time. The row mixes today's
+ * work with what is left over from before it, and a bare "8:00 AM" on a card from last week read as
+ * something due this morning — the one thing the time was there to tell you.
  */
 @Composable
-internal fun FocusAgendaItem.upNextMetadata(): String? {
+internal fun FocusAgendaItem.upNextMetadata(today: LocalDate?): String? {
     val context = LocalContext.current
+    val entry = this as? FocusAgendaItem.TaskEntry
+    val isOverdue =
+        today != null &&
+            entry
+                ?.task
+                ?.reminderDate
+                ?.date
+                ?.let { it < today } == true
     val parts =
         buildList {
             // Priority, then category, then time — the order the eye needs them in: how much this
             // matters, where it belongs, when it is due.
             // Leads the line: that the work is already under way outranks what kind of work it is.
-            (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
-                ?.focusToday
-                ?.soFarTodayLabel()
-                ?.let { add(it.uppercase()) }
+            entry?.focusToday?.soFarTodayLabel()?.let { add(it.uppercase()) }
             priority?.let { add(stringResource(it.titleResId).uppercase()) }
-            (this@upNextMetadata as? FocusAgendaItem.TaskEntry)
+            entry
                 ?.categoryName
                 ?.takeIf { it.isNotBlank() }
                 ?.let { add(it.uppercase()) }
-            dueTime?.let { add(DateTimeFormatter.formatTimeOfDay(it, context)) }
+            // The same word the Tasks tab groups this work under, so the two tabs agree.
+            if (isOverdue) {
+                add(stringResource(R.string.active_overdue).uppercase())
+            } else {
+                dueTime?.let { add(DateTimeFormatter.formatTimeOfDay(it, context)) }
+            }
         }
     return parts.takeIf { it.isNotEmpty() }?.joinToString(SEPARATOR)
 }
