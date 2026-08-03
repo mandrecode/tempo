@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.12.0](https://github.com/mandrecode/tempo/compare/v1.11.1...v1.12.0) (2026-08-03)
+
+
+### Features
+
+* **#346:** break sort ties, and let tied tasks be dragged ([#360](https://github.com/mandrecode/tempo/issues/360)) ([d3e9a87](https://github.com/mandrecode/tempo/commit/d3e9a87699be54328a5353128dbafae6bb6a8646))
+
+
+### Bug Fixes
+
+* **#353:** put today ahead of overdue in Focus, and stop reminding about work already under way ([#364](https://github.com/mandrecode/tempo/issues/364)) ([6cf9579](https://github.com/mandrecode/tempo/commit/6cf95791fb477f50e9c7c06c8208d48fd78dddcf)), closes [#353](https://github.com/mandrecode/tempo/issues/353) [#354](https://github.com/mandrecode/tempo/issues/354) [#357](https://github.com/mandrecode/tempo/issues/357) [#358](https://github.com/mandrecode/tempo/issues/358) [#359](https://github.com/mandrecode/tempo/issues/359)
+* **#355:** size the add action like the rest of the bar ([#362](https://github.com/mandrecode/tempo/issues/362)) ([9c76653](https://github.com/mandrecode/tempo/commit/9c7665300c208fa88952e43c92b7fd1dbf2597b0))
+* subtask nesting depth in Focus, and the parent-cycle guard ([#365](https://github.com/mandrecode/tempo/issues/365)) ([800a1eb](https://github.com/mandrecode/tempo/commit/800a1ebdc343d7578606095020ac371636e420da))
+
 ## [1.11.1](https://github.com/mandrecode/tempo/compare/v1.11.0...v1.11.1) (2026-07-31)
 
 
