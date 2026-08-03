@@ -192,6 +192,9 @@ class FocusContentTest {
         val promoted = taskEntry(2, "Call the bank", parentTaskId = 1)
         setContent(stateWith(items = listOf(promoted))) { }
 
+        // The row has to be there for its missing button to mean anything — without this the
+        // assertion below would pass just as well on a row that never rendered.
+        composeTestRule.onNodeWithText("Call the bank").assertIsDisplayed()
         composeTestRule.onNodeWithContentDescription("Add Subtask").assertDoesNotExist()
     }
 
