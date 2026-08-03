@@ -31,7 +31,19 @@ class PortraitFloatingBarMotionTest {
 
     private companion object {
         const val PILL_TAG = "nav_pill"
-        val PillWidth = 200.dp
+
+        /**
+         * Narrow enough that the bar still fits the narrowest screen Android ships.
+         *
+         * Centring is only a property the layout can have when there is room to centre in. At the
+         * 200dp this used to be, the row comes to 344dp with both flanks and their gaps, which
+         * overflows a 320dp screen: the row fills the bar, centring stops happening, and the pill
+         * sits at the padding edge instead. Every test here would then be measuring overflow
+         * rather than the centred group — silently, since "it stays put once it stops" is trivially
+         * true when nothing can move. It is also what made one of these fail by exactly 12dp on
+         * CI, whose emulator is 320dp wide, while passing on every local device.
+         */
+        val PillWidth = 120.dp
 
         /** One frame at 60 Hz, in milliseconds. */
         const val FRAME_MS = 16L
@@ -59,7 +71,7 @@ class PortraitFloatingBarMotionTest {
 
     private var isTasksRoute by mutableStateOf(true)
 
-    private fun setBar() {
+    private fun setBar(hasCompletedTasks: Boolean = true) {
         composeTestRule.setContent {
             TempoTheme {
                 val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
@@ -70,7 +82,7 @@ class PortraitFloatingBarMotionTest {
                         Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
                     },
                     routinesState = RoutinesFloatingBarState(),
-                    tasksState = TasksFloatingBarState(hasCompletedTasks = true),
+                    tasksState = TasksFloatingBarState(hasCompletedTasks = hasCompletedTasks),
                     isSingleTabMode = false,
                 )
             }
@@ -157,6 +169,63 @@ class PortraitFloatingBarMotionTest {
         val positions = samplePositions()
         assertMotionFinished(positions)
         assertStaysPutOnceItStops(positions)
+    }
+
+    /**
+     * With nothing to clear, Tasks flanks the pill with one button on each side, and the two are
+     * the same size on the same spring — so the pill sits where Focus, which flanks it with none,
+     * had it, and it stays there for every frame in between rather than only at the two ends.
+     *
+     * At rest the add button used to be 4dp wider than sort, and centring the group put half of
+     * that on the pill — see issue #355.
+     *
+     * The clock is stepped by hand rather than left to `waitForIdle`, which means "no pending
+     * work", not "the springs have stopped".
+     */
+    @Test
+    fun withNothingToClear_thePillStaysWhereFocusHadItThroughout() {
+        isTasksRoute = false
+        setBar(hasCompletedTasks = false)
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.waitForIdle()
+        val onFocus = pillLeft()
+
+        isTasksRoute = true
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        val positions = samplePositions()
+        assertMotionFinished(positions)
+        // Nothing on the way may lean either side of where Focus had it...
+        assertThat(positions.maxOf { abs((it - onFocus).value) }).isLessThan(Tolerance.value)
+        // ...and the rest has to land back on it, bar pixel rounding.
+        // Inclusive: on mdpi one device pixel *is* 1dp, so two adjacent quantised positions differ
+        // by exactly [Settled] without either having moved. The 2dp this guards still fails.
+        assertThat(abs((positions.last() - onFocus).value)).isAtMost(Settled.value)
+    }
+
+    /**
+     * With something to clear the pill does move — the left side ends up heavier — but it only ever
+     * moves that one way.
+     *
+     * Guarding the direction, not a known defect: a transition that sets off the opposite way
+     * before turning around reads as a bounce, however it comes about.
+     */
+    @Test
+    fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
+        isTasksRoute = false
+        setBar(hasCompletedTasks = true)
+        composeTestRule.mainClock.autoAdvance = false
+        composeTestRule.waitForIdle()
+        val start = pillLeft()
+
+        isTasksRoute = true
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        val positions = samplePositions()
+        assertMotionFinished(positions)
+        // It settles to the right of where it started, so nothing on the way may sit to the left.
+        assertThat((positions.last() - start).value).isGreaterThan(Tolerance.value)
+        assertThat(positions.minOf { (it - start).value }).isGreaterThan(-Tolerance.value)
     }
 
     /**
