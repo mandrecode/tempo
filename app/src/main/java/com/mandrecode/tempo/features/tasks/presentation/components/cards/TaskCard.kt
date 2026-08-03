@@ -76,6 +76,7 @@ import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlin.math.roundToInt
 
@@ -91,12 +92,36 @@ internal const val TASK_COMPLETION_CONTROL_TAG = "task_completion_control"
 internal const val TASK_CONTENT_TAG = "task_content"
 internal const val TASK_TRAILING_ACTIONS_TAG = "task_trailing_actions"
 internal const val TASK_DESCRIPTION_TAG = "task_description"
+internal const val TASK_METADATA_CATEGORY_TAG = "task_metadata_category"
+internal const val TASK_FOOTER_TAG = "task_footer"
 
 // Asymmetric fade durations for the SubtaskMetadataRow appearance/disappearance:
 // fade-in is slightly slower so the badge feels like it settles into place, while
 // fade-out is quicker so it gets out of the way for the toggle action.
 internal const val METADATA_ROW_FADE_IN_MS = 180
 internal const val METADATA_ROW_FADE_OUT_MS = 120
+
+/**
+ * Whether the metadata row has anything to say.
+ *
+ * Gated rather than always drawn: an empty row would push a title-only task off centre against its
+ * checkbox. Tasks that already carry any metadata keep MetadataRow's own reserved badge slot, so a
+ * reminder becoming a completion date does not change the card's height.
+ *
+ * Subtasks are excluded from the question entirely — a step's metadata belongs to its own row.
+ */
+private fun Task.hasMetadataToShow(
+    category: Category?,
+    subtasks: List<Task>,
+): Boolean {
+    if (parentTaskId != null) return false
+    return category != null ||
+        priority != null ||
+        periodicity != null ||
+        reminderDate != null ||
+        completedAt != null ||
+        subtasks.isNotEmpty()
+}
 
 @Composable
 fun TaskItem(
@@ -111,6 +136,20 @@ fun TaskItem(
     isSubtasksExpanded: Boolean = true,
     initialDescriptionExpanded: Boolean = false,
     isSelected: Boolean = false,
+    /**
+     * Shown as the first label of the metadata row when set. Off by default: the Tasks list is
+     * already grouped by category, where repeating it on every card would be noise. It earns its
+     * place only where a card sits next to work drawn from every category at once.
+     */
+    category: Category? = null,
+    /**
+     * Extra controls belonging to this task, drawn inside the card beneath its content.
+     *
+     * A slot rather than a fixed set of buttons, because what belongs here is whatever the
+     * surrounding surface is *for* — and putting those controls outside the card would leave the
+     * action for a task sitting on no task in particular.
+     */
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -326,23 +365,10 @@ fun TaskItem(
                                 )
                             }
 
-                            if (task.parentTaskId == null &&
-                                (
-                                    task.priority != null ||
-                                        task.periodicity != null ||
-                                        task.reminderDate != null ||
-                                        task.completedAt != null ||
-                                        subtasks.isNotEmpty()
-                                )
-                            ) {
-                                // Gated render: keeps title-only top-level tasks vertically
-                                // centered against the checkbox. Tasks that already have any
-                                // metadata still benefit from MetadataRow's internal
-                                // always-reserved badge slot, so reminder<->completedAt
-                                // swaps do not change card height. The rare title-only
-                                // first-completion case animates smoothly via the
-                                // animateContentSize on the enclosing Column.
-                                MetadataRow(task, subtasks)
+                            // The rare title-only first-completion case animates smoothly via the
+                            // animateContentSize on the enclosing Column.
+                            if (task.hasMetadataToShow(category, subtasks)) {
+                                MetadataRow(task, subtasks, category)
                             }
                         }
                     }
@@ -400,6 +426,18 @@ fun TaskItem(
                             tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                         )
                     }
+                }
+            }
+
+            if (footer != null) {
+                Box(
+                    modifier =
+                        Modifier
+                            .testTag(TASK_FOOTER_TAG)
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
+                ) {
+                    footer()
                 }
             }
 

@@ -7,9 +7,13 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
 
 /**
  * Contract for the Focus screen following the MVI pattern.
@@ -55,6 +59,11 @@ object FocusContract {
          * cannot render.
          */
         val routineEditor: RoutineEditorTarget? = null,
+        /**
+         * The planning sheet, when it is open. Undated work has no place in a day, so the one
+         * thing Focus can offer it is somewhere to be given one.
+         */
+        val planSheet: PlanSheetState? = null,
         /**
          * A start waiting on the user's word, because taking it would end the session already
          * running. Held rather than acted on: replacing a session is not something to discover
@@ -140,6 +149,49 @@ object FocusContract {
                 .filterIsInstance<FocusAgendaItem.TaskEntry>()
                 .firstOrNull { it.task.id == taskId }
         }
+    }
+
+    /**
+     * The plan sheet: the undated tasks it opened with, and what has happened to them since.
+     *
+     * [rows] is held against the ids the sheet opened with rather than against "whatever is still
+     * undated". Planning a task is exactly what takes it out of that second answer, so a sheet
+     * driven by it would erase each row the moment it did its job — and the planned/unplanned split
+     * only exists because the sheet remembers what it started with.
+     */
+    data class PlanSheetState(
+        val rows: ImmutableList<UndatedTask> = persistentListOf(),
+        /**
+         * What each task's reminder was when the sheet opened — all null in practice, since these
+         * are the undated ones, but held explicitly because undo means "put the sheet back", not
+         * "clear the date".
+         */
+        val originalReminders: ImmutableMap<Long, LocalDateTime?> = persistentMapOf(),
+        val isLoading: Boolean = true,
+    ) {
+        val planned: List<UndatedTask> get() = rows.filter { it.task.reminderDate != null }
+
+        val unplanned: List<UndatedTask> get() = rows.filter { it.task.reminderDate == null }
+
+        /**
+         * Everything this sheet session changed, however it was changed — a chip, or the full
+         * editor opened over the sheet. One notion rather than two, so undo puts back exactly what
+         * the sheet is answerable for.
+         */
+        val changedTaskIds: List<Long>
+            get() =
+                rows
+                    .filter { it.task.reminderDate != originalReminders[it.task.id] }
+                    .map { it.task.id }
+
+        /** Nothing to confirm until something has actually moved. */
+        val canConfirm: Boolean get() = changedTaskIds.isNotEmpty()
+
+        /**
+         * A sheet where nothing is planned yet is one plain list: headers that only ever say
+         * "Unplanned" over everything are labelling the obvious.
+         */
+        val showsSectionHeaders: Boolean get() = planned.isNotEmpty()
     }
 
     /** A start that would replace a running session, waiting to be confirmed. */
@@ -234,7 +286,22 @@ object FocusContract {
 
         data object DismissEditor : UiEvent
 
+        /** Opens the plan sheet. Focus used to answer this by leaving for Tasks. */
         data object UndatedTasksClicked : UiEvent
+
+        /** One quick-plan choice: [date], at whatever time `PlanReminderTimeUtil` makes of it. */
+        data class PlanTask(
+            val taskId: Long,
+            val date: LocalDate,
+        ) : UiEvent
+
+        /** Closes the sheet and leaves everything planned as it is. */
+        data object DismissPlanSheet : UiEvent
+
+        /** Closes the sheet and offers to take the whole batch back. */
+        data object ConfirmPlanSheet : UiEvent
+
+        data object UndoPlanBatch : UiEvent
 
         /**
          * [lengthMinutes] applies to this start alone and never changes the setting. [taskId]
@@ -274,10 +341,17 @@ object FocusContract {
     }
 
     sealed interface UiEffect {
-        /** The undated list has no Focus equivalent, so that one really does hand over to Tasks. */
-        data object OpenTasksTab : UiEffect
-
         /** The session gets its own slide-in screen, so opening it is navigation. */
         data object OpenSessionScreen : UiEffect
+
+        /**
+         * The sheet has closed on [count] newly planned tasks, and the way back is still open.
+         *
+         * Offered here rather than inside the sheet because it is about what the sheet did, and by
+         * the time there is anything to say the sheet is gone.
+         */
+        data class PlanBatchConfirmed(
+            val count: Int,
+        ) : UiEffect
     }
 }

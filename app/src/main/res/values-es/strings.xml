@@ -533,8 +533,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Ordenar sabiendo cuándo dejarte decidir</string>
-    <string name="whats_new_description">El orden ya usa un segundo criterio: por prioridad gana la fecha más cercana; por fecha gana la prioridad más alta. Y cuando dos tareas empatan de verdad, mantén pulsado para arrastrarlas al orden que quieras — sin pasar toda la lista a Manual.</string>
+    <string name="whats_new_title">Planifica lo que quedó suelto sin salir de Enfoque</string>
+    <string name="whats_new_description">Toca el recuento de tareas sin fecha al final de Enfoque y se abre una hoja de planificación sobre el día. Dale un día a cada tarea con un toque — Hoy, Mañana o la fecha que elijas — y verás cómo pasan de Sin planificar a Planificadas. ¿Te arrepientes? Listo te ofrece deshacerlo todo.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -664,6 +664,22 @@
         <item quantity="one">%1$d tarea sin fecha</item>
         <item quantity="other">%1$d tareas sin fecha</item>
     </plurals>
+    <string name="plan_tasks_title">Planifica tus tareas</string>
+    <plurals name="plan_tasks_subtitle">
+        <item quantity="one">%1$d sigue sin día</item>
+        <item quantity="other">%1$d siguen sin día</item>
+    </plurals>
+    <string name="plan_tasks_subtitle_all_done">Todas tienen ya su día</string>
+    <string name="plan_tasks_section_planned">Planificadas</string>
+    <string name="plan_tasks_section_unplanned">Sin planificar</string>
+    <string name="plan_tasks_pick_date">Elegir fecha</string>
+    <string name="plan_tasks_close">Cerrar</string>
+    <string name="plan_tasks_done">Listo</string>
+    <plurals name="plan_tasks_undo_message">
+        <item quantity="one">%1$d tarea planificada</item>
+        <item quantity="other">%1$d tareas planificadas</item>
+    </plurals>
+    <string name="task_category_badge_description">Categoría: %1$s</string>
     <string name="focus_session_paused">En pausa</string>
     <string name="focus_session_finished_title">%1$d minutos completados</string>
     <string name="focus_break_finished_title">Fin del descanso, ¡a seguir!</string>

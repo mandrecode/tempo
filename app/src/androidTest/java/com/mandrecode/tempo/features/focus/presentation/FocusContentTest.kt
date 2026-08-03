@@ -28,7 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.math.abs
 
-/** What the day's rows do when tapped, and how Focus hands off to Tasks. */
+/** What the day's rows do when tapped, and how Focus offers to plan what has no day yet. */
 class FocusContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -175,7 +175,7 @@ class FocusContentTest {
     }
 
     @Test
-    fun undatedFooter_namesItsDestinationAndHandsOff() {
+    fun undatedFooter_countsTheLooseEndsAndAsksToPlanThem() {
         val events = mutableListOf<FocusContract.UiEvent>()
         setContent(stateWith(items = listOf(chainEntry()), undatedTaskCount = 3)) { events += it }
 
@@ -309,7 +309,7 @@ class FocusContentTest {
     }
 
     @Test
-    fun emptyDay_stillOffersTheHandOff() {
+    fun emptyDay_stillOffersToPlanTheUndated() {
         val events = mutableListOf<FocusContract.UiEvent>()
         setContent(stateWith(items = emptyList(), undatedTaskCount = 1)) { events += it }
 

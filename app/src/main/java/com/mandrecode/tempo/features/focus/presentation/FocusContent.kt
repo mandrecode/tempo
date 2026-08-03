@@ -448,12 +448,14 @@ private fun SectionHeader(
 }
 
 /**
- * The one hand-off Focus really does make: the undated list has no Focus equivalent, so this
- * leaves for Tasks.
+ * What is left over from the day: work carrying no date at all.
  *
- * The same control the session screen uses to say the same thing — rounded, its ripple bounded to
- * itself rather than to the width of the list, and carrying the icon that promises you are about
- * to land somewhere else.
+ * It opens the planning sheet rather than the Tasks tab. Tapping it is someone volunteering to
+ * plan, and answering that by moving them to another tab — where the same tasks are scattered
+ * through a list sorted for something else — spent their willingness on finding them again.
+ *
+ * The same control the session screen uses, and now a calendar rather than an open-in-new arrow:
+ * the icon has to promise what actually happens, and nothing leaves Focus any more.
  */
 @Composable
 private fun UndatedTasksFooter(
@@ -467,11 +469,11 @@ private fun UndatedTasksFooter(
     ) {
         TempoLinkButton(
             label = pluralStringResource(R.plurals.focus_undated_tasks, count, count),
-            iconRes = R.drawable.ic_open_in_new,
+            iconRes = R.drawable.ic_calendar,
             onClick = onClick,
-            // The count is the label, so the icon is the only thing naming the destination — and an
+            // The count is the label, so the icon is the only thing naming what this does — and an
             // icon says nothing to a screen reader unless it is described.
-            iconContentDescription = stringResource(R.string.focus_session_open_in_tasks),
+            iconContentDescription = stringResource(R.string.plan_tasks_title),
         )
     }
 }

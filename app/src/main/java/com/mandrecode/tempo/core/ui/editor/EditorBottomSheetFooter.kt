@@ -30,6 +30,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.dialogAction
@@ -50,9 +51,16 @@ internal fun EditorBottomSheetFooter(
     confirmLabel: String,
     onRequestDismiss: () -> Unit,
     onConfirmClick: () -> Unit,
+    /**
+     * "Cancel" everywhere an editor can throw away what you typed. Overridable for the sheets that
+     * have nothing to throw away — offering to cancel changes already made and kept would be the
+     * button describing something it does not do.
+     */
+    dismissLabel: String? = null,
+    topSpacing: Dp? = null,
 ) {
     Column {
-        Spacer(modifier = Modifier.height(if (hasDeleteAction) 20.dp else 40.dp))
+        Spacer(modifier = Modifier.height(topSpacing ?: if (hasDeleteAction) 20.dp else 40.dp))
 
         if (hasDeleteAction) {
             EditorFooterDeleteAction(deleteLabel = deleteLabel, onDelete = onDelete)
@@ -61,6 +69,7 @@ internal fun EditorBottomSheetFooter(
                 autoSaveEnabled = autoSaveEnabled,
                 confirmEnabled = confirmEnabled,
                 confirmLabel = confirmLabel,
+                dismissLabel = dismissLabel ?: stringResource(R.string.cancel),
                 onRequestDismiss = onRequestDismiss,
                 onConfirmClick = onConfirmClick,
             )
@@ -117,6 +126,7 @@ private fun EditorFooterCancelConfirmRow(
     autoSaveEnabled: Boolean,
     confirmEnabled: Boolean,
     confirmLabel: String,
+    dismissLabel: String,
     onRequestDismiss: () -> Unit,
     onConfirmClick: () -> Unit,
 ) {
@@ -139,7 +149,7 @@ private fun EditorFooterCancelConfirmRow(
             interactionSource = cancelInteractionSource,
         ) {
             Text(
-                stringResource(R.string.cancel),
+                dismissLabel,
                 style = MaterialTheme.typography.labelLarge,
             )
         }

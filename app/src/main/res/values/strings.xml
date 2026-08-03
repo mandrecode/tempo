@@ -529,8 +529,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Sorting that knows when to let you decide</string>
-    <string name="whats_new_description">Sorting now uses a second criterion: by priority, the closer due date wins; by date, the higher priority wins. And when two tasks are a genuine tie, long-press to drag them into the order you want — without switching the whole list to Manual.</string>
+    <string name="whats_new_title">Plan your loose ends without leaving Focus</string>
+    <string name="whats_new_description">Tap the tasks-without-a-date count at the bottom of Focus and a planning sheet opens over the day. Give each task a day with one tap — Today, Tomorrow, or a date you pick — and watch them move from Unplanned to Planned as you go. Change your mind? Done offers to undo the whole batch.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -660,6 +660,22 @@
         <item quantity="one">%1$d task without a date</item>
         <item quantity="other">%1$d tasks without a date</item>
     </plurals>
+    <string name="plan_tasks_title">Plan your tasks</string>
+    <plurals name="plan_tasks_subtitle">
+        <item quantity="one">%1$d still needs a day</item>
+        <item quantity="other">%1$d still need a day</item>
+    </plurals>
+    <string name="plan_tasks_subtitle_all_done">Every one of them has a day now</string>
+    <string name="plan_tasks_section_planned">Planned</string>
+    <string name="plan_tasks_section_unplanned">Unplanned</string>
+    <string name="plan_tasks_pick_date">Pick a date</string>
+    <string name="plan_tasks_close">Close</string>
+    <string name="plan_tasks_done">Done</string>
+    <plurals name="plan_tasks_undo_message">
+        <item quantity="one">%1$d task planned</item>
+        <item quantity="other">%1$d tasks planned</item>
+    </plurals>
+    <string name="task_category_badge_description">Category: %1$s</string>
     <string name="focus_session_paused">Paused</string>
     <string name="focus_session_finished_title">%1$d minutes done</string>
     <string name="focus_break_finished_title">Break\'s over — back to it</string>

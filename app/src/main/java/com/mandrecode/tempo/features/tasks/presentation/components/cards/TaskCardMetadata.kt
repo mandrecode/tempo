@@ -45,16 +45,22 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
+import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.metadataLabel
+import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.theme.subtaskTitle
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime
@@ -332,6 +338,7 @@ private fun PriorityFlagIcon(
 internal fun MetadataRow(
     task: Task,
     subtasks: List<Task>,
+    category: Category? = null,
 ) {
     val taskBadgeState =
         when {
@@ -343,6 +350,16 @@ internal fun MetadataRow(
     val completedCount = remember(subtasks) { subtasks.count { it.isCompleted } }
     val metadataItems =
         buildList<MetadataItem> {
+            // First, because it is the one piece of context the list around the card cannot supply:
+            // wherever a task is shown next to work from every other part of someone's life, the
+            // category is what tells two similarly-named errands apart.
+            if (category != null) {
+                add(
+                    MetadataItem("category", flexible = true) {
+                        CategoryBadge(category)
+                    },
+                )
+            }
             if (task.priority != null) {
                 add(
                     MetadataItem("priority") {
@@ -413,6 +430,53 @@ private fun MetadataOverflowRow(
             } else {
                 item.content()
             }
+        }
+    }
+}
+
+/**
+ * The task's category, drawn to the same recipe as the date and count badges beside it so the row
+ * reads as one set of labels rather than a badge plus something else.
+ *
+ * The icon is decorative here — the name is right next to it, and a screen reader announcing
+ * "briefcase, Work" would be saying the same thing twice — so the name carries the description.
+ */
+@Composable
+private fun CategoryBadge(category: Category) {
+    val iconRes = TempoIcon.fromName(category.icon)?.iconRes
+    val accent =
+        resolveColor(
+            colorKey = category.color,
+            colorScheme = MaterialTheme.colorScheme,
+            isDarkTheme = LocalIsDarkTheme.current,
+        ) ?: MaterialTheme.colorScheme.onSurfaceVariant
+    val label = stringResource(R.string.task_category_badge_description, category.name)
+
+    Badge(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .semantics(mergeDescendants = true) { contentDescription = label },
+        ) {
+            if (iconRes != null) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(10.dp),
+                    tint = accent,
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+            }
+            Text(
+                text = category.name,
+                color = accent,
+                style = MaterialTheme.typography.metadataLabel,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag(TASK_METADATA_CATEGORY_TAG),
+            )
         }
     }
 }
