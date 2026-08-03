@@ -144,7 +144,7 @@ private fun ColumnScope.PlanSheetBody(
     onRequestDismiss: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
-        PlanSheetHeader(remainingCount = state.unplanned.size)
+        PlanSheetHeader(remainingCount = state.unplanned.size, isLoading = state.isLoading)
 
         if (state.isLoading) {
             TempoLoadingIndicator(
@@ -219,23 +219,32 @@ private fun PendingPlan.carryOut(
 }
 
 @Composable
-private fun PlanSheetHeader(remainingCount: Int) {
+private fun PlanSheetHeader(
+    remainingCount: Int,
+    isLoading: Boolean,
+) {
     Column(modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp)) {
         Text(
             text = stringResource(R.string.plan_tasks_title),
             style = MaterialTheme.typography.sheetTitle,
         )
-        Text(
-            text =
-                if (remainingCount == 0) {
-                    stringResource(R.string.plan_tasks_subtitle_all_done)
-                } else {
-                    pluralStringResource(R.plurals.plan_tasks_subtitle, remainingCount, remainingCount)
-                },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        // Nothing is counted until the rows arrive. An empty list and a list that has not loaded
+        // yet look identical from here, and only one of them means "every one of them has a day
+        // now" — saying it before looking would be the sheet congratulating the user on work it
+        // has not seen.
+        if (!isLoading) {
+            Text(
+                text =
+                    if (remainingCount == 0) {
+                        stringResource(R.string.plan_tasks_subtitle_all_done)
+                    } else {
+                        pluralStringResource(R.plurals.plan_tasks_subtitle, remainingCount, remainingCount)
+                    },
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+        }
     }
 }
 

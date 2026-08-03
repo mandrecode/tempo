@@ -121,6 +121,26 @@ class PlanTasksSheetTest {
         composeTestRule.onNodeWithText("2 still need a day").assertIsDisplayed()
     }
 
+    /**
+     * An empty list and a list that has not loaded look identical from the header, and only one of
+     * them is worth congratulating anyone on.
+     */
+    @Test
+    fun loadingSheet_claimsNothingAboutWorkItHasNotSeen() {
+        setSheet(FocusContract.PlanSheetState(isLoading = true))
+
+        composeTestRule.onNodeWithText("Plan your tasks").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Every one of them has a day now").assertDoesNotExist()
+        composeTestRule.onNodeWithText("still need", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun loadedEmptySheet_saysEverythingHasADay() {
+        setSheet(sheetOf(row(1, "Renew the passport", plannedFor = today)))
+
+        composeTestRule.onNodeWithText("Every one of them has a day now").assertIsDisplayed()
+    }
+
     /** One question per row. Breaking a task down is a different job, and the editor still has it. */
     @Test
     fun sheet_doesNotOfferAddSubtask() {
