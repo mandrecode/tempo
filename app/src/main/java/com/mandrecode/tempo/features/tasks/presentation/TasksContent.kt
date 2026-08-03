@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,10 +27,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -60,9 +62,11 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.Cate
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptyStateContent
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
+import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.collections.immutable.ImmutableList
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -79,7 +83,13 @@ private const val ACTIVE_GROUP_FALLBACK_RANK = 3
 private const val COMPLETED_GROUP_DATED_RANK = 0
 private const val COMPLETED_GROUP_NO_DATE_RANK = 1
 private const val COMPLETED_GROUP_FALLBACK_RANK = 2
+private const val DRAGGED_ITEM_ALPHA = 0.8f
+private const val TARGET_ITEM_ALPHA = 0.5f
 private val ContentBlockTopCornerRadius = 28.dp
+
+// Rough per-card height used to translate a drag distance into a number of slots. The list is
+// lazy, so measured heights aren't available for cards that haven't been composed yet.
+private val DragItemHeightEstimate = 96.dp
 
 @Composable
 fun TasksContent(
@@ -167,11 +177,7 @@ fun TasksContent(
                     if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
                         EmptyStateContent()
                     } else {
-                        val density = LocalDensity.current
-                        val haptic = LocalHapticFeedback.current
-                        var draggedIndex by remember { mutableIntStateOf(-1) }
-                        var dragOffset by remember { mutableFloatStateOf(0f) }
-                        var targetIndex by remember { mutableIntStateOf(-1) }
+                        val dragState = remember { TaskDragState() }
 
                         LazyColumn(
                             state = listState,
@@ -197,193 +203,50 @@ fun TasksContent(
                             val showActiveHeaders =
                                 uiState.sortOption == SortOption.BY_DATE ||
                                     uiState.sortOption == SortOption.BY_PRIORITY
-                            val flatActiveTasks =
-                                if (uiState.sortOption == SortOption.MANUAL) {
-                                    activeTaskGroups.values.flatten()
-                                } else {
-                                    emptyList()
-                                }
 
-                            if (uiState.sortOption == SortOption.MANUAL) {
-                                // MANUAL mode: flat list with drag-and-drop
-                                itemsIndexed(
-                                    items = flatActiveTasks,
-                                    key = { _, task -> task.id },
-                                    contentType = { _, _ -> "task" },
-                                ) { index, task ->
-                                    val taskSubtasks = subtasksMap[task.id] ?: emptyList()
-                                    val isSubtasksExpanded =
-                                        task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty()
-
-                                    val isDragging = draggedIndex == index
-                                    val isTarget = targetIndex == index
-
-                                    val onToggleSubtasksExpansion =
-                                        remember(task.id) {
-                                            { _: Boolean ->
-                                                onEvent(
-                                                    TasksContract.UiEvent.ToggleTaskExpanded(
-                                                        task.id,
-                                                    ),
-                                                )
-                                            }
-                                        }
-                                    val onAddSubtask =
-                                        remember {
-                                            { parentId: Long ->
-                                                onEvent(
-                                                    TasksContract.UiEvent.ShowTaskDialog(
-                                                        parentTaskId = parentId,
-                                                    ),
-                                                )
-                                            }
-                                        }
-
-                                    TaskItem(
-                                        task = task,
-                                        isSelected = task.id == selectedTaskId,
-                                        onToggleCompletion = {
-                                            onEvent(
-                                                TasksContract.UiEvent.ToggleTaskCompletion(
-                                                    it,
-                                                ),
-                                            )
-                                        },
-                                        onToggleSubtasksExpansion = onToggleSubtasksExpansion,
-                                        onEdit = { onEvent(TasksContract.UiEvent.ShowTaskDialog(task = it)) },
-                                        onAddSubtask = onAddSubtask,
-                                        onReorderSubtasks = { from, to, subs ->
-                                            onEvent(
-                                                TasksContract.UiEvent.ReorderSubtasks(from, to, subs),
-                                            )
-                                        },
-                                        subtasks = taskSubtasks,
-                                        isSubtasksExpanded = isSubtasksExpanded,
-                                        modifier =
-                                            Modifier
-                                                .animateItem()
-                                                .zIndex(if (isDragging) 1f else 0f)
-                                                .graphicsLayer {
-                                                    if (isDragging) {
-                                                        translationY = dragOffset
-                                                        alpha = 0.8f
-                                                    } else if (isTarget) {
-                                                        alpha = 0.5f
-                                                    }
-                                                }.pointerInput(flatActiveTasks) {
-                                                    detectDragGesturesAfterLongPress(
-                                                        onDragStart = {
-                                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                                            draggedIndex = index
-                                                            dragOffset = 0f
-                                                            targetIndex = index
-                                                        },
-                                                        onDrag = { change, dragAmount ->
-                                                            change.consume()
-                                                            dragOffset += dragAmount.y
-
-                                                            val itemHeight =
-                                                                with(density) { 96.dp.toPx() }
-                                                            val newTargetIndex =
-                                                                (index + (dragOffset / itemHeight).roundToInt())
-                                                                    .coerceIn(
-                                                                        0,
-                                                                        flatActiveTasks.size - 1,
-                                                                    )
-                                                            if (newTargetIndex != targetIndex) {
-                                                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                                            }
-                                                            targetIndex = newTargetIndex
-                                                        },
-                                                        onDragEnd = {
-                                                            if (draggedIndex != targetIndex && targetIndex >= 0) {
-                                                                onEvent(
-                                                                    TasksContract.UiEvent.ReorderTasks(
-                                                                        draggedIndex,
-                                                                        targetIndex,
-                                                                        flatActiveTasks,
-                                                                    ),
-                                                                )
-                                                            }
-                                                            draggedIndex = -1
-                                                            dragOffset = 0f
-                                                            targetIndex = -1
-                                                        },
-                                                        onDragCancel = {
-                                                            draggedIndex = -1
-                                                            dragOffset = 0f
-                                                            targetIndex = -1
-                                                        },
-                                                    )
-                                                },
-                                    )
-                                }
-                            } else {
-                                // Grouped modes: render with headers
-                                activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
-                                    if (showActiveHeaders) {
-                                        item(key = "active_header_${key.stableKey}") {
-                                            ActiveGroupHeader(
-                                                label = resolveActiveGroupLabel(key),
-                                                isFirst = groupIndex == 0,
-                                                modifier = Modifier.animateItem(),
-                                            )
-                                        }
-                                    }
-
-                                    itemsIndexed(
-                                        items = tasksForGroup,
-                                        key = { _, task -> task.id },
-                                        contentType = { _, _ -> "task" },
-                                    ) { _, task ->
-                                        val taskSubtasks = subtasksMap[task.id] ?: emptyList()
-                                        val isSubtasksExpanded =
-                                            task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty()
-
-                                        val onToggleSubtasksExpansion =
-                                            remember(task.id) {
-                                                { _: Boolean ->
-                                                    onEvent(
-                                                        TasksContract.UiEvent.ToggleTaskExpanded(
-                                                            task.id,
-                                                        ),
-                                                    )
-                                                }
-                                            }
-                                        val onAddSubtask =
-                                            remember {
-                                                { parentId: Long ->
-                                                    onEvent(
-                                                        TasksContract.UiEvent.ShowTaskDialog(
-                                                            parentTaskId = parentId,
-                                                        ),
-                                                    )
-                                                }
-                                            }
-
-                                        TaskItem(
-                                            task = task,
-                                            isSelected = task.id == selectedTaskId,
-                                            onToggleCompletion = {
-                                                onEvent(
-                                                    TasksContract.UiEvent.ToggleTaskCompletion(
-                                                        it,
-                                                    ),
-                                                )
-                                            },
-                                            onToggleSubtasksExpansion = onToggleSubtasksExpansion,
-                                            onEdit = { onEvent(TasksContract.UiEvent.ShowTaskDialog(task = it)) },
-                                            onAddSubtask = onAddSubtask,
-                                            onReorderSubtasks = { from, to, subs ->
-                                                onEvent(
-                                                    TasksContract.UiEvent.ReorderSubtasks(from, to, subs),
-                                                )
-                                            },
-                                            subtasks = taskSubtasks,
-                                            isSubtasksExpanded = isSubtasksExpanded,
+                            activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
+                                if (showActiveHeaders) {
+                                    item(key = "active_header_${key.stableKey}") {
+                                        ActiveGroupHeader(
+                                            label = resolveActiveGroupLabel(key),
+                                            isFirst = groupIndex == 0,
                                             modifier = Modifier.animateItem(),
                                         )
                                     }
+                                }
+
+                                items(
+                                    items = tasksForGroup,
+                                    key = { task -> task.id },
+                                    contentType = { "task" },
+                                ) { task ->
+                                    val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
+
+                                    TaskListItem(
+                                        task = task,
+                                        subtasks = taskSubtasks,
+                                        isSubtasksExpanded =
+                                            task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
+                                        isSelected = task.id == selectedTaskId,
+                                        onEvent = onEvent,
+                                        modifier =
+                                            Modifier
+                                                .animateItem()
+                                                .taskReorderGestures(
+                                                    reorderableRun = uiState.reorderableRuns[task.id],
+                                                    taskId = task.id,
+                                                    dragState = dragState,
+                                                    onReorder = { from, to, runTasks ->
+                                                        onEvent(
+                                                            TasksContract.UiEvent.ReorderTasks(
+                                                                from,
+                                                                to,
+                                                                runTasks,
+                                                            ),
+                                                        )
+                                                    },
+                                                ),
+                                    )
                                 }
                             }
 
@@ -426,64 +289,21 @@ fun TasksContent(
                                             }
                                         }
 
-                                        itemsIndexed(
+                                        items(
                                             items = tasksForGroup,
-                                            key = { _, task -> task.id },
-                                            contentType = { _, _ -> "task" },
-                                        ) { _, task ->
-                                            val taskSubtasks = subtasksMap[task.id] ?: emptyList()
-                                            val isSubtasksExpanded =
-                                                task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty()
+                                            key = { task -> task.id },
+                                            contentType = { "task" },
+                                        ) { task ->
+                                            val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
 
-                                            val onToggleSubtasksExpansion =
-                                                remember(task.id) {
-                                                    { _: Boolean ->
-                                                        onEvent(
-                                                            TasksContract.UiEvent.ToggleTaskExpanded(
-                                                                task.id,
-                                                            ),
-                                                        )
-                                                    }
-                                                }
-                                            val onAddSubtask =
-                                                remember {
-                                                    { parentId: Long ->
-                                                        onEvent(
-                                                            TasksContract.UiEvent.ShowTaskDialog(
-                                                                parentTaskId = parentId,
-                                                            ),
-                                                        )
-                                                    }
-                                                }
-
-                                            TaskItem(
+                                            TaskListItem(
                                                 task = task,
-                                                isSelected = task.id == selectedTaskId,
-                                                onToggleCompletion = {
-                                                    onEvent(
-                                                        TasksContract.UiEvent.ToggleTaskCompletion(
-                                                            it,
-                                                        ),
-                                                    )
-                                                },
-                                                onToggleSubtasksExpansion = onToggleSubtasksExpansion,
-                                                onEdit = {
-                                                    onEvent(
-                                                        TasksContract.UiEvent.ShowTaskDialog(
-                                                            task = it,
-                                                        ),
-                                                    )
-                                                },
-                                                onAddSubtask = onAddSubtask,
-                                                onReorderSubtasks = { from, to, subs ->
-                                                    onEvent(
-                                                        TasksContract.UiEvent.ReorderSubtasks(from, to, subs),
-                                                    )
-                                                },
                                                 subtasks = taskSubtasks,
-                                                isSubtasksExpanded = isSubtasksExpanded,
-                                                modifier =
-                                                    Modifier.animateItem(),
+                                                isSubtasksExpanded =
+                                                    task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
+                                                isSelected = task.id == selectedTaskId,
+                                                onEvent = onEvent,
+                                                modifier = Modifier.animateItem(),
                                             )
                                         }
                                     }
@@ -495,6 +315,145 @@ fun TasksContent(
             }
         }
     }
+}
+
+@Composable
+private fun TaskListItem(
+    task: Task,
+    subtasks: ImmutableList<Task>,
+    isSubtasksExpanded: Boolean,
+    isSelected: Boolean,
+    onEvent: (TasksContract.UiEvent) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val onToggleSubtasksExpansion =
+        remember(task.id) {
+            { _: Boolean -> onEvent(TasksContract.UiEvent.ToggleTaskExpanded(task.id)) }
+        }
+    val onAddSubtask =
+        remember {
+            { parentId: Long ->
+                onEvent(TasksContract.UiEvent.ShowTaskDialog(parentTaskId = parentId))
+            }
+        }
+
+    TaskItem(
+        task = task,
+        isSelected = isSelected,
+        onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
+        onToggleSubtasksExpansion = onToggleSubtasksExpansion,
+        onEdit = { onEvent(TasksContract.UiEvent.ShowTaskDialog(task = it)) },
+        onAddSubtask = onAddSubtask,
+        onReorderSubtasks = { from, to, subs ->
+            onEvent(TasksContract.UiEvent.ReorderSubtasks(from, to, subs))
+        },
+        subtasks = subtasks,
+        isSubtasksExpanded = isSubtasksExpanded,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Drag state for the task list.
+ *
+ * The drop target is tracked as (run key, index within run) rather than a list index: once tasks
+ * are grouped under headers the same index exists in every group, so a bare index would light up
+ * the wrong card.
+ */
+@Stable
+private class TaskDragState {
+    var draggedTaskId by mutableStateOf<Long?>(null)
+    var draggedRunKey by mutableStateOf<String?>(null)
+    var targetIndex by mutableIntStateOf(-1)
+    var offsetY by mutableFloatStateOf(0f)
+
+    fun onDragStart(
+        run: ReorderableRun,
+        taskId: Long,
+    ) {
+        draggedTaskId = taskId
+        draggedRunKey = run.key
+        targetIndex = run.indexInRun
+        offsetY = 0f
+    }
+
+    /** Returns true when the drop target moved, so the caller can fire the tick haptic. */
+    fun onDrag(
+        run: ReorderableRun,
+        dragAmountY: Float,
+        itemHeightPx: Float,
+    ): Boolean {
+        offsetY += dragAmountY
+        val newTargetIndex =
+            (run.indexInRun + (offsetY / itemHeightPx).roundToInt())
+                .coerceIn(0, run.tasks.lastIndex)
+        val moved = newTargetIndex != targetIndex
+        targetIndex = newTargetIndex
+        return moved
+    }
+
+    fun reset() {
+        draggedTaskId = null
+        draggedRunKey = null
+        targetIndex = -1
+        offsetY = 0f
+    }
+}
+
+/**
+ * Long-press drag-and-drop for a task, confined to [reorderableRun] — the run of tasks the
+ * current sort cannot tell apart. A `null` run means the sort distinguishes this task from its
+ * neighbours, so its position is not the user's to set and the modifier is a no-op.
+ */
+@Composable
+private fun Modifier.taskReorderGestures(
+    reorderableRun: ReorderableRun?,
+    taskId: Long,
+    dragState: TaskDragState,
+    onReorder: (fromIndex: Int, toIndex: Int, tasks: List<Task>) -> Unit,
+): Modifier {
+    if (reorderableRun == null) return this
+
+    val density = LocalDensity.current
+    val haptic = LocalHapticFeedback.current
+    val isDragging = dragState.draggedTaskId == taskId
+    val isTarget =
+        !isDragging &&
+            dragState.draggedRunKey == reorderableRun.key &&
+            dragState.targetIndex == reorderableRun.indexInRun
+
+    return this
+        .zIndex(if (isDragging) 1f else 0f)
+        .graphicsLayer {
+            if (isDragging) {
+                translationY = dragState.offsetY
+                alpha = DRAGGED_ITEM_ALPHA
+            } else if (isTarget) {
+                alpha = TARGET_ITEM_ALPHA
+            }
+        }.pointerInput(reorderableRun) {
+            detectDragGesturesAfterLongPress(
+                onDragStart = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    dragState.onDragStart(reorderableRun, taskId)
+                },
+                onDrag = { change, dragAmount ->
+                    change.consume()
+                    val itemHeight = with(density) { DragItemHeightEstimate.toPx() }
+                    if (dragState.onDrag(reorderableRun, dragAmount.y, itemHeight)) {
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    }
+                },
+                onDragEnd = {
+                    val target = dragState.targetIndex
+                    if (target >= 0 && target != reorderableRun.indexInRun) {
+                        onReorder(reorderableRun.indexInRun, target, reorderableRun.tasks)
+                    }
+                    dragState.reset()
+                },
+                onDragCancel = { dragState.reset() },
+            )
+        }
 }
 
 @Composable

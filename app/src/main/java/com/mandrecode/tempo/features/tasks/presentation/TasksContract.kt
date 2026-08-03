@@ -11,6 +11,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
+import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -51,6 +52,12 @@ object TasksContract {
         val activeTasks: ImmutableMap<ActiveGroupKey, ImmutableList<Task>> = persistentMapOf(),
         val completedTaskGroups: ImmutableMap<CompletedGroupKey, ImmutableList<Task>> = persistentMapOf(),
         val subtasksMap: ImmutableMap<Long, ImmutableList<Task>> = persistentMapOf(),
+        /**
+         * Active tasks the current sort cannot tell apart, keyed by task id. A task present here
+         * may be dragged into a different position within its run; a task absent from it is
+         * distinguished by the sort and therefore not draggable.
+         */
+        val reorderableRuns: ImmutableMap<Long, ReorderableRun> = persistentMapOf(),
     )
 
     data class TaskFormState(
