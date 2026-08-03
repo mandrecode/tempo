@@ -7,7 +7,6 @@ import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
@@ -23,11 +22,12 @@ internal fun FocusViewModel.onPlanSheetEvent(event: FocusContract.UiEvent) {
     when (event) {
         FocusContract.UiEvent.UndatedTasksClicked -> openPlanSheet()
 
-        is FocusContract.UiEvent.PlanTask ->
-            viewModelScope.launch { planTask(event.taskId, event.date) }
+        is FocusContract.UiEvent.PlanTask -> {
+            val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            askFor(event.taskId, PlanReminderTimeUtil.resolve(event.date, now))
+        }
 
-        is FocusContract.UiEvent.UnplanTask ->
-            viewModelScope.launch { setReminder(event.taskId, reminderDate = null) }
+        is FocusContract.UiEvent.UnplanTask -> askFor(event.taskId, reminderDate = null)
 
         FocusContract.UiEvent.ClosePlanSheet -> {
             val sheet = mutableUiState.value.planSheet ?: return
@@ -91,22 +91,18 @@ private fun FocusViewModel.closePlanSheet() {
     mutableUiState.update { it.copy(planSheet = null) }
 }
 
-private suspend fun FocusViewModel.planTask(
-    taskId: Long,
-    date: LocalDate,
-) {
-    val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    setReminder(taskId, PlanReminderTimeUtil.resolve(date, now))
-}
-
 /**
- * Writes a row's reminder, or takes it away when [reminderDate] is null.
+ * Records what the sheet wants, then goes and gets it.
+ *
+ * The record is made first and synchronously. The write is a round trip through the repository and
+ * back out of the flow, and the sheet can be closed inside that trip — so what the sheet is
+ * answerable for has to be known the moment it is asked for, not when it comes back.
  *
  * Planning and unplanning are the same write with a different value, and both go through the use
  * case the editor writes with — which is what cancels the alarm on the way out, as well as arming
  * it on the way in.
  */
-private suspend fun FocusViewModel.setReminder(
+private fun FocusViewModel.askFor(
     taskId: Long,
     reminderDate: LocalDateTime?,
 ) {
@@ -115,5 +111,12 @@ private suspend fun FocusViewModel.setReminder(
             ?.rows
             ?.firstOrNull { it.task.id == taskId }
             ?.task ?: return
-    updateTask(task.copy(reminderDate = reminderDate))
+
+    mutableUiState.update { state ->
+        state.planSheet?.let { sheet ->
+            val writes = (sheet.writes + (taskId to reminderDate)).toPersistentMap()
+            state.copy(planSheet = sheet.copy(writes = writes))
+        } ?: state
+    }
+    viewModelScope.launch { updateTask(task.copy(reminderDate = reminderDate)) }
 }

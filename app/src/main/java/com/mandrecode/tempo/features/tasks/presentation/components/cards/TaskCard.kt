@@ -92,8 +92,6 @@ internal const val TASK_COMPLETION_CONTROL_TAG = "task_completion_control"
 internal const val TASK_CONTENT_TAG = "task_content"
 internal const val TASK_TRAILING_ACTIONS_TAG = "task_trailing_actions"
 internal const val TASK_DESCRIPTION_TAG = "task_description"
-internal const val TASK_METADATA_CATEGORY_TAG = "task_metadata_category"
-internal const val TASK_FOOTER_TAG = "task_footer"
 
 // Asymmetric fade durations for the SubtaskMetadataRow appearance/disappearance:
 // fade-in is slightly slower so the badge feels like it settles into place, while
@@ -449,7 +447,6 @@ fun TaskItem(
                 Box(
                     modifier =
                         Modifier
-                            .testTag(TASK_FOOTER_TAG)
                             .fillMaxWidth()
                             .padding(start = 16.dp, end = 16.dp, bottom = 12.dp),
                 ) {

@@ -211,6 +211,31 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             assertThat(viewModel.uiState.value.planSheet).isNull()
         }
 
+    /**
+     * A chip and a swipe in the same breath. The write is a round trip through the repository, and
+     * the sheet is gone before it comes back — but the planning still happened, so the way back has
+     * to still be offered.
+     */
+    @Test
+    fun `closing before the write comes back still offers the undo`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1))
+            val viewModel = openSheet()
+
+            // The chip alone: no flow emission, so the rows still say the task has no date.
+            viewModel.onEvent(FocusContract.UiEvent.PlanTask(taskId = 1, date = tomorrow))
+
+            viewModel.uiEffect.test {
+                viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
+                advanceUntilIdle()
+
+                val effect = awaitItem() as PlanBatchConfirmed
+                assertThat(effect.batch).containsExactly(1L, null)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
     @Test
     fun `closing without a change goes quietly`() =
         runTest {

@@ -159,6 +159,13 @@ Chips toggle for the same reason the undo exists: pressing the lit one clears th
 `UiEvent.UnplanTask`. Planning and then unplanning leaves the task at its original reminder, so
 `changedTaskIds` is empty and closing says nothing — the sheet does not offer to undo a round trip.
 
+**What counts as changed is asked-for, not only seen.** `PlanSheetState.writes` records the value a
+chip asked for the instant it is pressed, and `changedTaskIds` takes either evidence: a row that has
+moved (which covers edits made in the full editor behind the sheet's back) or a recorded write that
+differs from the original (which covers a tap and a dismissal in the same breath, before the
+repository flow has answered). `writes` holds the latest value asked for rather than a history, so
+planning and then unplanning lands back on the original and drops out of the batch.
+
 **The batch travels with the offer.** `PlanBatchConfirmed` carries the map itself and `UndoPlanBatch`
 takes it back, rather than the view model holding "the last batch" in a field. A snackbar sits on
 screen for seconds, and in those seconds another sheet can be opened and closed — against a shared

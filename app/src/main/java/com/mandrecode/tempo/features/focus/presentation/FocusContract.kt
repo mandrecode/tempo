@@ -167,6 +167,14 @@ object FocusContract {
          * "clear the date".
          */
         val originalReminders: ImmutableMap<Long, LocalDateTime?> = persistentMapOf(),
+        /**
+         * What this sheet has asked for, recorded the instant a chip is pressed.
+         *
+         * [rows] follow the repository, which answers a beat later. Closing inside that beat — a
+         * tap and a swipe in the same breath — would otherwise have the sheet conclude it had
+         * changed nothing, and quietly withhold the undo for a write already on its way.
+         */
+        val writes: ImmutableMap<Long, LocalDateTime?> = persistentMapOf(),
         val isLoading: Boolean = true,
     ) {
         val planned: List<UndatedTask> get() = rows.filter { it.task.reminderDate != null }
@@ -177,12 +185,22 @@ object FocusContract {
          * Everything this sheet session changed, however it was changed — a chip, or the full
          * editor opened over the sheet. One notion rather than two, so undo puts back exactly what
          * the sheet is answerable for.
+         *
+         * Two kinds of evidence, because neither alone is enough. A row that has moved covers what
+         * the editor did behind the sheet's back; a recorded write covers what the sheet has asked
+         * for but not yet seen come back. Either counts, and a task planned and then unplanned
+         * counts as neither: [writes] holds the latest value asked for, not a history, so it lands
+         * back on the original and drops out.
          */
         val changedTaskIds: List<Long>
-            get() =
-                rows
-                    .filter { it.task.reminderDate != originalReminders[it.task.id] }
-                    .map { it.task.id }
+            get() = rows.map { it.task.id }.filter(::hasMoved)
+
+        private fun hasMoved(taskId: Long): Boolean {
+            val original = originalReminders[taskId]
+            val current = rows.firstOrNull { it.task.id == taskId }?.task?.reminderDate
+            val asked = writes[taskId]
+            return current != original || (writes.containsKey(taskId) && asked != original)
+        }
 
         /** Whether closing has anything to offer back. */
         val hasChanges: Boolean get() = changedTaskIds.isNotEmpty()

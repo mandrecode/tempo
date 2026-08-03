@@ -463,7 +463,6 @@ private fun CategoryBadge(category: Category) {
             modifier =
                 Modifier
                     .padding(horizontal = 6.dp, vertical = 2.dp)
-                    .testTag(TASK_METADATA_CATEGORY_TAG)
                     .clearAndSetSemantics { contentDescription = label },
         ) {
             if (iconRes != null) {

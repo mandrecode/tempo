@@ -200,6 +200,12 @@ be raised only when the sheet actually changed something.
 - **THEN** every task the sheet planned returns to having no reminder
 - **AND** the reminders scheduled for them are cancelled
 
+#### Scenario: Closing in the same breath as the tap still offers the undo
+
+- **WHEN** the user taps a quick-plan chip and dismisses the sheet before the write has come back
+- **THEN** the undo is still offered for that task, because the sheet is answerable for what it
+  asked for, not only for what it has seen land
+
 #### Scenario: An undo restores the batch it was offered for
 
 - **WHEN** a second sheet is opened and closed while the first sheet's undo snackbar is still shown
