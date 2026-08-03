@@ -139,7 +139,36 @@ class FocusDayMembershipTest {
         // Only an imported snapshot can produce this; the day is the wrong place to discover it.
         val first = task(id = 1, date = today, parentTaskId = 2)
         val second = task(id = 2, date = today, parentTaskId = 1)
+        val tasks = listOf(first, second)
 
-        assertThat(listOf(first, second).membership(first)).isFalse()
+        // Both sides, not just one: a cycle has no top-level task to hang off, so nothing in it is
+        // on anyone's day. Asserting one side would miss the other being promoted in its place.
+        assertThat(tasks.membership(first)).isFalse()
+        assertThat(tasks.membership(second)).isFalse()
+    }
+
+    @Test
+    fun `an odd-length cycle resolves to nothing too`() {
+        // The length matters: walking up a cycle alternates "on the day" at each step, so an
+        // odd-length one lands back on its start with the opposite answer to an even-length one.
+        val first = task(id = 1, date = today, parentTaskId = 2)
+        val second = task(id = 2, date = today, parentTaskId = 3)
+        val third = task(id = 3, date = today, parentTaskId = 1)
+        val tasks = listOf(first, second, third)
+
+        assertThat(tasks.membership(first)).isFalse()
+        assertThat(tasks.membership(second)).isFalse()
+        assertThat(tasks.membership(third)).isFalse()
+    }
+
+    @Test
+    fun `a task hanging off a cycle is not on the day either`() {
+        // It is not in the cycle, but every answer about it depends on one, so there is no answer.
+        val first = task(id = 1, date = today, parentTaskId = 2)
+        val second = task(id = 2, date = today, parentTaskId = 1)
+        val child = task(id = 3, date = today, parentTaskId = 1)
+        val tasks = listOf(first, second, child)
+
+        assertThat(tasks.membership(child)).isFalse()
     }
 }
