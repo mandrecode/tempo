@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgenda
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
+import com.mandrecode.tempo.features.focus.domain.model.isOnFocusDay
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -24,7 +25,8 @@ import kotlinx.datetime.LocalDate
  *
  * Membership follows issue #42's today-only rule — future work is hidden, and tasks with no date
  * are excluded entirely and reported only as a count, so the screen stays a view of the day rather
- * than a second Tasks tab.
+ * than a second Tasks tab. Which tasks that leaves is [isOnFocusDay]'s answer, shared with the day's
+ * counts so the two can never drift.
  */
 class GetFocusAgendaUseCase
     @Inject
@@ -62,18 +64,30 @@ class GetFocusAgendaUseCase
             categoriesById: Map<Long, Category>,
             focusByTask: Map<Long, TaskFocusToday>,
         ): FocusAgenda {
-            val subtasksByParent = tasks.filter { it.parentTaskId != null }.groupBy { it.parentTaskId }
-            val topLevelTasks = tasks.filter { it.parentTaskId == null }
+            // Steps read in the order they were given, the way the Tasks tab lists them. The task
+            // query behind this orders by descending id and nothing else, so without this a task
+            // showed its steps backwards here and forwards there.
+            val subtasksByParent =
+                tasks
+                    .filter { it.parentTaskId != null }
+                    .groupBy { it.parentTaskId }
+                    .mapValues { (_, subtasks) ->
+                        subtasks.sortedWith(compareBy<Task> { it.sortOrder }.thenBy { it.id })
+                    }
+            val tasksById = tasks.associateBy { it.id }
+
+            // Subtasks are here too, not only top-level tasks: a step with a time on it under a
+            // parent that has none is the only thing on the day that says when, so it stands as its
+            // own row. [isOnFocusDay] is what decides which ones those are.
+            val datedTasks = tasks.filter { it.isOnFocusDay(today, tasksById) }
 
             val overdueTasks =
-                topLevelTasks
-                    .filter { task ->
-                        val dueDate = task.reminderDate?.date
-                        dueDate != null && dueDate < today && !task.isCompleted
-                    }.map { it.toEntry(subtasksByParent, categoriesById, focusByTask) }
+                datedTasks
+                    .filter { it.reminderDate?.date != today }
+                    .map { it.toEntry(subtasksByParent, categoriesById, focusByTask) }
 
             val todayTasks =
-                topLevelTasks
+                datedTasks
                     .filter { it.reminderDate?.date == today }
                     .map { it.toEntry(subtasksByParent, categoriesById, focusByTask) }
 
@@ -110,11 +124,20 @@ class GetFocusAgendaUseCase
 
             // A shortlist over the day rather than a slice taken out of it: the row is somewhere
             // to start from, not a fourth section, so the work still appears where it belongs.
+            //
+            // Today first, then what is left over from before it. The row offering last week's
+            // errand ahead of this morning's meeting was Focus arguing with its own headline — and
+            // the sections below read the same way round, so the two never disagree.
             return FocusAgenda(
-                upNext = getUpNextItem(overdue + todayItems),
+                upNext = getUpNextItem(todayItems + overdue),
                 overdue = overdue,
                 today = todayItems,
-                undatedTaskCount = topLevelTasks.count { it.reminderDate == null && !it.isCompleted },
+                // Undated *top-level* work only. A step with no time of its own is not a loose end
+                // waiting in Tasks; it is part of whatever its parent is.
+                undatedTaskCount =
+                    tasks.count {
+                        it.parentTaskId == null && it.reminderDate == null && !it.isCompleted
+                    },
             )
         }
 

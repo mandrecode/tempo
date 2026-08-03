@@ -8,7 +8,9 @@ import jakarta.inject.Inject
  *
  * Deliberately does no sorting of its own. The row sits directly above the list it shortlists, and
  * a row that disagreed with the list about what comes first made one of them look wrong — so the
- * caller hands over the agenda already ordered and this only chooses what belongs in the row.
+ * caller hands over the agenda already ordered and this only chooses what belongs in the row. That
+ * order is today's work and then whatever is left over from before it, exactly as the sections
+ * beneath are read down.
  *
  * Tasks only. The row's whole purpose is the one thing you start a session on, and a habit is not
  * something you sit down and run a timer against — it is ticked off in passing. Completed work is

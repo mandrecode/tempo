@@ -33,7 +33,8 @@ class FocusSessionRepositoryImpl
         private val defaultLengthFlow = MutableStateFlow(readDefaultLength())
         private val breakLengthFlow = MutableStateFlow(readBreakLength())
         private val previewTaskIdFlow = MutableStateFlow<Long?>(null)
-        private val focusTodayFlow = MutableStateFlow(readFocusToday())
+        private val focusTodayFlow =
+            MutableStateFlow(prefs.readFocusOn(clock.todayIn(TimeZone.currentSystemDefault())))
 
         override val activeSession: StateFlow<FocusSession?> = sessionFlow.asStateFlow()
 
@@ -44,6 +45,11 @@ class FocusSessionRepositoryImpl
         override val previewTaskId: StateFlow<Long?> = previewTaskIdFlow.asStateFlow()
 
         override val focusToday: StateFlow<Map<Long, TaskFocusToday>> = focusTodayFlow.asStateFlow()
+
+        override fun focusOn(
+            taskId: Long,
+            date: LocalDate,
+        ): TaskFocusToday = prefs.readFocusOn(date)[taskId] ?: TaskFocusToday()
 
         override fun recordSessionFor(
             taskId: Long,
@@ -142,32 +148,6 @@ class FocusSessionRepositoryImpl
             )
         }
 
-        /**
-         * A flat `id:sessions:minutes` list — small, and never queried by anything but this class.
-         *
-         * The stored date is checked here and not only when writing: the record outlives the day it
-         * belongs to, and an app opened the next morning would otherwise read yesterday's runs back
-         * and let every card claim work the day has not had.
-         *
-         * The two-field `id:sessions` records written before minutes were tracked still parse, as a
-         * day with runs behind it and no time recorded; the next write brings them up to date.
-         */
-        private fun readFocusToday(): Map<Long, TaskFocusToday> {
-            val today = clock.todayIn(TimeZone.currentSystemDefault()).toString()
-            if (prefs.getString(KEY_SESSIONS_DATE, null) != today) return emptyMap()
-            return prefs
-                .getString(KEY_SESSIONS_BY_TASK, null)
-                .orEmpty()
-                .split(',')
-                .mapNotNull { record ->
-                    val parts = record.split(':').takeIf { it.size in 2..3 } ?: return@mapNotNull null
-                    val taskId = parts[0].toLongOrNull() ?: return@mapNotNull null
-                    val sessions = parts[1].toIntOrNull() ?: return@mapNotNull null
-                    val minutes = parts.getOrNull(2)?.toIntOrNull() ?: 0
-                    taskId to TaskFocusToday(sessions = sessions, minutes = minutes)
-                }.toMap()
-        }
-
         private fun readDefaultLength(): Int {
             val fallback = FocusSession.DEFAULT_LENGTH.inWholeMinutes.toInt()
             return prefs.getInt(KEY_DEFAULT_LENGTH, fallback).coerceIn(FocusSession.SESSION_LENGTH_RANGE)
@@ -188,12 +168,40 @@ class FocusSessionRepositoryImpl
             const val KEY_IS_BREAK = "session_is_break"
             const val KEY_DEFAULT_LENGTH = "session_default_length_minutes"
             const val KEY_BREAK_LENGTH = "session_break_length_minutes"
-            const val KEY_SESSIONS_DATE = "sessions_today_date"
-            const val KEY_SESSIONS_BY_TASK = "sessions_today_by_task"
             const val NOT_RUNNING = -1L
         }
     }
 
+// The day's record is read by the file-level helper below as well as by the class, so its keys sit
+// where both can see them.
+private const val KEY_SESSIONS_DATE = "sessions_today_date"
+private const val KEY_SESSIONS_BY_TASK = "sessions_today_by_task"
+
 /** The stored form of a day: `id:sessions:minutes`, one record per task. */
 private fun Map<Long, TaskFocusToday>.serialize(): String =
     entries.joinToString(",") { (taskId, day) -> "$taskId:${day.sessions}:${day.minutes}" }
+
+/**
+ * The stored day, but only if it is [date]'s.
+ *
+ * A flat `id:sessions:minutes` list — small, and never read by anything but this file. The date is
+ * checked on the way in rather than only when writing: the record outlives the day it belongs to,
+ * and an app opened the next morning would otherwise read yesterday's runs back and let every card
+ * claim work the day has not had.
+ *
+ * The two-field `id:sessions` records written before minutes were tracked still parse, as a day with
+ * runs behind it and no time recorded; the next write brings them up to date.
+ */
+private fun SharedPreferences.readFocusOn(date: LocalDate): Map<Long, TaskFocusToday> {
+    if (getString(KEY_SESSIONS_DATE, null) != date.toString()) return emptyMap()
+    return getString(KEY_SESSIONS_BY_TASK, null)
+        .orEmpty()
+        .split(',')
+        .mapNotNull { record ->
+            val parts = record.split(':').takeIf { it.size in 2..3 } ?: return@mapNotNull null
+            val taskId = parts[0].toLongOrNull() ?: return@mapNotNull null
+            val sessions = parts[1].toIntOrNull() ?: return@mapNotNull null
+            val minutes = parts.getOrNull(2)?.toIntOrNull() ?: 0
+            taskId to TaskFocusToday(sessions = sessions, minutes = minutes)
+        }.toMap()
+}

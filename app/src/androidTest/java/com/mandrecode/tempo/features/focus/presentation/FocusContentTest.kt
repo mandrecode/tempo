@@ -19,6 +19,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
+import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.LocalDate
@@ -56,13 +57,27 @@ class FocusContentTest {
         isCompleted = false,
     )
 
+    private fun taskEntry(
+        id: Long,
+        title: String,
+        subtasks: List<Task> = emptyList(),
+        due: LocalDateTime? = null,
+    ) = FocusAgendaItem.TaskEntry(
+        task = Task(id = id, title = title, description = "", reminderDate = due),
+        subtasks = subtasks,
+    )
+
     private fun stateWith(
         items: List<FocusAgendaItem> = emptyList(),
+        overdueItems: List<FocusAgendaItem> = emptyList(),
+        upNext: List<FocusAgendaItem.TaskEntry> = emptyList(),
         undatedTaskCount: Int = 0,
     ) = FocusContract.UiState(
         isLoading = false,
         today = today,
         todayItems = items.toPersistentList(),
+        overdue = overdueItems.toPersistentList(),
+        upNext = upNext.toPersistentList(),
         undatedTaskCount = undatedTaskCount,
     )
 
@@ -101,6 +116,62 @@ class FocusContentTest {
         assertThat(events.filterIsInstance<FocusContract.UiEvent.ToggleChainExpanded>().map { it.chainId })
             .containsExactly(1L)
         assertThat(events.filterIsInstance<FocusContract.UiEvent.EditChain>()).isEmpty()
+    }
+
+    /**
+     * Today above Overdue. Both are the day, but only one of them is the day you are in, and
+     * opening Focus onto last week's leftovers put the work you came for below the fold.
+     */
+    @Test
+    fun todaySection_readsAboveOverdue() {
+        val state =
+            stateWith(
+                items = listOf(taskEntry(1, "Write the report")),
+                overdueItems = listOf(taskEntry(2, "Chase the invoice")),
+            )
+        setContent(state) { }
+
+        val todayHeader = composeTestRule.onNodeWithText("Today · 1").getUnclippedBoundsInRoot().top
+        val overdueHeader = composeTestRule.onNodeWithText("Overdue · 1").getUnclippedBoundsInRoot().top
+
+        assertThat(todayHeader.value).isLessThan(overdueHeader.value)
+        assertThat(rowTop("Write the report").value).isLessThan(rowTop("Chase the invoice").value)
+    }
+
+    /**
+     * The row mixes today's work with what came before it, so a bare "8:00 AM" on last week's task
+     * read as something due this morning — the one thing the time was there to tell you.
+     */
+    @Test
+    fun upNextCard_saysOverdueInsteadOfShowingLastWeeksTime() {
+        // The card is the only thing on screen carrying a time, so "8:00" can only come from it.
+        val stale = taskEntry(1, "Chase the invoice", due = LocalDateTime(2024, 6, 8, 8, 0))
+        val filler = taskEntry(2, "Something else today")
+        setContent(stateWith(items = listOf(filler), upNext = listOf(stale))) { }
+
+        composeTestRule.onNodeWithText("OVERDUE", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("8:00", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun upNextCard_keepsTheTimeForWorkDueToday() {
+        val dueToday = taskEntry(1, "Write the report", due = LocalDateTime(2024, 6, 15, 9, 0))
+        val filler = taskEntry(2, "Something else today")
+        setContent(stateWith(items = listOf(filler), upNext = listOf(dueToday))) { }
+
+        composeTestRule.onNodeWithText("9:00", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("OVERDUE", substring = true).assertDoesNotExist()
+    }
+
+    /**
+     * A step with a time on it under a parent that has none is a row like any other here — no
+     * breadcrumb, no indentation, and something a session can be started on.
+     */
+    @Test
+    fun promotedSubtask_rendersAsAnOrdinaryRow() {
+        setContent(stateWith(items = listOf(taskEntry(2, "Call the bank")))) { }
+
+        composeTestRule.onNodeWithText("Call the bank").assertIsDisplayed()
     }
 
     @Test

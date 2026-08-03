@@ -3,7 +3,7 @@
 ## Project Context
 - **App:** Tempo & Habits Tracker
 - **Language:** Kotlin (JVM 21)
-- **Min SDK:** 24 | **Target SDK:** 36
+- **Min SDK:** 24 | **Target SDK / Compile SDK:** 37
 
 ## Core Stack
 - **UI:** Jetpack Compose (Material3)
@@ -18,6 +18,8 @@
 - **Database:** Room (with KSP for annotation processing), encrypted at rest via SQLCipher (`net.zetetic:sqlcipher-android`) — see [`docs/DB_ENCRYPTION.md`](../DB_ENCRYPTION.md)
 - **Collections:** `kotlinx.collections.immutable` (For stable Compose state)
 - **Adaptive layout:** `androidx.compose.material3.adaptive:adaptive` (BOM-managed) — window size classes via `currentWindowAdaptiveInfo()`; never use `LocalConfiguration` screen fields for layout decisions
+- **Background work:** `androidx.work:work-runtime-ktx` for deferrable work, `AlarmManager` for exact reminders and focus-session ends
+- **Home-screen widget:** Glance (`androidx.glance:glance-appwidget`, `glance-material3`)
 
 ## Directory Structure Strategy
 
@@ -41,16 +43,24 @@ app/src/main/java/com.mandrecode.tempo/
 │   ├── data/
 │   │   ├── entity/        # Room entities (*Entity) and TypeConverters
 │   │   ├── local/         # Room (TempoDatabase, DAOs)
-│   │   │   └── dao/       # TaskDao, CategoryDao, HabitDao, HabitChainDao
+│   │   │   └── dao/       # TaskDao, CategoryDao, HabitDao, HabitChainDao,
+│   │   │                  #   HabitChainMemberDao, DailyFocusActivityDao
+│   │   ├── mapper/        # Mappers for cross-feature entities (DailyFocusActivity)
+│   │   ├── repository/    # Repo impls for cross-feature entities
 │   │   └── preferences/   # SharedPreferences repos (interface + *Impl)
 │   ├── di/                # Hilt modules
 │   │   ├── DatabaseModule.kt
 │   │   ├── DispatcherModule.kt    # @IoDispatcher, @DefaultDispatcher
 │   │   ├── RepositoryModule.kt    # @Binds for domain/data repos
 │   │   ├── PreferencesRepositoryModule.kt    # @Binds for SharedPreferences-backed repos
+│   │   ├── RemindersModule.kt
 │   │   └── InfrastructureModule.kt
 │   ├── domain/
-│   │   └── model/         # Shared enums (Priority, Periodicity, DayOfWeek, ThemeMode, AppLanguage)
+│   │   ├── model/         # Shared enums (Priority, Periodicity, DayOfWeek, ThemeMode,
+│   │   │                  #   AppLanguage) and cross-feature models (DailyFocusActivity)
+│   │   ├── repository/    # Cross-feature repository interfaces
+│   │   ├── usecase/       # Cross-feature use cases and recorder interfaces
+│   │   └── util/
 │   └── ui/
 │       ├── theme/         # Color, Theme, Type, Spacing, ColorPalette, HabitIcon
 │       ├── components/    # Generic reusable widgets
@@ -80,13 +90,40 @@ app/src/main/java/com.mandrecode.tempo/
 │   │   └── presentation/
 │   │       ├── RoutinesContract.kt, RoutinesViewModel.kt, RoutinesScreen.kt, RoutinesContent.kt
 │   │       └── components/ # HabitBottomSheet, cards/, dialogs/, sections/
+│   ├── focus/
+│   │   ├── data/          # FocusSessionRepositoryImpl (SharedPreferences-backed)
+│   │   ├── domain/
+│   │   │   ├── model/     # FocusAgenda, FocusAgendaItem, FocusSession, TaskFocusToday
+│   │   │   ├── repository/ # FocusSessionRepository (interface)
+│   │   │   ├── scheduler/ # FocusSessionScheduler (interface)
+│   │   │   └── usecase/   # GetFocusAgenda, GetUpNextItem, RecordDailyActivity, etc.
+│   │   └── presentation/
+│   │       ├── FocusContract.kt, FocusViewModel.kt, FocusScreen.kt, FocusContent.kt
+│   │       ├── FocusSessionScreen.kt   # The session's own destination
+│   │       └── components/ # UpNextCard, RunningSessionCard, SessionFinishedSheet, etc.
+│   ├── backup/
+│   │   ├── data/          # Versioned DTOs, mappers, BackupRepositoryImpl
+│   │   └── domain/        # ImportMode, MergePlan, validation, use cases
+│   ├── onboarding/
+│   │   └── presentation/  # First-run setup and permission education
+│   ├── whatsnew/
+│   │   └── presentation/  # WhatsNewRegistry + the post-update bottom sheet
+│   ├── widget/
+│   │   └── presentation/  # QuickAddTaskWidget (Glance)
 │   └── settings/
-│       └── presentation/  # SettingsContract, SettingsViewModel, SettingsScreen, SettingsContent
+│       └── presentation/  # SettingsContract, SettingsViewModel, SettingsScreen, SettingsContent,
+│                          #   plus per-area sections (Reminders, Focus, Backup, VacationMode, …)
 ├── infrastructure/        # Cross-cutting concerns
 │   ├── permissions/       # PermissionChecker interface + PermissionCheckerImpl
+│   ├── notifications/     # Channels, notifiers, notification sync
 │   ├── reminders/
 │   │   ├── receivers/     # BroadcastReceivers
+│   │   ├── workers/       # WorkManager reschedule work
 │   │   └── scheduler/     # Scheduler interfaces + implementations
+│   ├── focus/             # Session alarms and their receivers
+│   ├── backup/            # Backup file I/O and reminder scheduling
+│   ├── security/          # BackupEncryptionService (passphrase-derived export encryption)
+│   ├── tasks/             # Completed-task cleanup scheduling and its worker
 │   └── liveactivity/      # HabitChainLiveActivityManager
 ├── util/                  # App-wide pure Kotlin helpers
 ├── MainActivity.kt

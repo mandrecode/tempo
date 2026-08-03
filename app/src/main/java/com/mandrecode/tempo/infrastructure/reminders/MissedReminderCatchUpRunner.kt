@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.infrastructure.reminders
 
+import com.mandrecode.tempo.features.focus.domain.usecase.HasFocusTimeTodayUseCase
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.usecase.GetOverdueIncompleteTasksUseCase
@@ -21,6 +22,7 @@ class MissedReminderCatchUpRunner
         private val preferences: MissedReminderPreferences,
         private val getOverdueIncompleteTasks: GetOverdueIncompleteTasksUseCase,
         private val taskReminderNotifier: TaskReminderNotifier,
+        private val hasFocusTimeToday: HasFocusTimeTodayUseCase,
         private val missedReminderScheduler: MissedReminderScheduler,
         private val clock: Clock,
     ) {
@@ -29,7 +31,11 @@ class MissedReminderCatchUpRunner
                 if (!preferences.isEnabled.value) return
                 // One instant for the whole sweep, so no task is judged against two "now"s.
                 val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
-                getOverdueIncompleteTasks(now).forEach(taskReminderNotifier::notify)
+                getOverdueIncompleteTasks(now)
+                    // The sweep exists to catch what slipped past you, and work you have already
+                    // put a session into today is the opposite of that.
+                    .filterNot { hasFocusTimeToday(it.id) }
+                    .forEach(taskReminderNotifier::notify)
             } finally {
                 // Losing tomorrow's catch-up would be worse than a failed sweep, so re-arm even
                 // when the sweep threw.

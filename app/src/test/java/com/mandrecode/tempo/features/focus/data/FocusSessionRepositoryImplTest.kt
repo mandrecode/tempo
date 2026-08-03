@@ -282,6 +282,46 @@ class FocusSessionRepositoryImplTest {
     }
 
     @Test
+    fun `a single task's day is read straight from storage`() {
+        val stored = storedDay("7:2:30,9:1:25")
+
+        assertThat(createRepository(stored).focusOn(taskId = 7, date = today))
+            .isEqualTo(TaskFocusToday(sessions = 2, minutes = 30))
+    }
+
+    @Test
+    fun `a task with nothing stored has had nothing out of the day`() {
+        val stored = storedDay("7:2:30")
+
+        assertThat(createRepository(stored).focusOn(taskId = 404, date = today))
+            .isEqualTo(TaskFocusToday())
+    }
+
+    @Test
+    fun `a day the record does not belong to comes back empty`() {
+        val stored = storedDay("7:2:30")
+
+        assertThat(createRepository(stored).focusOn(taskId = 7, date = today.plus(1, DateTimeUnit.DAY)))
+            .isEqualTo(TaskFocusToday())
+    }
+
+    @Test
+    fun `the single-task read is judged against the date asked for, not the one in memory`() {
+        // The repository was built yesterday and still holds that map; a caller asking about today
+        // must not be told yesterday's answer.
+        val stored =
+            mutableMapOf<String, Any>(
+                "sessions_today_date" to today.minus(1, DateTimeUnit.DAY).toString(),
+                "sessions_today_by_task" to "7:2:50",
+            )
+        val repository = createRepository(stored)
+
+        assertThat(repository.focusOn(taskId = 7, date = today)).isEqualTo(TaskFocusToday())
+        assertThat(repository.focusOn(taskId = 7, date = today.minus(1, DateTimeUnit.DAY)))
+            .isEqualTo(TaskFocusToday(sessions = 2, minutes = 50))
+    }
+
+    @Test
     fun `records written before minutes were tracked read back as sessions with no time`() {
         val stored = storedDay("7:2,9:1")
 

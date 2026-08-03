@@ -1,9 +1,9 @@
 # Tempo
 
-A native Android app for managing **tasks** and building **habits**. Tempo combines a
-flexible task manager (categories, subtasks, priorities, recurring reminders) with habit
-tracking built around **habit chains**, completion history, and live-activity reminder
-notifications.
+A native Android app for managing **tasks**, building **habits**, and actually getting the
+day started. Tempo combines a flexible task manager (categories, subtasks, priorities,
+recurring reminders) with habit tracking built around **habit chains**, and a **Focus** tab
+that puts today's work in front of you and runs a timer against it.
 
 > Built with Kotlin and Jetpack Compose, following Clean Architecture + MVI.
 
@@ -21,13 +21,25 @@ and Spanish — are in [`distribution/screenshots/`](distribution/screenshots/RE
 
 ## Features
 
+- **Focus** — the tab the app opens on: an agenda of what is due today and what is overdue,
+  an "Up next" shortlist you can start a timed session on, a day summary with progress, and
+  a streak and history heatmap of the days you showed up.
 - **Tasks** — categories, subtasks, priorities, and recurring/periodic reminders with
-  rollover handling.
+  rollover handling, plus optional auto-removal of completed tasks.
 - **Habits & routines** — habit chains, history visualization, and live-activity style
   reminder notifications.
-- **Reminders** — exact-alarm scheduling that survives reboot and time/timezone changes.
+- **Reminders** — exact-alarm scheduling that survives reboot and time/timezone changes,
+  with a daily catch-up sweep for reminders that were missed while the phone was off.
+- **Vacation mode** — pause every habit at once, with an optional end date, without
+  breaking streaks.
+- **Home-screen widget** — quick-add a task without opening the app.
+- **Backup & restore** — versioned export/import with conflict reporting and merge modes.
 - **Encrypted at rest** — local database (SQLCipher, Android Keystore-protected key) and
   backup exports (user passphrase) are both encrypted.
+- **Onboarding & what's new** — a first-run setup flow with notification-permission
+  education, and a one-off sheet announcing the latest feature after an update.
+- **Adaptive** — one layout across phone, foldable, tablet, desktop and Android XR, with a
+  floating navigation bar that becomes a rail on wider windows.
 - **Theming** — Material 3 / Material You dynamic color and a configurable theme setting.
 - **Localized** — English and Spanish (`values/`, `values-es/`).
 
@@ -52,10 +64,13 @@ See [`docs/agents/TECH_STACK.md`](docs/agents/TECH_STACK.md) for the full, versi
 app/                     # The single runtime module
   src/main/java/com/mandrecode/tempo/
     core/                # Shared data, domain, di, ui
-    features/            # routines, tasks, settings (domain / data / presentation)
-    infrastructure/      # notifications, reminders, live activity, permissions
+    features/            # tasks, routines, focus, settings, backup,
+                         #   onboarding, whatsnew, widget (domain / data / presentation)
+    infrastructure/      # notifications, reminders, focus sessions, live activity,
+                         #   backup, security, permissions
     util/
 benchmark/               # Macrobenchmark tooling (non-runtime)
+distribution/            # Store listing assets and generated screenshots
 docs/                    # Architecture, design, feature & implementation docs
 openspec/                # Spec-driven change workflow (changes/, specs/)
 ```
@@ -83,10 +98,14 @@ this project.
 
 ## Documentation
 
+- [`docs/README.md`](docs/README.md) — index of every doc, with what each one is for
 - [`AGENTS.md`](AGENTS.md) — engineering conventions & workflow
-- [`docs/agents/`](docs/agents/) — per-layer reference docs (UI, Domain, Data, Testing)
-- [`docs/features/`](docs/features/) · [`docs/implementation/`](docs/implementation/) ·
-  [`docs/design/`](docs/design/)
+- [`docs/agents/`](docs/agents/) — per-layer reference docs (UI, Domain, Data, Testing,
+  Tech stack)
+- [`openspec/changes/`](openspec/changes/) — the proposal, design and spec deltas behind each
+  feature, including the archived ones. The closest thing to a per-feature changelog with
+  reasoning attached.
+- [`CHANGELOG.md`](CHANGELOG.md) — released versions
 
 ## Security & privacy
 

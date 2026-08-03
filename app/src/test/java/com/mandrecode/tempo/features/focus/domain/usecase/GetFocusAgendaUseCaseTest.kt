@@ -52,12 +52,14 @@ class GetFocusAgendaUseCaseTest {
         hour: Int = 9,
         isCompleted: Boolean = false,
         parentTaskId: Long? = null,
+        sortOrder: Int = 0,
     ) = Task(
         id = id,
         title = "Task $id",
         description = "",
         isCompleted = isCompleted,
         parentTaskId = parentTaskId,
+        sortOrder = sortOrder,
         reminderDate = date?.let { LocalDateTime(it, LocalTime(hour, 0)) },
     )
 
@@ -157,6 +159,106 @@ class GetFocusAgendaUseCaseTest {
             ) {
                 val entry = it.today.single() as FocusAgendaItem.TaskEntry
                 assertThat(entry.subtasks).hasSize(1)
+            }
+        }
+
+    @Test
+    fun `subtasks are listed in their stored order, not the order the query returned them`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today),
+                        // As the task query hands them over: descending id, so last step first.
+                        task(4, null, parentTaskId = 1, sortOrder = 2),
+                        task(3, null, parentTaskId = 1, sortOrder = 1),
+                        task(2, null, parentTaskId = 1, sortOrder = 0),
+                    ),
+            ) {
+                val entry = it.today.single() as FocusAgendaItem.TaskEntry
+                assertThat(entry.subtasks.map { subtask -> subtask.id })
+                    .containsExactly(2L, 3L, 4L)
+                    .inOrder()
+            }
+        }
+
+    @Test
+    fun `subtasks sharing a sort order fall back to id`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today),
+                        task(3, null, parentTaskId = 1),
+                        task(2, null, parentTaskId = 1),
+                    ),
+            ) {
+                val entry = it.today.single() as FocusAgendaItem.TaskEntry
+                assertThat(entry.subtasks.map { subtask -> subtask.id }).containsExactly(2L, 3L).inOrder()
+            }
+        }
+
+    @Test
+    fun `a dated subtask under an undated parent stands as its own row`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, null),
+                        task(2, today, parentTaskId = 1),
+                    ),
+            ) {
+                assertThat(it.today.map { entry -> entry.id }).containsExactly("task_2")
+                // And it is something a session can be started on, which is the whole point.
+                assertThat(it.upNext.map { entry -> entry.id }).containsExactly("task_2")
+            }
+        }
+
+    @Test
+    fun `an overdue subtask under a future-dated parent stands as its own row`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today.plus(7, DateTimeUnit.DAY)),
+                        task(2, today.minus(1, DateTimeUnit.DAY), parentTaskId = 1),
+                    ),
+            ) {
+                assertThat(it.overdue.map { entry -> entry.id }).containsExactly("task_2")
+                assertThat(it.today).isEmpty()
+            }
+        }
+
+    @Test
+    fun `a promoted subtask carries its own steps`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, null),
+                        task(2, today, parentTaskId = 1),
+                        task(3, null, parentTaskId = 2),
+                    ),
+            ) {
+                val entry = it.today.single() as FocusAgendaItem.TaskEntry
+                assertThat(entry.task.id).isEqualTo(2L)
+                assertThat(entry.subtasks.map { subtask -> subtask.id }).containsExactly(3L)
+            }
+        }
+
+    @Test
+    fun `an undated subtask is not counted in the undated footer`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today),
+                        task(2, null, parentTaskId = 1),
+                        task(3, null),
+                    ),
+            ) {
+                // A step with no time of its own belongs to its parent, not to the loose-ends list.
+                assertThat(it.undatedTaskCount).isEqualTo(1)
             }
         }
 
@@ -279,6 +381,52 @@ class GetFocusAgendaUseCaseTest {
                 assertThat(it.today).hasSize(2)
                 // Counted once, from the sections — the row is a view, not a fourth section.
                 assertThat(it.scheduledCount).isEqualTo(2)
+            }
+        }
+
+    @Test
+    fun `today's work leads up next, ahead of anything left over from before`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        // Earlier in the clock, but a week old: the day you are in comes first.
+                        task(1, today.minus(7, DateTimeUnit.DAY), hour = 7),
+                        task(2, today, hour = 17),
+                    ),
+            ) {
+                assertThat(it.upNext.map { entry -> entry.id }).containsExactly("task_2", "task_1").inOrder()
+            }
+        }
+
+    @Test
+    fun `overdue work fills the places today leaves free`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today.minus(1, DateTimeUnit.DAY), hour = 8),
+                        task(2, today.minus(1, DateTimeUnit.DAY), hour = 9),
+                        task(3, today, hour = 10),
+                    ),
+            ) {
+                assertThat(it.upNext.map { entry -> entry.id })
+                    .containsExactly("task_3", "task_1", "task_2")
+                    .inOrder()
+            }
+        }
+
+    @Test
+    fun `a finished day today still hands the row over to overdue work`() =
+        runTest {
+            agenda(
+                tasks =
+                    listOf(
+                        task(1, today, isCompleted = true),
+                        task(2, today.minus(1, DateTimeUnit.DAY)),
+                    ),
+            ) {
+                assertThat(it.upNext.map { entry -> entry.id }).containsExactly("task_2")
             }
         }
 

@@ -40,6 +40,19 @@ interface FocusSessionRepository {
      */
     val focusToday: StateFlow<Map<Long, TaskFocusToday>>
 
+    /**
+     * What [taskId] has had out of [date], or an empty record when the stored day is not [date].
+     *
+     * A read rather than a look at [focusToday], because that flow is seeded once with the date it
+     * was built on: a process alive across midnight goes on holding yesterday's map until something
+     * writes to it. Nothing on screen minds, but a caller deciding whether to stay quiet does — it
+     * would silence a reminder on the strength of work done the day before.
+     */
+    fun focusOn(
+        taskId: Long,
+        date: LocalDate,
+    ): TaskFocusToday
+
     fun setActiveSession(session: FocusSession?)
 
     /** Counts one finished focus session against [taskId]. Breaks are not sessions. */
