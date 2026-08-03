@@ -43,10 +43,12 @@ fun Task.isOnFocusDay(
  * [this] and every task above it, nearest first — or `null` when the line runs into a cycle.
  *
  * Parent links are a tree in every path that writes them, and a restore rejects a snapshot whose
- * links are not, so this is the belt to that braces. It matters that a cycle answers `null` rather
- * than "not on the day" at the point it is found: the answers alternate on the way up, so a guard
- * that returned a plain `false` mid-walk was a real answer to the caller above it, and an
- * odd-length cycle came back out of the walk claiming every task in it was on the day.
+ * links are not, so this is a second line of defence rather than the first.
+ *
+ * It matters that a cycle answers `null` rather than "not on the day" at the point it is found: the
+ * answers alternate on the way up, so a guard that returned a plain `false` mid-walk handed the
+ * caller above it a real answer, and an odd-length cycle came back out of the walk claiming every
+ * task in it was on the day.
  *
  * Iterative rather than recursive so a long line of ancestors cannot end the process either.
  */
