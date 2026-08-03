@@ -88,8 +88,6 @@
     <ID>MagicNumber:TaskBottomSheetFormSections.kt:0.5f</ID>
     <ID>MagicNumber:TaskCard.kt:0.5f</ID>
     <ID>MagicNumber:TaskCard.kt:0.8f</ID>
-    <ID>MagicNumber:TasksContent.kt:0.5f</ID>
-    <ID>MagicNumber:TasksContent.kt:0.8f</ID>
     <ID>MatchingDeclarationName:ColorPalette.kt:ColorOption</ID>
     <ID>MaxLineLength:AnimationUtils.kt:)</ID>
     <ID>MaxLineLength:CategoryDialog.kt:val confirmEnabled = categoryName.isNotBlank() &amp;&amp; (category == null || categoryName != category.name)</ID>
@@ -107,7 +105,6 @@
     <ID>MaxLineLength:RoutinesViewModelActions.kt:mutableUiState.update { it.copy(habitForm = it.habitForm.copy(descriptionError = R.string.error_habit_description_too_long)) }</ID>
     <ID>MaxLineLength:RoutinesViewModelActions.kt:mutableUiState.update { it.copy(habitForm = it.habitForm.copy(titleError = R.string.error_habit_title_too_long)) }</ID>
     <ID>MaxLineLength:RoutinesViewModelTest.kt:RoutinesViewModelTest$assertThat(viewModel.uiState.value.habitForm.descriptionError).isEqualTo(R.string.error_habit_description_too_long)</ID>
-    <ID>MaxLineLength:TasksContent.kt:haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)</ID>
     <ID>MaxLineLength:TasksViewModelCategoryAndPermissionActions.kt:mutableUiState.update { it.copy(categoryForm = it.categoryForm.copy(nameError = R.string.msg_category_name_empty)) }</ID>
     <ID>MaxLineLength:TasksViewModelTaskActions.kt:mutableUiState.update { it.copy(taskForm = it.taskForm.copy(descriptionError = R.string.error_task_description_too_long)) }</ID>
     <ID>MaxLineLength:TasksViewModelTaskActions.kt:mutableUiState.update { it.copy(taskForm = it.taskForm.copy(titleError = R.string.error_task_title_too_long)) }</ID>

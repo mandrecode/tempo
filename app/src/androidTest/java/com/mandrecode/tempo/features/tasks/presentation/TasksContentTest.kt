@@ -3,10 +3,14 @@ package com.mandrecode.tempo.features.tasks.presentation
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
@@ -15,9 +19,14 @@ import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
+import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
+import com.mandrecode.tempo.features.tasks.presentation.model.buildReorderableRuns
+import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.datetime.LocalDateTime
 import org.junit.Rule
 import org.junit.Test
 
@@ -354,5 +363,118 @@ class TasksContentTest {
                 .boundsInRoot.top
 
         assertThat(completedSeparatorTop).isWithin(1f).of(activeTaskTop)
+    }
+
+    @Test
+    fun tiedTasks_longPressDrag_emitsReorderWithinTheRun() {
+        val tied = tiedTasks()
+        val events = mutableListOf<TasksContract.UiEvent>()
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(
+                    uiState = tiedUiState(tied, runs = buildReorderableRuns(listOf(tied), SortOption.BY_PRIORITY)),
+                    onEvent = { events += it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Tied A").longPressDragDown()
+
+        val reorder = events.filterIsInstance<TasksContract.UiEvent.ReorderTasks>().single()
+        assertThat(reorder.fromIndex).isEqualTo(0)
+        assertThat(reorder.toIndex).isEqualTo(2)
+        assertThat(reorder.tasks.map { it.id }).containsExactly(1L, 2L, 3L).inOrder()
+    }
+
+    @Test
+    fun taskTheSortDistinguishes_longPressDrag_emitsNothing() {
+        val tied = tiedTasks()
+        val events = mutableListOf<TasksContract.UiEvent>()
+
+        composeTestRule.setContent {
+            TempoTheme {
+                // No runs: every task is distinguished by the sort, so none may be reordered.
+                TasksContent(uiState = tiedUiState(tied, runs = persistentMapOf()), onEvent = { events += it })
+            }
+        }
+
+        composeTestRule.onNodeWithText("Tied A").longPressDragDown()
+
+        assertThat(events.filterIsInstance<TasksContract.UiEvent.ReorderTasks>()).isEmpty()
+    }
+
+    @Test
+    fun manualMode_longPressDrag_stillReordersTheWholeActiveList() {
+        val tasks = tiedTasks()
+        val events = mutableListOf<TasksContract.UiEvent>()
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(
+                    uiState =
+                        TasksContract.UiState(
+                            isLoading = false,
+                            tasks = tasks.toPersistentList(),
+                            activeTasks = persistentMapOf(ActiveGroupKey.Flat to tasks.toPersistentList()),
+                            reorderableRuns = buildReorderableRuns(listOf(tasks), SortOption.MANUAL),
+                            categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+                            sortOption = SortOption.MANUAL,
+                        ),
+                    onEvent = { events += it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Tied A").longPressDragDown()
+
+        val reorder = events.filterIsInstance<TasksContract.UiEvent.ReorderTasks>().single()
+        assertThat(reorder.fromIndex).isEqualTo(0)
+        assertThat(reorder.toIndex).isEqualTo(2)
+        assertThat(reorder.tasks).hasSize(3)
+    }
+
+    /** Three active tasks nothing but manual order can tell apart. */
+    private fun tiedTasks() =
+        listOf("Tied A", "Tied B", "Tied C").mapIndexed { index, title ->
+            Task(
+                id = index + 1L,
+                title = title,
+                description = "",
+                priority = Priority.HIGH,
+                reminderDate = LocalDateTime(2025, 6, 1, 9, 0),
+                categoryId = DEFAULT_INBOX_CATEGORY.id,
+                sortOrder = index,
+            )
+        }
+
+    private fun tiedUiState(
+        tasks: List<Task>,
+        runs: ImmutableMap<Long, ReorderableRun>,
+    ) = TasksContract.UiState(
+        isLoading = false,
+        tasks = tasks.toPersistentList(),
+        activeTasks =
+            persistentMapOf(
+                ActiveGroupKey.ByPriority(Priority.HIGH) to tasks.toPersistentList(),
+            ),
+        reorderableRuns = runs,
+        categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+        sortOption = SortOption.BY_PRIORITY,
+    )
+
+    /**
+     * Long-presses the card and drags it far enough down to clear two slots of the drag's
+     * per-card height estimate, then lifts.
+     */
+    private fun SemanticsNodeInteraction.longPressDragDown() {
+        composeTestRule.waitForIdle()
+        performTouchInput {
+            down(center)
+            moveBy(Offset.Zero, delayMillis = viewConfiguration.longPressTimeoutMillis + 100)
+            moveBy(Offset(0f, 200.dp.toPx()), delayMillis = 100)
+            up()
+        }
+        composeTestRule.waitForIdle()
     }
 }
