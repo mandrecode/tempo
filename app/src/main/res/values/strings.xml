@@ -529,8 +529,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Focus: your day on one screen</string>
-    <string name="whats_new_description">Focus is a new tab showing only what\'s due today — tasks, habits and chains together, with what\'s overdue and what to start next. It also runs a timer for the task you\'re on. The app now opens on Focus; you can change your start tab in Settings.</string>
+    <string name="whats_new_title">Sorting that knows when to let you decide</string>
+    <string name="whats_new_description">Sorting now uses a second criterion: by priority, the closer due date wins; by date, the higher priority wins. And when two tasks are a genuine tie, long-press to drag them into the order you want — without switching the whole list to Manual.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

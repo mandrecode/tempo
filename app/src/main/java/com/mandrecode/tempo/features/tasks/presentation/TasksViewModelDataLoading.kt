@@ -7,7 +7,10 @@ import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
+import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
+import com.mandrecode.tempo.features.tasks.presentation.model.TaskSortCriteria
+import com.mandrecode.tempo.features.tasks.presentation.model.buildReorderableRuns
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentMapOf
@@ -44,6 +47,7 @@ private data class CalculatedData(
     val activeTaskGroups: ImmutableMap<ActiveGroupKey, ImmutableList<Task>>,
     val completedTaskGroups: ImmutableMap<CompletedGroupKey, ImmutableList<Task>>,
     val subtasksMap: ImmutableMap<Long, ImmutableList<Task>>,
+    val reorderableRuns: ImmutableMap<Long, ReorderableRun>,
     val effectiveSelectedId: Long,
 )
 
@@ -81,37 +85,10 @@ internal fun TasksViewModel.loadData() {
             val filteredTasks =
                 tasks
                     .filter { it.categoryId == effectiveSelectedId }
-                    .let { categoryTasks ->
-                        when (sortOption) {
-                            SortOption.MANUAL ->
-                                categoryTasks.sortedWith(
-                                    compareBy(
-                                        { it.isCompleted },
-                                        { it.sortOrder },
-                                    ),
-                                )
-
-                            SortOption.BY_DATE ->
-                                categoryTasks.sortedWith(
-                                    compareBy<Task> { it.isCompleted }
-                                        .thenBy(nullsLast()) { it.reminderDate },
-                                )
-
-                            SortOption.BY_PRIORITY ->
-                                categoryTasks.sortedWith(
-                                    compareBy<Task> { it.isCompleted }
-                                        .thenBy(nullsLast()) { it.priority?.sortOrder },
-                                )
-
-                            SortOption.BY_TITLE ->
-                                categoryTasks.sortedWith(
-                                    compareBy(
-                                        { it.isCompleted },
-                                        { it.title.lowercase() },
-                                    ),
-                                )
-                        }
-                    }
+                    .sortedWith(
+                        compareBy<Task> { it.isCompleted }
+                            .then(TaskSortCriteria.comparator(sortOption)),
+                    )
 
             val parentTasks = filteredTasks.filter { it.parentTaskId == null }
             val (activeTasks, completedTasks) = parentTasks.partition { !it.isCompleted }
@@ -219,6 +196,7 @@ internal fun TasksViewModel.loadData() {
                 activeTaskGroups,
                 completedTaskGroups,
                 subtasksMap,
+                buildReorderableRuns(activeTaskGroups.values, sortOption),
                 effectiveSelectedId,
             )
         }.flowOn(defaultDispatcher)
@@ -251,6 +229,7 @@ internal fun TasksViewModel.loadData() {
                         activeTasks = data.activeTaskGroups,
                         completedTaskGroups = data.completedTaskGroups,
                         subtasksMap = data.subtasksMap,
+                        reorderableRuns = data.reorderableRuns,
                         selectedCategoryId = data.effectiveSelectedId,
                         sortOption = sortOption,
                         isLoading = false,
