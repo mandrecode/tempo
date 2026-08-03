@@ -159,6 +159,14 @@ Chips toggle for the same reason the undo exists: pressing the lit one clears th
 `UiEvent.UnplanTask`. Planning and then unplanning leaves the task at its original reminder, so
 `changedTaskIds` is empty and closing says nothing — the sheet does not offer to undo a round trip.
 
+**The batch travels with the offer.** `PlanBatchConfirmed` carries the map itself and `UndoPlanBatch`
+takes it back, rather than the view model holding "the last batch" in a field. A snackbar sits on
+screen for seconds, and in those seconds another sheet can be opened and closed — against a shared
+field that second session would either clear the offer (closing with no changes) or overwrite it
+(closing with different ones), leaving the still-visible undo to do nothing or to restore somebody
+else's work. Carrying the payload also makes undo idempotent rather than consume-once, which is
+free: `RestoreTaskRemindersUseCase` skips a task whose reminder already matches.
+
 Undo replays `originalReminders` for exactly the ids the sheet changed, through a new
 `RestoreTaskRemindersUseCase` — which re-reads each task before writing, so a title or priority
 edited between the planning and the undo survives it, and a deleted task is skipped rather than

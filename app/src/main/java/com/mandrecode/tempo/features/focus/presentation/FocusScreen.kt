@@ -53,7 +53,7 @@ fun FocusScreen(
         uiEffect = viewModel.uiEffect,
         snackbarHostState = snackbarHostState,
         onOpenSession = onOpenSession,
-        onUndoPlanBatch = { viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch) },
+        onEvent = viewModel::onEvent,
     )
 
     Box(
@@ -127,11 +127,11 @@ private fun FocusEffects(
     uiEffect: Flow<FocusContract.UiEffect>,
     snackbarHostState: SnackbarHostState,
     onOpenSession: () -> Unit,
-    onUndoPlanBatch: () -> Unit,
+    onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     val undoLabel = stringResource(R.string.undo)
     val currentOnOpenSession by rememberUpdatedState(onOpenSession)
-    val currentOnUndo by rememberUpdatedState(onUndoPlanBatch)
+    val currentOnEvent by rememberUpdatedState(onEvent)
     // The count is only known when the effect arrives, so the message has to be formatted inside
     // the collector rather than read as a resource up here. Kept current rather than captured: the
     // effect does not restart on a configuration change, and a closed-over Resources would go on
@@ -156,7 +156,9 @@ private fun FocusEffects(
                             withDismissAction = true,
                         )
                     if (result == SnackbarResult.ActionPerformed) {
-                        currentOnUndo()
+                        // The batch came with the offer, so it is still the one this snackbar was
+                        // raised for even if another sheet has opened and closed in the meantime.
+                        currentOnEvent(FocusContract.UiEvent.UndoPlanBatch(effect.batch))
                     }
                 }
             }

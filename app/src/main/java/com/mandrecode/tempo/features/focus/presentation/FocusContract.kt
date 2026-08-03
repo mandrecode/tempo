@@ -313,7 +313,16 @@ object FocusContract {
          */
         data object ClosePlanSheet : UiEvent
 
-        data object UndoPlanBatch : UiEvent
+        /**
+         * Puts [batch] back, exactly as the sheet that produced it found things.
+         *
+         * The batch travels with the offer rather than being looked up when it is taken. A snackbar
+         * sits on screen for seconds, and in those seconds another sheet can be opened and closed —
+         * so an undo that read "the last batch" could quietly restore somebody else's.
+         */
+        data class UndoPlanBatch(
+            val batch: ImmutableMap<Long, LocalDateTime?>,
+        ) : UiEvent
 
         /**
          * [lengthMinutes] applies to this start alone and never changes the setting. [taskId]
@@ -363,7 +372,10 @@ object FocusContract {
          * the time there is anything to say the sheet is gone.
          */
         data class PlanBatchConfirmed(
-            val count: Int,
-        ) : UiEffect
+            /** What to put back, and what each task's reminder was before the sheet touched it. */
+            val batch: ImmutableMap<Long, LocalDateTime?>,
+        ) : UiEffect {
+            val count: Int get() = batch.size
+        }
     }
 }

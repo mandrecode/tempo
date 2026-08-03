@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.focus.presentation
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.features.focus.presentation.FocusContract.UiEffect.PlanBatchConfirmed
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.util.PlanReminderTimeUtil
 import io.mockk.coVerify
@@ -202,7 +203,9 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
                 viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
                 advanceUntilIdle()
 
-                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.PlanBatchConfirmed(2))
+                val effect = awaitItem() as PlanBatchConfirmed
+                assertThat(effect.count).isEqualTo(2)
+                assertThat(effect.batch.keys).containsExactly(1L, 2L)
                 cancelAndIgnoreRemainingEvents()
             }
             assertThat(viewModel.uiState.value.planSheet).isNull()
@@ -234,10 +237,8 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             viewModel.plan(taskId = 1)
             viewModel.plan(taskId = 3)
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
+            val offered = closeAndTakeTheOffer(viewModel)
+            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch(offered.batch))
             advanceUntilIdle()
 
             val restored = slot<Map<Long, LocalDateTime?>>()
@@ -257,8 +258,8 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             viewModel.plan(taskId = 1)
             advanceUntilIdle()
-            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
-            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
+            val offered = closeAndTakeTheOffer(viewModel)
+            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch(offered.batch))
             advanceUntilIdle()
 
             val restored = slot<Map<Long, LocalDateTime?>>()
@@ -266,8 +267,41 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             assertThat(restored.captured).containsExactly(1L, alreadyDated)
         }
 
+    /**
+     * The snackbar sits on screen for seconds, and a second sheet can be opened and closed inside
+     * them. Its undo must still restore the batch it was raised for, not whatever happened last.
+     */
     @Test
-    fun `undo is offered once and cannot be taken twice`() =
+    fun `an undo restores its own batch even after a later sheet has been and gone`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1), undatedRow(2))
+            val viewModel = openSheet()
+
+            viewModel.plan(taskId = 1)
+            advanceUntilIdle()
+
+            val offered = closeAndTakeTheOffer(viewModel)
+
+            // A second session, planning something else entirely, while that offer is still open.
+            viewModel.onEvent(FocusContract.UiEvent.UndatedTasksClicked)
+            advanceUntilIdle()
+            viewModel.plan(taskId = 2)
+            advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch(offered.batch))
+            advanceUntilIdle()
+
+            val restored = slot<Map<Long, LocalDateTime?>>()
+            coVerify { restoreTaskReminders(capture(restored)) }
+            assertThat(restored.captured.keys).containsExactly(1L)
+        }
+
+    /** A sheet that changed nothing must not clear an offer still standing from an earlier one. */
+    @Test
+    fun `a no-change sheet does not disturb an offer already made`() =
         runTest {
             stubDay()
             undatedTasks.value = listOf(undatedRow(1))
@@ -275,13 +309,33 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
 
             viewModel.plan(taskId = 1)
             advanceUntilIdle()
+
+            val offered = closeAndTakeTheOffer(viewModel)
+
+            viewModel.onEvent(FocusContract.UiEvent.UndatedTasksClicked)
+            advanceUntilIdle()
             viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
-            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
-            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch)
             advanceUntilIdle()
 
-            coVerify(exactly = 1) { restoreTaskReminders(any()) }
+            viewModel.onEvent(FocusContract.UiEvent.UndoPlanBatch(offered.batch))
+            advanceUntilIdle()
+
+            val restored = slot<Map<Long, LocalDateTime?>>()
+            coVerify { restoreTaskReminders(capture(restored)) }
+            assertThat(restored.captured).containsExactly(1L, null)
         }
+
+    /** Closes the sheet and returns the offer it made, the way the snackbar receives it. */
+    private suspend fun TestScope.closeAndTakeTheOffer(viewModel: FocusViewModel): PlanBatchConfirmed {
+        lateinit var offer: PlanBatchConfirmed
+        viewModel.uiEffect.test {
+            viewModel.onEvent(FocusContract.UiEvent.ClosePlanSheet)
+            advanceUntilIdle()
+            offer = awaitItem() as PlanBatchConfirmed
+            cancelAndIgnoreRemainingEvents()
+        }
+        return offer
+    }
 
     /** Opens the sheet and settles the flows behind it. */
     private fun TestScope.openSheet(): FocusViewModel {

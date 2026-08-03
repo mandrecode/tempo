@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
 import javax.inject.Inject
@@ -63,12 +62,6 @@ class FocusViewModel
 
         /** Cancelled when the sheet closes, so a closed sheet is not still collecting for nobody. */
         internal var planSheetJob: Job? = null
-
-        /**
-         * What the last confirmed sheet moved, kept past the sheet's own life because the offer to
-         * take it back outlives the sheet that made it.
-         */
-        internal var undoableBatch: Map<Long, LocalDateTime?>? = null
 
         init {
             observeSession()

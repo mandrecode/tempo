@@ -200,6 +200,12 @@ be raised only when the sheet actually changed something.
 - **THEN** every task the sheet planned returns to having no reminder
 - **AND** the reminders scheduled for them are cancelled
 
+#### Scenario: An undo restores the batch it was offered for
+
+- **WHEN** a second sheet is opened and closed while the first sheet's undo snackbar is still shown
+- **THEN** taking that snackbar's undo restores only what the first sheet changed, whether the second
+  sheet changed something else or nothing at all
+
 #### Scenario: Closing without a change says nothing
 
 - **WHEN** the user opens the sheet and closes it without planning anything

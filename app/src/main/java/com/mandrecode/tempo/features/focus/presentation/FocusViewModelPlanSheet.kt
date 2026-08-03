@@ -31,21 +31,22 @@ internal fun FocusViewModel.onPlanSheetEvent(event: FocusContract.UiEvent) {
 
         FocusContract.UiEvent.ClosePlanSheet -> {
             val sheet = mutableUiState.value.planSheet ?: return
-            val changed = sheet.changedTaskIds
             // Only what moved, and only as it was: a task the sheet never touched has no
             // business being reset by an undo the sheet offered.
-            undoableBatch =
-                changed.associateWith { id -> sheet.originalReminders[id] }.takeIf { it.isNotEmpty() }
+            val batch =
+                sheet.changedTaskIds
+                    .associateWith { id -> sheet.originalReminders[id] }
+                    .toPersistentMap()
             closePlanSheet()
             // Nothing happened, nothing to say. A sheet opened and closed without a change should
             // not leave a notice behind claiming otherwise.
-            if (changed.isNotEmpty()) {
-                sendEffect(FocusContract.UiEffect.PlanBatchConfirmed(changed.size))
+            if (batch.isNotEmpty()) {
+                sendEffect(FocusContract.UiEffect.PlanBatchConfirmed(batch))
             }
         }
 
-        FocusContract.UiEvent.UndoPlanBatch ->
-            viewModelScope.launch { undoPlanBatch() }
+        is FocusContract.UiEvent.UndoPlanBatch ->
+            viewModelScope.launch { restoreTaskReminders(event.batch) }
 
         else -> onEditorEvent(event)
     }
@@ -115,16 +116,4 @@ private suspend fun FocusViewModel.setReminder(
             ?.firstOrNull { it.task.id == taskId }
             ?.task ?: return
     updateTask(task.copy(reminderDate = reminderDate))
-}
-
-/**
- * Puts every task the sheet moved back to the reminder it had when the sheet opened.
- *
- * The batch is consumed on the way: an undo already taken has nothing left to undo, and a
- * second one would silently reset dates the user has since chosen on purpose.
- */
-private suspend fun FocusViewModel.undoPlanBatch() {
-    val batch = undoableBatch ?: return
-    undoableBatch = null
-    restoreTaskReminders(batch)
 }
