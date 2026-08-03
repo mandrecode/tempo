@@ -33,6 +33,18 @@ class PortraitFloatingBarMotionTest {
         const val PILL_TAG = "nav_pill"
         val PillWidth = 200.dp
 
+        /**
+         * A pill narrow enough that the bar still fits the narrowest screen Android ships.
+         *
+         * Centring is only a property the layout can have when there is room to centre in. At
+         * 200dp the row comes to 344dp with both flanks and their gaps, which overflows a 320dp
+         * screen: the row fills the bar, centring stops happening, and the pill sits at the
+         * padding edge instead. That is a different condition from the one these tests are about,
+         * and it is what made a first version fail by exactly 12dp on CI — whose emulator is
+         * 320dp wide — while passing on every local device.
+         */
+        val FittingPillWidth = 120.dp
+
         /** One frame at 60 Hz, in milliseconds. */
         const val FRAME_MS = 16L
 
@@ -59,7 +71,10 @@ class PortraitFloatingBarMotionTest {
 
     private var isTasksRoute by mutableStateOf(true)
 
-    private fun setBar(hasCompletedTasks: Boolean = true) {
+    private fun setBar(
+        hasCompletedTasks: Boolean = true,
+        pillWidth: Dp = PillWidth,
+    ) {
         composeTestRule.setContent {
             TempoTheme {
                 val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
@@ -67,7 +82,7 @@ class PortraitFloatingBarMotionTest {
                     isTasksRoute = isTasksRoute,
                     topLevelRoute = route,
                     navigationContent = {
-                        Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
+                        Box(modifier = Modifier.size(pillWidth).testTag(PILL_TAG))
                     },
                     routinesState = RoutinesFloatingBarState(),
                     tasksState = TasksFloatingBarState(hasCompletedTasks = hasCompletedTasks),
@@ -164,22 +179,16 @@ class PortraitFloatingBarMotionTest {
      * the same size on the same spring — so the pill sits where Focus, which flanks it with none,
      * had it, and it stays there for every frame in between rather than only at the two ends.
      *
-     * Both halves of that were broken, for unrelated reasons:
-     *  - at rest, the add button was 4dp wider than sort, and centring the group put half of that
-     *    on the pill;
-     *  - in flight, the task actions were wrapped in an `AnimatedVisibility` on top of the ones
-     *    the buttons already had, so the left side was a spring chasing a target a second spring
-     *    was still growing while the right side was a single spring around a fixed-size button.
-     *    The right arrived first, the group leaned on it, and the pill lurched about 13dp left
-     *    and wobbled back.
+     * At rest the add button used to be 4dp wider than sort, and centring the group put half of
+     * that on the pill — see issue #355.
      *
-     * See issue #355. The clock is stepped by hand rather than left to `waitForIdle`: idle is not
-     * settled, and a first version of this test read the pill mid-lurch and failed by 12dp on CI.
+     * The clock is stepped by hand rather than left to `waitForIdle`, which means "no pending
+     * work", not "the springs have stopped".
      */
     @Test
     fun withNothingToClear_thePillStaysWhereFocusHadItThroughout() {
         isTasksRoute = false
-        setBar(hasCompletedTasks = false)
+        setBar(hasCompletedTasks = false, pillWidth = FittingPillWidth)
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val onFocus = pillLeft()
@@ -203,7 +212,7 @@ class PortraitFloatingBarMotionTest {
     @Test
     fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
         isTasksRoute = false
-        setBar(hasCompletedTasks = true)
+        setBar(hasCompletedTasks = true, pillWidth = FittingPillWidth)
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val start = pillLeft()

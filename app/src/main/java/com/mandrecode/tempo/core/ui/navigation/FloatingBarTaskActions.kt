@@ -24,7 +24,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.util.getIconForSortOption
 import com.mandrecode.tempo.features.tasks.presentation.components.buttons.ClearCompletedButton
@@ -35,19 +34,11 @@ internal val TASK_ACTIONS_BUTTON_SIZE = 48.dp
 internal val TASK_ACTIONS_BUTTON_SPACING = 6.dp
 internal val TASK_ACTIONS_WIDTH = TASK_ACTIONS_BUTTON_SIZE * 2 + TASK_ACTIONS_BUTTON_SPACING
 
-/**
- * The task actions that flank the navigation pill.
- *
- * [trailingGap] is the space between the last button and whatever follows the row. It is drawn by
- * the button rather than by the caller so it collapses along with it: a gap held by the caller
- * survives the button it belongs to and lands as a step of its own.
- */
 @Composable
 internal fun TaskActionButtons(
     tasksState: TasksFloatingBarState,
     showActions: Boolean,
     modifier: Modifier = Modifier,
-    trailingGap: Dp = 0.dp,
 ) {
     // Sized by what it actually shows, not by a reserved two-button slot: sort sits right against
     // the navigation pill, and clear-completed expands in beside it, pushing the whole group back
@@ -72,12 +63,10 @@ internal fun TaskActionButtons(
             enter = expandHorizontally(expandFrom = Alignment.End) + fadeIn(),
             exit = shrinkHorizontally(shrinkTowards = Alignment.End) + fadeOut(),
         ) {
-            Box(modifier = Modifier.padding(end = trailingGap)) {
-                SortButton(
-                    sortOption = tasksState.sortOption,
-                    onClick = tasksState.onSort,
-                )
-            }
+            SortButton(
+                sortOption = tasksState.sortOption,
+                onClick = tasksState.onSort,
+            )
         }
     }
 }
