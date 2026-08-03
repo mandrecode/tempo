@@ -177,6 +177,7 @@ class CreateTaskUseCaseTest {
     @Test
     fun `creating subtask uses parent max sort order`() =
         runTest {
+            coEvery { taskRepository.getTaskById(10L) } returns topLevelTask(10L)
             coEvery { taskRepository.getMaxSubtaskSortOrder(10L) } returns 5
 
             val taskSlot = slot<Task>()
@@ -196,6 +197,78 @@ class CreateTaskUseCaseTest {
             coVerify(exactly = 0) { taskRepository.getMaxSortOrder(any()) }
             coVerify { taskRepository.getMaxSubtaskSortOrder(10L) }
         }
+
+    /**
+     * Tasks nests exactly one level, so a task created beneath a subtask would exist with nowhere
+     * in Tasks to show it. It becomes a sibling of that subtask instead.
+     */
+    @Test
+    fun `a task created under a subtask hangs off the top-level ancestor instead`() =
+        runTest {
+            coEvery { taskRepository.getTaskById(20L) } returns
+                topLevelTask(20L).copy(parentTaskId = 10L)
+            coEvery { taskRepository.getTaskById(10L) } returns topLevelTask(10L)
+            coEvery { taskRepository.getMaxSubtaskSortOrder(10L) } returns 2
+
+            val taskSlot = slot<Task>()
+            coEvery { taskRepository.insertTask(capture(taskSlot)) } returns 3L
+
+            useCase(Task(title = "Step", description = "", parentTaskId = 20L))
+
+            assertThat(taskSlot.captured.parentTaskId).isEqualTo(10L)
+            assertThat(taskSlot.captured.sortOrder).isEqualTo(3)
+            coVerify(exactly = 0) { taskRepository.getMaxSubtaskSortOrder(20L) }
+        }
+
+    @Test
+    fun `a deeper chain still resolves to the one task that is not a subtask`() =
+        runTest {
+            coEvery { taskRepository.getTaskById(30L) } returns
+                topLevelTask(30L).copy(parentTaskId = 20L)
+            coEvery { taskRepository.getTaskById(20L) } returns
+                topLevelTask(20L).copy(parentTaskId = 10L)
+            coEvery { taskRepository.getTaskById(10L) } returns topLevelTask(10L)
+
+            val taskSlot = slot<Task>()
+            coEvery { taskRepository.insertTask(capture(taskSlot)) } returns 4L
+
+            useCase(Task(title = "Step", description = "", parentTaskId = 30L))
+
+            assertThat(taskSlot.captured.parentTaskId).isEqualTo(10L)
+        }
+
+    @Test
+    fun `a cycle in parent links leaves the parent as it was asked for`() =
+        runTest {
+            // Only a corrupt snapshot links parents in a loop; no task in one is a real root, so
+            // there is nothing better to offer — and the walk has to end either way.
+            coEvery { taskRepository.getTaskById(10L) } returns
+                topLevelTask(10L).copy(parentTaskId = 20L)
+            coEvery { taskRepository.getTaskById(20L) } returns
+                topLevelTask(20L).copy(parentTaskId = 10L)
+
+            val taskSlot = slot<Task>()
+            coEvery { taskRepository.insertTask(capture(taskSlot)) } returns 3L
+
+            useCase(Task(title = "Step", description = "", parentTaskId = 10L))
+
+            assertThat(taskSlot.captured.parentTaskId).isEqualTo(10L)
+        }
+
+    @Test
+    fun `a parent that is not there is left as asked`() =
+        runTest {
+            coEvery { taskRepository.getTaskById(404L) } returns null
+
+            val taskSlot = slot<Task>()
+            coEvery { taskRepository.insertTask(capture(taskSlot)) } returns 3L
+
+            useCase(Task(title = "Step", description = "", parentTaskId = 404L))
+
+            assertThat(taskSlot.captured.parentTaskId).isEqualTo(404L)
+        }
+
+    private fun topLevelTask(id: Long) = Task(id = id, title = "Task $id", description = "")
 
     private fun task(
         title: String = "Test Task",

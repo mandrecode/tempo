@@ -421,7 +421,15 @@ fun TaskItem(
                         }
                     }
 
-                    if (showAddSubtaskAction) {
+                    // Not on a card that is itself a step of something. Tasks nests exactly one
+                    // level — only top-level tasks become cards, and a subtask row draws no
+                    // children of its own — so a task added under a subtask would exist with
+                    // nowhere in Tasks to show it. Focus is where this bites: it gives a dated
+                    // subtask its own card when the parent is off the day, and that card carried
+                    // the same button as any other.
+                    //
+                    // And not where the surrounding surface has asked its own question of the row.
+                    if (task.parentTaskId == null && showAddSubtaskAction) {
                         IconButton(
                             onClick = { onAddSubtask(task.id) },
                             modifier = Modifier.size(48.dp),

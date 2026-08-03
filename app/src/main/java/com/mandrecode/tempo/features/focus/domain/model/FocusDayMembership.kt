@@ -18,28 +18,54 @@ import kotlinx.datetime.LocalDate
  * undated, dated later, or an overdue task already ticked off — nothing is showing the subtask, and
  * the subtask is the thing with a time on it, so it stands on its own.
  *
+ * Because that rule defers to the parent, the answer is settled by walking the whole line of
+ * ancestors and resolving it from the root down — the root's answer is its date alone, and each
+ * step below it flips on whether the one above claimed the day.
+ *
  * [tasksById] is the same snapshot the caller is already working from; no lookup leaves it.
  */
 fun Task.isOnFocusDay(
     today: LocalDate,
     tasksById: Map<Long, Task>,
-): Boolean = isOnFocusDay(today, tasksById, mutableSetOf())
-
-private fun Task.isOnFocusDay(
-    today: LocalDate,
-    tasksById: Map<Long, Task>,
-    visiting: MutableSet<Long>,
 ): Boolean {
-    // Parent links are a tree in every path that writes them, but an imported snapshot is only
-    // validated for parents that exist — not for parents that lead back here. A cycle has no
-    // top-level task to hang off, so it is not on anyone's day rather than a stack overflow.
-    if (!visiting.add(id)) return false
+    val ancestry = ancestryFrom(tasksById) ?: return false
 
-    val dueDate = reminderDate?.date
-    // Due today, or overdue and still open. Undated and future-dated work is not the day.
-    val isDatedForTheDay =
-        dueDate != null && (dueDate == today || (dueDate < today && !isCompleted))
-    val parent = parentTaskId?.let(tasksById::get)
+    // Settled from the root down, because "is this one on the day?" is only answerable once its
+    // parent's answer is known. The root has no parent to defer to, so it is simply its own date.
+    var onTheDay = false
+    for (task in ancestry.asReversed()) {
+        onTheDay = task.isDatedFor(today) && !onTheDay
+    }
+    return onTheDay
+}
 
-    return isDatedForTheDay && (parent == null || !parent.isOnFocusDay(today, tasksById, visiting))
+/**
+ * [this] and every task above it, nearest first — or `null` when the line runs into a cycle.
+ *
+ * Parent links are a tree in every path that writes them, and a restore rejects a snapshot whose
+ * links are not, so this is a second line of defence rather than the first.
+ *
+ * It matters that a cycle answers `null` rather than "not on the day" at the point it is found: the
+ * answers alternate on the way up, so a guard that returned a plain `false` mid-walk handed the
+ * caller above it a real answer, and an odd-length cycle came back out of the walk claiming every
+ * task in it was on the day.
+ *
+ * Iterative rather than recursive so a long line of ancestors cannot end the process either.
+ */
+private fun Task.ancestryFrom(tasksById: Map<Long, Task>): List<Task>? {
+    val ancestry = mutableListOf<Task>()
+    val seen = mutableSetOf<Long>()
+    var current: Task? = this
+    while (current != null) {
+        if (!seen.add(current.id)) return null
+        ancestry += current
+        current = current.parentTaskId?.let(tasksById::get)
+    }
+    return ancestry
+}
+
+/** Due today, or overdue and still open. Undated and future-dated work is not the day. */
+private fun Task.isDatedFor(today: LocalDate): Boolean {
+    val dueDate = reminderDate?.date ?: return false
+    return dueDate == today || (dueDate < today && !isCompleted)
 }
