@@ -50,7 +50,16 @@ private data class NavigationItem(
 private val navigationItems = TempoTab.entries.map(::NavigationItem)
 
 internal val FloatingToolbarItemSize = 48.dp
-internal val FloatingToolbarActionButtonSize = 52.dp
+
+/**
+ * The add action is the same size as everything else in the bar, deliberately.
+ *
+ * Tasks flanks the pill with sort on one side and add on the other, and the group is centred as a
+ * whole. That only leaves the pill where it was on a tab with no flanking buttons if the two sides
+ * weigh the same: the 4dp this button used to carry over [FloatingToolbarItemSize] landed half of
+ * itself on the pill, which slid sideways every time you switched to Tasks and back.
+ */
+internal val FloatingToolbarActionButtonSize = FloatingToolbarItemSize
 internal val FloatingToolbarItemSpacing = 8.dp
 
 /** How far the corners pull in while a bar control is held; shared by the tabs and the chip. */
