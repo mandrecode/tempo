@@ -167,6 +167,23 @@ class RecordDailyActivityUseCaseTest {
         }
 
     @Test
+    fun `a subtask standing on its own day is counted, because the day shows it`() =
+        runTest {
+            // The parent has no date, so nothing on the agenda is holding these two — they are
+            // rows in their own right, and the hero has to agree with the list underneath it.
+            record(
+                tasks =
+                    listOf(
+                        task(1, null),
+                        task(2, today, parentTaskId = 1),
+                        task(3, today, parentTaskId = 1, isCompleted = true),
+                    ),
+            )
+
+            coVerify { activityRepository.recordCounts(today, scheduledCount = 2, completedCount = 1) }
+        }
+
+    @Test
     fun `a habit outside its repeat days is not scheduled today`() =
         runTest {
             // Today is a Wednesday.

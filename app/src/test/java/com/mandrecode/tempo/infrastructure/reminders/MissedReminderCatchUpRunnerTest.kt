@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.infrastructure.reminders
 
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.features.focus.domain.usecase.HasFocusTimeTodayUseCase
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import com.mandrecode.tempo.features.tasks.domain.scheduler.MissedReminderScheduler
@@ -25,6 +26,8 @@ class MissedReminderCatchUpRunnerTest {
     private val enabled = MutableStateFlow(true)
     private val getOverdueIncompleteTasks: GetOverdueIncompleteTasksUseCase = mockk()
     private val notifier: TaskReminderNotifier = mockk(relaxed = true)
+    private val hasFocusTimeToday: HasFocusTimeTodayUseCase =
+        mockk { every { this@mockk(any()) } returns false }
     private val scheduler: MissedReminderScheduler = mockk(relaxed = true)
 
     private val now = LocalDateTime(2026, 7, 28, 9, 0)
@@ -118,11 +121,39 @@ class MissedReminderCatchUpRunnerTest {
             verify(exactly = 1) { scheduler.sync() }
         }
 
+    @Test
+    fun `skips a task that has already had focus time today`() =
+        runTest {
+            val worked = task(1L)
+            val untouched = task(2L)
+            coEvery { getOverdueIncompleteTasks(now) } returns listOf(worked, untouched)
+            every { hasFocusTimeToday(worked.id) } returns true
+
+            runner().run()
+
+            // The sweep is for what slipped past you, and a task you sat down with today did not.
+            verify(exactly = 0) { notifier.notify(worked) }
+            verify(exactly = 1) { notifier.notify(untouched) }
+        }
+
+    @Test
+    fun `arms the next catch-up even when every task was skipped`() =
+        runTest {
+            coEvery { getOverdueIncompleteTasks(now) } returns listOf(task(1L))
+            every { hasFocusTimeToday(any()) } returns true
+
+            runner().run()
+
+            verify(exactly = 0) { notifier.notify(any()) }
+            verify(exactly = 1) { scheduler.sync() }
+        }
+
     private fun runner(): MissedReminderCatchUpRunner =
         MissedReminderCatchUpRunner(
             preferences = preferences,
             getOverdueIncompleteTasks = getOverdueIncompleteTasks,
             taskReminderNotifier = notifier,
+            hasFocusTimeToday = hasFocusTimeToday,
             missedReminderScheduler = scheduler,
             clock = fixedClock(now),
         )

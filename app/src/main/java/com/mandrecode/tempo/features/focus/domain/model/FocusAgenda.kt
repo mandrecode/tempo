@@ -69,7 +69,10 @@ sealed interface FocusAgendaItem {
  * what it is — a way to start something without hunting for it — so the day's own list stays whole.
  */
 data class FocusAgenda(
-    /** The tasks worth starting next, best first — the row you swipe through. */
+    /**
+     * The tasks worth starting next, best first — the row you swipe through. Drawn from [today]
+     * before [overdue]: the day you are in outranks the one you already missed.
+     */
     val upNext: List<FocusAgendaItem.TaskEntry> = emptyList(),
     val overdue: List<FocusAgendaItem> = emptyList(),
     val today: List<FocusAgendaItem> = emptyList(),

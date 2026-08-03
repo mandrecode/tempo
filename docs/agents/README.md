@@ -96,13 +96,12 @@ When updating architectural decisions:
 
 To validate the documentation structure:
 
+From the repository root:
+
 ```bash
-cd /home/runner/work/tempo/tempo
-bash -c "
-  for file in docs/agents/{TECH_STACK,UI_UX,DOMAIN,DATA,TESTING}.md; do
-    [ -f \$file ] && echo \"✓ \$file exists\" || echo \"✗ \$file missing\"
-  done
-"
+for file in docs/agents/{TECH_STACK,UI_UX,DOMAIN,DATA,TESTING}.md; do
+  [ -f "$file" ] && echo "✓ $file exists" || echo "✗ $file missing"
+done
 ```
 
 ## Philosophy
