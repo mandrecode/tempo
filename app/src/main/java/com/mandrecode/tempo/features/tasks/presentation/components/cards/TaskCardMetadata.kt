@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -64,6 +65,9 @@ import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime
+
+/** A ceiling for the category badge, so a long name can never crowd the date out of the row. */
+private val CategoryBadgeMaxWidth = 140.dp
 
 @Composable
 internal fun SubtaskItem(
@@ -354,8 +358,12 @@ internal fun MetadataRow(
             // wherever a task is shown next to work from every other part of someone's life, the
             // category is what tells two similarly-named errands apart.
             if (category != null) {
+                // Not flexible. A weighted child is *capped* at its share and does not hand back
+                // what it leaves unused, so two of them split the row down the middle — which had
+                // a short "Inbox" sitting in half a row while the date beside it ellipsised into
+                // empty space. Only the date flexes now, and it gets everything the rest leaves.
                 add(
-                    MetadataItem("category", flexible = true) {
+                    MetadataItem("category") {
                         CategoryBadge(category)
                     },
                 )
@@ -462,6 +470,10 @@ private fun CategoryBadge(category: Category) {
             verticalAlignment = Alignment.CenterVertically,
             modifier =
                 Modifier
+                    // Unweighted, so without a ceiling a very long category name would measure its
+                    // full width and leave the date nothing. Wide enough for the names people
+                    // actually write; past it the name ellipsises rather than the date vanishing.
+                    .widthIn(max = CategoryBadgeMaxWidth)
                     .padding(horizontal = 6.dp, vertical = 2.dp)
                     .clearAndSetSemantics { contentDescription = label },
         ) {

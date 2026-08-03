@@ -12,9 +12,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
+import com.mandrecode.tempo.core.ui.components.SquaredSelection
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
+import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.plus
@@ -100,10 +102,15 @@ private fun QuickPlanChips(
             onUnplan = onUnplan,
         )
         // Lit when the task carries a day these two do not name — the only state in which this chip
-        // stands for a value rather than for opening the picker.
+        // stands for a value rather than for opening the picker. It says that value, too: a lit
+        // chip still reading "Pick a date" would be the one chip on the row not telling you what it
+        // had chosen.
+        val chosenDate = plannedFor?.takeIf { it != today && it != tomorrow }
         QuickPlanChip(
-            label = stringResource(R.string.plan_tasks_pick_date),
-            isSelected = plannedFor != null && plannedFor != today && plannedFor != tomorrow,
+            label =
+                chosenDate?.let { remember(it) { DateTimeFormatter.formatDate(it) } }
+                    ?: stringResource(R.string.plan_tasks_pick_date),
+            isSelected = chosenDate != null,
             onPlan = { onPlan(null) },
             onUnplan = onUnplan,
         )
@@ -127,6 +134,9 @@ private fun QuickPlanChip(
         isLast = true,
         height = QuickPlanChipHeight,
         horizontalPadding = 14.dp,
+        // These stand alone with gaps between them rather than joined into a run, so the chosen one
+        // squares off instead of rounding out.
+        selectedCornerRadius = SquaredSelection,
         // A lit chip and an unlit one do the opposite things, and a screen reader reading the same
         // word for both would be describing only half of the control.
         modifier =

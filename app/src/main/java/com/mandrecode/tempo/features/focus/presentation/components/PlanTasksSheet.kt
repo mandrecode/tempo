@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -155,7 +157,17 @@ private fun ColumnScope.PlanSheetBody(
     onPlan: (Long, LocalDate?) -> Unit,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp)) {
+    Column(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp)
+                // The sheet is only as tall as this column, so every row that changes section
+                // resizes the whole surface. Left to itself that is a snap — the sheet jumps, and
+                // at the top of its range the corners and status-bar inset change with it. Animated
+                // on the same spring the rows move on, the sheet settles with them instead.
+                .animateContentSize(),
+    ) {
         PlanSheetHeader(remainingCount = state.unplanned.size, isLoading = state.isLoading)
 
         if (state.isLoading) {
@@ -313,6 +325,7 @@ private fun PlanSheetRows(
                 PlanSectionHeader(
                     label = stringResource(R.string.plan_tasks_section_unplanned),
                     testTag = PLAN_SHEET_UNPLANNED_HEADER_TAG,
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -323,6 +336,7 @@ private fun PlanSheetRows(
                 PlanSectionHeader(
                     label = stringResource(R.string.plan_tasks_section_planned),
                     testTag = PLAN_SHEET_PLANNED_HEADER_TAG,
+                    modifier = Modifier.animateItem(),
                 )
             }
         }
@@ -332,7 +346,7 @@ private fun PlanSheetRows(
 
 private fun LazyGridScope.fullWidthItem(
     key: String,
-    content: @Composable () -> Unit,
+    content: @Composable LazyGridItemScope.() -> Unit,
 ) = item(key = key, span = { GridItemSpan(maxLineSpan) }) { content() }
 
 private fun LazyGridScope.planRows(
@@ -362,9 +376,10 @@ private fun LazyGridScope.planRows(
 private fun PlanSectionHeader(
     label: String,
     testTag: String,
+    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp).testTag(testTag),
+        modifier = modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp).testTag(testTag),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         WavyDivider(modifier = Modifier.weight(1f))
