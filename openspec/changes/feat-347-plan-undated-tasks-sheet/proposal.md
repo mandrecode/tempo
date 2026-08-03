@@ -20,9 +20,16 @@ Closes [#347](https://github.com/sherrerapiqueras/tempo/issues/347).
 - Planning a task moves it, animated, from an **"Unplanned"** section to a **"Planned"** one, under
   headers in the Tasks list's own style (`WavyDivider` + `groupLabel`). The headers appear only once
   the split is real — a sheet where nothing is planned yet is one plain list.
-- The sheet footer carries two end-aligned actions: **Close** always, and **Done** enabled once at
-  least one task has been planned. Done closes the sheet and raises a **snackbar offering Undo for
-  the whole batch**, restoring every reminder the sheet set.
+- Each chip **toggles**: pressing the one already lit takes the date back off and returns the task
+  to Unplanned. Planning a list at speed means mis-tapping some of it.
+- The sheet footer carries a **single end-aligned Done**, always enabled, with a leading check.
+  There is no Cancel or Close beside it — nothing is staged, so nothing could be thrown away.
+- Closing by **any** means — Done, the drag handle, back, the scrim or Escape — behaves identically:
+  the planning stays, and a **snackbar offers Undo for the whole batch**, restoring every reminder
+  the sheet set. It appears only when the sheet actually changed something, so planning and then
+  unplanning the same task says nothing.
+- Rows keep the Tasks card's expand control but **not** its add-subtask action: the sheet asks one
+  question of every row, and breaking a task down is a different job.
 - Setting a reminder from the sheet goes through the **same notification/exact-alarm permission
   check** the task editor uses, so the sheet cannot promise a reminder the system will not deliver.
 - Tapping a card body still opens the **full task editor** stacked over the sheet, for anything the

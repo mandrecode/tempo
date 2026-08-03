@@ -143,11 +143,21 @@ applied on grant, dropped on dismiss. Subsequent taps in the same session skip i
 state cannot change under us while the sheet is open, and asking per row would make the sheet
 unusable.
 
-### D7 — Done raises the undo snackbar; Close does not
+### D7 — One button, and every exit raises the same undo
 
-`Close` is always enabled and simply dismisses; so do the drag handle, predictive back, and the
-scrim. `Done` is enabled once `changedTaskIds` is non-empty, dismisses, and emits a new
-`UiEffect.PlanBatchConfirmed(count)`.
+The footer is a single **Done**, always enabled, with a leading check. A Cancel beside it would be
+lying: nothing is staged, because every chip has already written, so it could only do what Done
+does. Two buttons where one cannot do what its name says is worse than one button — and gating the
+lone way out on having planned something would leave a state whose only exit is greyed out.
+
+Every dismissal therefore funnels to one `UiEvent.ClosePlanSheet`: the button, the drag handle,
+predictive back, the scrim and Escape. Each captures `changedTaskIds`, closes, and emits
+`UiEffect.PlanBatchConfirmed(count)` when that is non-empty. An earlier draft raised the undo only
+from the button, which made the quickest way out the one that quietly withheld the way back.
+
+Chips toggle for the same reason the undo exists: pressing the lit one clears the date via
+`UiEvent.UnplanTask`. Planning and then unplanning leaves the task at its original reminder, so
+`changedTaskIds` is empty and closing says nothing — the sheet does not offer to undo a round trip.
 
 Undo replays `originalReminders` for exactly the ids the sheet changed, through a new
 `RestoreTaskRemindersUseCase` — which re-reads each task before writing, so a title or priority

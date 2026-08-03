@@ -12,8 +12,8 @@
 
 ## 2. Shared task card
 
-- [x] 2.1 Add a `CategoryBadge` model (icon resource + name) and an optional `categoryBadge`
-      parameter to `TaskItem`, defaulting to `null`.
+- [x] 2.1 Add an optional `category: Category?` parameter to `TaskItem`, defaulting to `null` — the
+      domain model itself rather than a mirrored UI type, since `TaskItem` already takes a `Task`.
 - [x] 2.2 Render the badge as the first entry of `MetadataRow` in `cards/TaskCardMetadata.kt`,
       handling the icon-less category by showing the name alone.
 - [x] 2.3 Add an optional `footer: (@Composable () -> Unit)?` slot to `TaskItem`, rendered inside the
@@ -22,20 +22,21 @@
 
 ## 3. Focus contract and view model
 
-- [x] 3.1 Add `PlanSheetState` to `FocusContract` holding `taskIds: ImmutableList<Long>`,
-      `originalReminders: ImmutableMap<Long, LocalDateTime?>` and `plannedTaskIds: ImmutableList<Long>`,
+- [x] 3.1 Add `PlanSheetState` to `FocusContract` holding `rows: ImmutableList<UndatedTask>` and
+      `originalReminders: ImmutableMap<Long, LocalDateTime?>` — which doubles as the id snapshot —
       plus a nullable `planSheet` field on `UiState`.
-- [x] 3.2 Expose `plannedIds` / `unplannedIds` derived against the live task list, and a
-      `showsSectionHeaders` rule (headers only once both sections are non-empty).
-- [x] 3.3 Add `UiEvent`s: `PlanTask(taskId, date)`, `DismissPlanSheet`, `ConfirmPlanSheet`,
-      `UndoPlanBatch`; repurpose `UndatedTasksClicked` to open the sheet.
-- [x] 3.4 Remove `UiEffect.OpenTasksTab` and add `UiEffect.ShowPlanUndoSnackbar(count)`.
+- [x] 3.2 Expose `planned` / `unplanned` / `changedTaskIds` / `hasChanges` derived against the live
+      rows, and a `showsSectionHeaders` rule (headers once anything is planned).
+- [x] 3.3 Add `UiEvent`s: `PlanTask(taskId, date)`, `UnplanTask(taskId)`, `ClosePlanSheet`,
+      `UndoPlanBatch`; repurpose `UndatedTasksClicked` to open the sheet. One close event rather than
+      a dismiss and a confirm, because there is no difference between them.
+- [x] 3.4 Remove `UiEffect.OpenTasksTab` and add `UiEffect.PlanBatchConfirmed(count)`.
 - [x] 3.5 Implement the handlers in `FocusViewModel`: opening snapshots ids and original reminders;
       `PlanTask` writes through `UpdateTaskUseCase`; `UndoPlanBatch` replays `originalReminders` for
       the planned ids only.
 - [x] 3.6 Unit-test the view model: opening snapshots the right ids; planning moves a task between
-      sections; `Done` is gated on at least one plan; undo restores the reminder captured at open
-      time even after a later edit; undo cancels scheduling via the same use case.
+      sections; unplanning moves it back; closing without a change stays quiet; undo restores the
+      reminder captured at open time even after a later edit, via the same use case.
 
 ## 4. Plan sheet UI
 
@@ -44,16 +45,17 @@
       "Plan your tasks" title in Tempo's sheet-title style.
 - [x] 4.2 Lay the rows out in `LazyVerticalGrid(columns = GridCells.Adaptive(minSize = 328.dp))`,
       with section headers spanning `maxLineSpan`.
-- [x] 4.3 Render each row with `TaskItem`, passing the task's `categoryBadge` and a `footer` holding
-      the quick-plan chips in a `FlowRow`: Today, Tomorrow, Pick a date.
+- [x] 4.3 Render each row with `TaskItem`, passing the task's `category`, `showAddSubtaskAction =
+      false`, and a `footer` holding the quick-plan chips in a `FlowRow`: Today, Tomorrow, Pick a
+      date. Pressing a lit chip unplans rather than re-planning.
 - [x] 4.4 Draw the "Planned" / "Unplanned" headers in `ActiveGroupHeader`'s style (`WavyDivider` +
-      `groupLabel`), shown only when the view model says both sections exist.
+      `groupLabel`), shown once anything is planned.
 - [x] 4.5 Wire "Pick a date" to `TempoDatePickerDialog` with today-and-later selectable dates,
       applying `PlanReminderTimeUtil` to the confirmed date.
 - [x] 4.6 Gate the first chip tap of a session behind `HandleReminderPermissions`, holding the
       pending chip and applying it on grant, dropping it on dismiss.
-- [x] 4.7 Add the end-aligned footer actions: Close (always enabled) and Done (enabled once at least
-      one task has been planned).
+- [x] 4.7 Add a single end-aligned Done button with a leading check, always enabled, and route every
+      other dismissal — handle, back, scrim, Escape — through the same `ClosePlanSheet` event.
 - [x] 4.8 Dismiss on Escape via `onPreviewKeyEvent`, alongside the existing handle, back and scrim
       dismissals.
 - [x] 4.9 Animate rows between sections so planning a task reads as a move rather than a jump.
@@ -62,7 +64,8 @@
 
 - [x] 5.1 Host `PlanTasksSheet` from `FocusScreen` when `uiState.planSheet != null`.
 - [x] 5.2 Add a `SnackbarHostState` + `ExpressiveSnackbarHost` to the Focus `Scaffold`, matching
-      `TasksScreen`, and show the undo snackbar on `ShowPlanUndoSnackbar`.
+      `TasksScreen` and clearing the floating bar, and show the undo snackbar on
+      `PlanBatchConfirmed`.
 - [x] 5.3 Route a card-body tap to the existing `FocusTaskEditor` so the full editor opens over the
       sheet.
 - [x] 5.4 Drop `onNavigateToTasks` from the Focus call site now that nothing emits `OpenTasksTab`,
@@ -73,8 +76,8 @@
 ## 6. Strings, previews and What's New
 
 - [x] 6.1 Add the new strings to `values/strings.xml` and matching entries to `values-es/strings.xml`
-      (sheet title, subtitle, Planned, Unplanned, Today, Tomorrow, Pick a date, Close, Done, the
-      undo snackbar message and action, and the category badge content description).
+      (sheet title, both subtitles, Planned, Unplanned, Pick a date, Done, the undo snackbar
+      message, the lit-chip content description, and the category badge content description).
 - [x] 6.2 Add `@Preview`s under `src/debug/` for the sheet (empty-of-planned, mixed, all-planned) and
       for the new internal composables (chips row, section header, planned row), Light and Dark.
 - [x] 6.3 Replace `WhatsNewRegistry.latest` with a `347` entry and remove the previous entry's now
@@ -86,7 +89,7 @@
       category badge does not overflow.
 - [x] 7.2 Compose-test the planned/unplanned split: no headers initially, both headers after one
       plan, only "Planned" once everything is planned.
-- [x] 7.3 Compose-test the footer: Done disabled until a plan, enabled after, Close always enabled.
+- [x] 7.3 Compose-test the footer: Done is the only action, always enabled, and closes the sheet.
 - [x] 7.4 Compose-test at an expanded width that the sheet still lays out correctly and the column
       count follows available width.
 - [x] 7.5 Update `FocusContentTest`'s undated-footer assertions from "navigates to Tasks" to
@@ -103,6 +106,7 @@
       must be clean
 - [x] 8.7 `./gradlew koverVerifyDebug`
 - [x] 8.8 `./gradlew connectedDebugAndroidTest` on the Pixel 10 AVD for the new Compose tests
-- [x] 8.9 Manual smoke test on the connected Pixel 7: plan two tasks, confirm the split, Done, undo,
+- [x] 8.9 Manual smoke test: plan two tasks, confirm the split, toggle a chip back off, dismiss with
+      back rather than the button, undo,
       and confirm both reminders are gone — run on the Pixel 10 AVD instead, to avoid touching the
       physical Pixel 7's real data. Caught the snackbar coming up under the floating bar, now fixed.
