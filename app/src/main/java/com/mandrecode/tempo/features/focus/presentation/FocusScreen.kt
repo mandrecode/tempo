@@ -130,9 +130,13 @@ private fun FocusEffects(
     onUndoPlanBatch: () -> Unit,
 ) {
     val undoLabel = stringResource(R.string.undo)
-    val resources = LocalContext.current.resources
     val currentOnOpenSession by rememberUpdatedState(onOpenSession)
     val currentOnUndo by rememberUpdatedState(onUndoPlanBatch)
+    // The count is only known when the effect arrives, so the message has to be formatted inside
+    // the collector rather than read as a resource up here. Kept current rather than captured: the
+    // effect does not restart on a configuration change, and a closed-over Resources would go on
+    // answering in the locale the screen opened in.
+    val currentResources by rememberUpdatedState(LocalContext.current.resources)
 
     LaunchedEffect(uiEffect, snackbarHostState) {
         uiEffect.collect { effect ->
@@ -143,7 +147,7 @@ private fun FocusEffects(
                     val result =
                         snackbarHostState.showSnackbar(
                             message =
-                                resources.getQuantityString(
+                                currentResources.getQuantityString(
                                     R.plurals.plan_tasks_undo_message,
                                     effect.count,
                                     effect.count,

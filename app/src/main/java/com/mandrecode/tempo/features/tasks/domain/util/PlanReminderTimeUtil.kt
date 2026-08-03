@@ -23,9 +23,14 @@ object PlanReminderTimeUtil {
      * happens when [date] is the day [now] falls on — the next whole hour instead.
      *
      * Never spills into the following day: planning something for today and having it land tomorrow
-     * would be the sheet quietly answering a different question. Late enough at night there is no
-     * good time left, and the last minute of the day is the honest answer — the day is what the
-     * user chose, and the reminder is the part that may not survive it.
+     * would be the sheet quietly answering a different question.
+     *
+     * Which leaves one case with no good answer. Planning for *today* during the last minute of it
+     * returns that minute, which by then is already behind [now] — so the task is dated today, and
+     * `UpdateTaskUseCase` skips scheduling a reminder that could only fire in the past. That is the
+     * least wrong of the three options: the day is what the user chose, moving it to tomorrow would
+     * answer a different question, and refusing the tap would leave the task undated. The reminder
+     * is the part that does not survive planning something a minute before midnight.
      */
     fun resolve(
         date: LocalDate,

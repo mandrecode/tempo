@@ -63,8 +63,6 @@ internal const val PLAN_SHEET_UNPLANNED_HEADER_TAG = "plan_sheet_unplanned_heade
  */
 private val PlanRowMinWidth = 328.dp
 
-private val QuickPlanChipHeight = 40.dp
-
 /**
  * Somewhere to give undated work a day, without leaving the day you were looking at.
  *

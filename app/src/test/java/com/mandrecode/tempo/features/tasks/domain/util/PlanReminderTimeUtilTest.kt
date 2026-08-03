@@ -44,6 +44,23 @@ class PlanReminderTimeUtilTest {
         assertThat(resolved).isEqualTo(LocalDateTime(2026, 8, 3, 23, 59))
     }
 
+    /**
+     * The one case with no good answer. Inside the last minute of the day there is no time left to
+     * put a reminder on, so the task keeps the day it was given and the reminder is what gives way
+     * — deliberately, rather than by moving the task to a day nobody asked for.
+     */
+    @Test
+    fun `inside the last minute of the day the task keeps the day and loses the reminder`() {
+        val secondsBeforeMidnight = LocalDateTime(2026, 8, 3, 23, 59, 30)
+
+        val resolved = PlanReminderTimeUtil.resolve(today, now = secondsBeforeMidnight)
+
+        assertThat(resolved.date).isEqualTo(today)
+        assertThat(resolved).isEqualTo(LocalDateTime(2026, 8, 3, 23, 59))
+        // Behind `now`, so UpdateTaskUseCase will skip scheduling rather than arm a past alarm.
+        assertThat(resolved).isLessThan(secondsBeforeMidnight)
+    }
+
     @Test
     fun `planning today never spills into tomorrow`() {
         val resolved = PlanReminderTimeUtil.resolve(today, now = LocalDateTime(2026, 8, 3, 23, 5))
