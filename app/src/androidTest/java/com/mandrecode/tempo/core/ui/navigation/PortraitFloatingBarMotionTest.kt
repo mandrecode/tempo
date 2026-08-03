@@ -59,7 +59,7 @@ class PortraitFloatingBarMotionTest {
 
     private var isTasksRoute by mutableStateOf(true)
 
-    private fun setBar() {
+    private fun setBar(hasCompletedTasks: Boolean = true) {
         composeTestRule.setContent {
             TempoTheme {
                 val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
@@ -70,7 +70,7 @@ class PortraitFloatingBarMotionTest {
                         Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
                     },
                     routinesState = RoutinesFloatingBarState(),
-                    tasksState = TasksFloatingBarState(hasCompletedTasks = true),
+                    tasksState = TasksFloatingBarState(hasCompletedTasks = hasCompletedTasks),
                     isSingleTabMode = false,
                 )
             }
@@ -157,6 +157,29 @@ class PortraitFloatingBarMotionTest {
         val positions = samplePositions()
         assertMotionFinished(positions)
         assertStaysPutOnceItStops(positions)
+    }
+
+    /**
+     * With nothing to clear, Tasks flanks the pill with one button on each side — so the pill has
+     * to end up exactly where Focus, which flanks it with none, had it.
+     *
+     * It did not: the add button was 4dp wider than sort, and centring the group put half of that
+     * on the pill. Two dp is under the [Tolerance] the motion tests run at, so it took a rest-to-
+     * rest comparison to see at all — see issue #355.
+     */
+    @Test
+    fun withNothingToClear_theFlankingButtonsLeaveThePillWhereFocusHadIt() {
+        isTasksRoute = false
+        setBar(hasCompletedTasks = false)
+        composeTestRule.waitForIdle()
+        val onFocus = pillLeft()
+
+        isTasksRoute = true
+        composeTestRule.waitForIdle()
+
+        // Both rests are pixel-quantised, so they can differ by rounding; they cannot differ by the
+        // 2dp the mismatched buttons were worth.
+        assertThat(abs((pillLeft() - onFocus).value)).isLessThan(Settled.value)
     }
 
     /**
