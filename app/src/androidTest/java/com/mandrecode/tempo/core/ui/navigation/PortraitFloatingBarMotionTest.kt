@@ -201,7 +201,9 @@ class PortraitFloatingBarMotionTest {
         // Nothing on the way may lean either side of where Focus had it...
         assertThat(positions.maxOf { abs((it - onFocus).value) }).isLessThan(Tolerance.value)
         // ...and the rest has to land back on it, bar pixel rounding.
-        assertThat(abs((positions.last() - onFocus).value)).isLessThan(Settled.value)
+        // Inclusive: on mdpi one device pixel *is* 1dp, so two adjacent quantised positions differ
+        // by exactly [Settled] without either having moved. The 2dp this guards still fails.
+        assertThat(abs((positions.last() - onFocus).value)).isAtMost(Settled.value)
     }
 
     /**
