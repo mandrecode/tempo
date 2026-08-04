@@ -3,12 +3,8 @@ package com.mandrecode.tempo.core.ui.util
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 
 /**
  * Keeps a list looking where it is when one of its rows moves to another section, rather than
@@ -22,6 +18,15 @@ import androidx.compose.runtime.setValue
  *
  * Holding the index instead keeps the viewport still. The settled row slides away to where it now
  * belongs and the next one rises into the place it left, under the finger already there.
+ *
+ * The hold is a *request* rather than a scroll, made before the list has measured itself against
+ * the new sections rather than after. That is the whole difference between the row sliding away and
+ * the list jumping: `requestScrollToItem` forgets the anchor key, so the chase never happens and
+ * there is nothing to undo, and it is answered by the next measure rather than forcing one of its
+ * own — one layout for the change, which is what `animateItem` needs to animate across. Restored
+ * afterwards instead, from a coroutine, the correction lands on whichever side of the frame's
+ * layout the dispatcher happens to resume on: sometimes invisible, sometimes a frame at the chased
+ * position and a snap back, and the row's slide re-targeted mid-flight either way.
  *
  * Call the returned lambda immediately *before* the event that can move the row — it has to read
  * the scroll position while the list still has its old contents.
@@ -37,8 +42,8 @@ import androidx.compose.runtime.setValue
  *
  * @param sectionKey a value that changes when a row crosses between sections, and only then. How
  * many rows a section holds is the usual answer. It has to change *by value* — a collection that
- * mutates in place reads as the same key, the effect never restarts, and the restore silently never
- * happens — and it should not change for anything else, or the effect restarts for edits that moved
+ * mutates in place reads as the same key, the hold never fires, and the restore silently never
+ * happens — and it should not change for anything else, or the hold fires for edits that moved
  * nothing. One is required rather than a bare vararg, because none at all is the same silent
  * nothing and there is no reason to let it compile.
  * @param moreSectionKeys the rest, where more than one section is in play — usually the count on
@@ -54,7 +59,7 @@ fun rememberViewportHold(
         readIndex = { state.firstVisibleItemIndex },
         readOffset = { state.firstVisibleItemScrollOffset },
         sectionKeys = arrayOf(sectionKey, *moreSectionKeys),
-        scrollToItem = { index, offset -> state.scrollToItem(index, offset) },
+        requestScrollToItem = { index, offset -> state.requestScrollToItem(index, offset) },
     )
 
 /** As above, for a grid. The two state types share the behaviour but not an interface. */
@@ -68,7 +73,7 @@ fun rememberViewportHold(
         readIndex = { state.firstVisibleItemIndex },
         readOffset = { state.firstVisibleItemScrollOffset },
         sectionKeys = arrayOf(sectionKey, *moreSectionKeys),
-        scrollToItem = { index, offset -> state.scrollToItem(index, offset) },
+        requestScrollToItem = { index, offset -> state.requestScrollToItem(index, offset) },
     )
 
 @Composable
@@ -76,20 +81,32 @@ private fun rememberViewportHold(
     readIndex: () -> Int,
     readOffset: () -> Int,
     sectionKeys: Array<out Any?>,
-    scrollToItem: suspend (Int, Int) -> Unit,
+    requestScrollToItem: (Int, Int) -> Unit,
 ): () -> Unit {
-    var restoreTo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-    // The effect restarts on the section keys, not on this, so it would otherwise go on calling
-    // whichever list it was first composed with.
-    val currentScrollToItem by rememberUpdatedState(scrollToItem)
+    // Deliberately not snapshot state. Nothing reads either of these during composition and nothing
+    // should recompose because of them — they are notes passed from a click to the layout that
+    // follows it, and making them observable would only invite a write-during-composition tangle.
+    val hold = remember { ViewportHold() }
 
-    // Only once the sections have actually changed, which is the moment the list has had its chance
-    // to chase. Nothing recorded means nothing to put back, so an unrelated change costs a return.
-    LaunchedEffect(*sectionKeys) {
-        val (index, offset) = restoreTo ?: return@LaunchedEffect
-        currentScrollToItem(index, offset)
-        restoreTo = null
+    // After the composition that brought the new sections in, and before the measure that would
+    // otherwise chase — the one window where the answer is known and the list has not moved yet.
+    // Every recomposition arrives here, so the keys are what decides whether anything crossed.
+    SideEffect {
+        if (hold.sectionKeys.contentEquals(sectionKeys)) return@SideEffect
+        hold.sectionKeys = sectionKeys
+        val (index, offset) = hold.restoreTo ?: return@SideEffect
+        hold.restoreTo = null
+        requestScrollToItem(index, offset)
     }
 
-    return { restoreTo = readIndex() to readOffset() }
+    return { hold.restoreTo = readIndex() to readOffset() }
+}
+
+/** The two notes the hold carries between a click and the layout that answers it. */
+private class ViewportHold {
+    /** Null until the first composition has run, so the first pass is never mistaken for a move. */
+    var sectionKeys: Array<out Any?>? = null
+
+    /** Where the list was looking when a row was last acted on, until a crossing spends it. */
+    var restoreTo: Pair<Int, Int>? = null
 }
