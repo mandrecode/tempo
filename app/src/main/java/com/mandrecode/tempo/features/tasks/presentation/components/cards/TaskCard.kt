@@ -157,6 +157,15 @@ fun TaskItem(
      */
     trailingContent: (@Composable () -> Unit)? = null,
     /**
+     * How the checkbox, the text and the trailing slot line up against each other.
+     *
+     * Top by default, which is what a list of mostly-text cards wants: the checkbox sits against the
+     * title whatever the description does below it. A card carrying [trailingContent] is a different
+     * shape — two columns of comparable height rather than one tall one with icons pinned beside it
+     * — and there the three parts want centring on each other instead of hanging from the top edge.
+     */
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    /**
      * On by default, because in a list of work "break this down" is always a reasonable next move.
      * Off where the card is on screen to be answered rather than worked on — a surface asking one
      * question of every row has no business offering a second.
@@ -255,7 +264,7 @@ fun TaskItem(
                     Modifier
                         .fillMaxWidth()
                         .padding(cardContentPadding),
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = verticalAlignment,
             ) {
                 // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
                 // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep

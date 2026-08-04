@@ -11,6 +11,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -97,6 +98,10 @@ internal fun PlanTaskRow(
             showAddSubtaskAction = false,
             footer = if (chipsBeside) null else chips,
             trailingContent = if (chipsBeside) chips else null,
+            // Beside, the card is two columns of similar height and the three parts read as one
+            // line of the list, so they centre on each other. Stacked, the chips are a band under
+            // the text and the checkbox belongs against the title, as it does everywhere else.
+            verticalAlignment = if (chipsBeside) Alignment.CenterVertically else Alignment.Top,
         )
     }
 }

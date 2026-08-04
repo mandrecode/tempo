@@ -270,6 +270,8 @@ The sheet SHALL derive its presentation from the current window rather than assu
 - **WHEN** a row is laid out at 480dp or wider
 - **THEN** its quick-plan chips sit to the right of the task's text, two across with the picker
   beneath them, rather than in a band under the whole card
+- **AND** the checkbox, the task's text and the chips are centred on each other, because the card is
+  then two columns of comparable height rather than one tall one
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 
