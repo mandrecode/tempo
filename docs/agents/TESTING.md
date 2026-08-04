@@ -359,6 +359,12 @@ one thing it would catch — the breakpoint moving — is already pinned exactly
 A quick way to spot a worthless reference: count distinct grey levels. Real rendered content lands
 around 180–220; anything under about 10 is a blob.
 
+This is why `PlanTasksSheet` — the sheet whose tablet layout bug motivated this whole layer — has
+no screenshot coverage. Its fix was to hardcode `placement = SheetPlacement.BottomSheet`, so it is
+now unconditionally a `Dialog` and renders as scrim at every width. The constant itself is what
+guards it; there is no image that could. Screenshot the docked *consumers* of `rememberSheetPlacement()`
+instead, which is what `AdaptiveSheetScreenshots` does.
+
 ### Paint Your Own Background
 
 `showBackground = true` fills the preview white whatever the theme. Any area your composable does
