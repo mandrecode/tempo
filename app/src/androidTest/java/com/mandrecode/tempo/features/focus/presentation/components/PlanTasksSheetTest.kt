@@ -1,7 +1,7 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
@@ -29,6 +29,9 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.time.Clock
 import kotlin.time.Instant
+
+/** Sub-pixel: these are laid-out edges, not values anyone typed, and they land a rounding off. */
+private const val TOLERANCE = 0.5f
 
 /** What the planning sheet shows, what its footer allows, and what a row survives when narrow. */
 class PlanTasksSheetTest {
@@ -82,6 +85,10 @@ class PlanTasksSheetTest {
      *
      * The sheet itself is a dialog and fills whatever window it is given, so a width constraint
      * around it would do nothing. The row is where the narrow-window risk actually lives.
+     *
+     * Required rather than merely asked for: a plain width is still coerced into the test device's
+     * own, so anything wider than the phone this runs on would quietly be measured at phone width
+     * and the wide layouts would never be reached.
      */
     private fun setRow(
         row: UndatedTask,
@@ -91,7 +98,7 @@ class PlanTasksSheetTest {
     ) {
         composeTestRule.setContent {
             TempoTheme {
-                Box(modifier = Modifier.width(width)) {
+                Box(modifier = Modifier.requiredWidth(width)) {
                     PlanTaskRow(
                         row = row,
                         today = today,
@@ -281,6 +288,25 @@ class PlanTasksSheetTest {
 
         assertThat(planned).containsExactly(7L to today.plus(1, DateTimeUnit.DAY))
         assertThat(unplanned).isEmpty()
+    }
+
+    /**
+     * Wide enough for the chips to sit beside the text, where they become a block of their own and
+     * the picker spans the two days above it. Left to size itself it stopped a ragged distance
+     * short of Tomorrow, and moved again the moment it was chosen and its label became a date.
+     */
+    @Test
+    fun besideTheText_thePickerSpansBothDays() {
+        setRow(row(1, "Renew the passport"), width = 640.dp)
+
+        val today = composeTestRule.onNodeWithText("Today").getUnclippedBoundsInRoot()
+        val tomorrow = composeTestRule.onNodeWithText("Tomorrow").getUnclippedBoundsInRoot()
+        val picker = composeTestRule.onNodeWithText("Pick a date").getUnclippedBoundsInRoot()
+
+        // Under the pair rather than beside them — the shape only holds if it wrapped.
+        assertThat(picker.top.value).isAtLeast(today.bottom.value)
+        assertThat(picker.left.value).isWithin(TOLERANCE).of(today.left.value)
+        assertThat(picker.right.value).isWithin(TOLERANCE).of(tomorrow.right.value)
     }
 
     /**

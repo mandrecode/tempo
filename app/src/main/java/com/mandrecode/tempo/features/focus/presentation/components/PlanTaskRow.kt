@@ -2,9 +2,13 @@ package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -75,10 +79,7 @@ internal fun PlanTaskRow(
                 plannedFor = row.task.reminderDate?.date,
                 today = today,
                 tomorrow = tomorrow,
-                // Two across when beside, so the pair of days reads as a pair and the picker sits
-                // under them on its own — the shape the chips would take anyway in that width.
-                columns = if (chipsBeside) 2 else Int.MAX_VALUE,
-                fillWidth = !chipsBeside,
+                isBesideText = chipsBeside,
                 onPlan = { date -> onPlan(row.task.id, date) },
                 onUnplan = { onUnplan(row.task.id) },
             )
@@ -109,10 +110,6 @@ internal fun PlanTaskRow(
 /**
  * The whole point of the sheet: a day, in one tap.
  *
- * Wrapped rather than laid out per size class — chips are text, and text is as wide as the
- * language it is in. A [FlowRow] answers that at every width, where a breakpoint would only answer
- * it in English.
- *
  * Each chip is rounded on both ends rather than segment-joined: a connected group that wraps mid-
  * run reads as broken, and these are three separate offers, not one control with three positions.
  *
@@ -125,17 +122,11 @@ private fun QuickPlanChips(
     plannedFor: LocalDate?,
     today: LocalDate,
     tomorrow: LocalDate,
-    columns: Int,
-    fillWidth: Boolean,
+    isBesideText: Boolean,
     onPlan: (LocalDate?) -> Unit,
     onUnplan: () -> Unit,
 ) {
-    FlowRow(
-        modifier = if (fillWidth) Modifier.fillMaxWidth() else Modifier,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        maxItemsInEachRow = columns,
-    ) {
+    val days: @Composable () -> Unit = {
         QuickPlanChip(
             label = stringResource(R.string.today),
             isSelected = plannedFor == today,
@@ -148,11 +139,13 @@ private fun QuickPlanChips(
             onPlan = { onPlan(tomorrow) },
             onUnplan = onUnplan,
         )
-        // Lit when the task carries a day these two do not name — the only state in which this chip
-        // stands for a value rather than for opening the picker. It says that value, too: a lit
-        // chip still reading "Pick a date" would be the one chip on the row not telling you what it
-        // had chosen.
-        val chosenDate = plannedFor?.takeIf { it != today && it != tomorrow }
+    }
+
+    // Lit when the task carries a day the other two do not name — the only state in which this chip
+    // stands for a value rather than for opening the picker. It says that value, too: a lit chip
+    // still reading "Pick a date" would be the one chip on the row not telling you what it chose.
+    val chosenDate = plannedFor?.takeIf { it != today && it != tomorrow }
+    val picker: @Composable (Modifier) -> Unit = { pickerModifier ->
         QuickPlanChip(
             label =
                 chosenDate?.let { remember(it) { DateTimeFormatter.formatDate(it) } }
@@ -175,7 +168,35 @@ private fun QuickPlanChips(
                 } else {
                     null
                 },
+            modifier = pickerModifier,
         )
+    }
+
+    if (isBesideText) {
+        // The two days set the block's width — [IntrinsicSize.Max] asks the Row below what it wants
+        // and hands the Column exactly that — and the picker then fills it. Left to size itself it
+        // ended a ragged distance short of Tomorrow, and shrank again the moment it was chosen and
+        // its label became a date. Filling gives the group one edge, and gives the one chip here
+        // that opens a dialog rather than answering outright the target to match.
+        Column(
+            modifier = Modifier.width(IntrinsicSize.Max),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) { days() }
+            picker(Modifier.fillMaxWidth())
+        }
+    } else {
+        // Under the text there is no column to line up with, and chips are text — as wide as the
+        // language they are in. A [FlowRow] answers that at every width and in every translation,
+        // where a fixed arrangement would only answer it in English.
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            days()
+            picker(Modifier)
+        }
     }
 }
 
@@ -185,6 +206,7 @@ private fun QuickPlanChip(
     isSelected: Boolean,
     onPlan: () -> Unit,
     onUnplan: () -> Unit,
+    modifier: Modifier = Modifier,
     icon: (@Composable () -> Unit)? = null,
 ) {
     val unplanLabel = stringResource(R.string.plan_tasks_unplan_action, label)
@@ -209,9 +231,9 @@ private fun QuickPlanChip(
         // word for both would be describing only half of the control.
         modifier =
             if (isSelected) {
-                Modifier.semantics { contentDescription = unplanLabel }
+                modifier.semantics { contentDescription = unplanLabel }
             } else {
-                Modifier
+                modifier
             },
     )
 }

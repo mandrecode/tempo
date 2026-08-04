@@ -465,7 +465,15 @@ fun TaskItem(
                     // from row to row — a chevron only where there is something to unfold — and
                     // ahead of the slot they shunted its content left by exactly one icon, breaking
                     // the column those controls otherwise line up in down the list.
-                    trailingContent?.invoke()
+                    if (trailingContent != null) {
+                        // The card's icons carry their own touch padding, so an icon and the slot
+                        // land 12dp apart — close enough that the chevron reads as belonging to
+                        // whatever the surrounding surface put there rather than to the card.
+                        if (showExpandButton || task.parentTaskId == null && showAddSubtaskAction) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                        }
+                        trailingContent()
+                    }
                 }
             }
 
