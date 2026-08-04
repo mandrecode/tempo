@@ -10,10 +10,10 @@ that puts today's work in front of you and runs a timer against it.
 ## Screenshots
 
 <p align="center">
-  <img src="distribution/screenshots/phone/phone_en_light_1_routines_today.png" width="200" alt="Routines screen with a habit chain, light theme" />
-  <img src="distribution/screenshots/phone/phone_en_light_2_tasks_work.png" width="200" alt="Tasks screen with priorities and due dates, light theme" />
-  <img src="distribution/screenshots/phone/phone_en_dark_1_routines_today.png" width="200" alt="Routines screen with a habit chain, dark theme" />
-  <img src="distribution/screenshots/phone/phone_en_dark_2_tasks_work.png" width="200" alt="Tasks screen with priorities and due dates, dark theme" />
+  <img src="distribution/screenshots/phone/phone_en_light_1_focus_today.png" width="200" alt="Focus screen showing today's tasks, habits and chains, light theme" />
+  <img src="distribution/screenshots/phone/phone_en_light_2_focus_session.png" width="200" alt="A focus session counting down on a task, light theme" />
+  <img src="distribution/screenshots/phone/phone_en_dark_3_routines_today.png" width="200" alt="Routines screen with a habit chain, dark theme" />
+  <img src="distribution/screenshots/phone/phone_en_dark_4_tasks_personal.png" width="200" alt="Tasks screen with priorities and due dates, dark theme" />
 </p>
 
 More screenshots — Medium/Expanded tablet, Desktop, Android XR, both themes, English

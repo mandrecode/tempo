@@ -1,1 +1,1 @@
-Habit tracker & to-do list: build habit chains, manage tasks, find your flow.
+Habit tracker & to-do list with a focus timer: build chains, find your flow.
