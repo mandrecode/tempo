@@ -311,6 +311,62 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it a
 ./gradlew connectedDebugAndroidTest  # Only debug variant
 ```
 
+## Screenshot Tests (`app/src/screenshotTest/`)
+
+Compose Preview screenshot testing via the `com.android.compose.screenshot` plugin. Previews are
+rendered on the JVM with layoutlib — no emulator, no device — and compared pixel-for-pixel against
+reference images committed under `app/src/screenshotTestDebug/reference/`.
+
+### What This Layer Is For
+
+**Adaptive-layout regressions, and only those.** Instrumented tests all run at whatever size the
+host window happens to be, and a Compose test cannot resize that window — so a layout that breaks
+only at, say, 1280dp is invisible to them however many of them there are. A preview renders at
+whatever its `device` spec says, which is exactly the axis instrumented tests cannot move.
+
+Do not reach for this layer for behavior, state, or interaction — those belong in unit and
+instrumented tests, which are cheaper to read and do not carry a binary payload.
+
+### Structure
+
+- Tests live in `app/src/screenshotTest/java/com/mandrecode/tempo/screenshots/`.
+- Mark each rendered preview `@PreviewTest` (from `com.android.tools.screenshot`). Previews
+  without it compile but produce no reference image.
+- Apply `@PreviewAdaptiveFormFactors` for the standard matrix: phone (411dp), foldable (673dp)
+  and tablet (1280dp), each in light and dark. Those widths bracket the app's two adaptive
+  breakpoints — the navigation-rail one and `sheetPlacement`'s 1200dp docking one.
+- Wrap content in `ScreenshotTheme`, not `TempoTheme` directly. It pins `useTempoColors = true`
+  so the palette does not come from the platform's dynamic-color tables, which would rewrite
+  every reference on a `compileSdk` bump.
+- Keep fixtures local to the screenshot test. Do not share them with `src/debug` previews:
+  those are a scratchpad, and retuning one would rewrite committed binaries.
+
+### Known Limitation: Dialogs Do Not Render
+
+layoutlib does not render `Dialog` windows in previews. Anything routed through `TempoModalSheet`
+(every bottom and top sheet) captures **the scrim only**. This is not a reason to delete those
+references — a scrim-only image is a precise assertion that the width falls on the bottom-sheet
+side of the breakpoint, so moving the breakpoint fails it — but it does mean sheet *content* can
+only be screenshotted on the docked-pane path.
+
+When screenshotting a docked pane, reproduce the container the real screen gives it
+(`Modifier.width(DockedEditorWidth)` at the end of a `Row`). A bare docked sheet stretches across
+the whole window, which bakes a layout bug into the reference image instead of catching one.
+
+### Running Screenshot Tests
+
+```bash
+./gradlew validateDebugScreenshotTest   # Compare against references (CI runs this)
+./gradlew updateDebugScreenshotTest     # Regenerate references after an intended UI change
+```
+
+Failures write side-by-side diffs to `app/build/reports/screenshotTest/preview/debug/index.html`;
+CI uploads that directory as the `screenshot-test-results` artifact.
+
+**Regenerated references must be reviewed, not rubber-stamped.** `updateDebugScreenshotTest`
+happily records a regression as the new truth. Open the diff report and confirm every changed
+pixel is a change you meant to make before committing.
+
 ## Test Organization
 
 ### Mirror Source Structure
