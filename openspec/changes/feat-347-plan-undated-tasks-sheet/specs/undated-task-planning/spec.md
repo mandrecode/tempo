@@ -277,8 +277,8 @@ The sheet SHALL derive its presentation from the current window rather than assu
 - **AND** the date picker spans the width of the two day chips above it, so the three read as one
   block rather than as two chips and a shorter third
 - **AND** the chips stand on a surface one tone further from the page than the card carrying them,
-  with the corner a container nested at that inset takes, so a row shows at a glance which half of
-  it describes the task and which half changes it
+  reaching the card's own edges and rounding only where the two halves meet, so a row reads as a
+  card divided into the half that describes the task and the half that changes it
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 

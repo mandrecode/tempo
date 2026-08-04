@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -23,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -31,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.SquaredSelection
+import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
@@ -55,14 +58,11 @@ private val QuickPlanChipHeight = 36.dp
 private val ChipsBesideMinWidth = 480.dp
 
 /**
- * The card's own corner is 32dp and the tray sits [ChipTrayPadding] inside it, which is the radius
- * a nested container has to take for the two curves to stay concentric rather than merely both
- * being round.
+ * The corner where the tray meets the rest of the card — the only one it draws for itself. The card
+ * clips the outer ones, so those follow whatever radius it is currently animating through and the
+ * tray never has to know about it.
  */
 private val ChipTrayCorner = 20.dp
-
-/** How far the tray is inset from the card's content edge, and how far the chips sit inside it. */
-private val ChipTrayPadding = 8.dp
 
 /**
  * One task, as the Tasks list itself draws it, with the day it is missing offered underneath.
@@ -91,10 +91,16 @@ internal fun PlanTaskRow(
         val chipsBeside = maxWidth >= ChipsBesideMinWidth
         val chips: @Composable () -> Unit = {
             ChipTray(
-                // Beside the text the tray is a panel at the card's edge and takes only the width
-                // its chips need. Under the text it is a band across the foot of the card, and a
-                // band that stopped short of one side would read as a mistake.
-                modifier = if (chipsBeside) Modifier else Modifier.fillMaxWidth(),
+                // Beside the text it is the card's right-hand column, so it reaches the card's full
+                // height and rounds only where it meets the left-hand one. Under the text it is the
+                // card's bottom band, reaching both sides and rounding only along its top.
+                modifier = if (chipsBeside) Modifier.fillMaxHeight() else Modifier.fillMaxWidth(),
+                shape =
+                    if (chipsBeside) {
+                        RoundedCornerShape(topStart = ChipTrayCorner, bottomStart = ChipTrayCorner)
+                    } else {
+                        RoundedCornerShape(topStart = ChipTrayCorner, topEnd = ChipTrayCorner)
+                    },
             ) {
                 QuickPlanChips(
                     plannedFor = row.task.reminderDate?.date,
@@ -130,26 +136,35 @@ internal fun PlanTaskRow(
 }
 
 /**
- * The shelf the chips stand on, one tone further from the page than the card carrying it.
+ * The half of the card that changes the task, divided off from the half that describes it.
+ *
+ * Not a panel laid on the card but a piece of it: the surface runs out to the card's own edges and
+ * rounds only where the two halves meet, which is how the app's screens already split a page into
+ * its two tones. The card clips the rest.
  *
  * The card is drawn on `background` and this on `surfaceContainerHighest`, so the step between them
- * is read off the same ramp the app's screens use for their own two tones — darker than the card in
- * the light theme, lighter in the dark one, without either being named here.
- *
- * The gain is that a row now says at a glance which half of it answers and which half asks: the
- * task's own words on the card's tone, everything that changes the task on a surface of its own.
+ * is read off that same ramp — darker than the card in the light theme, lighter in the dark one,
+ * without either being named here.
  */
 @Composable
 private fun ChipTray(
+    shape: Shape,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(ChipTrayCorner),
+        shape = shape,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
-        Box(modifier = Modifier.padding(ChipTrayPadding)) { content() }
+        Box(
+            modifier = Modifier.padding(horizontal = cardContentPadding, vertical = 12.dp),
+            // Only does anything on the side panel, which is as tall as the card rather than as
+            // tall as its chips.
+            contentAlignment = Alignment.Center,
+        ) {
+            content()
+        }
     }
 }
 
