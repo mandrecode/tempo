@@ -73,7 +73,7 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it i
 - **Runtime module boundary:** production app code lives in `:app`. Auxiliary non-runtime modules (for example `:benchmark`) are allowed when they target or support `:app` and do not contain production domain, data, or UI implementation.
 - **Domain layer** must be pure Kotlin. No `android.*` imports, no Room, no Compose types.
 - **Data layer** is the only layer that touches Room, SharedPreferences, or network.
-- **UI layer**: `*Screen.kt` owns ViewModel/navigation; `*Content.kt` is pure Compose with no ViewModel reference. All `@Preview` composables go under `src/debug/`, not main source set.
+- **UI layer**: `*Screen.kt` owns ViewModel/navigation; `*Content.kt` is pure Compose with no ViewModel reference. All `@Preview` composables go under `src/debug/` — or `src/screenshotTest/` for the `@PreviewTest` previews backing committed reference images — never the main source set.
 - **No hardcoded strings** in composables — use `stringResource()`.
 - **Collections in UiState** must use `kotlinx.collections.immutable` types (`ImmutableList`, etc.).
 - **Trailing commas** in multi-line declarations.
