@@ -76,8 +76,11 @@ private val midDayState =
             ),
         overdue =
             persistentListOf(
+                // id 4, not 2: id 2 is already the "Reply to the design review" entry in upNext,
+                // and `UiState.entryFor()` resolves a task id against upNext + overdue + todayItems
+                // with firstOrNull, so a duplicate makes this row unreachable by id.
                 FocusAgendaItem.TaskEntry(
-                    task(2, "Renew gym membership", hour = 10, date = today.minus(2, DateTimeUnit.DAY)),
+                    task(4, "Renew gym membership", hour = 10, date = today.minus(2, DateTimeUnit.DAY)),
                 ),
             ),
         todayItems =
