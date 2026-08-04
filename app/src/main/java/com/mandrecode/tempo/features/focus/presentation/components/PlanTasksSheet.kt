@@ -132,27 +132,30 @@ internal fun PlanTasksSheet(
     var permissionsSettled by remember { mutableStateOf(false) }
     var datePickerTaskId by remember { mutableStateOf<Long?>(null) }
 
-    // The row the user last acted on, so the list can go and find it once it has moved sections.
-    var followTaskId by remember { mutableStateOf<Long?>(null) }
     val gridState = rememberLazyGridState()
+
+    // Where the list was looking when the last plan was made.
+    //
+    // A lazy list anchors on the *key* of its first visible row, and the row you plan is usually
+    // that one — it leaves for a section below the fold and the list goes after it, which meant a
+    // scroll back up for every task planned, in the one loop this sheet exists for. Anchoring the
+    // index instead holds the viewport still: the planned card slides away to where it now belongs
+    // and the next undated task rises into the place it left, under the finger already there.
+    var restoreScrollTo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     val openDatePicker: (Long) -> Unit = { datePickerTaskId = it }
     val requestPlan: (Long, LocalDate?) -> Unit = { taskId, date ->
-        followTaskId = taskId
+        restoreScrollTo = gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
         val plan = PendingPlan(taskId, date)
         if (permissionsSettled) plan.carryOut(onEvent, openDatePicker) else pendingPlan = plan
     }
 
-    // A planned card leaves for a section that is usually below the fold, and scroll position stays
-    // where it was — so the answer to a tap was a view of whatever fell into the gap. Follow it.
-    val rowOrder = state.rowOrder
-    LaunchedEffect(followTaskId, rowOrder) {
-        val target = followTaskId ?: return@LaunchedEffect
-        val index = rowOrder.indexOf(target)
-        if (index >= 0) {
-            gridState.animateScrollToItem(index)
-            followTaskId = null
-        }
+    // Keyed on the section sizes, which is exactly when a row has crossed between them and the list
+    // has had a chance to chase it. Changing one already-planned day for another moves nothing.
+    LaunchedEffect(state.unplanned.size, state.planned.size) {
+        val (index, offset) = restoreScrollTo ?: return@LaunchedEffect
+        gridState.scrollToItem(index, offset)
+        restoreScrollTo = null
     }
 
     TempoModalBottomSheet(

@@ -284,6 +284,14 @@ The sheet SHALL derive its presentation from the current window rather than assu
   nothing and pulls the checkbox away from the title it belongs to
 - **AND** that band closes the card, after any steps the task has rather than between them and the
   task they belong to
+
+#### Scenario: Giving several tasks a day in a row
+- **WHEN** a task is given a day and moves to the Planned section
+- **THEN** the list stays where it was looking rather than following the card
+- **AND** the next undated task takes the place the planned one left, so the queue can be worked
+  down without scrolling back after every tap
+- **AND** the count in the header falls by one, which is where the confirmation lives now that
+  nothing moves to provide it
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 

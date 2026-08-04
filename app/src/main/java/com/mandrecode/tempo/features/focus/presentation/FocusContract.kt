@@ -219,19 +219,6 @@ object FocusContract {
          */
         val showsSectionHeaders: Boolean get() = planned.isNotEmpty()
 
-        /**
-         * Task ids in the order the grid lays them out, with a slot for each section header, so a
-         * caller can scroll to a row by id without rebuilding the sheet's layout rules.
-         */
-        val rowOrder: List<Long>
-            get() =
-                buildList {
-                    if (showsSectionHeaders && unplanned.isNotEmpty()) add(HEADER_SLOT)
-                    unplanned.forEach { add(it.task.id) }
-                    if (showsSectionHeaders) add(HEADER_SLOT)
-                    planned.forEach { add(it.task.id) }
-                }
-
         private fun group(): Grouping {
             val planned = mutableListOf<UndatedTask>()
             val unplanned = mutableListOf<UndatedTask>()
@@ -247,11 +234,6 @@ object FocusContract {
                 }
             }
             return Grouping(planned = planned, unplanned = unplanned, changedTaskIds = changed)
-        }
-
-        private companion object {
-            /** Stands in for a header row, which has no task of its own. */
-            const val HEADER_SLOT = -1L
         }
 
         private data class Grouping(
