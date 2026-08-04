@@ -279,6 +279,9 @@ The sheet SHALL derive its presentation from the current window rather than assu
 - **AND** the chips stand on a surface one tone further from the page than the card carrying them,
   reaching the card's own edges and rounding only where the two halves meet, so a row reads as a
   card divided into the half that describes the task and the half that changes it
+- **AND** unfolding a row returns it to a single column with the chips as a band across its foot,
+  because a tall text column beside a short one of controls strands the controls in the middle of
+  nothing and pulls the checkbox away from the title it belongs to
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 

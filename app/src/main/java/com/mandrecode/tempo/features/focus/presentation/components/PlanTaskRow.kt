@@ -88,25 +88,38 @@ internal fun PlanTaskRow(
     var isSubtasksExpanded by remember(row.task.id) { mutableStateOf(false) }
 
     BoxWithConstraints(modifier = modifier) {
-        val chipsBeside = maxWidth >= ChipsBesideMinWidth
-        val chips: @Composable () -> Unit = {
+        val roomToSit = maxWidth >= ChipsBesideMinWidth
+
+        // The card's bottom band: it reaches both of the card's sides and rounds only along its top.
+        val chipBand: @Composable () -> Unit = {
             ChipTray(
-                // Beside the text it is the card's right-hand column, so it reaches the card's full
-                // height and rounds only where it meets the left-hand one. Under the text it is the
-                // card's bottom band, reaching both sides and rounding only along its top.
-                modifier = if (chipsBeside) Modifier.fillMaxHeight() else Modifier.fillMaxWidth(),
-                shape =
-                    if (chipsBeside) {
-                        RoundedCornerShape(topStart = ChipTrayCorner, bottomStart = ChipTrayCorner)
-                    } else {
-                        RoundedCornerShape(topStart = ChipTrayCorner, topEnd = ChipTrayCorner)
-                    },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(topStart = ChipTrayCorner, topEnd = ChipTrayCorner),
             ) {
                 QuickPlanChips(
                     plannedFor = row.task.reminderDate?.date,
                     today = today,
                     tomorrow = tomorrow,
-                    isBesideText = chipsBeside,
+                    isBesideText = false,
+                    onPlan = { date -> onPlan(row.task.id, date) },
+                    onUnplan = { onUnplan(row.task.id) },
+                )
+            }
+        }
+
+        // The card's right-hand column: it reaches the card's full height and rounds only where it
+        // meets the left-hand one. Offered rather than chosen — the card takes it only while it is
+        // folded, and falls back to the band above once it is not.
+        val chipColumn: @Composable () -> Unit = {
+            ChipTray(
+                modifier = Modifier.fillMaxHeight(),
+                shape = RoundedCornerShape(topStart = ChipTrayCorner, bottomStart = ChipTrayCorner),
+            ) {
+                QuickPlanChips(
+                    plannedFor = row.task.reminderDate?.date,
+                    today = today,
+                    tomorrow = tomorrow,
+                    isBesideText = true,
                     onPlan = { date -> onPlan(row.task.id, date) },
                     onUnplan = { onUnplan(row.task.id) },
                 )
@@ -125,12 +138,13 @@ internal fun PlanTaskRow(
             // beside the answer is a different job offered in the middle of this one. The full
             // editor is still a tap on the card away for anyone who wants it.
             showAddSubtaskAction = false,
-            footer = if (chipsBeside) null else chips,
-            trailingContent = if (chipsBeside) chips else null,
+            footer = chipBand,
+            trailingContent = if (roomToSit) chipColumn else null,
             // Beside, the card is two columns of similar height and the three parts read as one
-            // line of the list, so they centre on each other. Stacked, the chips are a band under
-            // the text and the checkbox belongs against the title, as it does everywhere else.
-            verticalAlignment = if (chipsBeside) Alignment.CenterVertically else Alignment.Top,
+            // line of the list, so they centre on each other. In the band the chips sit under the
+            // text and the checkbox belongs against the title, as it does everywhere else — which
+            // the card falls back to on its own whenever it is not using the column.
+            verticalAlignment = Alignment.CenterVertically,
         )
     }
 }

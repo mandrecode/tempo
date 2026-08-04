@@ -157,6 +157,9 @@ fun TaskItem(
      * needing the whole width long before the controls stop needing a home, and stacking them
      * underneath spends a band of height on space the row already had to its right.
      *
+     * An offer, not an instruction: the card takes it only while it is folded, and falls back to
+     * [footer] once a description or a list of steps has made the content column tall. Pass both.
+     *
      * Drawn after the card's own trailing icons, so it finishes at the card's edge and lines up
      * down the list whether or not a given row has a chevron to show.
      */
@@ -269,7 +272,13 @@ fun TaskItem(
             // then fills it. Only where there *is* a side column — an intrinsic pass costs a second
             // measure of every card in the list, and filling a height nothing has fixed yet makes
             // the content as tall as whatever bound it was handed, which off a list is the screen.
-            val hasSideColumn = trailingContent != null
+            // A card unfolded is a tall text column with a short one of controls beside it, and
+            // dividing that vertically leaves the controls stranded in the middle of a column of
+            // nothing while the checkbox drifts away from the title it belongs to. So the split is
+            // for the card at rest: once it unfolds, the slot drops back underneath the content and
+            // the card reads the way it does in the Tasks list, which is where the steps now are.
+            val isUnfolded = isDescriptionExpanded || (subtasks.isNotEmpty() && isSubtasksExpanded)
+            val hasSideColumn = trailingContent != null && !isUnfolded
             Row(
                 modifier =
                     Modifier
@@ -282,7 +291,9 @@ fun TaskItem(
                             .weight(1f)
                             .then(if (hasSideColumn) Modifier.fillMaxHeight() else Modifier)
                             .padding(cardContentPadding),
-                    verticalAlignment = verticalAlignment,
+                    // Centring only means anything while the two halves are of a height. Unfolded,
+                    // the checkbox and the chevron belong against the title, as everywhere else.
+                    verticalAlignment = if (hasSideColumn) verticalAlignment else Alignment.Top,
                 ) {
                     // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
                     // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep
@@ -482,13 +493,13 @@ fun TaskItem(
                 // card's edges rather than floating within them: a column of the card, divided off,
                 // rather than a panel dropped on top of one. It only needs its inner corners — the
                 // card clips the outer ones to whatever radius it is currently animating through.
-                trailingContent?.invoke()
+                if (hasSideColumn) trailingContent?.invoke()
             }
 
             // Edge to edge for the same reason, and last in the column so it closes the card off.
             // The slot supplies its own padding, since only it knows whether it is a surface that
             // has to reach the card's sides or content that should line up with the text above.
-            footer?.invoke()
+            if (!hasSideColumn) footer?.invoke()
 
             AnimatedVisibility(
                 visible = subtasks.isNotEmpty() && isSubtasksExpanded,
