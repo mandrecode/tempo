@@ -20,11 +20,15 @@ import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.datetime.LocalDateTime
 
+// Colors are `ColorOption.labelKey` values and icons are `TempoIcon.iconName` values, because
+// that is what `resolveColor()` and `TempoIcon.fromName()` match on. Drawable-style names
+// ("ic_work", "material_blue") resolve to nothing and fall back silently to the default glyph
+// and no color, so the preview stops showing what the screen actually renders.
 private val previewCategories =
     listOf(
-        Category(id = 1L, name = "Inbox", icon = "ic_category", isDefault = true, sortOrder = 0),
-        Category(id = 2L, name = "Work", color = "material_blue", icon = "ic_work", sortOrder = 1),
-        Category(id = 3L, name = "Personal", color = "material_green", icon = "ic_person", sortOrder = 2),
+        Category(id = 1L, name = "Inbox", icon = "inbox", isDefault = true, sortOrder = 0),
+        Category(id = 2L, name = "Work", color = "color_m3_blue", icon = "work", sortOrder = 1),
+        Category(id = 3L, name = "Personal", color = "color_m3_green", icon = "home", sortOrder = 2),
     )
 
 private val previewReminderDate = LocalDateTime(2026, 4, 20, 9, 0)
