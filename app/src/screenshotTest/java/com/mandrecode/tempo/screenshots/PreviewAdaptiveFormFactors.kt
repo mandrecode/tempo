@@ -42,3 +42,22 @@ internal const val TABLET_SPEC = "spec:width=1280dp,height=800dp,dpi=160"
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 )
 annotation class PreviewAdaptiveFormFactors
+
+/**
+ * Just the docking width, light and dark.
+ *
+ * For composables that only *render* past the 1200dp breakpoint — anything routed through
+ * `TempoModalSheet`, which is a `Dialog` below it, and layoutlib does not render dialog windows
+ * in previews. Screenshotting those at phone and foldable widths produces a near-flat scrim
+ * rectangle: it looks broken in review, and the only thing it asserts (that the width falls on
+ * the bottom-sheet side of the breakpoint) is already pinned exactly, at 1199 and 1200, by
+ * `SheetPlacementTest`. A unit test on a pure function beats a committed binary.
+ */
+@Preview(name = "tablet", device = TABLET_SPEC, showBackground = true)
+@Preview(
+    name = "tablet-dark",
+    device = TABLET_SPEC,
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+annotation class PreviewDockedWindow

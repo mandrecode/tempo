@@ -334,7 +334,9 @@ instrumented tests, which are cheaper to read and do not carry a binary payload.
   without it compile but produce no reference image.
 - Apply `@PreviewAdaptiveFormFactors` for the standard matrix: phone (411dp), foldable (673dp)
   and tablet (1280dp), each in light and dark. Those widths bracket the app's two adaptive
-  breakpoints — the navigation-rail one and `sheetPlacement`'s 1200dp docking one.
+  breakpoints — the navigation-rail one and `sheetPlacement`'s 1200dp docking one. Use
+  `@PreviewDockedWindow` (tablet only) for composables that render only past the docking
+  breakpoint — see *Dialogs Do Not Render* below.
 - Wrap content in `ScreenshotTheme`, not `TempoTheme` directly. It pins `useTempoColors = true`
   so the palette does not come from the platform's dynamic-color tables, which would rewrite
   every reference on a `compileSdk` bump.
@@ -344,10 +346,25 @@ instrumented tests, which are cheaper to read and do not carry a binary payload.
 ### Known Limitation: Dialogs Do Not Render
 
 layoutlib does not render `Dialog` windows in previews. Anything routed through `TempoModalSheet`
-(every bottom and top sheet) captures **the scrim only**. This is not a reason to delete those
-references — a scrim-only image is a precise assertion that the width falls on the bottom-sheet
-side of the breakpoint, so moving the breakpoint fails it — but it does mean sheet *content* can
-only be screenshotted on the docked-pane path.
+(every bottom and top sheet) captures **the scrim only** — a near-flat rectangle of two to five
+distinct grey levels. Sheet *content* can therefore only be screenshotted on the docked-pane path,
+which is why sheets use `@PreviewDockedWindow` (tablet only) rather than the full matrix.
+
+**Do not commit a reference for a width where the composable does not render.** It looks broken in
+review, and it asserts almost nothing: a flat image cannot tell "took the dialog path" apart from
+"rendered nothing at all", so it passes just as happily if the sheet stops composing entirely. The
+one thing it would catch — the breakpoint moving — is already pinned exactly, at 1199 and 1200, by
+`SheetPlacementTest`. Prefer a unit test on a pure function over a committed binary every time.
+
+A quick way to spot a worthless reference: count distinct grey levels. Real rendered content lands
+around 180–220; anything under about 10 is a blob.
+
+### Paint Your Own Background
+
+`showBackground = true` fills the preview white whatever the theme. Any area your composable does
+not paint itself stays white in dark mode, so a two-pane reference comes out half white and
+misrepresents the app. Add `Modifier.background(MaterialTheme.colorScheme.background)` to the root
+of anything that does not already fill its own background.
 
 When screenshotting a docked pane, reproduce the container the real screen gives it
 (`Modifier.width(DockedEditorWidth)` at the end of a `Row`). A bare docked sheet stretches across

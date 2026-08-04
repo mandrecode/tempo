@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.screenshots
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.android.tools.screenshot.PreviewTest
@@ -47,25 +49,31 @@ private val editedTask =
  * The real editor sheet, resolved through the real placement rule, in the container the real
  * screen gives it.
  *
- * `rememberSheetPlacement()` reads the window width, so this docks on the tablet spec and stays
- * a bottom sheet on the other two — the same fork `PlanTasksSheet` took when it shipped broken
- * on a 1280dp tablet in #366. That bug was invisible to the 265 instrumented tests because they
- * all run at one window size and a Compose test cannot resize the host window; a preview renders
- * at whatever the device spec says, which is exactly the axis those tests cannot move.
+ * `rememberSheetPlacement()` reads the window width, so at the tablet spec this takes the docked
+ * path — the same fork `PlanTasksSheet` took when it shipped broken on a 1280dp tablet in #366.
+ * That bug was invisible to the 265 instrumented tests because they all run at one window size
+ * and a Compose test cannot resize the host window; a preview renders at whatever the device
+ * spec says, which is exactly the axis those tests cannot move.
  *
  * The [Row] mirrors `TasksScreen`: live content takes the remaining width and the editor gets a
  * [DockedEditorWidth] column at the end. Rendering the sheet bare instead would let the docked
  * pane stretch across the whole window and bake *the #366 bug itself* into the reference image.
  *
- * On the phone and foldable specs the sheet is a `Dialog`, and layoutlib does not render dialog
- * windows in previews — those references capture the scrim only. They are kept anyway: a
- * scrim-only image is a precise assertion that the width falls on the bottom-sheet side of the
- * 1200dp breakpoint, so moving the breakpoint fails them.
+ * Tablet-only by way of [PreviewDockedWindow] — below the breakpoint this is a `Dialog`, which
+ * layoutlib does not render. See that annotation for why no reference is kept for those widths.
  */
 @Composable
 private fun AdaptiveTaskSheet(task: Task?) {
     ScreenshotTheme {
-        Row(modifier = Modifier.fillMaxSize()) {
+        // The background has to be painted explicitly: `showBackground = true` fills the preview
+        // white whatever the theme, so without this the live-content side of a dark-theme tablet
+        // reference comes out white and the image misrepresents the app.
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
             Spacer(modifier = Modifier.weight(1f))
             Box(
                 modifier =
@@ -105,14 +113,14 @@ private fun AdaptiveTaskSheet(task: Task?) {
 }
 
 @PreviewTest
-@PreviewAdaptiveFormFactors
+@PreviewDockedWindow
 @Composable
 private fun AdaptiveTaskSheetNewTask() {
     AdaptiveTaskSheet(task = null)
 }
 
 @PreviewTest
-@PreviewAdaptiveFormFactors
+@PreviewDockedWindow
 @Composable
 private fun AdaptiveTaskSheetEditTask() {
     AdaptiveTaskSheet(task = editedTask)
