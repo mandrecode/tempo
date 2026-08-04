@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.1](https://github.com/mandrecode/tempo/compare/v1.13.0...v1.13.1) (2026-08-04)
+
+
+### Bug Fixes
+
+* **#372:** let a settling row slide rather than jump ([#374](https://github.com/mandrecode/tempo/issues/374)) ([e6a4f0f](https://github.com/mandrecode/tempo/commit/e6a4f0f8f88b4551024c3debbdbefec858c4519f))
+
 ## [1.13.0](https://github.com/mandrecode/tempo/compare/v1.12.0...v1.13.0) (2026-08-04)
 
 
