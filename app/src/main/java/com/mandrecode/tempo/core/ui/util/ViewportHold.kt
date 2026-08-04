@@ -27,7 +27,7 @@ import androidx.compose.runtime.setValue
  * the scroll position while the list still has its old contents.
  *
  * ```
- * val holdViewport = rememberViewportHold(listState, uiState.active, uiState.completed)
+ * val holdViewport = rememberViewportHold(listState, activeCount, completedCount)
  * ...
  * onToggleCompletion = { task ->
  *     holdViewport()
