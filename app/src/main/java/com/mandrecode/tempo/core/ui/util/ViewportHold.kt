@@ -35,21 +35,25 @@ import androidx.compose.runtime.setValue
  * }
  * ```
  *
- * @param sectionKeys values that change when a row crosses between sections, and only then. How
- * many rows each section holds is the usual answer. They have to change *by value* — a collection
- * that mutates in place reads as the same key, the effect never restarts, and the restore silently
- * never happens — and they should not change for anything else, or the effect restarts for edits
- * that moved nothing.
+ * @param sectionKey a value that changes when a row crosses between sections, and only then. How
+ * many rows a section holds is the usual answer. It has to change *by value* — a collection that
+ * mutates in place reads as the same key, the effect never restarts, and the restore silently never
+ * happens — and it should not change for anything else, or the effect restarts for edits that moved
+ * nothing. One is required rather than a bare vararg, because none at all is the same silent
+ * nothing and there is no reason to let it compile.
+ * @param moreSectionKeys the rest, where more than one section is in play — usually the count on
+ * the other side of the divide.
  */
 @Composable
 fun rememberViewportHold(
     state: LazyListState,
-    vararg sectionKeys: Any?,
+    sectionKey: Any?,
+    vararg moreSectionKeys: Any?,
 ): () -> Unit =
     rememberViewportHold(
         readIndex = { state.firstVisibleItemIndex },
         readOffset = { state.firstVisibleItemScrollOffset },
-        sectionKeys = sectionKeys,
+        sectionKeys = arrayOf(sectionKey, *moreSectionKeys),
         scrollToItem = { index, offset -> state.scrollToItem(index, offset) },
     )
 
@@ -57,12 +61,13 @@ fun rememberViewportHold(
 @Composable
 fun rememberViewportHold(
     state: LazyGridState,
-    vararg sectionKeys: Any?,
+    sectionKey: Any?,
+    vararg moreSectionKeys: Any?,
 ): () -> Unit =
     rememberViewportHold(
         readIndex = { state.firstVisibleItemIndex },
         readOffset = { state.firstVisibleItemScrollOffset },
-        sectionKeys = sectionKeys,
+        sectionKeys = arrayOf(sectionKey, *moreSectionKeys),
         scrollToItem = { index, offset -> state.scrollToItem(index, offset) },
     )
 
