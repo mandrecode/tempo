@@ -496,11 +496,6 @@ fun TaskItem(
                 if (hasSideColumn) trailingContent?.invoke()
             }
 
-            // Edge to edge for the same reason, and last in the column so it closes the card off.
-            // The slot supplies its own padding, since only it knows whether it is a surface that
-            // has to reach the card's sides or content that should line up with the text above.
-            if (!hasSideColumn) footer?.invoke()
-
             AnimatedVisibility(
                 visible = subtasks.isNotEmpty() && isSubtasksExpanded,
                 enter = expandVertically(spring(stiffness = Spring.StiffnessMedium)) + fadeIn(),
@@ -592,6 +587,16 @@ fun TaskItem(
                     }
                 }
             }
+
+            // After the steps, not between them and the task they belong to. The band is shaped
+            // to close the card — flush along the bottom, rounded only on top — and it can only
+            // do that from the end of the column. Set above the steps it cut a task away from
+            // what it is made of, and its flat edge ran into the first of them.
+            //
+            // Edge to edge, and the slot supplies its own padding: only it knows whether it is a
+            // surface that has to reach the card's sides or content that should line up with the
+            // text above.
+            if (!hasSideColumn) footer?.invoke()
         }
     }
 }

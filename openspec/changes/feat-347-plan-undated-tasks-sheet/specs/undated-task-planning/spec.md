@@ -282,6 +282,8 @@ The sheet SHALL derive its presentation from the current window rather than assu
 - **AND** unfolding a row returns it to a single column with the chips as a band across its foot,
   because a tall text column beside a short one of controls strands the controls in the middle of
   nothing and pulls the checkbox away from the title it belongs to
+- **AND** that band closes the card, after any steps the task has rather than between them and the
+  task they belong to
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 
