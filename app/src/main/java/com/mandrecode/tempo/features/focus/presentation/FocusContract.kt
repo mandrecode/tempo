@@ -178,17 +178,24 @@ object FocusContract {
         val isLoading: Boolean = true,
     ) {
         /**
+         * One pass over the rows, answering every question the sheet asks of them.
+         *
+         * Computed once per state rather than per read: the sections, the changed set and the
+         * header rule were three separately written predicates over the same list, each re-filtering
+         * on every recomposition and each free to drift from the others about what "settled" means.
+         */
+        private val grouping: Grouping by lazy { group() }
+
+        /**
          * Settled, one way or the other: given a day, or ticked off.
          *
          * A task you complete while planning is not waiting for a day any more, and going on
          * counting it as one would have the sheet ask for something already done. The card shows it
          * struck through, so it reads as finished rather than scheduled.
          */
-        val planned: List<UndatedTask>
-            get() = rows.filter { it.task.reminderDate != null || it.task.isCompleted }
+        val planned: List<UndatedTask> get() = grouping.planned
 
-        val unplanned: List<UndatedTask>
-            get() = rows.filter { it.task.reminderDate == null && !it.task.isCompleted }
+        val unplanned: List<UndatedTask> get() = grouping.unplanned
 
         /**
          * Everything this sheet session changed, however it was changed — a chip, or the full
@@ -201,15 +208,7 @@ object FocusContract {
          * counts as neither: [writes] holds the latest value asked for, not a history, so it lands
          * back on the original and drops out.
          */
-        val changedTaskIds: List<Long>
-            get() = rows.map { it.task.id }.filter(::hasMoved)
-
-        private fun hasMoved(taskId: Long): Boolean {
-            val original = originalReminders[taskId]
-            val current = rows.firstOrNull { it.task.id == taskId }?.task?.reminderDate
-            val asked = writes[taskId]
-            return current != original || (writes.containsKey(taskId) && asked != original)
-        }
+        val changedTaskIds: List<Long> get() = grouping.changedTaskIds
 
         /** Whether closing has anything to offer back. */
         val hasChanges: Boolean get() = changedTaskIds.isNotEmpty()
@@ -219,6 +218,47 @@ object FocusContract {
          * "Unplanned" over everything are labelling the obvious.
          */
         val showsSectionHeaders: Boolean get() = planned.isNotEmpty()
+
+        /**
+         * Task ids in the order the grid lays them out, with a slot for each section header, so a
+         * caller can scroll to a row by id without rebuilding the sheet's layout rules.
+         */
+        val rowOrder: List<Long>
+            get() =
+                buildList {
+                    if (showsSectionHeaders && unplanned.isNotEmpty()) add(HEADER_SLOT)
+                    unplanned.forEach { add(it.task.id) }
+                    if (showsSectionHeaders) add(HEADER_SLOT)
+                    planned.forEach { add(it.task.id) }
+                }
+
+        private fun group(): Grouping {
+            val planned = mutableListOf<UndatedTask>()
+            val unplanned = mutableListOf<UndatedTask>()
+            val changed = mutableListOf<Long>()
+            rows.forEach { row ->
+                val id = row.task.id
+                val current = row.task.reminderDate
+                val original = originalReminders[id]
+                if (current != null || row.task.isCompleted) planned += row else unplanned += row
+                val asked = writes[id]
+                if (current != original || (writes.containsKey(id) && asked != original)) {
+                    changed += id
+                }
+            }
+            return Grouping(planned = planned, unplanned = unplanned, changedTaskIds = changed)
+        }
+
+        private companion object {
+            /** Stands in for a header row, which has no task of its own. */
+            const val HEADER_SLOT = -1L
+        }
+
+        private data class Grouping(
+            val planned: List<UndatedTask>,
+            val unplanned: List<UndatedTask>,
+            val changedTaskIds: List<Long>,
+        )
     }
 
     /** A start that would replace a running session, waiting to be confirmed. */

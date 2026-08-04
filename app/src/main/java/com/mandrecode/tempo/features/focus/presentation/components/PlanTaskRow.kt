@@ -3,12 +3,16 @@ package com.mandrecode.tempo.features.focus.presentation.components
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -20,11 +24,14 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import com.mandrecode.tempo.util.DateTimeFormatter
-import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
-import kotlinx.datetime.plus
 
-private val QuickPlanChipHeight = 40.dp
+/**
+ * Smaller than the app's default chip. These repeat on every row, so three of them at full size
+ * carried as much weight as the task title they belong to — and the title is the thing you are
+ * deciding about.
+ */
+private val QuickPlanChipHeight = 36.dp
 
 /**
  * One task, as the Tasks list itself draws it, with the day it is missing offered underneath.
@@ -37,6 +44,7 @@ private val QuickPlanChipHeight = 40.dp
 internal fun PlanTaskRow(
     row: UndatedTask,
     today: LocalDate,
+    tomorrow: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
     onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
@@ -65,6 +73,7 @@ internal fun PlanTaskRow(
             QuickPlanChips(
                 plannedFor = row.task.reminderDate?.date,
                 today = today,
+                tomorrow = tomorrow,
                 onPlan = { date -> onPlan(row.task.id, date) },
                 onUnplan = { onUnplan(row.task.id) },
             )
@@ -90,11 +99,10 @@ internal fun PlanTaskRow(
 private fun QuickPlanChips(
     plannedFor: LocalDate?,
     today: LocalDate,
+    tomorrow: LocalDate,
     onPlan: (LocalDate?) -> Unit,
     onUnplan: () -> Unit,
 ) {
-    val tomorrow = remember(today) { today.plus(1, DateTimeUnit.DAY) }
-
     FlowRow(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -124,6 +132,21 @@ private fun QuickPlanChips(
             isSelected = chosenDate != null,
             onPlan = { onPlan(null) },
             onUnplan = onUnplan,
+            // Only while it stands for an action. Two of these chips are values and this one opens
+            // a picker, which nothing distinguished until it had been used; once it carries a date
+            // it is a value like the others and the glyph would be describing the wrong thing.
+            icon =
+                if (chosenDate == null) {
+                    {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_calendar),
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                        )
+                    }
+                } else {
+                    null
+                },
         )
     }
 }
@@ -134,6 +157,7 @@ private fun QuickPlanChip(
     isSelected: Boolean,
     onPlan: () -> Unit,
     onUnplan: () -> Unit,
+    icon: (@Composable () -> Unit)? = null,
 ) {
     val unplanLabel = stringResource(R.string.plan_tasks_unplan_action, label)
 
@@ -143,8 +167,13 @@ private fun QuickPlanChip(
         onClick = if (isSelected) onUnplan else onPlan,
         isFirst = true,
         isLast = true,
+        icon = icon,
         height = QuickPlanChipHeight,
-        horizontalPadding = 14.dp,
+        horizontalPadding = 12.dp,
+        // Outline only when unchosen. Filled containers on every chip of every row made the row's
+        // controls compete with its title; an outline still reads as tappable and lets the one that
+        // has been chosen be the only filled thing on the card.
+        unselectedContainerColor = Color.Transparent,
         // These stand alone with gaps between them rather than joined into a run, so the chosen one
         // squares off instead of rounding out.
         selectedCornerRadius = SquaredSelection,

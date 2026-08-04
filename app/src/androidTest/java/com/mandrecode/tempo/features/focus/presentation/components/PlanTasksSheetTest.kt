@@ -95,6 +95,7 @@ class PlanTasksSheetTest {
                     PlanTaskRow(
                         row = row,
                         today = today,
+                        tomorrow = today.plus(1, DateTimeUnit.DAY),
                         onPlan = onPlan,
                         onUnplan = onUnplan,
                         onEdit = {},

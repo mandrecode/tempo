@@ -364,7 +364,11 @@ internal fun MetadataRow(
                 // empty space. Only the date flexes now, and it gets everything the rest leaves.
                 add(
                     MetadataItem("category") {
-                        CategoryBadge(category)
+                        // A wider gap after the category than between the badges that follow it. It
+                        // is a different kind of fact — where the task lives, rather than something
+                        // about the task — and flush against the priority disc the two coloured
+                        // pills scanned as one two-tone control.
+                        Box(modifier = Modifier.padding(end = 4.dp)) { CategoryBadge(category) }
                     },
                 )
             }

@@ -1,7 +1,12 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +14,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -16,41 +22,47 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyGridItemScope
 import androidx.compose.foundation.lazy.grid.LazyGridScope
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
-import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
-import com.mandrecode.tempo.core.ui.components.TempoDatePickerDialog
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sheetTitle
@@ -58,9 +70,10 @@ import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.plus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
@@ -80,6 +93,20 @@ internal const val PLAN_SHEET_UNPLANNED_HEADER_TAG = "plan_sheet_unplanned_heade
 private val PlanRowMinWidth = 328.dp
 
 /**
+ * How much of the day stays visible behind the sheet.
+ *
+ * The sheet may otherwise grow to everything below the status bar, which on a full list hides Focus
+ * completely — and planning *without leaving the day* was the whole argument for putting this here
+ * rather than in Tasks. Sized to clear the title and the summary hero, because a peek of bare
+ * background would keep the sheet off the top of the screen without telling anyone anything: what
+ * has to survive is the part of Focus that says what today already looks like.
+ */
+private val AgendaPeekHeight = 200.dp
+
+/** Enough of a gradient to say "this continues" without drawing a line across the content. */
+private val ScrollFadeHeight = 20.dp
+
+/**
  * Somewhere to give undated work a day, without leaving the day you were looking at.
  *
  * Every change here lands the moment it is made — there is nothing to save, and so nothing to lose
@@ -96,6 +123,8 @@ internal fun PlanTasksSheet(
 ) {
     val close = { onEvent(FocusContract.UiEvent.ClosePlanSheet) }
     val today = clock.todayIn(TimeZone.currentSystemDefault())
+    // Once per sheet rather than once per row: every chip row was deriving the same date.
+    val tomorrow = remember(today) { today.plus(1, DateTimeUnit.DAY) }
 
     // Held rather than acted on: the first plan of a session has to get past the permission
     // education first, and the chip the user pressed is what should happen once it does.
@@ -103,10 +132,27 @@ internal fun PlanTasksSheet(
     var permissionsSettled by remember { mutableStateOf(false) }
     var datePickerTaskId by remember { mutableStateOf<Long?>(null) }
 
+    // The row the user last acted on, so the list can go and find it once it has moved sections.
+    var followTaskId by remember { mutableStateOf<Long?>(null) }
+    val gridState = rememberLazyGridState()
+
     val openDatePicker: (Long) -> Unit = { datePickerTaskId = it }
     val requestPlan: (Long, LocalDate?) -> Unit = { taskId, date ->
+        followTaskId = taskId
         val plan = PendingPlan(taskId, date)
         if (permissionsSettled) plan.carryOut(onEvent, openDatePicker) else pendingPlan = plan
+    }
+
+    // A planned card leaves for a section that is usually below the fold, and scroll position stays
+    // where it was — so the answer to a tap was a view of whatever fell into the gap. Follow it.
+    val rowOrder = state.rowOrder
+    LaunchedEffect(followTaskId, rowOrder) {
+        val target = followTaskId ?: return@LaunchedEffect
+        val index = rowOrder.indexOf(target)
+        if (index >= 0) {
+            gridState.animateScrollToItem(index)
+            followTaskId = null
+        }
     }
 
     TempoModalBottomSheet(
@@ -130,6 +176,8 @@ internal fun PlanTasksSheet(
         PlanSheetBody(
             state = state,
             today = today,
+            tomorrow = tomorrow,
+            gridState = gridState,
             onPlan = requestPlan,
             onEvent = onEvent,
         )
@@ -160,13 +208,24 @@ internal fun PlanTasksSheet(
 private fun ColumnScope.PlanSheetBody(
     state: FocusContract.PlanSheetState,
     today: LocalDate,
+    tomorrow: LocalDate,
+    gridState: LazyGridState,
     onPlan: (Long, LocalDate?) -> Unit,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
+    val windowHeight =
+        with(LocalDensity.current) {
+            LocalWindowInfo.current.containerSize.height
+                .toDp()
+        }
+    // Never taller than the window less a strip of the day. Coerced, so a short window still gets a
+    // usable sheet rather than a sliver.
+    val maxBodyHeight = (windowHeight - AgendaPeekHeight).coerceAtLeast(windowHeight * 0.6f)
     Column(
         modifier =
             Modifier
                 .fillMaxWidth()
+                .heightIn(max = maxBodyHeight)
                 .padding(horizontal = 20.dp)
                 // The sheet is only as tall as this column, so every row that changes section
                 // resizes the whole surface. Left to itself that is a snap — the sheet jumps, and
@@ -185,6 +244,8 @@ private fun ColumnScope.PlanSheetBody(
             PlanSheetRows(
                 state = state,
                 today = today,
+                tomorrow = tomorrow,
+                gridState = gridState,
                 onPlan = onPlan,
                 onUnplan = { taskId -> onEvent(FocusContract.UiEvent.UnplanTask(taskId)) },
                 onEdit = { task -> onEvent(FocusContract.UiEvent.EditTask(task)) },
@@ -240,45 +301,6 @@ private fun PlanSheetDoneButton(onClick: () -> Unit) {
     }
 }
 
-/** The two things that can stand between a chip and a date: permission, and the picker itself. */
-@Composable
-private fun PlanSheetDialogs(
-    pendingPlan: PendingPlan?,
-    datePickerTaskId: Long?,
-    today: LocalDate,
-    onGrantPermissions: () -> Unit,
-    onDeclinePermissions: () -> Unit,
-    onChooseDate: (Long, LocalDate) -> Unit,
-    onDismissDatePicker: () -> Unit,
-) {
-    HandleReminderPermissions(
-        show = pendingPlan != null,
-        onGrantPermissions = onGrantPermissions,
-        onDismiss = onDeclinePermissions,
-    )
-
-    datePickerTaskId?.let { taskId ->
-        PlanDatePickerDialog(
-            today = today,
-            onConfirm = { date -> onChooseDate(taskId, date) },
-            onDismiss = onDismissDatePicker,
-        )
-    }
-}
-
-/** A chip press waiting on permissions. A null [date] means "let the user pick one". */
-private data class PendingPlan(
-    val taskId: Long,
-    val date: LocalDate?,
-)
-
-private fun PendingPlan.carryOut(
-    onEvent: (FocusContract.UiEvent) -> Unit,
-    openDatePicker: (Long) -> Unit,
-) {
-    if (date == null) openDatePicker(taskId) else onEvent(FocusContract.UiEvent.PlanTask(taskId, date))
-}
-
 @Composable
 private fun PlanSheetHeader(
     remainingCount: Int,
@@ -313,41 +335,93 @@ private fun PlanSheetHeader(
 private fun PlanSheetRows(
     state: FocusContract.PlanSheetState,
     today: LocalDate,
+    tomorrow: LocalDate,
+    gridState: LazyGridState,
     onPlan: (Long, LocalDate?) -> Unit,
     onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
     onToggleCompletion: (Task) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LazyVerticalGrid(
-        columns = GridCells.Adaptive(minSize = PlanRowMinWidth),
-        modifier = modifier.fillMaxWidth(),
-        contentPadding = PaddingValues(bottom = 8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        if (state.showsSectionHeaders && state.unplanned.isNotEmpty()) {
-            fullWidthItem(key = "unplanned_header") {
-                PlanSectionHeader(
-                    label = stringResource(R.string.plan_tasks_section_unplanned),
-                    testTag = PLAN_SHEET_UNPLANNED_HEADER_TAG,
-                    modifier = Modifier.animateItem(),
-                )
-            }
-        }
-        planRows(state.unplanned, today, onPlan, onUnplan, onEdit, onToggleCompletion)
+    // Whether anything has scrolled past either edge. The list sits between a fixed title and a
+    // fixed button, and a card sliced by either of them with no boundary reads as a broken render
+    // rather than as content carrying on.
+    val fadeTop by remember { derivedStateOf { gridState.canScrollBackward } }
+    val fadeBottom by remember { derivedStateOf { gridState.canScrollForward } }
+    val surface = MaterialTheme.colorScheme.surfaceContainerHigh
 
-        if (state.showsSectionHeaders) {
-            fullWidthItem(key = "planned_header") {
-                PlanSectionHeader(
-                    label = stringResource(R.string.plan_tasks_section_planned),
-                    testTag = PLAN_SHEET_PLANNED_HEADER_TAG,
-                    modifier = Modifier.animateItem(),
-                )
+    Box(modifier = modifier.fillMaxWidth()) {
+        LazyVerticalGrid(
+            state = gridState,
+            columns = GridCells.Adaptive(minSize = PlanRowMinWidth),
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(bottom = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            if (state.showsSectionHeaders && state.unplanned.isNotEmpty()) {
+                fullWidthItem(key = "unplanned_header") {
+                    PlanSectionHeader(
+                        label = stringResource(R.string.plan_tasks_section_unplanned),
+                        testTag = PLAN_SHEET_UNPLANNED_HEADER_TAG,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
             }
+            planRows(state.unplanned, today, tomorrow, onPlan, onUnplan, onEdit, onToggleCompletion)
+
+            if (state.showsSectionHeaders) {
+                fullWidthItem(key = "planned_header") {
+                    PlanSectionHeader(
+                        label = stringResource(R.string.plan_tasks_section_planned),
+                        testTag = PLAN_SHEET_PLANNED_HEADER_TAG,
+                        modifier = Modifier.animateItem(),
+                    )
+                }
+            }
+            planRows(state.planned, today, tomorrow, onPlan, onUnplan, onEdit, onToggleCompletion)
         }
-        planRows(state.planned, today, onPlan, onUnplan, onEdit, onToggleCompletion)
+
+        ScrollFade(visible = fadeTop, surface = surface, alignment = Alignment.TopCenter)
+        ScrollFade(visible = fadeBottom, surface = surface, alignment = Alignment.BottomCenter)
     }
+}
+
+/**
+ * A short gradient at whichever edge has content beyond it.
+ *
+ * Not a divider: a line would claim the list ends there, and it does not — it carries on under the
+ * title above or the button below. A fade says the same thing without drawing a boundary that is
+ * not real.
+ */
+@Composable
+private fun BoxScope.ScrollFade(
+    visible: Boolean,
+    surface: Color,
+    alignment: Alignment,
+) {
+    val alpha by animateFloatAsState(
+        targetValue = if (visible) 1f else 0f,
+        animationSpec = tween(TempoMotionTokens.DURATION_SHORT_MILLIS),
+        label = "plan_scroll_fade",
+    )
+    if (alpha == 0f) return
+
+    val colors =
+        if (alignment == Alignment.TopCenter) {
+            listOf(surface, Color.Transparent)
+        } else {
+            listOf(Color.Transparent, surface)
+        }
+    Box(
+        modifier =
+            Modifier
+                .align(alignment)
+                .fillMaxWidth()
+                .height(ScrollFadeHeight)
+                .alpha(alpha)
+                .background(Brush.verticalGradient(colors)),
+    )
 }
 
 private fun LazyGridScope.fullWidthItem(
@@ -358,6 +432,7 @@ private fun LazyGridScope.fullWidthItem(
 private fun LazyGridScope.planRows(
     rows: List<UndatedTask>,
     today: LocalDate,
+    tomorrow: LocalDate,
     onPlan: (Long, LocalDate?) -> Unit,
     onUnplan: (Long) -> Unit,
     onEdit: (Task) -> Unit,
@@ -366,6 +441,7 @@ private fun LazyGridScope.planRows(
     PlanTaskRow(
         row = rows[index],
         today = today,
+        tomorrow = tomorrow,
         onPlan = onPlan,
         onUnplan = onUnplan,
         onEdit = onEdit,
@@ -396,29 +472,4 @@ private fun PlanSectionHeader(
             modifier = Modifier.padding(start = 12.dp, end = 8.dp),
         )
     }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PlanDatePickerDialog(
-    today: LocalDate,
-    onConfirm: (LocalDate) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    // Planning is about what is ahead. A date already gone would be a reminder that never fires,
-    // which is the one thing the sheet exists to stop happening.
-    val todayOrLater =
-        remember(today) {
-            object : SelectableDates {
-                override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-                    utcTimeMillis >= today.atStartOfDayIn(TimeZone.UTC).toEpochMilliseconds()
-            }
-        }
-
-    TempoDatePickerDialog(
-        initialDate = today,
-        onConfirm = onConfirm,
-        onDismiss = onDismiss,
-        selectableDates = todayOrLater,
-    )
 }
