@@ -9,7 +9,7 @@ the app's UI changes enough to make these stale.
 
 ```
 distribution/screenshots/
-  phone/     phone_{en,es}_{light,dark}_{1_routines_today,2_tasks_work,3_tasks_shopping,4_settings}.png
+  phone/     phone_{en,es}_{light,dark}_{1_focus_today,2_focus_session,3_routines_today,4_tasks_personal}.png
   medium/    medium_...
   expanded/  expanded_...
   desktop/   desktop_...
@@ -17,6 +17,31 @@ distribution/screenshots/
 ```
 
 4 views × light/dark × 2 locales × 5 form factors = 80 images.
+
+The four views are one story told in order: the day as Focus sees it, a session
+started on it, and then Routines and Tasks with that session still running.
+Capturing them in that order is what puts the running session into the last two,
+so the sequence in `capture-screenshot-set.py` is not arbitrary.
+
+How the session shows there depends on how much room the navigation has:
+
+| Form factor | Navigation | With a session running |
+|---|---|---|
+| Phone | bottom bar | Focus tab widens into a pill with the countdown |
+| Medium tablet | compact icon-only rail | Focus tab tinted; no room for digits |
+| Expanded tablet, Desktop | labeled rail | countdown replaces the "Focus" label |
+| XR | compact icon-only rail | Focus tab tinted; no room for digits |
+
+Two things about the Tasks shot are load-bearing:
+
+- It opens the **Personal** category, the one seeded category with nothing
+  completed in it. A category with completed tasks gains a clear-completed
+  action, and the floating bar drops the countdown to make room
+  (`hasContextualActions` in `PersistentFloatingBar.kt`) — taking the running
+  session out of a shot that exists to show it running.
+- `generate-seed-backup.py` orders Personal first among the user-made
+  categories so its chip is on screen without scrolling on a phone, where the
+  row only fits about three.
 
 ## Prerequisites
 
@@ -28,12 +53,18 @@ distribution/screenshots/
   /tmp/venv/bin/pip install cryptography Pillow`
 - A debug build: `./gradlew assembleDebug`
 
-**Before building, temporarily drop the "(Debug)" suffix.** Desktop and
-Expanded/big-tablet form factors render OS window chrome (a caption bar
-with the app's label) around the app, which would otherwise leak
-"Tempo (Debug)" into those screenshots. Phone and Medium tablet run
-without window chrome and are unaffected; XR's chrome pill has no text
-label either way.
+**Before building, temporarily drop the "(Debug)" suffix.** Two different
+things put `R.string.app_name` on screen, and both would otherwise read
+"Tempo (Debug)":
+
+- **Desktop** draws real OS window chrome — a caption bar carrying the
+  app's launcher label — around the app.
+- **Expanded/big tablet** has no window chrome, but its labeled navigation
+  rail prints the app name as its own header (`PersistentFloatingBar.kt`
+  renders `app_name` when `isExpandedRail`).
+
+Phone and Medium tablet get the icon-only rail and no chrome, so they are
+unaffected; XR's chrome pill has no text label either way.
 
 ```bash
 # In app/build.gradle.kts, buildTypes { debug { ... } }:
@@ -72,7 +103,7 @@ Four scripts, composed by a fifth:
 
 - **`scripts/generate-seed-backup.py --locale en|es --theme light|dark
   --passphrase P -o FILE`** — writes an encrypted backup (as `.json`, see above)
-  containing a curated demo dataset (12 tasks across 4 categories with a mix of
+  containing a curated demo dataset (14 tasks across 4 categories with a mix of
   priorities/due dates/completion states, 7 habits split Build/Quit, one
   3-member habit chain), with category names, task titles/descriptions, and
   habit titles translated per locale. Every date is computed relative to
@@ -93,12 +124,29 @@ Four scripts, composed by a fifth:
   bottom sheet doesn't cover the first screenshot, then generates and
   imports the backup via the two scripts above.
 - **`scripts/capture-screenshot-set.py <serial> <out-dir> <prefix> <en|es>`**
-  — navigates the seeded app (Routines/Today → Tasks/Work-category →
-  Tasks/Shopping-category → Settings) and screenshots each via
-  `adb screencap`. Navigation finds UI elements by `android layout`'s
-  content-desc, falling back to plain text (desktop's nav rail only sets
-  text, not content-desc); the target text/desc strings are looked up
-  per locale in the script's `NAV` dict.
+  — navigates the seeded app (Focus/Today → start a session from the "Up
+  next" card → Routines/Today → Tasks/Personal-category) and screenshots
+  each via `adb screencap`. Navigation finds UI elements by `android
+  layout`'s content-desc, falling back to plain text (desktop's nav rail
+  only sets text, not content-desc); the target text/desc strings are
+  looked up per locale in the script's `NAV` dict. The start button is
+  matched on the *verb* of `focus_session_start` plus a digit, because the
+  rest of its label is the session length from Settings.
+
+  The Focus tab only answers to the content-desc "Focus" while nothing is
+  running — once a session starts it relabels itself to the time left — so
+  the first step relies on the `pm clear` that `seed-screenshot-data.sh`
+  does. Running this script twice against the same device without
+  re-seeding fails on step 1 rather than producing a wrong image.
+
+  Every shot **waits for a piece of content only the finished screen has**
+  (the start button, the "Focusing" status, the seeded chain title, the
+  first seeded Personal task) before the shutter goes. A fixed settle alone
+  was not enough on XR: Focus was still drawing its loading indicator, and
+  the resulting blank panel with a spinner in the middle reads as a
+  legitimately empty day rather than as a failed capture. If you add a
+  view, give it a marker too — a fixed sleep will pass on a fast emulator
+  and quietly produce a bad image on a slow one.
 - **`scripts/generate-screenshot-set.sh <serial> <out-dir> <prefix> <en|es>`**
   — runs the above twice (light, then dark) for one form factor and
   locale, and crops XR output to 16:9 when `prefix` is `xr` (see below).
@@ -125,9 +173,9 @@ pipeline handles both:
    support), plus entries in `NAV` in `capture-screenshot-set.py` and
    `STRINGS` in `import-seed-backup.py` with the corresponding translated
    strings (look them up in `app/src/main/res/values-<locale>/strings.xml` —
-   e.g. `routines`, `tasks`, `settings`, `backup_import_title` — don't
-   guess; a mismatched string means the script can't find the element to
-   tap).
+   e.g. `focus`, `routines`, `tasks`, `focus_session_start`,
+   `backup_import_title` — don't guess; a mismatched string means the
+   script can't find the element to tap).
 
    Note that the **system file picker** follows the emulator's *system*
    locale, not the app's per-app one, so `import-seed-backup.py` addresses
@@ -146,21 +194,21 @@ tried first and abandoned: the app has a single width breakpoint at
 | Form factor | AVD | Orientation | Result |
 |---|---|---|---|
 | Phone | `Pixel_10` | portrait (native) | 1080×2424 |
-| Medium tablet | `medium_tablet` | **portrait** (forced) | 1600×2560, 800dp width — below the 1200dp breakpoint, compact icon-only rail |
-| Expanded/big tablet | `PixelTablet` | landscape (native) | 2560×1600, 1280dp width — above the breakpoint, full labeled rail with app title |
-| Desktop | `large_desktop` | landscape (native) | 1920×1080, exact 16:9 |
+| Medium tablet | `Medium_Tablet` | **portrait** (forced) | 1600×2560, 800dp width — below the 1200dp breakpoint, compact icon-only rail |
+| Expanded/big tablet | `Pixel_Tablet` | landscape (native) | 2560×1600, 1280dp width — above the breakpoint, full labeled rail with app title |
+| Desktop | `Large_Desktop` | landscape (native) | 1920×1080, exact 16:9 |
 | Android XR | `XR_Headset` | n/a (square passthrough scene) | 2558×2558 → cropped to 2558×1439 |
 
 Create any that don't already exist:
 
 ```bash
 android emulator list                     # check what's already there
-android emulator create medium_tablet     # profile exists in --list-profiles
-android emulator create large_desktop     # profile exists in --list-profiles
-# PixelTablet isn't in the simplified `android` CLI's profile list —
+android emulator create Medium_Tablet     # profile exists in --list-profiles
+android emulator create Large_Desktop     # profile exists in --list-profiles
+# Pixel_Tablet isn't in the simplified `android` CLI's profile list —
 # create it directly via avdmanager, reusing whatever system image an
 # existing AVD (e.g. Pixel_10) uses:
-avdmanager create avd -n PixelTablet \
+avdmanager create avd -n Pixel_Tablet \
   -d pixel_tablet \
   -k "system-images;android-37.1;google_apis_ps16k;arm64-v8a"
 # Pixel_10 and XR_Headset should already exist per AGENTS.md /
@@ -168,7 +216,7 @@ avdmanager create avd -n PixelTablet \
 # and check `android emulator create --list-profiles` for an XR profile.
 ```
 
-`medium_tablet` and `PixelTablet` end up with the **same** physical spec
+`Medium_Tablet` and `Pixel_Tablet` end up with the **same** physical spec
 (2560×1600 @ 320dpi — apparently pinned by the Google Play tablet system
 image regardless of requested device profile); orientation is what makes
 them look different, not the hardware.
@@ -193,7 +241,7 @@ done
 adb -s emulator-5554 emu kill
 
 # --- Medium tablet (portrait) ---
-android emulator start medium_tablet
+android emulator start Medium_Tablet
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
 adb -s emulator-5554 shell settings put system accelerometer_rotation 0
@@ -208,7 +256,7 @@ done
 adb -s emulator-5554 emu kill
 
 # --- Expanded/big tablet (landscape, native — no rotation needed) ---
-android emulator start PixelTablet
+android emulator start Pixel_Tablet
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
 for LOCALE in en es; do
@@ -217,7 +265,7 @@ done
 adb -s emulator-5554 emu kill
 
 # --- Desktop ---
-android emulator start large_desktop
+android emulator start Large_Desktop
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
 # The app may launch into a small floating window rather than maximized.
@@ -270,7 +318,7 @@ splitting evenly between light and dark).
   here; captured at each device's native resolution.
 - **Desktop (Chromebook) listing**: 4–8 PNG/JPEG, ≤8MB each, 16:9 or 9:16,
   each side 1080–7680px. `Small_Desktop` (1366×768) fails on the
-  768px height; `large_desktop` (1920×1080) is exact 16:9 and clears the
+  768px height; `Large_Desktop` (1920×1080) is exact 16:9 and clears the
   minimum comfortably.
 - **Android XR listing**: 4–8 PNG/JPEG, ≤15MB each, 16:9 or 9:16, each
   side 720–7680px.
@@ -291,8 +339,10 @@ The crop window (`y=620` to `y=620+1439=2059` at full width, giving a
 since 2558 isn't evenly divisible by 16) was derived by pixel-sampling a vertical
 line through the floating app window across all four canonical views to
 find its true on-screen bounds — the window-chrome pill top sits at
-`y≈658` and the tallest panel (Settings, which has the most content)
-bottoms out at `y≈2022` — then centering the crop on that combined range
+`y≈658` and the tallest panel (Focus/Today, which has the most content —
+it was Settings before the views changed in GitHub issue #318, and both
+land in the same place) bottoms out at `y≈2022` — then centering the crop
+on that combined range
 with roughly even margins. A naive default *center-of-canvas* crop
 looked unbalanced (lots of empty sky above, content nearly touching the
 bottom edge) because the floating window itself isn't centered in the
@@ -303,7 +353,7 @@ the same way:
 ```bash
 python3 -c "
 from PIL import Image
-im = Image.open('distribution/screenshots/xr/xr_en_light_4_settings.png').convert('RGB')
+im = Image.open('distribution/screenshots/xr/xr_en_light_1_focus_today.png').convert('RGB')
 x = 1000  # a column safely inside the panel, left of the chrome pill
 prev = None
 for y in range(0, im.size[1], 4):
