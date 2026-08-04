@@ -3,11 +3,13 @@ package com.mandrecode.tempo.features.focus.presentation.components
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Dp
@@ -32,6 +34,15 @@ import kotlin.time.Instant
 
 /** Sub-pixel: these are laid-out edges, not values anyone typed, and they land a rounding off. */
 private const val TOLERANCE = 0.5f
+
+/**
+ * The row under test, so its edges can be asked for rather than assumed.
+ *
+ * A required width wider than the device it runs on is centred on the screen, which puts the row's
+ * left edge at a negative root coordinate. Anything measured against the root rather than against
+ * the row is then measuring the test device, and passes or fails on which emulator drew it.
+ */
+private const val ROW_TAG = "plan_task_row_under_test"
 
 /** What the planning sheet shows, what its footer allows, and what a row survives when narrow. */
 class PlanTasksSheetTest {
@@ -98,7 +109,7 @@ class PlanTasksSheetTest {
     ) {
         composeTestRule.setContent {
             TempoTheme {
-                Box(modifier = Modifier.requiredWidth(width)) {
+                Box(modifier = Modifier.requiredWidth(width).testTag(ROW_TAG)) {
                     PlanTaskRow(
                         row = row,
                         today = today,
@@ -315,30 +326,31 @@ class PlanTasksSheetTest {
      */
     @Test
     fun row_survivesTheNarrowestColumn() {
-        val width = 328.dp
         setRow(
             row(1, "Renew the passport before the September trip", plannedFor = today),
-            width = width,
+            width = 328.dp,
         )
+        val rowBounds = composeTestRule.onNodeWithTag(ROW_TAG).getUnclippedBoundsInRoot()
 
         listOf("Today", "Tomorrow", "Pick a date").forEach { label ->
             val bounds = composeTestRule.onNodeWithText(label).getUnclippedBoundsInRoot()
-            assertThat(bounds.left.value).isAtLeast(0f)
-            assertThat(bounds.right.value).isAtMost(width.value)
+            assertThat(bounds.left.value).isAtLeast(rowBounds.left.value)
+            assertThat(bounds.right.value).isAtMost(rowBounds.right.value)
         }
 
         val badge = composeTestRule.onNodeWithContentDescription("Category: Work").getUnclippedBoundsInRoot()
-        assertThat(badge.left.value).isAtLeast(0f)
-        assertThat(badge.right.value).isAtMost(width.value)
+        assertThat(badge.left.value).isAtLeast(rowBounds.left.value)
+        assertThat(badge.right.value).isAtMost(rowBounds.right.value)
     }
 
     @Test
     fun row_survives360dpWithNoCategoryIcon() {
         setRow(row(1, "Fix the shelf in the spare room", category = home), width = 360.dp)
+        val rowBounds = composeTestRule.onNodeWithTag(ROW_TAG).getUnclippedBoundsInRoot()
 
         val badge =
             composeTestRule.onNodeWithContentDescription("Category: Home").getUnclippedBoundsInRoot()
-        assertThat(badge.right.value).isAtMost(360f)
+        assertThat(badge.right.value).isAtMost(rowBounds.right.value)
         composeTestRule.onNodeWithText("Fix the shelf in the spare room").assertIsDisplayed()
     }
 }
