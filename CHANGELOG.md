@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/mandrecode/tempo/compare/v1.12.0...v1.13.0) (2026-08-04)
+
+
+### Features
+
+* **#347:** plan undated tasks without leaving Focus ([#366](https://github.com/mandrecode/tempo/issues/366)) ([2b160f0](https://github.com/mandrecode/tempo/commit/2b160f088dc5b506a216ca000b851fdcfefaebc6))
+
 ## [1.12.0](https://github.com/mandrecode/tempo/compare/v1.11.1...v1.12.0) (2026-08-03)
 
 
