@@ -57,6 +57,8 @@ LOCALES = {
             ("Call Mom", ""),
             ("Read 20 pages", ""),
             ("Water the plants", ""),
+            ("Renew gym membership", "The current one runs out at the end of the month."),
+            ("Tidy the desk", ""),
         ],
         "habits": [
             "Drink Water", "No Smoking", "Read Before Bed", "Limit Social Media",
@@ -82,6 +84,8 @@ LOCALES = {
             ("Llamar a mamá", ""),
             ("Leer 20 páginas", ""),
             ("Regar las plantas", ""),
+            ("Renovar el gimnasio", "La cuota actual termina a final de mes."),
+            ("Ordenar el escritorio", ""),
         ],
         "habits": [
             "Beber agua", "Dejar de fumar", "Leer antes de dormir", "Limitar redes sociales",
@@ -152,10 +156,14 @@ def build_plaintext(today, locale, theme):
         # R.string.category_inbox in the matching values-<locale>/strings.xml.
         {"id": -1, "name": content["inbox"], "color": None, "icon": "inbox",
          "isDefault": True, "sortOrder": -1},
-        {"id": 1, "name": work, "color": "color_m3_blue", "icon": "work", "isDefault": False, "sortOrder": 0},
-        {"id": 2, "name": shopping, "color": "color_m3_orange", "icon": "shopping_cart", "isDefault": False, "sortOrder": 1},
-        {"id": 3, "name": health, "color": "color_m3_red", "icon": "health", "isDefault": False, "sortOrder": 2},
-        {"id": 4, "name": personal, "color": "color_m3_green", "icon": "home", "isDefault": False, "sortOrder": 3},
+        # Personal leads the user-made categories so its chip is on screen without
+        # scrolling even on a phone, where the row only fits about three. It is the
+        # category capture-screenshot-set.py opens for the Tasks shot — see the note
+        # on NAV there for why it has to be that one rather than Work.
+        {"id": 4, "name": personal, "color": "color_m3_green", "icon": "home", "isDefault": False, "sortOrder": 0},
+        {"id": 1, "name": work, "color": "color_m3_blue", "icon": "work", "isDefault": False, "sortOrder": 1},
+        {"id": 2, "name": shopping, "color": "color_m3_orange", "icon": "shopping_cart", "isDefault": False, "sortOrder": 2},
+        {"id": 3, "name": health, "color": "color_m3_red", "icon": "health", "isDefault": False, "sortOrder": 3},
     ]
 
     # (id, title, desc, isCompleted, categoryId, priority, reminderDate, periodicity,
@@ -173,6 +181,11 @@ def build_plaintext(today, locale, theme):
         (10, *task_text[9], False, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, 9, None),
         (11, *task_text[10], False, 4, None, None, "DAILY", None, None, 10, None),
         (12, *task_text[11], False, -1, None, None, "WEEKLY", [1, 4], None, 11, None),
+        # Two more in Personal, undated so they stay out of Focus's day and only
+        # add to its tasks-without-a-date count. They are there to give the Tasks
+        # screenshot — which opens Personal — a list that fills the screen.
+        (13, *task_text[12], False, 4, "LOW", None, None, None, None, 12, None),
+        (14, *task_text[13], False, 4, None, None, None, None, None, 13, None),
     ]
     tasks = [
         {

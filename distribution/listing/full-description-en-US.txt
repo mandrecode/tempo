@@ -1,14 +1,17 @@
 Find your flow with Tempo — the minimalist habit tracker and daily planner designed for peace of mind.
 
-Tempo isn't just another checklist. It combines powerful <b>Habit Chains</b> with a simple <b>Task Manager</b> to help you build momentum without the stress. Whether you're building a morning routine, tracking your fitness, or organizing your day, Tempo gets out of your way so you can get things done.
+Tempo isn't just another checklist. It puts today on one screen, then backs it with powerful <b>Habit Chains</b> and a simple <b>Task Manager</b> so you build momentum without the stress. Whether you're building a morning routine, tracking your fitness, or organizing your day, Tempo gets out of your way so you can get things done.
 
 <b>🔗 CORE FEATURES</b>
+
+🎯 <b>Focus — today, and a timer for it</b>
+One tab for everything due now: tasks, habits and chains together, with anything overdue and the work worth picking up next. Start a focus session on any of it with a single tap, and the countdown stays with you as you move around the app. Loose ends with no date? Give them one from Focus without losing your place.
 
 🔄 <b>Habit Chains — link your routines</b>
 Create sequences of habits that naturally flow from one to the next. Building a "Morning Chain" is easier than juggling scattered reminders — the smartest habit tracker for people who think in routines, not isolated checkboxes.
 
 ✅ <b>Simple Tasks & To-Do Lists</b>
-Capture daily to-dos instantly. Organize with tags, priorities, and deadlines. It's the perfect lightweight task manager and daily planner for your busy life.
+Capture daily to-dos instantly. Organize with categories, priorities, and deadlines. It's the perfect lightweight task manager and daily planner for your busy life.
 
 🎨 <b>Expressive Material Design</b>
 Built with the latest Material You design standards. Tempo adapts to your wallpaper colors and offers a beautiful, modern interface that feels at home on your Android device.
@@ -17,10 +20,11 @@ Built with the latest Material You design standards. Tempo adapts to your wallpa
 Tempo works completely offline and encrypts your data at rest — including anything you export as a backup. Your data never leaves your device. No accounts, no cloud sync, no tracking — just you and your goals.
 
 <b>⭐ WHY CHOOSE TEMPO?</b>
-🎯 <b>Focused</b> — no ads, no distractions
+⏱️ <b>Focus sessions</b> — a one-tap timer for whatever you're on
+🚫 <b>Distraction-free</b> — no ads, no noise
 🗓️ <b>Flexible</b> — build routines for specific days of the week
 📊 <b>Visual</b> — beautiful progress indicators and expressive animations
 🔔 <b>Gentle Reminders</b> — notifications that help, not nag
 🔐 <b>Encrypted & private by design</b> — a true offline habit tracker and productivity app
 
-Start small, build chains, and master your day with Tempo — your habit tracker, routine builder, and to-do list, all in one.
+Start small, build chains, and master your day with Tempo — your focus timer, habit tracker, routine builder, and to-do list, all in one.

@@ -1,1 +1,1 @@
-Rastreador de hábitos y tareas: crea cadenas de hábitos y encuentra tu ritmo.
+Rastreador de hábitos y tareas con sesiones de enfoque: encuentra tu ritmo.
