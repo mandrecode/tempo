@@ -1,15 +1,20 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,6 +55,16 @@ private val QuickPlanChipHeight = 36.dp
 private val ChipsBesideMinWidth = 480.dp
 
 /**
+ * The card's own corner is 32dp and the tray sits [ChipTrayPadding] inside it, which is the radius
+ * a nested container has to take for the two curves to stay concentric rather than merely both
+ * being round.
+ */
+private val ChipTrayCorner = 20.dp
+
+/** How far the tray is inset from the card's content edge, and how far the chips sit inside it. */
+private val ChipTrayPadding = 8.dp
+
+/**
  * One task, as the Tasks list itself draws it, with the day it is missing offered underneath.
  *
  * Pulled out of the grid so it can be measured on its own: this is the part that has to survive a
@@ -75,14 +90,21 @@ internal fun PlanTaskRow(
     BoxWithConstraints(modifier = modifier) {
         val chipsBeside = maxWidth >= ChipsBesideMinWidth
         val chips: @Composable () -> Unit = {
-            QuickPlanChips(
-                plannedFor = row.task.reminderDate?.date,
-                today = today,
-                tomorrow = tomorrow,
-                isBesideText = chipsBeside,
-                onPlan = { date -> onPlan(row.task.id, date) },
-                onUnplan = { onUnplan(row.task.id) },
-            )
+            ChipTray(
+                // Beside the text the tray is a panel at the card's edge and takes only the width
+                // its chips need. Under the text it is a band across the foot of the card, and a
+                // band that stopped short of one side would read as a mistake.
+                modifier = if (chipsBeside) Modifier else Modifier.fillMaxWidth(),
+            ) {
+                QuickPlanChips(
+                    plannedFor = row.task.reminderDate?.date,
+                    today = today,
+                    tomorrow = tomorrow,
+                    isBesideText = chipsBeside,
+                    onPlan = { date -> onPlan(row.task.id, date) },
+                    onUnplan = { onUnplan(row.task.id) },
+                )
+            }
         }
 
         TaskItem(
@@ -104,6 +126,30 @@ internal fun PlanTaskRow(
             // the text and the checkbox belongs against the title, as it does everywhere else.
             verticalAlignment = if (chipsBeside) Alignment.CenterVertically else Alignment.Top,
         )
+    }
+}
+
+/**
+ * The shelf the chips stand on, one tone further from the page than the card carrying it.
+ *
+ * The card is drawn on `background` and this on `surfaceContainerHighest`, so the step between them
+ * is read off the same ramp the app's screens use for their own two tones — darker than the card in
+ * the light theme, lighter in the dark one, without either being named here.
+ *
+ * The gain is that a row now says at a glance which half of it answers and which half asks: the
+ * task's own words on the card's tone, everything that changes the task on a surface of its own.
+ */
+@Composable
+private fun ChipTray(
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(ChipTrayCorner),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+    ) {
+        Box(modifier = Modifier.padding(ChipTrayPadding)) { content() }
     }
 }
 
