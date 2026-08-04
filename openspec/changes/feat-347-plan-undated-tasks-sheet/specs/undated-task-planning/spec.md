@@ -292,6 +292,8 @@ The sheet SHALL derive its presentation from the current window rather than assu
   down without scrolling back after every tap
 - **AND** the count in the header falls by one, which is where the confirmation lives now that
   nothing moves to provide it
+- **AND** checking a task off, or taking a day back from one, holds the view the same way, since
+  each of them sends a row across the same divide
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 

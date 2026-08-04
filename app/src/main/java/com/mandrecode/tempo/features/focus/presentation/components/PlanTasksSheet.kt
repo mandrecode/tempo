@@ -134,28 +134,13 @@ internal fun PlanTasksSheet(
 
     val gridState = rememberLazyGridState()
 
-    // Where the list was looking when the last plan was made.
-    //
-    // A lazy list anchors on the *key* of its first visible row, and the row you plan is usually
-    // that one — it leaves for a section below the fold and the list goes after it, which meant a
-    // scroll back up for every task planned, in the one loop this sheet exists for. Anchoring the
-    // index instead holds the viewport still: the planned card slides away to where it now belongs
-    // and the next undated task rises into the place it left, under the finger already there.
-    var restoreScrollTo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    val holdViewport = rememberViewportHold(gridState, state.unplanned.size, state.planned.size)
 
     val openDatePicker: (Long) -> Unit = { datePickerTaskId = it }
     val requestPlan: (Long, LocalDate?) -> Unit = { taskId, date ->
-        restoreScrollTo = gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
+        holdViewport()
         val plan = PendingPlan(taskId, date)
         if (permissionsSettled) plan.carryOut(onEvent, openDatePicker) else pendingPlan = plan
-    }
-
-    // Keyed on the section sizes, which is exactly when a row has crossed between them and the list
-    // has had a chance to chase it. Changing one already-planned day for another moves nothing.
-    LaunchedEffect(state.unplanned.size, state.planned.size) {
-        val (index, offset) = restoreScrollTo ?: return@LaunchedEffect
-        gridState.scrollToItem(index, offset)
-        restoreScrollTo = null
     }
 
     TempoModalBottomSheet(
@@ -182,6 +167,7 @@ internal fun PlanTasksSheet(
             tomorrow = tomorrow,
             gridState = gridState,
             onPlan = requestPlan,
+            holdViewport = holdViewport,
             onEvent = onEvent,
         )
     }
@@ -200,10 +186,46 @@ internal fun PlanTasksSheet(
         onDeclinePermissions = { pendingPlan = null },
         onChooseDate = { taskId, date ->
             datePickerTaskId = null
+            holdViewport()
             onEvent(FocusContract.UiEvent.PlanTask(taskId, date))
         },
         onDismissDatePicker = { datePickerTaskId = null },
     )
+}
+
+/**
+ * Keeps the list looking where it is through a regroup, rather than chasing the row that moved.
+ *
+ * A lazy list anchors on the *key* of its first visible row, and the row acted on is usually that
+ * one — it leaves for a section below the fold and the list follows it there, which meant a scroll
+ * back up after every single task, in the one loop this sheet exists for. Holding the index instead
+ * keeps the viewport still: the settled card slides away to where it now belongs and the next
+ * undated task rises into the place it left, under the finger already there.
+ *
+ * The restore is keyed on the section sizes, which is exactly when a row has crossed between them
+ * and the list has had its chance to chase. Swapping one already-planned day for another moves no
+ * row and needs nothing.
+ *
+ * @return the call to make immediately *before* anything that can send a row across the divide — a
+ * day, a day taken back, or a task checked off, which settles it the same as a date does.
+ */
+@Composable
+private fun rememberViewportHold(
+    gridState: LazyGridState,
+    unplannedCount: Int,
+    plannedCount: Int,
+): () -> Unit {
+    var restoreScrollTo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+
+    LaunchedEffect(unplannedCount, plannedCount) {
+        val (index, offset) = restoreScrollTo ?: return@LaunchedEffect
+        gridState.scrollToItem(index, offset)
+        restoreScrollTo = null
+    }
+
+    return {
+        restoreScrollTo = gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
+    }
 }
 
 /** Title, list and footer — everything inside the sheet's own surface. */
@@ -214,6 +236,7 @@ private fun ColumnScope.PlanSheetBody(
     tomorrow: LocalDate,
     gridState: LazyGridState,
     onPlan: (Long, LocalDate?) -> Unit,
+    holdViewport: () -> Unit,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     val windowHeight =
@@ -250,9 +273,13 @@ private fun ColumnScope.PlanSheetBody(
                 tomorrow = tomorrow,
                 gridState = gridState,
                 onPlan = onPlan,
-                onUnplan = { taskId -> onEvent(FocusContract.UiEvent.UnplanTask(taskId)) },
+                onUnplan = { taskId ->
+                    holdViewport()
+                    onEvent(FocusContract.UiEvent.UnplanTask(taskId))
+                },
                 onEdit = { task -> onEvent(FocusContract.UiEvent.EditTask(task)) },
                 onToggleCompletion = { task ->
+                    holdViewport()
                     onEvent(FocusContract.UiEvent.ToggleTaskCompletion(task))
                 },
                 modifier = Modifier.weight(1f, fill = false),
