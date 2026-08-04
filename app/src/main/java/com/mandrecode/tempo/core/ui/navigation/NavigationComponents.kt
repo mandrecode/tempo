@@ -44,6 +44,12 @@ internal val FloatingRailExpandedContentStartPadding =
     FloatingRailStartPadding + FloatingRailExpandedSurfaceWidth + FloatingRailContentGap
 internal val ReadableContentMaxWidth = 840.dp
 
+/** Enough to clear the floating bar spanning the bottom of a compact window. */
+internal val SnackbarFloatingBarBottomPadding = 88.dp
+
+/** The rail is up the side, so a snackbar only needs room to breathe. */
+internal val SnackbarRailBottomPadding = 20.dp
+
 /**
  * Lays out top-level screen content adaptively: reserves [railClearance] for the floating rail
  * and caps content at a readable width,

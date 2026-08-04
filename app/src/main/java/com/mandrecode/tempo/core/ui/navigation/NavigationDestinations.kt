@@ -38,7 +38,6 @@ internal fun FocusDestination(navigator: TempoNavigator) {
                     },
             )
         },
-        onNavigateToTasks = { navigator.navigateToTopLevel(TasksRoute) },
         onOpenSession = { navigator.navigate(FocusSessionRoute) },
     )
 }

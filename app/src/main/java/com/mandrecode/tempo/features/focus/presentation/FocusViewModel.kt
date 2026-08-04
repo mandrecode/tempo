@@ -12,10 +12,14 @@ import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.GetUndatedTasksUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,16 +46,22 @@ class FocusViewModel
         private val focusSessionRepository: FocusSessionRepository,
         private val focusSessionUseCases: FocusSessionUseCases,
         private val toggleHabitCompletion: ToggleHabitCompletionUseCase,
+        internal val getUndatedTasks: GetUndatedTasksUseCase,
+        internal val updateTask: UpdateTaskUseCase,
+        internal val restoreTaskReminders: RestoreTaskRemindersUseCase,
         private val vacationModeRepository: VacationModeRepository,
-        private val clock: Clock,
+        internal val clock: Clock,
     ) : ViewModel() {
-        private val mutableUiState = MutableStateFlow(FocusContract.UiState())
+        internal val mutableUiState = MutableStateFlow(FocusContract.UiState())
         val uiState: StateFlow<FocusContract.UiState> = mutableUiState.asStateFlow()
 
         private val effectChannel = Channel<FocusContract.UiEffect>(Channel.BUFFERED)
         val uiEffect = effectChannel.receiveAsFlow()
 
         private val today: LocalDate get() = clock.todayIn(TimeZone.currentSystemDefault())
+
+        /** Cancelled when the sheet closes, so a closed sheet is not still collecting for nobody. */
+        internal var planSheetJob: Job? = null
 
         init {
             observeSession()
@@ -92,15 +102,12 @@ class FocusViewModel
                         it.copy(expandedTaskIds = it.expandedTaskIds.toggling(event.taskId))
                     }
 
-                FocusContract.UiEvent.UndatedTasksClicked ->
-                    sendEffect(FocusContract.UiEffect.OpenTasksTab)
-
-                else -> onEditorEvent(event)
+                else -> onPlanSheetEvent(event)
             }
         }
 
         /** Which sheet or dialog is open — state changes only, no work behind them. */
-        private fun onEditorEvent(event: FocusContract.UiEvent) {
+        internal fun onEditorEvent(event: FocusContract.UiEvent) {
             when (event) {
                 is FocusContract.UiEvent.EditTask ->
                     mutableUiState.update {
@@ -401,7 +408,7 @@ class FocusViewModel
             }
         }
 
-        private fun sendEffect(effect: FocusContract.UiEffect) {
+        internal fun sendEffect(effect: FocusContract.UiEffect) {
             viewModelScope.launch { effectChannel.send(effect) }
         }
     }

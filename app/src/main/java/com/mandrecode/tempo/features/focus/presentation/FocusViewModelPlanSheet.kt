@@ -1,0 +1,122 @@
+package com.mandrecode.tempo.features.focus.presentation
+
+import androidx.lifecycle.viewModelScope
+import com.mandrecode.tempo.features.tasks.domain.util.PlanReminderTimeUtil
+import kotlinx.collections.immutable.toPersistentList
+import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
+/**
+ * Planning undated work, from opening the sheet to taking the whole batch back.
+ *
+ * The plan sheet's half of [FocusViewModel], split off the way Tasks splits its own view model:
+ * the day's behaviour and planning what has no day are two subjects, together only because one
+ * screen hosts both.
+ */
+internal fun FocusViewModel.onPlanSheetEvent(event: FocusContract.UiEvent) {
+    when (event) {
+        FocusContract.UiEvent.UndatedTasksClicked -> openPlanSheet()
+
+        is FocusContract.UiEvent.PlanTask -> {
+            val now = clock.now().toLocalDateTime(TimeZone.currentSystemDefault())
+            askFor(event.taskId, PlanReminderTimeUtil.resolve(event.date, now))
+        }
+
+        is FocusContract.UiEvent.UnplanTask -> askFor(event.taskId, reminderDate = null)
+
+        FocusContract.UiEvent.ClosePlanSheet -> {
+            val sheet = mutableUiState.value.planSheet ?: return
+            // Only what moved, and only as it was: a task the sheet never touched has no
+            // business being reset by an undo the sheet offered.
+            val batch =
+                sheet.changedTaskIds
+                    .associateWith { id -> sheet.originalReminders[id] }
+                    .toPersistentMap()
+            closePlanSheet()
+            // Nothing happened, nothing to say. A sheet opened and closed without a change should
+            // not leave a notice behind claiming otherwise.
+            if (batch.isNotEmpty()) {
+                sendEffect(FocusContract.UiEffect.PlanBatchConfirmed(batch))
+            }
+        }
+
+        is FocusContract.UiEvent.UndoPlanBatch ->
+            viewModelScope.launch { restoreTaskReminders(event.batch) }
+
+        else -> onEditorEvent(event)
+    }
+}
+
+private fun FocusViewModel.openPlanSheet() {
+    planSheetJob?.cancel()
+    mutableUiState.update { it.copy(planSheet = FocusContract.PlanSheetState()) }
+    planSheetJob =
+        viewModelScope.launch {
+            // The ids are taken once, from what is undated right now; the rows that follow
+            // are held to them. Re-reading the undated set on every emission would empty
+            // the sheet as fast as the user filled it.
+            val opened = getUndatedTasks().first()
+            val originalReminders =
+                opened.associate { it.task.id to it.task.reminderDate }.toPersistentMap()
+            mutableUiState.update { state ->
+                state.planSheet?.let { sheet ->
+                    state.copy(
+                        planSheet =
+                            sheet.copy(
+                                rows = opened.toPersistentList(),
+                                originalReminders = originalReminders,
+                                isLoading = false,
+                            ),
+                    )
+                } ?: state
+            }
+            getUndatedTasks.pinnedTo(originalReminders.keys).collect { rows ->
+                mutableUiState.update { state ->
+                    state.planSheet?.let { sheet ->
+                        state.copy(planSheet = sheet.copy(rows = rows.toPersistentList(), isLoading = false))
+                    } ?: state
+                }
+            }
+        }
+}
+
+private fun FocusViewModel.closePlanSheet() {
+    planSheetJob?.cancel()
+    planSheetJob = null
+    mutableUiState.update { it.copy(planSheet = null) }
+}
+
+/**
+ * Records what the sheet wants, then goes and gets it.
+ *
+ * The record is made first and synchronously. The write is a round trip through the repository and
+ * back out of the flow, and the sheet can be closed inside that trip — so what the sheet is
+ * answerable for has to be known the moment it is asked for, not when it comes back.
+ *
+ * Planning and unplanning are the same write with a different value, and both go through the use
+ * case the editor writes with — which is what cancels the alarm on the way out, as well as arming
+ * it on the way in.
+ */
+private fun FocusViewModel.askFor(
+    taskId: Long,
+    reminderDate: LocalDateTime?,
+) {
+    val task =
+        mutableUiState.value.planSheet
+            ?.rows
+            ?.firstOrNull { it.task.id == taskId }
+            ?.task ?: return
+
+    mutableUiState.update { state ->
+        state.planSheet?.let { sheet ->
+            val writes = (sheet.writes + (taskId to reminderDate)).toPersistentMap()
+            state.copy(planSheet = sheet.copy(writes = writes))
+        } ?: state
+    }
+    viewModelScope.launch { updateTask(task.copy(reminderDate = reminderDate)) }
+}

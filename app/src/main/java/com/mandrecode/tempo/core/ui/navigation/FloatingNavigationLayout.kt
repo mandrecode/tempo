@@ -36,6 +36,21 @@ internal fun floatingRailContentClearance(): Dp =
         else -> FloatingRailContentStartPadding
     }
 
+/**
+ * How far a snackbar must sit above the bottom edge to clear the floating navigation.
+ *
+ * The bar spans the bottom of the window on compact layouts, so a snackbar left where Material
+ * puts it comes up underneath it and loses its own text. On rail layouts the bar is up the side
+ * and only the usual breathing room is needed.
+ */
+@Composable
+internal fun floatingNavigationSnackbarBottomPadding(): Dp =
+    if (isFloatingNavigationRailLayout()) {
+        SnackbarRailBottomPadding
+    } else {
+        SnackbarFloatingBarBottomPadding
+    }
+
 @Composable
 internal fun floatingNavigationBottomClearancePadding(defaultPadding: Dp): Dp =
     calculateFloatingNavigationBottomClearancePadding(

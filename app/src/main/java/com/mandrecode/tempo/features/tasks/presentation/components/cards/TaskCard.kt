@@ -19,8 +19,10 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -76,6 +78,7 @@ import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlin.math.roundToInt
 
@@ -98,6 +101,28 @@ internal const val TASK_DESCRIPTION_TAG = "task_description"
 internal const val METADATA_ROW_FADE_IN_MS = 180
 internal const val METADATA_ROW_FADE_OUT_MS = 120
 
+/**
+ * Whether the metadata row has anything to say.
+ *
+ * Gated rather than always drawn: an empty row would push a title-only task off centre against its
+ * checkbox. Tasks that already carry any metadata keep MetadataRow's own reserved badge slot, so a
+ * reminder becoming a completion date does not change the card's height.
+ *
+ * Subtasks are excluded from the question entirely — a step's metadata belongs to its own row.
+ */
+private fun Task.hasMetadataToShow(
+    category: Category?,
+    subtasks: List<Task>,
+): Boolean {
+    if (parentTaskId != null) return false
+    return category != null ||
+        priority != null ||
+        periodicity != null ||
+        reminderDate != null ||
+        completedAt != null ||
+        subtasks.isNotEmpty()
+}
+
 @Composable
 fun TaskItem(
     task: Task,
@@ -111,6 +136,49 @@ fun TaskItem(
     isSubtasksExpanded: Boolean = true,
     initialDescriptionExpanded: Boolean = false,
     isSelected: Boolean = false,
+    /**
+     * Shown as the first label of the metadata row when set. Off by default: the Tasks list is
+     * already grouped by category, where repeating it on every card would be noise. It earns its
+     * place only where a card sits next to work drawn from every category at once.
+     */
+    category: Category? = null,
+    /**
+     * Extra controls belonging to this task, drawn inside the card beneath its content.
+     *
+     * A slot rather than a fixed set of buttons, because what belongs here is whatever the
+     * surrounding surface is *for* — and putting those controls outside the card would leave the
+     * action for a task sitting on no task in particular.
+     */
+    footer: (@Composable () -> Unit)? = null,
+    /**
+     * Controls belonging to this task, drawn *beside* its content rather than beneath it.
+     *
+     * The same slot content a narrow card puts in [footer]. On a wide card the text column stops
+     * needing the whole width long before the controls stop needing a home, and stacking them
+     * underneath spends a band of height on space the row already had to its right.
+     *
+     * An offer, not an instruction: the card takes it only while it is folded, and falls back to
+     * [footer] once a description or a list of steps has made the content column tall. Pass both.
+     *
+     * Drawn after the card's own trailing icons, so it finishes at the card's edge and lines up
+     * down the list whether or not a given row has a chevron to show.
+     */
+    trailingContent: (@Composable () -> Unit)? = null,
+    /**
+     * How the checkbox, the text and the trailing slot line up against each other.
+     *
+     * Top by default, which is what a list of mostly-text cards wants: the checkbox sits against the
+     * title whatever the description does below it. A card carrying [trailingContent] is a different
+     * shape — two columns of comparable height rather than one tall one with icons pinned beside it
+     * — and there the three parts want centring on each other instead of hanging from the top edge.
+     */
+    verticalAlignment: Alignment.Vertical = Alignment.Top,
+    /**
+     * On by default, because in a list of work "break this down" is always a reasonable next move.
+     * Off where the card is on screen to be answered rather than worked on — a surface asking one
+     * question of every row has no business offering a second.
+     */
+    showAddSubtaskAction: Boolean = true,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -199,216 +267,233 @@ fun TaskItem(
         Column(
             modifier = Modifier.fillMaxWidth(),
         ) {
+            // Both sides of the split have to agree on a height for the side column to reach the
+            // card's edges: the row takes the shortest height its content allows, and the content
+            // then fills it. Only where there *is* a side column — an intrinsic pass costs a second
+            // measure of every card in the list, and filling a height nothing has fixed yet makes
+            // the content as tall as whatever bound it was handed, which off a list is the screen.
+            // A card unfolded is a tall text column with a short one of controls beside it, and
+            // dividing that vertically leaves the controls stranded in the middle of a column of
+            // nothing while the checkbox drifts away from the title it belongs to. So the split is
+            // for the card at rest: once it unfolds, the slot drops back underneath the content and
+            // the card reads the way it does in the Tasks list, which is where the steps now are.
+            val isUnfolded = isDescriptionExpanded || (subtasks.isNotEmpty() && isSubtasksExpanded)
+            val hasSideColumn = trailingContent != null && !isUnfolded
             Row(
                 modifier =
                     Modifier
                         .fillMaxWidth()
-                        .padding(cardContentPadding),
-                verticalAlignment = Alignment.Top,
+                        .then(if (hasSideColumn) Modifier.height(IntrinsicSize.Min) else Modifier),
             ) {
-                // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
-                // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep
-                // this in sync with that Box's heightIn(min) if either changes.
-                val completionA11yLabel =
-                    stringResource(
-                        if (task.isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
-                    )
-                Box(
+                Row(
                     modifier =
                         Modifier
-                            .testTag(TASK_COMPLETION_CONTROL_TAG)
-                            .size(48.dp)
-                            .semantics {
-                                role = Role.Checkbox
-                                toggleableState = if (task.isCompleted) ToggleableState.On else ToggleableState.Off
-                                contentDescription = completionA11yLabel
-                            }.graphicsLayer {
-                                scaleX = checkboxScale
-                                scaleY = checkboxScale
-                            }.clip(RoundedCornerShape(checkboxRadius))
-                            .clickable {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                onToggleCompletion(task)
-                            },
-                    contentAlignment = Alignment.Center,
+                            .weight(1f)
+                            .then(if (hasSideColumn) Modifier.fillMaxHeight() else Modifier)
+                            .padding(cardContentPadding),
+                    // Centring only means anything while the two halves are of a height. Unfolded,
+                    // the checkbox and the chevron belong against the title, as everywhere else.
+                    verticalAlignment = if (hasSideColumn) verticalAlignment else Alignment.Top,
                 ) {
+                    // Sized to match the title Box's heightIn(min = 48.dp) below — intentionally
+                    // smaller than HabitItem's 56dp checkbox; see the comment there for why. Keep
+                    // this in sync with that Box's heightIn(min) if either changes.
+                    val completionA11yLabel =
+                        stringResource(
+                            if (task.isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
+                        )
                     Box(
                         modifier =
                             Modifier
+                                .testTag(TASK_COMPLETION_CONTROL_TAG)
                                 .size(48.dp)
-                                .background(
-                                    color =
-                                        if (task.isCompleted) {
-                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
-                                        },
-                                    shape = RoundedCornerShape(checkboxRadius),
-                                ).then(
-                                    if (!task.isCompleted) {
-                                        Modifier.border(
-                                            width = 2.dp,
-                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
-                                            shape = RoundedCornerShape(checkboxRadius),
-                                        )
-                                    } else {
-                                        Modifier
-                                    },
-                                ),
-                    )
-
-                    if (task.isCompleted) {
-                        Icon(
-                            imageVector = Icons.Filled.Check,
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                Column(
-                    modifier =
-                        Modifier
-                            .testTag(TASK_CONTENT_TAG)
-                            .weight(1f)
-                            .animateContentSize(animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS)),
-                ) {
-                    Box(
-                        modifier = Modifier.heightIn(min = 48.dp),
-                        contentAlignment = Alignment.CenterStart,
+                                .semantics {
+                                    role = Role.Checkbox
+                                    toggleableState = if (task.isCompleted) ToggleableState.On else ToggleableState.Off
+                                    contentDescription = completionA11yLabel
+                                }.graphicsLayer {
+                                    scaleX = checkboxScale
+                                    scaleY = checkboxScale
+                                }.clip(RoundedCornerShape(checkboxRadius))
+                                .clickable {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    onToggleCompletion(task)
+                                },
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                        ) {
-                            Text(
-                                text = task.title,
-                                style =
-                                    MaterialTheme.typography.cardTitle.copy(
-                                        textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
-                                    ),
-                                color =
-                                    if (task.isCompleted) {
-                                        MaterialTheme.colorScheme.onSurface.copy(alpha = MutedContentAlpha.TITLE)
-                                    } else {
-                                        MaterialTheme.colorScheme.onSurface
-                                    },
-                                maxLines = if (isDescriptionExpanded) Int.MAX_VALUE else 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-
-                            if (sanitizedDescription.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                EnhancedDescriptionText(
-                                    text = sanitizedDescription,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color =
-                                        if (task.isCompleted) {
-                                            MaterialTheme.colorScheme.onSurface.copy(
-                                                alpha = MutedContentAlpha.DESCRIPTION,
+                        Box(
+                            modifier =
+                                Modifier
+                                    .size(48.dp)
+                                    .background(
+                                        color =
+                                            if (task.isCompleted) {
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                                            },
+                                        shape = RoundedCornerShape(checkboxRadius),
+                                    ).then(
+                                        if (!task.isCompleted) {
+                                            Modifier.border(
+                                                width = 2.dp,
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f),
+                                                shape = RoundedCornerShape(checkboxRadius),
                                             )
                                         } else {
-                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                                        },
-                                    maxLines = if (isDescriptionExpanded) Int.MAX_VALUE else 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.testTag(TASK_DESCRIPTION_TAG),
-                                    onTextLayout = { textLayoutResult ->
-                                        isDescriptionOverflowing =
-                                            if (isDescriptionExpanded) {
-                                                textLayoutResult.lineCount > 1
-                                            } else {
-                                                textLayoutResult.hasVisualOverflow
-                                            }
-                                    },
-                                )
-                            }
-
-                            if (task.parentTaskId == null &&
-                                (
-                                    task.priority != null ||
-                                        task.periodicity != null ||
-                                        task.reminderDate != null ||
-                                        task.completedAt != null ||
-                                        subtasks.isNotEmpty()
-                                )
-                            ) {
-                                // Gated render: keeps title-only top-level tasks vertically
-                                // centered against the checkbox. Tasks that already have any
-                                // metadata still benefit from MetadataRow's internal
-                                // always-reserved badge slot, so reminder<->completedAt
-                                // swaps do not change card height. The rare title-only
-                                // first-completion case animates smoothly via the
-                                // animateContentSize on the enclosing Column.
-                                MetadataRow(task, subtasks)
-                            }
-                        }
-                    }
-                }
-
-                val showExpandButton = subtasks.isNotEmpty() || isDescriptionOverflowing
-                val isExpanded =
-                    if (subtasks.isNotEmpty()) isSubtasksExpanded else isDescriptionExpanded
-
-                Row(
-                    modifier = Modifier.testTag(TASK_TRAILING_ACTIONS_TAG),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    if (showExpandButton) {
-                        IconButton(
-                            onClick = {
-                                if (subtasks.isNotEmpty()) {
-                                    onToggleSubtasksExpansion(!isSubtasksExpanded)
-                                    isDescriptionExpanded = !isSubtasksExpanded
-                                } else {
-                                    isDescriptionExpanded = !isDescriptionExpanded
-                                }
-                            },
-                            modifier = Modifier.size(48.dp),
-                        ) {
-                            Icon(
-                                painter =
-                                    painterResource(
-                                        if (isExpanded) {
-                                            R.drawable.ic_expand_less
-                                        } else {
-                                            R.drawable.ic_expand_more
+                                            Modifier
                                         },
                                     ),
-                                contentDescription =
-                                    if (isExpanded) {
-                                        stringResource(R.string.collapse)
-                                    } else {
-                                        stringResource(R.string.expand)
-                                    },
+                        )
+
+                        if (task.isCompleted) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
                                 modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                tint = MaterialTheme.colorScheme.primary,
                             )
                         }
                     }
 
-                    // Not on a card that is itself a step of something. Tasks nests exactly one
-                    // level — only top-level tasks become cards, and a subtask row draws no
-                    // children of its own — so a task added under a subtask would exist with
-                    // nowhere in Tasks to show it. Focus is where this bites: it gives a dated
-                    // subtask its own card when the parent is off the day, and that card carried
-                    // the same button as any other.
-                    if (task.parentTaskId == null) {
-                        IconButton(
-                            onClick = { onAddSubtask(task.id) },
-                            modifier = Modifier.size(48.dp),
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(
+                        modifier =
+                            Modifier
+                                .testTag(TASK_CONTENT_TAG)
+                                .weight(1f)
+                                .animateContentSize(animationSpec = tween(CARD_CONTENT_ANIM_DURATION_MS)),
+                    ) {
+                        Box(
+                            modifier = Modifier.heightIn(min = 48.dp),
+                            contentAlignment = Alignment.CenterStart,
                         ) {
-                            Icon(
-                                painter = painterResource(R.drawable.ic_add_row_below),
-                                contentDescription = stringResource(R.string.add_subtask),
-                                modifier = Modifier.size(24.dp),
-                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
-                            )
+                            Column(
+                                verticalArrangement = Arrangement.Center,
+                            ) {
+                                Text(
+                                    text = task.title,
+                                    style =
+                                        MaterialTheme.typography.cardTitle.copy(
+                                            textDecoration = if (task.isCompleted) TextDecoration.LineThrough else null,
+                                        ),
+                                    color =
+                                        if (task.isCompleted) {
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = MutedContentAlpha.TITLE)
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurface
+                                        },
+                                    maxLines = if (isDescriptionExpanded) Int.MAX_VALUE else 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+
+                                if (sanitizedDescription.isNotBlank()) {
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    EnhancedDescriptionText(
+                                        text = sanitizedDescription,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color =
+                                            if (task.isCompleted) {
+                                                MaterialTheme.colorScheme.onSurface.copy(
+                                                    alpha = MutedContentAlpha.DESCRIPTION,
+                                                )
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                            },
+                                        maxLines = if (isDescriptionExpanded) Int.MAX_VALUE else 1,
+                                        overflow = TextOverflow.Ellipsis,
+                                        modifier = Modifier.testTag(TASK_DESCRIPTION_TAG),
+                                        onTextLayout = { textLayoutResult ->
+                                            isDescriptionOverflowing =
+                                                if (isDescriptionExpanded) {
+                                                    textLayoutResult.lineCount > 1
+                                                } else {
+                                                    textLayoutResult.hasVisualOverflow
+                                                }
+                                        },
+                                    )
+                                }
+
+                                // The rare title-only first-completion case animates smoothly via the
+                                // animateContentSize on the enclosing Column.
+                                if (task.hasMetadataToShow(category, subtasks)) {
+                                    MetadataRow(task, subtasks, category)
+                                }
+                            }
+                        }
+                    }
+
+                    val showExpandButton = subtasks.isNotEmpty() || isDescriptionOverflowing
+                    val isExpanded =
+                        if (subtasks.isNotEmpty()) isSubtasksExpanded else isDescriptionExpanded
+
+                    Row(
+                        modifier = Modifier.testTag(TASK_TRAILING_ACTIONS_TAG),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        if (showExpandButton) {
+                            IconButton(
+                                onClick = {
+                                    if (subtasks.isNotEmpty()) {
+                                        onToggleSubtasksExpansion(!isSubtasksExpanded)
+                                        isDescriptionExpanded = !isSubtasksExpanded
+                                    } else {
+                                        isDescriptionExpanded = !isDescriptionExpanded
+                                    }
+                                },
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(
+                                    painter =
+                                        painterResource(
+                                            if (isExpanded) {
+                                                R.drawable.ic_expand_less
+                                            } else {
+                                                R.drawable.ic_expand_more
+                                            },
+                                        ),
+                                    contentDescription =
+                                        if (isExpanded) {
+                                            stringResource(R.string.collapse)
+                                        } else {
+                                            stringResource(R.string.expand)
+                                        },
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                )
+                            }
+                        }
+
+                        // Not on a card that is itself a step of something. Tasks nests exactly one
+                        // level — only top-level tasks become cards, and a subtask row draws no
+                        // children of its own — so a task added under a subtask would exist with
+                        // nowhere in Tasks to show it. Focus is where this bites: it gives a dated
+                        // subtask its own card when the parent is off the day, and that card carried
+                        // the same button as any other.
+                        //
+                        // And not where the surrounding surface has asked its own question of the row.
+                        if (task.parentTaskId == null && showAddSubtaskAction) {
+                            IconButton(
+                                onClick = { onAddSubtask(task.id) },
+                                modifier = Modifier.size(48.dp),
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_add_row_below),
+                                    contentDescription = stringResource(R.string.add_subtask),
+                                    modifier = Modifier.size(24.dp),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                                )
+                            }
                         }
                     }
                 }
+
+                // Outside the content's padding and outside the card's own icons, so it reaches the
+                // card's edges rather than floating within them: a column of the card, divided off,
+                // rather than a panel dropped on top of one. It only needs its inner corners — the
+                // card clips the outer ones to whatever radius it is currently animating through.
+                if (hasSideColumn) trailingContent?.invoke()
             }
 
             AnimatedVisibility(
@@ -502,6 +587,16 @@ fun TaskItem(
                     }
                 }
             }
+
+            // After the steps, not between them and the task they belong to. The band is shaped
+            // to close the card — flush along the bottom, rounded only on top — and it can only
+            // do that from the end of the column. Set above the steps it cut a task away from
+            // what it is made of, and its flat edge ran into the first of them.
+            //
+            // Edge to edge, and the slot supplies its own padding: only it knows whether it is a
+            // surface that has to reach the card's sides or content that should line up with the
+            // text above.
+            if (!hasSideColumn) footer?.invoke()
         }
     }
 }

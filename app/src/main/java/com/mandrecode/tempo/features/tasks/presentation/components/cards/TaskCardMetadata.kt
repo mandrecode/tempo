@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -45,19 +46,28 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
+import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.metadataLabel
+import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.theme.subtaskTitle
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime
+
+/** A ceiling for the category badge, so a long name can never crowd the date out of the row. */
+private val CategoryBadgeMaxWidth = 140.dp
 
 @Composable
 internal fun SubtaskItem(
@@ -332,6 +342,7 @@ private fun PriorityFlagIcon(
 internal fun MetadataRow(
     task: Task,
     subtasks: List<Task>,
+    category: Category? = null,
 ) {
     val taskBadgeState =
         when {
@@ -343,6 +354,24 @@ internal fun MetadataRow(
     val completedCount = remember(subtasks) { subtasks.count { it.isCompleted } }
     val metadataItems =
         buildList<MetadataItem> {
+            // First, because it is the one piece of context the list around the card cannot supply:
+            // wherever a task is shown next to work from every other part of someone's life, the
+            // category is what tells two similarly-named errands apart.
+            if (category != null) {
+                // Not flexible. A weighted child is *capped* at its share and does not hand back
+                // what it leaves unused, so two of them split the row down the middle — which had
+                // a short "Inbox" sitting in half a row while the date beside it ellipsised into
+                // empty space. Only the date flexes now, and it gets everything the rest leaves.
+                add(
+                    MetadataItem("category") {
+                        // A wider gap after the category than between the badges that follow it. It
+                        // is a different kind of fact — where the task lives, rather than something
+                        // about the task — and flush against the priority disc the two coloured
+                        // pills scanned as one two-tone control.
+                        Box(modifier = Modifier.padding(end = 4.dp)) { CategoryBadge(category) }
+                    },
+                )
+            }
             if (task.priority != null) {
                 add(
                     MetadataItem("priority") {
@@ -413,6 +442,61 @@ private fun MetadataOverflowRow(
             } else {
                 item.content()
             }
+        }
+    }
+}
+
+/**
+ * The task's category, drawn to the same recipe as the date and count badges beside it so the row
+ * reads as one set of labels rather than a badge plus something else.
+ *
+ * The icon is decorative here — the name is right next to it, and a screen reader announcing
+ * "briefcase, Work" would be saying the same thing twice — so the name carries the description.
+ *
+ * The badge speaks with one voice, and nothing inside it speaks at all. Merely describing the row
+ * would leave the name underneath still contributing its own text, and this badge lives inside a
+ * clickable card that merges everything below it into a single announcement — where the category
+ * would then be read twice, once as "Category: Work" and again as "Work".
+ */
+@Composable
+private fun CategoryBadge(category: Category) {
+    val iconRes = TempoIcon.fromName(category.icon)?.iconRes
+    val accent =
+        resolveColor(
+            colorKey = category.color,
+            colorScheme = MaterialTheme.colorScheme,
+            isDarkTheme = LocalIsDarkTheme.current,
+        ) ?: MaterialTheme.colorScheme.onSurfaceVariant
+    val label = stringResource(R.string.task_category_badge_description, category.name)
+
+    Badge(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier =
+                Modifier
+                    // Unweighted, so without a ceiling a very long category name would measure its
+                    // full width and leave the date nothing. Wide enough for the names people
+                    // actually write; past it the name ellipsises rather than the date vanishing.
+                    .widthIn(max = CategoryBadgeMaxWidth)
+                    .padding(horizontal = 6.dp, vertical = 2.dp)
+                    .clearAndSetSemantics { contentDescription = label },
+        ) {
+            if (iconRes != null) {
+                Icon(
+                    painter = painterResource(iconRes),
+                    contentDescription = null,
+                    modifier = Modifier.size(10.dp),
+                    tint = accent,
+                )
+                Spacer(modifier = Modifier.width(3.dp))
+            }
+            Text(
+                text = category.name,
+                color = accent,
+                style = MaterialTheme.typography.metadataLabel,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
