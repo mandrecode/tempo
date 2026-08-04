@@ -265,6 +265,14 @@ The sheet SHALL derive its presentation from the current window rather than assu
 - **THEN** the number of task columns is derived from the available width against a minimum card
   width, never from a hardcoded count
 
+#### Scenario: Wide rows put the chips beside the task, not beneath it
+
+- **WHEN** a row is laid out at 480dp or wider
+- **THEN** its quick-plan chips sit to the right of the task's text, two across with the picker
+  beneath them, rather than in a band under the whole card
+- **AND** the decision is made against the row's own width, not the window's, because the sheet caps
+  its width and the grid may give a row more or less than the window suggests
+
 #### Scenario: Chips reflow rather than truncate
 
 - **WHEN** the quick-plan chips do not fit on one line at the current width

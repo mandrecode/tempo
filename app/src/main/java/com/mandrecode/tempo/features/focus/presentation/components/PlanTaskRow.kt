@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.focus.presentation.components
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
@@ -34,6 +35,16 @@ import kotlinx.datetime.LocalDate
 private val QuickPlanChipHeight = 36.dp
 
 /**
+ * The row width at which the chips move out from under the card's text and sit beside it.
+ *
+ * Measured against the row itself rather than the window: the sheet caps at 640dp and the grid may
+ * one day give it more than one column, so what decides this is how much room *this card* has, not
+ * how big the screen is. Below it the text column still wants the full width; above it the column
+ * has stopped growing and the chips are stacking height onto space already going spare.
+ */
+private val ChipsBesideMinWidth = 480.dp
+
+/**
  * One task, as the Tasks list itself draws it, with the day it is missing offered underneath.
  *
  * Pulled out of the grid so it can be measured on its own: this is the part that has to survive a
@@ -56,29 +67,38 @@ internal fun PlanTaskRow(
     // bury the question the sheet is asking. The chevron is still there for anyone who wants to look.
     var isSubtasksExpanded by remember(row.task.id) { mutableStateOf(false) }
 
-    TaskItem(
-        task = row.task,
-        onToggleCompletion = onToggleCompletion,
-        onEdit = onEdit,
-        modifier = modifier,
-        category = row.category,
-        subtasks = row.subtasks,
-        isSubtasksExpanded = isSubtasksExpanded,
-        onToggleSubtasksExpansion = { isSubtasksExpanded = it },
-        // The sheet asks one question of every row — which day? — and an "add a step" button beside
-        // the answer is a different job offered in the middle of this one. The full editor is still
-        // a tap on the card away for anyone who wants it.
-        showAddSubtaskAction = false,
-        footer = {
+    BoxWithConstraints(modifier = modifier) {
+        val chipsBeside = maxWidth >= ChipsBesideMinWidth
+        val chips: @Composable () -> Unit = {
             QuickPlanChips(
                 plannedFor = row.task.reminderDate?.date,
                 today = today,
                 tomorrow = tomorrow,
+                // Two across when beside, so the pair of days reads as a pair and the picker sits
+                // under them on its own — the shape the chips would take anyway in that width.
+                columns = if (chipsBeside) 2 else Int.MAX_VALUE,
+                fillWidth = !chipsBeside,
                 onPlan = { date -> onPlan(row.task.id, date) },
                 onUnplan = { onUnplan(row.task.id) },
             )
-        },
-    )
+        }
+
+        TaskItem(
+            task = row.task,
+            onToggleCompletion = onToggleCompletion,
+            onEdit = onEdit,
+            category = row.category,
+            subtasks = row.subtasks,
+            isSubtasksExpanded = isSubtasksExpanded,
+            onToggleSubtasksExpansion = { isSubtasksExpanded = it },
+            // The sheet asks one question of every row — which day? — and an "add a step" button
+            // beside the answer is a different job offered in the middle of this one. The full
+            // editor is still a tap on the card away for anyone who wants it.
+            showAddSubtaskAction = false,
+            footer = if (chipsBeside) null else chips,
+            trailingContent = if (chipsBeside) chips else null,
+        )
+    }
 }
 
 /**
@@ -100,13 +120,16 @@ private fun QuickPlanChips(
     plannedFor: LocalDate?,
     today: LocalDate,
     tomorrow: LocalDate,
+    columns: Int,
+    fillWidth: Boolean,
     onPlan: (LocalDate?) -> Unit,
     onUnplan: () -> Unit,
 ) {
     FlowRow(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = if (fillWidth) Modifier.fillMaxWidth() else Modifier,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
+        maxItemsInEachRow = columns,
     ) {
         QuickPlanChip(
             label = stringResource(R.string.today),

@@ -149,6 +149,14 @@ fun TaskItem(
      */
     footer: (@Composable () -> Unit)? = null,
     /**
+     * Controls belonging to this task, drawn *beside* its content rather than beneath it.
+     *
+     * The same slot content a narrow card puts in [footer]. On a wide card the text column stops
+     * needing the whole width long before the controls stop needing a home, and stacking them
+     * underneath spends a band of height on space the row already had to its right.
+     */
+    trailingContent: (@Composable () -> Unit)? = null,
+    /**
      * On by default, because in a list of work "break this down" is always a reasonable next move.
      * Off where the card is on screen to be answered rather than worked on — a surface asking one
      * question of every row has no business offering a second.
@@ -386,6 +394,8 @@ fun TaskItem(
                     modifier = Modifier.testTag(TASK_TRAILING_ACTIONS_TAG),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    trailingContent?.invoke()
+
                     if (showExpandButton) {
                         IconButton(
                             onClick = {
