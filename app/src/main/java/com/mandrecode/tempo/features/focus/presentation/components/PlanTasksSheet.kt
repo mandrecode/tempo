@@ -33,7 +33,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +66,7 @@ import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sheetTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
+import com.mandrecode.tempo.core.ui.util.rememberViewportHold
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
@@ -191,41 +191,6 @@ internal fun PlanTasksSheet(
         },
         onDismissDatePicker = { datePickerTaskId = null },
     )
-}
-
-/**
- * Keeps the list looking where it is through a regroup, rather than chasing the row that moved.
- *
- * A lazy list anchors on the *key* of its first visible row, and the row acted on is usually that
- * one — it leaves for a section below the fold and the list follows it there, which meant a scroll
- * back up after every single task, in the one loop this sheet exists for. Holding the index instead
- * keeps the viewport still: the settled card slides away to where it now belongs and the next
- * undated task rises into the place it left, under the finger already there.
- *
- * The restore is keyed on the section sizes, which is exactly when a row has crossed between them
- * and the list has had its chance to chase. Swapping one already-planned day for another moves no
- * row and needs nothing.
- *
- * @return the call to make immediately *before* anything that can send a row across the divide — a
- * day, a day taken back, or a task checked off, which settles it the same as a date does.
- */
-@Composable
-private fun rememberViewportHold(
-    gridState: LazyGridState,
-    unplannedCount: Int,
-    plannedCount: Int,
-): () -> Unit {
-    var restoreScrollTo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
-
-    LaunchedEffect(unplannedCount, plannedCount) {
-        val (index, offset) = restoreScrollTo ?: return@LaunchedEffect
-        gridState.scrollToItem(index, offset)
-        restoreScrollTo = null
-    }
-
-    return {
-        restoreScrollTo = gridState.firstVisibleItemIndex to gridState.firstVisibleItemScrollOffset
-    }
 }
 
 /** Title, list and footer — everything inside the sheet's own surface. */

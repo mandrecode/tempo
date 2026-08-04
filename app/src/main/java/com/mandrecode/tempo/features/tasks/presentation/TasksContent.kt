@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -56,6 +55,7 @@ import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
+import com.mandrecode.tempo.core.ui.util.rememberViewportHold
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.CategoryChipRow
@@ -127,6 +127,19 @@ fun TasksContent(
         }
     }
 
+    // Checking a task off sends it to the completed section, which is below — and the list would
+    // otherwise go after it, because the row checked is usually the first one visible. Held here
+    // rather than inside the row so that both sections get it from one place, and un-checking, which
+    // makes the same trip in reverse, is covered by the same line.
+    // Counts, not the sections themselves: the key has to change when a row crosses, and only then.
+    val activeTaskCount = activeTaskGroups.values.sumOf { it.size }
+    val completedTaskCount = completedTaskGroups.values.sumOf { it.size }
+    val holdViewport = rememberViewportHold(listState, activeTaskCount, completedTaskCount)
+    val onRowEvent: (TasksContract.UiEvent) -> Unit = { event ->
+        if (event is TasksContract.UiEvent.ToggleTaskCompletion) holdViewport()
+        onEvent(event)
+    }
+
     Box(
         // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
         // here too so the rounded content block's corner cutouts (see below) still resolve to
@@ -191,10 +204,6 @@ fun TasksContent(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            item(key = "scroll_anchor") {
-                                Spacer(Modifier.height(0.dp))
-                            }
-
                             val activeEntries =
                                 sortedActiveEntries(
                                     groups = activeTaskGroups,
@@ -228,7 +237,7 @@ fun TasksContent(
                                         isSubtasksExpanded =
                                             task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
                                         isSelected = task.id == selectedTaskId,
-                                        onEvent = onEvent,
+                                        onEvent = onRowEvent,
                                         modifier =
                                             Modifier
                                                 .animateItem()
@@ -302,7 +311,7 @@ fun TasksContent(
                                                 isSubtasksExpanded =
                                                     task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
                                                 isSelected = task.id == selectedTaskId,
-                                                onEvent = onEvent,
+                                                onEvent = onRowEvent,
                                                 modifier = Modifier.animateItem(),
                                             )
                                         }
@@ -463,8 +472,8 @@ internal fun CompletedTasksSeparator(
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
     firstGroupLabel: String? = null,
-    // Whether this separator is the first *visible* content in the list — the LazyColumn always
-    // has a leading zero-height scroll_anchor item ahead of it, so this isn't about list index.
+    // Whether this separator is the first *visible* content in the list, which is a question about
+    // whether there are any active tasks above it rather than about its index.
     isFirstVisibleItem: Boolean = false,
 ) {
     val rotation by animateFloatAsState(
