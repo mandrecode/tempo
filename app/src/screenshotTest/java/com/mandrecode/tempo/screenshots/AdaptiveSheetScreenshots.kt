@@ -21,15 +21,19 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 
+// Colors are `ColorOption.labelKey` values and icons are `TempoIcon.iconName` values, because
+// that is what `resolveColor()` and `TempoIcon.fromName()` match on. Drawable-style names
+// ("ic_work", "material_blue") resolve to nothing and silently fall back to the default glyph
+// and color, which would pin reference images that do not look like the app.
 private val categories =
     listOf(
-        Category(id = 1L, name = "Inbox", icon = "ic_category", isDefault = true, sortOrder = 0),
-        Category(id = 2L, name = "Work", color = "material_blue", icon = "ic_work", sortOrder = 1),
+        Category(id = 1L, name = "Inbox", icon = "inbox", isDefault = true, sortOrder = 0),
+        Category(id = 2L, name = "Work", color = "color_m3_blue", icon = "work", sortOrder = 1),
         Category(
             id = 3L,
             name = "Personal",
-            color = "material_green",
-            icon = "ic_person",
+            color = "color_m3_green",
+            icon = "home",
             sortOrder = 2,
         ),
     )
