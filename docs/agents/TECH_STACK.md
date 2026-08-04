@@ -20,6 +20,7 @@
 - **Adaptive layout:** `androidx.compose.material3.adaptive:adaptive` (BOM-managed) — window size classes via `currentWindowAdaptiveInfo()`; never use `LocalConfiguration` screen fields for layout decisions
 - **Background work:** `androidx.work:work-runtime-ktx` for deferrable work, `AlarmManager` for exact reminders and focus-session ends
 - **Home-screen widget:** Glance (`androidx.glance:glance-appwidget`, `glance-material3`)
+- **Screenshot testing:** `com.android.compose.screenshot` Gradle plugin + `com.android.tools.screenshot:screenshot-validation-api` (`@PreviewTest`). Renders previews on the JVM via layoutlib; requires `android.experimental.enableScreenshotTest=true` in both `gradle.properties` and the module's `android` block
 
 ## Directory Structure Strategy
 
@@ -133,6 +134,7 @@ app/src/main/java/com.mandrecode.tempo/
 ## Operational Commands
 - **Build:** `./gradlew assembleDebug`
 - **Test:** `./gradlew testDebugUnitTest` (Target: 80%+ coverage)
+- **Screenshots:** `./gradlew validateDebugScreenshotTest` (compare) / `updateDebugScreenshotTest` (regenerate references)
 - **Lint:**
   - `./gradlew ktlintCheck` (Code formatting)
   - `./gradlew :app:detekt` (Static analysis — code smells, complexity, naming)

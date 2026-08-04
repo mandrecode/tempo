@@ -42,7 +42,8 @@ OpenSpec proposal → apply → archive flow. Trivial doc/formatting tweaks don'
 - **Domain** is pure Kotlin — no `android.*`, Room, or Compose types; `kotlinx-datetime` only.
 - **Data** is the only layer touching Room / preferences; map at boundaries with
   `toDomain()` / `toEntity()`.
-- **UI** uses the `*Screen` / `*Content` split; `@Preview` lives in `src/debug/`; no
+- **UI** uses the `*Screen` / `*Content` split; `@Preview` lives in `src/debug/` (or
+  `src/screenshotTest/` for screenshot tests), never the main source set; no
   hardcoded strings (use `stringResource`); `UiState` collections use
   `kotlinx.collections.immutable` types.
 

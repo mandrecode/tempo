@@ -21,10 +21,10 @@ Before writing code, read the reference doc for the layer you are touching:
 
 | Layer | Doc | Non-obvious rules |
 |:---|:---|:---|
-| UI / Screens | [`docs/agents/UI_UX.md`](docs/agents/UI_UX.md) | Screen/Content split; `@Preview` in `src/debug/` only; `kotlinx.collections.immutable` for state |
+| UI / Screens | [`docs/agents/UI_UX.md`](docs/agents/UI_UX.md) | Screen/Content split; `@Preview` in `src/debug/` (or `src/screenshotTest/`) only; `kotlinx.collections.immutable` for state |
 | Domain / UseCases | [`docs/agents/DOMAIN.md`](docs/agents/DOMAIN.md) | Pure Kotlin — zero `android.*` imports; `kotlinx-datetime` only (no `java.time`) |
 | Data / Room / Repos | [`docs/agents/DATA.md`](docs/agents/DATA.md) | Mapper extensions (`toDomain()`/`toEntity()`); bind domain/data repos in `core/di/RepositoryModule.kt`, `SharedPreferences`-backed repos in `core/di/PreferencesRepositoryModule.kt` |
-| Tests | [`docs/agents/TESTING.md`](docs/agents/TESTING.md) | MockK (`relaxed = true`), Truth assertions, Turbine for Flows |
+| Tests | [`docs/agents/TESTING.md`](docs/agents/TESTING.md) | MockK (`relaxed = true`), Truth assertions, Turbine for Flows; screenshot tests only for adaptive-layout regressions |
 | Tech stack / versions | [`docs/agents/TECH_STACK.md`](docs/agents/TECH_STACK.md) | Do not add libraries not listed here without asking |
 
 ## Commands
@@ -33,6 +33,8 @@ Before writing code, read the reference doc for the layer you are touching:
 ./gradlew assembleDebug          # Build
 ./gradlew testDebugUnitTest      # Unit tests (CI uses this, not `test`)
 ./gradlew koverVerifyDebug       # Coverage thresholds: 80% line, 70% branch
+./gradlew validateDebugScreenshotTest  # Compose Preview screenshot tests (JVM, no emulator)
+./gradlew updateDebugScreenshotTest    # Regenerate reference images after an intended UI change
 ./gradlew ktlintCheck            # Formatting lint
 ./gradlew ktlintFormat           # Auto-fix formatting — MUST run before every commit
 ./gradlew :app:detekt            # Static analysis (code smells, complexity, naming)
@@ -45,6 +47,7 @@ JDK 21 required. Version is read from `version.txt` at repo root.
 
 - **detekt and ktlint are blocking.** The `📐 Static Analysis` job in `.github/workflows/ci.yml` fails the build if `./gradlew ktlintCheck` or `./gradlew :app:detekt` fail. Run `./gradlew ktlintFormat` and `./gradlew :app:detekt` locally before pushing.
 - **The detekt baseline is frozen at 155 and may only decrease.** `app/detekt-baseline.xml` is the suppression ceiling. A CI guard counts `<ID>` entries and fails if the count exceeds 155. Do **not** add new suppressions to grow the baseline — fix the issue instead.
+- **Screenshot tests are blocking.** The `🖼️ Screenshot Tests` job runs `./gradlew validateDebugScreenshotTest` on every PR — JVM only, no emulator — and `✅ CI Status` requires it. If you change adaptive layout on purpose, run `./gradlew updateDebugScreenshotTest`, **review the diff report** at `app/build/reports/screenshotTest/preview/debug/index.html`, and commit the regenerated references. Never regenerate to make a red build green without looking at what moved.
 - **When you fix detekt issues**, regenerate/shrink the baseline (e.g. `./gradlew :app:detektBaseline` then prune resolved entries) and lower the `MAX=155` ceiling in the CI guard accordingly so the gate ratchets down.
 
 ## Local Instrumented Tests
@@ -70,7 +73,7 @@ For manual app smoke testing, prefer the user's real connected Pixel 7 when it i
 - **Runtime module boundary:** production app code lives in `:app`. Auxiliary non-runtime modules (for example `:benchmark`) are allowed when they target or support `:app` and do not contain production domain, data, or UI implementation.
 - **Domain layer** must be pure Kotlin. No `android.*` imports, no Room, no Compose types.
 - **Data layer** is the only layer that touches Room, SharedPreferences, or network.
-- **UI layer**: `*Screen.kt` owns ViewModel/navigation; `*Content.kt` is pure Compose with no ViewModel reference. All `@Preview` composables go under `src/debug/`, not main source set.
+- **UI layer**: `*Screen.kt` owns ViewModel/navigation; `*Content.kt` is pure Compose with no ViewModel reference. All `@Preview` composables go under `src/debug/` — or `src/screenshotTest/` for the `@PreviewTest` previews backing committed reference images — never the main source set.
 - **No hardcoded strings** in composables — use `stringResource()`.
 - **Collections in UiState** must use `kotlinx.collections.immutable` types (`ImmutableList`, etc.).
 - **Trailing commas** in multi-line declarations.
