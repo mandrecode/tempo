@@ -272,6 +272,8 @@ The sheet SHALL derive its presentation from the current window rather than assu
   beneath them, rather than in a band under the whole card
 - **AND** the checkbox, the task's text and the chips are centred on each other, because the card is
   then two columns of comparable height rather than one tall one
+- **AND** the chips finish flush with the card's edge, after any expand control the row happens to
+  carry, so they line up down the list whether or not a given row has one
 - **AND** the decision is made against the row's own width, not the window's, because the sheet caps
   its width and the grid may give a row more or less than the window suggests
 

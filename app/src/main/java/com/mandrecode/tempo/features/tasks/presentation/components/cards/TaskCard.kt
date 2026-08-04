@@ -154,6 +154,9 @@ fun TaskItem(
      * The same slot content a narrow card puts in [footer]. On a wide card the text column stops
      * needing the whole width long before the controls stop needing a home, and stacking them
      * underneath spends a band of height on space the row already had to its right.
+     *
+     * Drawn after the card's own trailing icons, so it finishes at the card's edge and lines up
+     * down the list whether or not a given row has a chevron to show.
      */
     trailingContent: (@Composable () -> Unit)? = null,
     /**
@@ -403,8 +406,6 @@ fun TaskItem(
                     modifier = Modifier.testTag(TASK_TRAILING_ACTIONS_TAG),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    trailingContent?.invoke()
-
                     if (showExpandButton) {
                         IconButton(
                             onClick = {
@@ -459,6 +460,12 @@ fun TaskItem(
                             )
                         }
                     }
+
+                    // Last, so it finishes flush with the card's edge. The card's own icons vary
+                    // from row to row — a chevron only where there is something to unfold — and
+                    // ahead of the slot they shunted its content left by exactly one icon, breaking
+                    // the column those controls otherwise line up in down the list.
+                    trailingContent?.invoke()
                 }
             }
 
