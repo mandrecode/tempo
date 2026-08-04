@@ -73,8 +73,9 @@ internal const val PLAN_SHEET_UNPLANNED_HEADER_TAG = "plan_sheet_unplanned_heade
  * The width a task card actually gets in the Tasks list on a 360dp phone.
  *
  * The column count is derived against it rather than fixed, so the sheet answers "how many fit"
- * from the window it is in. At today's sheet widths — 640dp for the bottom sheet, 412dp for the
- * docked pane — that answer is one everywhere, but it is an answer rather than an assumption.
+ * from the window it is in. The sheet caps at `SHEET_MAX_WIDTH` (640dp), so that answer is one
+ * everywhere today — but it is an answer rather than an assumption, and it would find the second
+ * column on its own if the cap ever moved.
  */
 private val PlanRowMinWidth = 328.dp
 
