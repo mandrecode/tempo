@@ -12,12 +12,16 @@ import com.mandrecode.tempo.features.tasks.domain.model.Category
 @Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun CategoryChipRowSelectedPreview() {
+    // Colors are `ColorOption.labelKey` values and icons are `TempoIcon.iconName` values, because
+    // that is what `resolveColor()` and `TempoIcon.fromName()` match on. Drawable-style names
+    // ("ic_work", "material_blue") resolve to nothing and fall back silently to the default glyph
+    // and no color, so the preview stops showing what the screen actually renders.
     val categories =
         listOf(
-            Category(id = 1L, name = "Inbox", color = null, icon = "ic_category", isDefault = true, sortOrder = 0),
-            Category(id = 2L, name = "Work", color = "material_blue", icon = "ic_work", sortOrder = 1),
-            Category(id = 3L, name = "Personal", color = "material_green", icon = "ic_person", sortOrder = 2),
-            Category(id = 4L, name = "Shopping", color = "material_orange", icon = "ic_shopping_cart", sortOrder = 3),
+            Category(id = 1L, name = "Inbox", color = null, icon = "inbox", isDefault = true, sortOrder = 0),
+            Category(id = 2L, name = "Work", color = "color_m3_blue", icon = "work", sortOrder = 1),
+            Category(id = 3L, name = "Personal", color = "color_m3_green", icon = "home", sortOrder = 2),
+            Category(id = 4L, name = "Shopping", color = "color_m3_orange", icon = "shopping_cart", sortOrder = 3),
         )
     val counts = mapOf(1L to 5, 2L to 3, 3L to 8, 4L to 0)
 
@@ -64,7 +68,7 @@ private fun CategoryChipRowNoColorPreview() {
 private fun CategoryChipRowSingleCategoryPreview() {
     val categories =
         listOf(
-            Category(id = 1L, name = "Inbox", color = "material_purple", icon = "ic_category", isDefault = true),
+            Category(id = 1L, name = "Inbox", color = "color_m3_purple", icon = "inbox", isDefault = true),
         )
 
     TempoTheme {
