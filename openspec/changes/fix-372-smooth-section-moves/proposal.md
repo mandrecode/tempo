@@ -29,6 +29,12 @@ happens to resume on. Hence "sometimes".
   nothing should recompose because of it.
 - No change to either screen's call sites — both keep calling `holdViewport()` immediately before
   the event that can move a row.
+- Give the Tasks list 16dp above its first card instead of 8dp — the same as its own sides and the
+  same as Routines, which is the same block with the same 28dp corners. The other half of what #371
+  left behind: removing the `scroll_anchor` item took the arrangement's 8dp with it, and the card
+  has been sitting inside the corner curve ever since, which reads as shoved against the seam. Not
+  a spec-level behaviour, so it carries no requirement of its own; recorded here because it is a
+  visible change riding along with this one.
 
 ### Non-goals
 
@@ -59,6 +65,9 @@ None.
 - `app/src/androidTest/java/com/mandrecode/tempo/core/ui/util/ViewportHoldTest.kt` and
   `.../features/tasks/presentation/TasksViewportHoldTest.kt` — existing coverage that must keep
   passing unchanged, since the contract they pin is exactly what this preserves.
-- Callers (`PlanTasksSheet`, `TasksContent`) are untouched.
+- `app/src/main/java/com/mandrecode/tempo/features/tasks/presentation/TasksContent.kt` — the list's
+  top content padding only. `PlanTasksSheet` is untouched, and neither screen's hold wiring moves.
+- No screenshot references cover the Tasks list, so none need regenerating; `Routines` and `Focus`
+  are unchanged.
 - No new dependencies. `requestScrollToItem` is stable API in the Compose Foundation already on the
   BOM in use.

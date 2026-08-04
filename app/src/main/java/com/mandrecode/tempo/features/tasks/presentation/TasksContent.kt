@@ -194,11 +194,15 @@ fun TasksContent(
 
                         LazyColumn(
                             state = listState,
+                            // 16dp at the top, the same as the sides and the same as Routines,
+                            // which is the same block with the same 28dp corners. The first card
+                            // starts inside that curve, so anything less reads as the card being
+                            // shoved against the seam rather than sitting in the panel.
                             contentPadding =
                                 PaddingValues(
                                     start = 16.dp,
                                     end = 16.dp,
-                                    top = 8.dp,
+                                    top = 16.dp,
                                     bottom = listBottomPadding,
                                 ),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
