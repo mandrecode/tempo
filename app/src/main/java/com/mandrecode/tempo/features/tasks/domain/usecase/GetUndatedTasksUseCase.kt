@@ -46,9 +46,17 @@ class GetUndatedTasksUseCase
                 categoryRepository.getAllCategories(),
             ) { tasks, categories ->
                 val categoriesById: Map<Long, Category> = categories.associateBy { it.id }
+                val subtasksByParent: Map<Long?, List<Task>> =
+                    tasks.filter { it.parentTaskId != null }.groupBy { it.parentTaskId }
                 select(tasks)
                     .sortedBy { it.sortOrder }
-                    .map { task -> UndatedTask(task = task, category = categoriesById[task.categoryId]) }
+                    .map { task ->
+                        UndatedTask(
+                            task = task,
+                            category = categoriesById[task.categoryId],
+                            subtasks = subtasksByParent[task.id].orEmpty().sortedBy { it.sortOrder },
+                        )
+                    }
             }
 
         private fun isLooseEnd(task: Task): Boolean =

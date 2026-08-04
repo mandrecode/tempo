@@ -112,6 +112,43 @@ class FocusPlanSheetViewModelTest : FocusViewModelHarness() {
             }
         }
 
+    /** Ticking one off while planning settles it as surely as giving it a day. */
+    @Test
+    fun `a completed task stops counting as needing a day`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1), undatedRow(2))
+            val viewModel = openSheet()
+
+            undatedTasks.value =
+                undatedTasks.value.map { row ->
+                    if (row.task.id == 1L) row.copy(task = row.task.copy(isCompleted = true)) else row
+                }
+            advanceUntilIdle()
+
+            val sheet = requireNotNull(viewModel.uiState.value.planSheet)
+            assertThat(sheet.unplanned.map { it.task.id }).containsExactly(2L)
+            assertThat(sheet.planned.map { it.task.id }).containsExactly(1L)
+        }
+
+    /** Completing is not a date change, so there is no reminder for an undo to put back. */
+    @Test
+    fun `completing a task alone leaves nothing to undo`() =
+        runTest {
+            stubDay()
+            undatedTasks.value = listOf(undatedRow(1))
+            val viewModel = openSheet()
+
+            undatedTasks.value =
+                undatedTasks.value.map { it.copy(task = it.task.copy(isCompleted = true)) }
+            advanceUntilIdle()
+
+            assertThat(
+                viewModel.uiState.value.planSheet
+                    ?.hasChanges,
+            ).isFalse()
+        }
+
     @Test
     fun `a quick-plan chip writes the reminder through the update use case`() =
         runTest {

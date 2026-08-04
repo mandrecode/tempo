@@ -10,4 +10,10 @@ package com.mandrecode.tempo.features.tasks.domain.model
 data class UndatedTask(
     val task: Task,
     val category: Category?,
+    /**
+     * The task's own steps. Carried so a card can say how many of them are done — a task with four
+     * steps left is a different proposition from one with none when you are deciding what day to
+     * give it.
+     */
+    val subtasks: List<Task> = emptyList(),
 )

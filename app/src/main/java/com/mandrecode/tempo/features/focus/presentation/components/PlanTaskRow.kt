@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -40,12 +43,20 @@ internal fun PlanTaskRow(
     onToggleCompletion: (Task) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Folded is the resting state here. The count badge is the part that matters when you are
+    // choosing a day — how much is left in this task — and unfolding every step of every row would
+    // bury the question the sheet is asking. The chevron is still there for anyone who wants to look.
+    var isSubtasksExpanded by remember(row.task.id) { mutableStateOf(false) }
+
     TaskItem(
         task = row.task,
         onToggleCompletion = onToggleCompletion,
         onEdit = onEdit,
         modifier = modifier,
         category = row.category,
+        subtasks = row.subtasks,
+        isSubtasksExpanded = isSubtasksExpanded,
+        onToggleSubtasksExpansion = { isSubtasksExpanded = it },
         // The sheet asks one question of every row — which day? — and an "add a step" button beside
         // the answer is a different job offered in the middle of this one. The full editor is still
         // a tap on the card away for anyone who wants it.

@@ -53,6 +53,26 @@ class GetUndatedTasksUseCaseTest {
         }
 
     @Test
+    fun `carries a task's own steps, in their order`() =
+        runTest {
+            givenTasks(
+                task(id = 1L, title = "Move flat"),
+                task(id = 3L, title = "Second step", parentTaskId = 1L, sortOrder = 2),
+                task(id = 2L, title = "First step", parentTaskId = 1L, sortOrder = 1),
+                task(id = 4L, title = "Unrelated"),
+            )
+
+            useCase().test {
+                val rows = awaitItem().associateBy { it.task.title }
+                assertThat(rows.getValue("Move flat").subtasks.map { it.title })
+                    .containsExactly("First step", "Second step")
+                    .inOrder()
+                assertThat(rows.getValue("Unrelated").subtasks).isEmpty()
+                awaitComplete()
+            }
+        }
+
+    @Test
     fun `carries each task's category`() =
         runTest {
             givenTasks(

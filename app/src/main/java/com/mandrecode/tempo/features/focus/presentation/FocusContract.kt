@@ -177,9 +177,18 @@ object FocusContract {
         val writes: ImmutableMap<Long, LocalDateTime?> = persistentMapOf(),
         val isLoading: Boolean = true,
     ) {
-        val planned: List<UndatedTask> get() = rows.filter { it.task.reminderDate != null }
+        /**
+         * Settled, one way or the other: given a day, or ticked off.
+         *
+         * A task you complete while planning is not waiting for a day any more, and going on
+         * counting it as one would have the sheet ask for something already done. The card shows it
+         * struck through, so it reads as finished rather than scheduled.
+         */
+        val planned: List<UndatedTask>
+            get() = rows.filter { it.task.reminderDate != null || it.task.isCompleted }
 
-        val unplanned: List<UndatedTask> get() = rows.filter { it.task.reminderDate == null }
+        val unplanned: List<UndatedTask>
+            get() = rows.filter { it.task.reminderDate == null && !it.task.isCompleted }
 
         /**
          * Everything this sheet session changed, however it was changed — a chip, or the full

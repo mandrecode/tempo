@@ -37,6 +37,12 @@ lead its metadata row with the task's category, shown as the category's icon fol
 - **WHEN** an undated task is a subtask of another task, or is already completed
 - **THEN** it does not appear in the sheet
 
+#### Scenario: A task with steps says how many are left
+
+- **WHEN** a listed task has subtasks
+- **THEN** its card carries the same done-of-total count badge the Tasks list uses
+- **AND** the steps stay folded, so the row keeps asking about the day rather than the work
+
 #### Scenario: Category leads the metadata row
 
 - **WHEN** a listed task belongs to a category with an icon
@@ -142,6 +148,17 @@ sheet SHALL show one plain, unheaded list.
 - **WHEN** a task has been planned from the sheet
 - **THEN** it remains visible under "Planned" for as long as the sheet is open, rather than
   disappearing from a list of undated work
+
+#### Scenario: A completed task stops asking for a day
+
+- **WHEN** the user ticks a task off from inside the sheet
+- **THEN** it stops counting towards the tasks that still need a day
+- **AND** it moves under "Planned", shown struck through, because it is settled either way
+
+#### Scenario: Completing alone is not a change to undo
+
+- **WHEN** the user only ticks tasks off and closes the sheet
+- **THEN** no undo snackbar is shown, because no reminder was moved
 
 #### Scenario: Everything planned leaves only the planned section
 
