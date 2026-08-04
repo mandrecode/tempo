@@ -356,8 +356,16 @@ review, and it asserts almost nothing: a flat image cannot tell "took the dialog
 one thing it would catch — the breakpoint moving — is already pinned exactly, at 1199 and 1200, by
 `SheetPlacementTest`. Prefer a unit test on a pure function over a committed binary every time.
 
-A quick way to spot a worthless reference: count distinct grey levels. Real rendered content lands
-around 180–220; anything under about 10 is a blob.
+A quick way to spot a worthless reference: count how many **distinct** grey levels the PNG
+contains, out of a possible 256. This is a count of values present, not a brightness — a dark
+screenshot and a light one both score high, because both have plenty of tones in them.
+
+```bash
+python3 -c "import sys;from PIL import Image;print(len(set(Image.open(sys.argv[1]).convert('L').getdata())))" <file.png>
+```
+
+Real rendered content lands around 180–220 distinct levels. The scrim-only images described above
+scored two to five. Anything in single digits is a blob and should not be committed.
 
 This is why `PlanTasksSheet` — the sheet whose tablet layout bug motivated this whole layer — has
 no screenshot coverage. Its fix was to hardcode `placement = SheetPlacement.BottomSheet`, so it is
