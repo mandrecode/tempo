@@ -30,6 +30,11 @@ private fun CategoryEditSheetNewPreview() {
 
 // region CategoryEditSheet – Edit Category Previews
 
+// Colors below are `ColorOption.labelKey` values and icons are `TempoIcon.iconName` values,
+// because that is what `resolveColor()` and `TempoIcon.fromName()` match on. Drawable-style names
+// ("ic_work", "material_blue") resolve to nothing and fall back silently to the default glyph and
+// no color — which in this sheet also means the selected swatch and icon read as unset.
+
 @Preview(name = "Light", showBackground = true, device = "id:pixel_9")
 @Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -38,8 +43,8 @@ private fun CategoryEditSheetEditPreview() {
         Category(
             id = 2L,
             name = "Work",
-            color = "material_blue",
-            icon = "ic_work",
+            color = "color_m3_blue",
+            icon = "work",
             isDefault = false,
         )
     TempoTheme {
@@ -63,8 +68,8 @@ private fun CategoryEditSheetDefaultCategoryPreview() {
         Category(
             id = 1L,
             name = "Inbox",
-            color = "material_purple",
-            icon = "ic_category",
+            color = "color_m3_purple",
+            icon = "inbox",
             isDefault = true,
         )
     TempoTheme {
@@ -88,8 +93,8 @@ private fun CategoryEditSheetErrorPreview() {
         Category(
             id = 2L,
             name = "Work",
-            color = "material_blue",
-            icon = "ic_work",
+            color = "color_m3_blue",
+            icon = "work",
         )
     TempoTheme {
         CategoryEditSheet(

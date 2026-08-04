@@ -6,6 +6,7 @@ plugins {
     alias(libs.plugins.kotlin.ksp)
     alias(libs.plugins.kover)
     alias(libs.plugins.detekt)
+    alias(libs.plugins.android.screenshot)
 }
 
 detekt {
@@ -228,6 +229,9 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
     testOptions {
         animationsDisabled = true
     }
+    // Compose Preview screenshot testing. The plugin requires the opt-in both here and as
+    // `android.experimental.enableScreenshotTest` in gradle.properties.
+    experimentalProperties["android.experimental.enableScreenshotTest"] = true
     lint {
         // Translation parity is enforced for all translatable string resources:
         // every translatable resource in values/ MUST have a matching
@@ -300,4 +304,10 @@ dependencies {
 
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
+
+    screenshotTestImplementation(platform(libs.androidx.compose.bom))
+    screenshotTestImplementation(libs.androidx.ui.tooling)
+    screenshotTestImplementation(libs.kotlinx.collections.immutable)
+    // Supplies @PreviewTest, which marks which previews get a committed reference image.
+    screenshotTestImplementation(libs.screenshot.validation.api)
 }

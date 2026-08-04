@@ -120,8 +120,13 @@ New or modified **internal composables** (headers, separators, dialogs, cards, e
 include `@Preview` functions to enable visual verification in Android Studio without running the
 full app.
 
-**All `@Preview` composables live under `src/debug/`**, not in the main source set. Place them in
-a `[Feature]ContentPreviews.kt` file mirroring the main package structure.
+**`@Preview` composables never live in the main source set.** Development previews go under
+`src/debug/`, in a `[Feature]ContentPreviews.kt` file mirroring the main package structure.
+
+The one other home for a `@Preview` is `src/screenshotTest/`, which holds the `@PreviewTest`
+previews backing the committed reference images. Those are a CI gate, not a development aid —
+see [`TESTING.md` → Screenshot Tests](TESTING.md#screenshot-tests-appsrcscreenshottest). Keep the
+two sets separate: `src/debug/` previews stay free to retune, screenshot-test previews are pinned.
 
 **Example:**
 

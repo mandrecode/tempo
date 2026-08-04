@@ -26,8 +26,10 @@ private val previewClock =
         override fun now(): Instant = Instant.parse("2026-08-03T08:15:00Z")
     }
 
-private val work = Category(id = 1, name = "Work", icon = "work", color = "blue")
-private val home = Category(id = 2, name = "Home", icon = "home", color = "green")
+// Colors are `ColorOption.labelKey` values, because that is what `resolveColor()` matches on.
+// Bare names like "blue" resolve to nothing and fall back silently to no color at all.
+private val work = Category(id = 1, name = "Work", icon = "work", color = "color_m3_blue")
+private val home = Category(id = 2, name = "Home", icon = "home", color = "color_m3_green")
 private val errands = Category(id = 3, name = "Errands", icon = null, color = null)
 
 private fun row(
