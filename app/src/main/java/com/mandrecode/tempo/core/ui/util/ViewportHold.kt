@@ -35,8 +35,11 @@ import androidx.compose.runtime.setValue
  * }
  * ```
  *
- * @param sectionKeys whatever changes when a row crosses between sections — the sections themselves
- * will do. The restore is keyed on these, so a row acted on without moving costs nothing.
+ * @param sectionKeys values that change when a row crosses between sections, and only then. How
+ * many rows each section holds is the usual answer. They have to change *by value* — a collection
+ * that mutates in place reads as the same key, the effect never restarts, and the restore silently
+ * never happens — and they should not change for anything else, or the effect restarts for edits
+ * that moved nothing.
  */
 @Composable
 fun rememberViewportHold(

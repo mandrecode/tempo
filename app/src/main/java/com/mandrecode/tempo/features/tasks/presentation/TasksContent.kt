@@ -131,7 +131,10 @@ fun TasksContent(
     // otherwise go after it, because the row checked is usually the first one visible. Held here
     // rather than inside the row so that both sections get it from one place, and un-checking, which
     // makes the same trip in reverse, is covered by the same line.
-    val holdViewport = rememberViewportHold(listState, activeTaskGroups, completedTaskGroups)
+    // Counts, not the sections themselves: the key has to change when a row crosses, and only then.
+    val activeTaskCount = activeTaskGroups.values.sumOf { it.size }
+    val completedTaskCount = completedTaskGroups.values.sumOf { it.size }
+    val holdViewport = rememberViewportHold(listState, activeTaskCount, completedTaskCount)
     val onRowEvent: (TasksContract.UiEvent) -> Unit = { event ->
         if (event is TasksContract.UiEvent.ToggleTaskCompletion) holdViewport()
         onEvent(event)
