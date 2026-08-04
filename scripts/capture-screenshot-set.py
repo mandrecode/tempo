@@ -143,14 +143,23 @@ def tap_center(serial, center):
 
 def wait_for(serial, desc=None, text=None, text_prefix=None, timeout=READY_TIMEOUT_SECONDS):
     """Re-read the view tree until the described element shows up, and return its center."""
-    deadline = time.monotonic() + timeout
+    started = time.monotonic()
+    deadline = started + timeout
     while True:
         nodes = dump_layout(serial)
         try:
             return find_center(nodes, desc=desc, text=text, text_prefix=text_prefix)
-        except RuntimeError:
+        except RuntimeError as missing:
             if time.monotonic() >= deadline:
-                raise
+                # Say that this was a *timeout*, and for how long. The bare
+                # "Element not found" reads like a typo in NAV, which is the one
+                # thing it is not after 90 seconds of polling — far more likely
+                # the screen never finished rendering, or the seeded content this
+                # marker names has drifted from generate-seed-backup.py.
+                raise TimeoutError(
+                    f"Screen never finished rendering: waited "
+                    f"{time.monotonic() - started:.0f}s of {timeout:.0f}s for {missing}",
+                ) from missing
             time.sleep(READY_POLL_SECONDS)
 
 
