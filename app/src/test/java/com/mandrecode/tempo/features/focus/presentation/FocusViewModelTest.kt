@@ -126,19 +126,20 @@ class FocusViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
-    fun `the undated footer opens the Tasks tab`() =
+    fun `the undated footer opens the plan sheet without leaving Focus`() =
         runTest {
             stubDay()
+            undatedTasks.value = listOf(undatedRow(1), undatedRow(2))
             val viewModel = createViewModel()
             advanceUntilIdle()
 
-            viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.UndatedTasksClicked)
-                advanceUntilIdle()
+            viewModel.onEvent(FocusContract.UiEvent.UndatedTasksClicked)
+            advanceUntilIdle()
 
-                assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenTasksTab)
-                cancelAndIgnoreRemainingEvents()
-            }
+            val sheet = viewModel.uiState.value.planSheet
+            assertThat(sheet).isNotNull()
+            assertThat(sheet?.rows?.map { it.task.id }).containsExactly(1L, 2L)
+            assertThat(sheet?.isLoading).isFalse()
         }
 
     @Test

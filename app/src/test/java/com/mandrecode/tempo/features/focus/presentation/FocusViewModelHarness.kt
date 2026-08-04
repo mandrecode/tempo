@@ -15,8 +15,13 @@ import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUse
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
+import com.mandrecode.tempo.features.tasks.domain.usecase.GetUndatedTasksUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -24,6 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -69,6 +75,21 @@ abstract class FocusViewModelHarness {
             every { setPreviewTaskId(any()) } answers { previewFlow.value = firstArg() }
         }
 
+    /** What the plan sheet opens onto. Empty unless a test says otherwise. */
+    protected val undatedTasks = MutableStateFlow<List<UndatedTask>>(emptyList())
+    protected val getUndatedTasks =
+        mockk<GetUndatedTasksUseCase> {
+            every { this@mockk.invoke() } returns undatedTasks
+            // Pinned rows follow the same source, filtered the way the real one filters: the tests
+            // that matter here are about what the sheet does with a row, not about the query.
+            every { pinnedTo(any()) } answers {
+                val ids: Set<Long> = firstArg()
+                undatedTasks.map { rows -> rows.filter { it.task.id in ids } }
+            }
+        }
+    protected val updateTask = mockk<UpdateTaskUseCase>(relaxed = true)
+    protected val restoreTaskReminders = mockk<RestoreTaskRemindersUseCase>(relaxed = true)
+
     protected val vacationPeriods = MutableStateFlow<List<VacationPeriod>>(emptyList())
     protected val vacationModeRepository =
         mockk<VacationModeRepository> { every { periods } returns vacationPeriods }
@@ -89,6 +110,23 @@ abstract class FocusViewModelHarness {
         description = "",
         isCompleted = isCompleted,
         reminderDate = LocalDateTime(today, LocalTime(9, 0)),
+    )
+
+    /** A row as the plan sheet first sees it: open, top-level, and carrying no date. */
+    protected fun undatedRow(
+        id: Long,
+        title: String = "Loose end $id",
+        category: Category? = null,
+        reminderDate: LocalDateTime? = null,
+    ) = UndatedTask(
+        task =
+            Task(
+                id = id,
+                title = title,
+                description = "",
+                reminderDate = reminderDate,
+            ),
+        category = category,
     )
 
     protected fun agendaOf(
@@ -114,6 +152,9 @@ abstract class FocusViewModelHarness {
             focusSessionRepository = focusSessionRepository,
             focusSessionUseCases = focusSessionUseCases,
             toggleHabitCompletion = toggleHabitCompletion,
+            getUndatedTasks = getUndatedTasks,
+            updateTask = updateTask,
+            restoreTaskReminders = restoreTaskReminders,
             vacationModeRepository = vacationModeRepository,
             clock = clock,
         )

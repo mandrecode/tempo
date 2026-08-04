@@ -28,7 +28,7 @@ import org.junit.Rule
 import org.junit.Test
 import kotlin.math.abs
 
-/** What the day's rows do when tapped, and how Focus hands off to Tasks. */
+/** What the day's rows do when tapped, and how Focus offers to plan what has no day yet. */
 class FocusContentTest {
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -206,12 +206,12 @@ class FocusContentTest {
     }
 
     @Test
-    fun undatedFooter_namesItsDestinationAndHandsOff() {
+    fun undatedFooter_countsTheLooseEndsAndAsksToPlanThem() {
         val events = mutableListOf<FocusContract.UiEvent>()
         setContent(stateWith(items = listOf(chainEntry()), undatedTaskCount = 3)) { events += it }
 
-        composeTestRule.onNodeWithText("3 tasks without a date").assertIsDisplayed()
-        composeTestRule.onNodeWithText("3 tasks without a date").performClick()
+        composeTestRule.onNodeWithText("Give 3 tasks a day").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Give 3 tasks a day").performClick()
         composeTestRule.waitForIdle()
 
         assertThat(events).contains(FocusContract.UiEvent.UndatedTasksClicked)
@@ -221,7 +221,7 @@ class FocusContentTest {
     fun undatedFooter_isAbsentWhenNothingIsUndated() {
         setContent(stateWith(items = listOf(chainEntry()), undatedTaskCount = 0)) { }
 
-        composeTestRule.onNodeWithText("without a date", substring = true).assertDoesNotExist()
+        composeTestRule.onNodeWithText("a day", substring = true).assertDoesNotExist()
     }
 
     /** The chain's steps read down in the order the chain runs them, as they do in Routines. */
@@ -340,11 +340,11 @@ class FocusContentTest {
     }
 
     @Test
-    fun emptyDay_stillOffersTheHandOff() {
+    fun emptyDay_stillOffersToPlanTheUndated() {
         val events = mutableListOf<FocusContract.UiEvent>()
         setContent(stateWith(items = emptyList(), undatedTaskCount = 1)) { events += it }
 
-        composeTestRule.onNodeWithText("1 task without a date").performClick()
+        composeTestRule.onNodeWithText("Give 1 task a day").performClick()
         composeTestRule.waitForIdle()
 
         assertThat(events).contains(FocusContract.UiEvent.UndatedTasksClicked)

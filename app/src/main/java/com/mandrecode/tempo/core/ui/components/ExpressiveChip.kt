@@ -32,6 +32,13 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.filterChipSelected
 
+/**
+ * The corner a standalone chip settles into once chosen — square enough to read as pressed in, and
+ * the same radius the press itself uses, so the touch does not spring back before the selection
+ * lands: the squash of pressing simply becomes the shape of being chosen.
+ */
+val SquaredSelection = 10.dp
+
 @Composable
 fun ExpressiveChip(
     label: String,
@@ -44,6 +51,16 @@ fun ExpressiveChip(
     enabled: Boolean = true,
     icon: @Composable (() -> Unit)? = null,
     horizontalPadding: Dp = 16.dp,
+    /**
+     * The corner the chip animates to when it is selected.
+     *
+     * Rounder by default, which is what selection has to mean inside a *connected* run: the
+     * segments share flat 4dp joins, so the selected one earns its own rounded ends and lifts out
+     * of the row. Standing alone with gaps around it a chip has nothing to lift out of — roundness
+     * says nothing there, and squareness is what reads as pressed-in. Pass [SquaredSelection] for
+     * those.
+     */
+    selectedCornerRadius: Dp = 20.dp,
     selectedContainerColor: Color = MaterialTheme.colorScheme.primary,
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
     unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
@@ -54,7 +71,7 @@ fun ExpressiveChip(
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
-    val selectedRadius = 20.dp
+    val selectedRadius = selectedCornerRadius
     val connectedRadius = 4.dp
     val outerRadius = 16.dp
 

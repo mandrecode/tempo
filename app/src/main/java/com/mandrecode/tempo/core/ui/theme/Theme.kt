@@ -183,7 +183,11 @@ internal fun ColorScheme.withPageSurfaceContrast(darkTheme: Boolean): ColorSchem
             surface = surfaceContainerLowest,
             surfaceContainerLow = surfaceContainerLowest,
             surfaceContainer = surfaceContainerLow,
-            surfaceContainerHigh = surfaceContainer,
+            // Down one, as the light branch does. Left at `surfaceContainer` this landed on the
+            // same value `background` already had, so a card — which is drawn on `background` —
+            // was the exact colour of the sheet underneath it and disappeared into it. Nothing
+            // showed it in a flat card; a card with a two-tone split showed it immediately.
+            surfaceContainerHigh = surfaceContainerLow,
             surfaceContainerHighest = surfaceContainerHigh,
         )
     } else {

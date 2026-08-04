@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.theme
 
+import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.ui.graphics.Color
@@ -26,6 +27,7 @@ class PageSurfaceContrastTest {
         assertThat(luminanceDistance(colorScheme.surfaceContainer, colorScheme.background))
             .isLessThan(luminanceDistance(colorScheme.surfaceContainerLow, colorScheme.background))
         assertThat(colorScheme.primary).isEqualTo(baseColorScheme.primary)
+        assertSheetSurfaceSeparatesFromCards(colorScheme)
     }
 
     @Test
@@ -38,13 +40,25 @@ class PageSurfaceContrastTest {
         assertThat(colorScheme.surface).isEqualTo(baseColorScheme.surfaceContainerLowest)
         assertThat(colorScheme.surfaceContainerLow).isEqualTo(baseColorScheme.surfaceContainerLowest)
         assertThat(colorScheme.surfaceContainer).isEqualTo(baseColorScheme.surfaceContainerLow)
-        assertThat(colorScheme.surfaceContainerHigh).isEqualTo(baseColorScheme.surfaceContainer)
+        assertThat(colorScheme.surfaceContainerHigh).isEqualTo(baseColorScheme.surfaceContainerLow)
         assertThat(colorScheme.surfaceContainerHighest).isEqualTo(baseColorScheme.surfaceContainerHigh)
         assertThat(colorScheme.surfaceContainerLow.luminance()).isLessThan(colorScheme.background.luminance())
         assertThat(colorScheme.surfaceContainer.luminance()).isLessThan(colorScheme.background.luminance())
         assertThat(luminanceDistance(colorScheme.surfaceContainer, colorScheme.background))
             .isLessThan(luminanceDistance(colorScheme.surfaceContainerLow, colorScheme.background))
         assertThat(colorScheme.primary).isEqualTo(baseColorScheme.primary)
+        assertSheetSurfaceSeparatesFromCards(colorScheme)
+    }
+
+    /**
+     * A card is drawn on `background` and a bottom sheet on `surfaceContainerHigh`, so the two roles
+     * landing on the same value leaves every card on a sheet the exact colour of the sheet and
+     * invisible. The dark branch did precisely that, and nothing caught it: the mapping was asserted
+     * role by role, which says what the function was written to do rather than what it has to be
+     * true for.
+     */
+    private fun assertSheetSurfaceSeparatesFromCards(colorScheme: ColorScheme) {
+        assertThat(colorScheme.surfaceContainerHigh).isNotEqualTo(colorScheme.background)
     }
 
     private fun luminanceDistance(
