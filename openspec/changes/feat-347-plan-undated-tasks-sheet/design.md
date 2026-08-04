@@ -191,11 +191,19 @@ would be a lie.
 
 ### D8 — Adaptive behaviour, stated at every size
 
-- **Placement:** `TempoModalBottomSheet(adaptivePlacement = true)`. Bottom sheet below 1200dp
-  (capped at `SHEET_MAX_WIDTH` = 640dp), `TempoDockedSheet` at 1200dp and above. This is the app's
-  existing rule; the plan sheet does not invent a second one. Unlike `FocusTaskEditor`, which forces
-  `BottomSheet` because Focus has no list-detail layout for a pane to dock beside, the plan sheet
-  *is* a supporting view onto the Focus agenda, so docking it is coherent.
+- **Placement:** `TempoModalBottomSheet(placement = SheetPlacement.BottomSheet)` — a bottom sheet at
+  every width, capped at `SHEET_MAX_WIDTH` = 640dp and centred on wide windows.
+
+  An earlier draft passed `adaptivePlacement = true`, reasoning that the plan sheet is a supporting
+  view onto the agenda and could therefore dock. On a 1280dp tablet that turned out to be wrong in
+  the plainest possible way: `TempoDockedSheet` is `fillMaxSize()`, meant to be laid out *beside*
+  content by a caller that reserves its width. Focus hosts the sheet at the top level of the screen
+  with nothing beside it, so the pane filled the whole window and the floating rail and app title
+  drew straight over it — the sheet's own title and its first task card both buried.
+
+  `FocusTaskEditor` had already written the rule down — "never the docked pane … Focus has no
+  list-detail layout for a pane to dock beside" — and the plan sheet now follows it. Docking is for
+  a pane with a sibling; this sheet has none.
 - **Columns:** `LazyVerticalGrid(columns = GridCells.Adaptive(minSize = PlanRowMinWidth))` with
   `PlanRowMinWidth = 328.dp` — the width a task card actually gets in the Tasks list on a 360dp
   phone. Section headers span `maxLineSpan`. At today's sheet widths this resolves to one column

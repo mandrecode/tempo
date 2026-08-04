@@ -45,6 +45,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.TempoDatePickerDialog
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
@@ -119,7 +120,11 @@ internal fun PlanTasksSheet(
                 if (isEscape) close()
                 isEscape
             },
-        adaptivePlacement = true,
+        // Never the docked pane, for the same reason the Focus editors refuse it: docking is for a
+        // pane that sits *beside* something, and Focus has no list-detail layout to dock against.
+        // Allowed to adapt, the pane filled the whole window on a tablet and the floating rail drew
+        // straight over the top of it — title and first card both buried.
+        placement = SheetPlacement.BottomSheet,
     ) { _ ->
         PlanSheetBody(
             state = state,
