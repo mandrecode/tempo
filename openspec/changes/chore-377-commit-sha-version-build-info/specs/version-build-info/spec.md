@@ -6,12 +6,12 @@ The Android build SHALL expose the source commit identifier through the existing
 
 #### Scenario: Build from a Git checkout
 
-- **WHEN** the app is built from a checkout with a resolvable commit SHA
+- **WHEN** the app is built with a valid CI-provided commit SHA
 - **THEN** `AppVersionInfo` contains the semantic version, version code, and the abbreviated source commit identifier
 
 #### Scenario: Build without Git metadata
 
-- **WHEN** the app is built without a resolvable CI or Git commit SHA
+- **WHEN** the app is built without a valid CI-provided commit SHA
 - **THEN** the build succeeds and `AppVersionInfo` exposes an empty commit identifier
 
 ### Requirement: User-facing build information identifies the revision

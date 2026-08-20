@@ -149,19 +149,13 @@ val appVersionCode: Int = calculatedVersionCode.toInt()
 val appCommitSha =
     providers
         .environmentVariable("GITHUB_SHA")
-        .orElse(
-            providers
-                .exec {
-                    commandLine("git", "rev-parse", "--short=7", "HEAD")
-                    isIgnoreExitValue = true
-                }.standardOutput.asText,
-        ).map {
-            it
+        .map { value ->
+            value
                 .trim()
-                .takeIf(String::isNotEmpty)
+                .takeIf { it.matches(Regex("[0-9a-fA-F]{7,40}")) }
+                ?.take(7)
                 .orEmpty()
-                .take(7)
-        }.get()
+        }.getOrElse("")
 
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.mandrecode.tempo"

@@ -17,4 +17,11 @@ class AppVersionProviderTest {
 
         assertThat(versionInfo.displayName).isEqualTo("1.2.3")
     }
+
+    @Test
+    fun `blank commit sha is omitted from display name`() {
+        val versionInfo = AppVersionInfo(versionName = "1.2.3", versionCode = 1, commitSha = "   ")
+
+        assertThat(versionInfo.displayName).isEqualTo("1.2.3")
+    }
 }

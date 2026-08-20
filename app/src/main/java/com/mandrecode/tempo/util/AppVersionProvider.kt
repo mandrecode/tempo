@@ -8,10 +8,7 @@ data class AppVersionInfo(
     val commitSha: String = "",
 ) {
     val displayName: String
-        get() {
-            val normalizedCommitSha = commitSha.trim()
-            return if (normalizedCommitSha.isBlank()) versionName else "$versionName ($normalizedCommitSha)"
-        }
+        get() = commitSha.trim().takeIf(String::isNotBlank)?.let { "$versionName ($it)" } ?: versionName
 }
 
 interface AppVersionProvider {
