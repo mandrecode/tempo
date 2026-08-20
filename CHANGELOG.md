@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.2](https://github.com/mandrecode/tempo/compare/v1.13.1...v1.13.2) (2026-08-20)
+
+
+### Bug Fixes
+
+* **#378:** refresh Focus habits after midnight ([#387](https://github.com/mandrecode/tempo/issues/387)) ([c90bfbe](https://github.com/mandrecode/tempo/commit/c90bfbe623b757f4160389fb429d509119f3ccf9))
+
 ## [1.13.1](https://github.com/mandrecode/tempo/compare/v1.13.0...v1.13.1) (2026-08-04)
 
 
