@@ -1,7 +1,7 @@
 # task-editor-keyboard-dismissal Specification
 
 ## Purpose
-TBD - created by archiving change fix-393-task-sheet-keyboard-dismissal. Update Purpose after archive.
+Define how the task editor prioritizes keyboard dismissal over sheet dismissal while preserving field focus, sheet stability, entered content, and adaptive placement.
 ## Requirements
 ### Requirement: Task editor keyboard dismissal settles in one attempt
 The system SHALL keep the software keyboard hidden after a user dismisses it from a focused task title or description field, and SHALL decide keyboard-first routing from the state captured when that back action begins.

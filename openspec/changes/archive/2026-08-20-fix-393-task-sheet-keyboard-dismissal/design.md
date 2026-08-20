@@ -1,5 +1,7 @@
 ## Context
 
+> **Superseded implementation:** The transition-state approach documented below was replaced by the gesture-scoped `resolveTempoModalSheetBackRoute` policy in `TempoModalSheetBackRoute.kt`. The archived rationale remains here to explain the rejected #393 iteration.
+
 The #229 fix disables `PredictiveBackHandler` while `WindowInsets.isImeVisible` is true so Android can consume the first back action. The supplied Pixel 7 recording for #393 shows a remaining transition race: as soon as the IME reports hidden, the shared sheet re-registers predictive back while the description field still owns focus. The dialog/editor reconnects to the IME and Gboard reappears, so the user must dismiss it repeatedly.
 
 The same shared sheet primitive serves compact and medium modal sheets plus expanded docked panes. Existing stable IME padding already distinguishes a real hide (`imeAnimationTarget` reaches zero) from a keyboard-to-keyboard focus handoff (the target remains non-zero).
@@ -45,9 +47,9 @@ Alternatives considered:
 - Call only `SoftwareKeyboardController.hide()`: the recording already shows that hiding without releasing the active editor connection permits the IME to reopen.
 - Keep focus indefinitely and suppress future keyboard requests: this would require task-field-specific state and could prevent intentional refocus.
 
-### Keep the fix and deterministic policy tests in the shared UI primitive
+### Superseded by gesture-scoped routing in the shared UI primitive
 
-The transition predicates will remain pure functions next to `stableImeInset`, with unit tests for real dismissal, handoff, and predictive-back enablement. Device validation remains necessary because Compose unit tests cannot reproduce a physical IME/window focus race.
+The transition predicates and `stableImeInset` helper described by this iteration were removed. The delivered implementation uses the pure `resolveTempoModalSheetBackRoute` policy, with unit tests covering whether keyboard- or sheet-routed gestures forward progress, clear focus, dismiss, or restore. Device validation remains necessary because Compose unit tests cannot reproduce a physical IME/window focus race.
 
 Across compact and medium widths, the modal task sheet uses the corrected shared handler. At expanded widths, the docked task editor calls the same handler and receives identical focus settlement without placement changes.
 
