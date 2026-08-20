@@ -6,12 +6,65 @@ import org.junit.Test
 class TempoModalSheetImeTest {
     @Test
     fun givenImeVisible_whenRoutingBack_thenSheetPredictiveBackIsDisabled() {
-        assertThat(shouldHandleSheetPredictiveBack(isImeVisible = true)).isFalse()
+        assertThat(
+            shouldHandleSheetPredictiveBack(
+                isImeVisible = true,
+                wasImeVisible = true,
+            ),
+        ).isFalse()
     }
 
     @Test
     fun givenImeHidden_whenRoutingBack_thenSheetPredictiveBackIsEnabled() {
-        assertThat(shouldHandleSheetPredictiveBack(isImeVisible = false)).isTrue()
+        assertThat(
+            shouldHandleSheetPredictiveBack(
+                isImeVisible = false,
+                wasImeVisible = false,
+            ),
+        ).isTrue()
+    }
+
+    @Test
+    fun givenImeJustBecameHidden_whenRoutingBack_thenSheetPredictiveBackRemainsDisabled() {
+        assertThat(
+            shouldHandleSheetPredictiveBack(
+                isImeVisible = false,
+                wasImeVisible = true,
+            ),
+        ).isFalse()
+    }
+
+    @Test
+    fun givenImeDismissalReachedZeroTarget_whenResolvingFocus_thenFocusIsCleared() {
+        assertThat(
+            shouldClearSheetFocusAfterImeChange(
+                wasImeVisible = true,
+                isImeVisible = false,
+                animationTarget = 0,
+            ),
+        ).isTrue()
+    }
+
+    @Test
+    fun givenImeFocusHandoffHasTarget_whenResolvingFocus_thenFocusIsRetained() {
+        assertThat(
+            shouldClearSheetFocusAfterImeChange(
+                wasImeVisible = true,
+                isImeVisible = false,
+                animationTarget = 800,
+            ),
+        ).isFalse()
+    }
+
+    @Test
+    fun givenImeWasAlreadyHidden_whenResolvingFocus_thenFocusIsRetained() {
+        assertThat(
+            shouldClearSheetFocusAfterImeChange(
+                wasImeVisible = false,
+                isImeVisible = false,
+                animationTarget = 0,
+            ),
+        ).isFalse()
     }
 
     @Test

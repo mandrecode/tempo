@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -21,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -499,7 +497,7 @@ private fun TempoModalSheetDragHandle(
     }
 }
 
-@OptIn(ExperimentalActivityApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalActivityApi::class)
 @Composable
 private fun TempoModalSheetPredictiveBackHandler(
     onProgress: suspend (Float) -> Unit,
@@ -507,7 +505,7 @@ private fun TempoModalSheetPredictiveBackHandler(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val predictiveBackEnabled = shouldHandleSheetPredictiveBack(WindowInsets.isImeVisible)
+    val predictiveBackEnabled = rememberSheetPredictiveBackEnabled()
 
     PredictiveBackHandler(enabled = predictiveBackEnabled) {
         try {

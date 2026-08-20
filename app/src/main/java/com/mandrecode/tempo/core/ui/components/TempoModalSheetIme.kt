@@ -5,13 +5,20 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imeAnimationSource
 import androidx.compose.foundation.layout.imeAnimationTarget
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import kotlinx.coroutines.flow.first
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -26,7 +33,48 @@ internal fun Modifier.stableImePadding(): Modifier {
     return this.windowInsetsPadding(stableInsets)
 }
 
-internal fun shouldHandleSheetPredictiveBack(isImeVisible: Boolean): Boolean = !isImeVisible
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+internal fun rememberSheetPredictiveBackEnabled(): Boolean {
+    val isImeVisible = WindowInsets.isImeVisible
+    val imeAnimationTarget = WindowInsets.imeAnimationTarget
+    val density = LocalDensity.current
+    val focusManager = LocalFocusManager.current
+    val wasImeVisible = remember { mutableStateOf(isImeVisible) }
+
+    LaunchedEffect(isImeVisible, imeAnimationTarget, density, focusManager) {
+        if (isImeVisible) {
+            wasImeVisible.value = true
+        } else if (wasImeVisible.value) {
+            snapshotFlow { imeAnimationTarget.getBottom(density) }
+                .first { targetBottom ->
+                    shouldClearSheetFocusAfterImeChange(
+                        wasImeVisible = wasImeVisible.value,
+                        isImeVisible = false,
+                        animationTarget = targetBottom,
+                    )
+                }
+            focusManager.clearFocus(force = true)
+            wasImeVisible.value = false
+        }
+    }
+
+    return shouldHandleSheetPredictiveBack(
+        isImeVisible = isImeVisible,
+        wasImeVisible = wasImeVisible.value,
+    )
+}
+
+internal fun shouldHandleSheetPredictiveBack(
+    isImeVisible: Boolean,
+    wasImeVisible: Boolean,
+): Boolean = !isImeVisible && !wasImeVisible
+
+internal fun shouldClearSheetFocusAfterImeChange(
+    wasImeVisible: Boolean,
+    isImeVisible: Boolean,
+    animationTarget: Int,
+): Boolean = wasImeVisible && !isImeVisible && animationTarget == 0
 
 internal fun stableImeInset(
     current: Int,
