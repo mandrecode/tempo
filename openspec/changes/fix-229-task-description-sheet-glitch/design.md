@@ -34,7 +34,7 @@ Alternatives considered:
 
 ### Keep IME padding inside the bottom-sheet surface
 
-The bottom sheet retains internal IME padding, keeping its outer bottom edge anchored while focus moves between fields with different IME configurations. The effective inset uses the current animated value plus the overlap of the animation source and target. That overlap remains non-zero during a keyboard-to-keyboard focus handoff, but does not interfere with the normal show or hide animation.
+Sheets retain internal IME padding, keeping their outer edges anchored while focus moves between fields with different IME configurations. The effective inset uses the current animated value plus the overlap of the animation source and target. That overlap remains non-zero during a keyboard-to-keyboard focus handoff, but does not interfere with the normal show or hide animation. A stable `WindowInsets` wrapper reads those values during layout, following Compose guidance to avoid recomposition on every animation frame, and is shared by modal, side, and docked placements.
 
 Alternatives considered:
 
@@ -48,6 +48,6 @@ A focused unit test will lock the IME/back-handler enablement policy. Build, sta
 
 ## Risks / Trade-offs
 
-- [IME visibility is exposed as Compose inset state] → Read the platform-provided visibility only for back routing and retain the established surface-local inset layout.
+- [IME visibility is exposed as Compose inset state] → Read visibility during composition only for back routing; read animated inset dimensions during layout through a stable wrapper.
 - [Shared behavior changes for every sheet] → The policy matches expected Android back ordering, and unit/device checks cover both keyboard hiding and subsequent sheet dismissal.
 - [An automated Compose test cannot reliably assert a transient physical-keyboard frame] → Retain a deterministic policy test and verify the animation with the repository's prescribed AVD smoke-test path.

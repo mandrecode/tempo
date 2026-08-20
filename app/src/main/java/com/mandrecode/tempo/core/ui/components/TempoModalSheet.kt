@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
@@ -205,7 +204,7 @@ internal fun TempoDockedSheet(
                     Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
-                        .imePadding(),
+                        .stableImePadding(),
             ) {
                 content(requestDismiss)
             }
@@ -373,11 +372,12 @@ private val TempoModalSheetState.navigationBarPaddingModifier: Modifier
  * and the drag handle occupies the start edge instead of the top/bottom.
  */
 private val TempoModalSheetState.horizontalContentPaddingModifier: Modifier
+    @Composable
     get() =
         if (direction.isHorizontal) {
             Modifier
                 .padding(start = SHEET_HANDLE_CONTENT_INSET)
-                .imePadding()
+                .stableImePadding()
         } else {
             Modifier
         }
