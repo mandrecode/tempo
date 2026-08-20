@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -22,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -493,7 +491,7 @@ private fun TempoModalSheetDragHandle(
     }
 }
 
-@OptIn(ExperimentalActivityApi::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalActivityApi::class)
 @Composable
 private fun TempoModalSheetPredictiveBackHandler(
     onProgress: suspend (Float) -> Unit,
@@ -501,27 +499,15 @@ private fun TempoModalSheetPredictiveBackHandler(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val focusManager = LocalFocusManager.current
-    val latestImeVisible by rememberUpdatedState(WindowInsets.isImeVisible)
 
     PredictiveBackHandler {
-        val route = resolveTempoModalSheetBackRoute(isImeVisible = latestImeVisible)
         try {
             it.collect { backEvent ->
-                if (route.forwardsProgressToSheet) {
-                    onProgress(backEvent.progress)
-                }
+                onProgress(backEvent.progress)
             }
-            if (route.clearsFocusOnCompletion) {
-                focusManager.clearFocus(force = true)
-            }
-            if (route.dismissesSheetOnCompletion) {
-                onDismiss()
-            }
+            onDismiss()
         } catch (exception: CancellationException) {
-            if (route.restoresSheetOnCancellation) {
-                scope.launch { onRestore() }
-            }
+            scope.launch { onRestore() }
             throw exception
         }
     }
