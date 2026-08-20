@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.4](https://github.com/mandrecode/tempo/compare/v1.13.3...v1.13.4) (2026-08-20)
+
+
+### Bug Fixes
+
+* **#393:** route task sheet back by gesture ([#394](https://github.com/mandrecode/tempo/issues/394)) ([ea072ce](https://github.com/mandrecode/tempo/commit/ea072cec04c13aaa27a28e5c186c1c9b3c32bb34))
+
 ## [1.13.3](https://github.com/mandrecode/tempo/compare/v1.13.2...v1.13.3) (2026-08-20)
 
 
