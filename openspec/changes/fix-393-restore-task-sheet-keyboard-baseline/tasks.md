@@ -16,3 +16,8 @@
 
 - [x] 3.1 Commit and push the rollback branch
 - [x] 3.2 Open a rollback PR that references #388 and #394 without closing #393
+
+## 4. Finalize Change
+
+- [ ] 4.1 After the Pixel 7 smoke test passes, archive this OpenSpec change in the rollback PR and
+  rerun final verification against the archived state
