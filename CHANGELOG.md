@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.5](https://github.com/mandrecode/tempo/compare/v1.13.4...v1.13.5) (2026-08-20)
+
+
+### Bug Fixes
+
+* **#393:** restore task sheet keyboard baseline ([#396](https://github.com/mandrecode/tempo/issues/396)) ([cc093a0](https://github.com/mandrecode/tempo/commit/cc093a0a9524139760f9e1cdc30e11fa563120d3))
+
 ## [1.13.4](https://github.com/mandrecode/tempo/compare/v1.13.3...v1.13.4) (2026-08-20)
 
 
