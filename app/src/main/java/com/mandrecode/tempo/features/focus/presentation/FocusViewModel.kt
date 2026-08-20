@@ -385,6 +385,7 @@ class FocusViewModel
                     ) { agenda, history, periods ->
                         Triple(agenda, history, periods)
                     }.collect { (agenda, history, periods) ->
+                        if (observedDay != day) return@collect
                         val streak = getFocusStreak(day)
                         mutableUiState.update { state ->
                             state.copy(
