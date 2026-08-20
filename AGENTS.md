@@ -14,12 +14,15 @@ Before starting substantive implementation, run `openspec list --json` to unders
 - If implementation is complete and the change is ready to finalize, suggest or use the `openspec-archive-change` skill as appropriate.
 
 After completing a change's implementation and required verification, update its
-task checklist and archive it immediately with `openspec-archive-change`. Do not
-leave completed changes active. If a change is deprecated, superseded, or solved
-outside its recorded task list, archive it with that status understood rather
-than keeping it active. Keep a change active when it is still being pursued and
-implementation, verification, review follow-up, or required device validation
-is pending; do not archive it solely because the app code appears complete.
+task checklist and archive it immediately with `openspec-archive-change`. When a
+change is delivered through a PR, include that archive move in the same PR before
+its final verification run, so the final green CI validates the complete delivered
+state. Do not leave completed changes active. If a change is deprecated,
+superseded, or solved outside its recorded task list, archive it with that status
+understood rather than keeping it active. Keep a change active when it is still
+being pursued and implementation, verification, review follow-up, or required
+device validation is pending; do not archive it solely because the app code
+appears complete.
 
 Do not use OpenSpec for trivial one-off work: pure Q&A, code review, running a simple command, formatting-only changes, tiny comments/docs wording, or narrowly scoped edits that do not change behavior or architecture. When in doubt, prefer OpenSpec for anything that affects product behavior, persistence, scheduling, notifications, navigation, or multiple layers.
 
