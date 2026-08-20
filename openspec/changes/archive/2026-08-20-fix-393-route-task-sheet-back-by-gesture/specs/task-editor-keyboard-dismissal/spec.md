@@ -1,8 +1,5 @@
-# task-editor-keyboard-dismissal Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change fix-393-task-sheet-keyboard-dismissal. Update Purpose after archive.
-## Requirements
 ### Requirement: Task editor keyboard dismissal settles in one attempt
 The system SHALL keep the software keyboard hidden after a user dismisses it from a focused task title or description field, and SHALL decide keyboard-first routing from the state captured when that back action begins.
 
@@ -36,21 +33,3 @@ The system SHALL keep the task editor visible, anchored, and populated while sof
 #### Scenario: Keyboard-routed gesture is cancelled
 - **WHEN** a predictive-back gesture that began with the keyboard visible is cancelled
 - **THEN** the system retains editor focus and leaves the task sheet unchanged
-
-### Requirement: Sheet dismissal follows keyboard dismissal
-The system SHALL restore the task sheet's existing guarded back behavior after keyboard dismissal has settled.
-
-#### Scenario: Invoke back after the keyboard stays hidden
-- **WHEN** the task editor is open, the software keyboard has been dismissed, and the user invokes back again
-- **THEN** the editor follows its existing save, discard-confirmation, or dismissal behavior
-
-### Requirement: Adaptive task editor placement is unchanged
-The system SHALL apply settled keyboard dismissal without changing task editor placement or sizing across supported window classes.
-
-#### Scenario: Use compact or medium modal placement
-- **WHEN** the task editor is shown as a modal sheet on a compact or medium window
-- **THEN** keyboard dismissal settles without changing the modal sheet's established placement
-
-#### Scenario: Use expanded docked placement
-- **WHEN** the task editor is shown as a docked pane on an expanded window
-- **THEN** keyboard dismissal settles without changing the docked pane layout

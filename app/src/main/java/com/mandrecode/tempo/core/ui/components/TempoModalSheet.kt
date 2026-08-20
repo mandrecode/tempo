@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -20,6 +21,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
@@ -202,7 +205,7 @@ internal fun TempoDockedSheet(
                     Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
-                        .stableImePadding(),
+                        .imePadding(),
             ) {
                 content(requestDismiss)
             }
@@ -273,13 +276,7 @@ private fun BoxScope.TempoModalSheetSurface(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {},
-                ).then(
-                    if (state.direction == TempoModalSheetDirection.Bottom) {
-                        Modifier.stableImePadding()
-                    } else {
-                        Modifier
-                    },
-                ),
+                ).then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier),
         shape = state.direction.shape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
@@ -370,12 +367,11 @@ private val TempoModalSheetState.navigationBarPaddingModifier: Modifier
  * and the drag handle occupies the start edge instead of the top/bottom.
  */
 private val TempoModalSheetState.horizontalContentPaddingModifier: Modifier
-    @Composable
     get() =
         if (direction.isHorizontal) {
             Modifier
                 .padding(start = SHEET_HANDLE_CONTENT_INSET)
-                .stableImePadding()
+                .imePadding()
         } else {
             Modifier
         }
@@ -497,7 +493,7 @@ private fun TempoModalSheetDragHandle(
     }
 }
 
-@OptIn(ExperimentalActivityApi::class)
+@OptIn(ExperimentalActivityApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun TempoModalSheetPredictiveBackHandler(
     onProgress: suspend (Float) -> Unit,
@@ -505,16 +501,27 @@ private fun TempoModalSheetPredictiveBackHandler(
     onDismiss: () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
-    val predictiveBackEnabled = rememberSheetPredictiveBackEnabled()
+    val focusManager = LocalFocusManager.current
+    val latestImeVisible by rememberUpdatedState(WindowInsets.isImeVisible)
 
-    PredictiveBackHandler(enabled = predictiveBackEnabled) {
+    PredictiveBackHandler {
+        val route = resolveTempoModalSheetBackRoute(isImeVisible = latestImeVisible)
         try {
             it.collect { backEvent ->
-                onProgress(backEvent.progress)
+                if (route.forwardsProgressToSheet) {
+                    onProgress(backEvent.progress)
+                }
             }
-            onDismiss()
+            if (route.clearsFocusOnCompletion) {
+                focusManager.clearFocus(force = true)
+            }
+            if (route.dismissesSheetOnCompletion) {
+                onDismiss()
+            }
         } catch (exception: CancellationException) {
-            scope.launch { onRestore() }
+            if (route.restoresSheetOnCancellation) {
+                scope.launch { onRestore() }
+            }
             throw exception
         }
     }
