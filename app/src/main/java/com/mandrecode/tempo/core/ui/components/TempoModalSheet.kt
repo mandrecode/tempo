@@ -247,12 +247,6 @@ private fun TempoModalSheetDialogContent(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = state.onRequestDismiss,
-                ).then(
-                    if (state.direction == TempoModalSheetDirection.Bottom) {
-                        Modifier.imePadding()
-                    } else {
-                        Modifier
-                    },
                 ),
     ) {
         TempoModalSheetSurface(
@@ -282,6 +276,12 @@ private fun BoxScope.TempoModalSheetSurface(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = {},
+                ).then(
+                    if (state.direction == TempoModalSheetDirection.Bottom) {
+                        Modifier.stableImePadding()
+                    } else {
+                        Modifier
+                    },
                 ),
         shape = state.direction.shape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,

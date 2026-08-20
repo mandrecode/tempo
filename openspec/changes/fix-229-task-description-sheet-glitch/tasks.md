@@ -7,6 +7,7 @@
 
 - [x] 2.1 Add unit coverage for keyboard-first sheet back routing
 - [x] 2.2 Verify the multiline new-task sequence on the Pixel 10 AVD against the supplied failure recording
+- [x] 2.3 Verify repeated title/description focus switching does not move the sheet
 
 ## 3. Quality gates
 

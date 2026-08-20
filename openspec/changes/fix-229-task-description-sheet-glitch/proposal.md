@@ -5,6 +5,7 @@ When a user creates a task and the description grows onto additional lines, IME 
 ## What Changes
 
 - Keep the task creation sheet visible and bottom-anchored while a multiline description grows and the keyboard is shown or hidden.
+- Keep the sheet anchored when focus moves between the title and description while the keyboard remains open.
 - Preserve the existing focus, scrolling, dismissal, and task-editing behavior.
 - Add regression coverage for multiline descriptions in the new-task path.
 - Non-goals: redesigning the task form, changing validation or persistence, or changing sheet behavior for unrelated features.
