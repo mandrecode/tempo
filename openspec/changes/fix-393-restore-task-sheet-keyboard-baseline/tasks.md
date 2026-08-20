@@ -14,5 +14,5 @@
 
 ## 3. Deliver Replacement
 
-- [ ] 3.1 Commit and push the rollback branch
-- [ ] 3.2 Open a rollback PR that references #388 and #394 without closing #393
+- [x] 3.1 Commit and push the rollback branch
+- [x] 3.2 Open a rollback PR that references #388 and #394 without closing #393
