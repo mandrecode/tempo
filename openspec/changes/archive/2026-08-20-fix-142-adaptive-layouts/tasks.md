@@ -14,5 +14,5 @@
 - [x] 2.1 Unit-test the rail clearance derivation alongside the existing floating-navigation padding tests.
 - [x] 2.2 Run `./gradlew testDebugUnitTest`.
 - [x] 2.3 Run `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, and `./gradlew :app:detekt`.
-- [ ] 2.4 Run `openspec validate fix-142-adaptive-layouts` (CLI unavailable on this machine at proposal time — run when available).
+- [x] 2.4 Run `openspec validate fix-142-adaptive-layouts` (CLI unavailable on this machine at proposal time — run when available).
 - [x] 2.5 Smoke-verify on the Pixel 10 AVD in landscape: Routines, Tasks, Settings, task sheet, and portrait regression.
