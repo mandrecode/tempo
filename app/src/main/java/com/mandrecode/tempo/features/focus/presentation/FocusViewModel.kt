@@ -20,6 +20,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -369,9 +370,10 @@ class FocusViewModel
             if (observedDay == day) return day
 
             observedDay = day
-            observeDayJob?.cancel()
+            val previousObserveDayJob = observeDayJob
             observeDayJob =
                 viewModelScope.launch {
+                    previousObserveDayJob?.cancelAndJoin()
                     // The vacation periods are collected here rather than on their own, because the
                     // streak is counted on their terms: pausing while this screen is open has to move
                     // the number as well as the badge, and two collectors would have let the badge

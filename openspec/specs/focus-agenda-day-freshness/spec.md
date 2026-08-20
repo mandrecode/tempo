@@ -1,7 +1,7 @@
 # focus-agenda-day-freshness Specification
 
 ## Purpose
-TBD - created by archiving change fix-378-habit-session-midnight. Update Purpose after archive.
+Keep the Focus agenda and habit completion state aligned with the current local day while the screen stays open.
 ## Requirements
 ### Requirement: Habit completion uses the current Focus day
 When the Focus screen remains open across a local calendar-day boundary, the system SHALL refresh the agenda observation to the current local day before processing a habit or habit-chain completion event.
