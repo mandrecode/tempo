@@ -38,6 +38,8 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import org.junit.After
 import org.junit.Before
 import kotlin.time.Clock
@@ -55,6 +57,7 @@ abstract class FocusViewModelHarness {
     private val testDispatcher = StandardTestDispatcher()
     protected val today = LocalDate(2026, 7, 29)
     protected val nowInstant = Instant.fromEpochMilliseconds(1_800_000_000_000)
+    protected var clockNow = nowInstant
 
     protected val getFocusAgenda = mockk<GetFocusAgendaUseCase>()
     protected val getFocusHistory = mockk<GetFocusHistoryUseCase>()
@@ -96,9 +99,10 @@ abstract class FocusViewModelHarness {
 
     protected val clock =
         object : Clock {
-            // Fixed so "today" is deterministic; the date is what the ViewModel reads.
-            override fun now(): Instant = nowInstant
+            override fun now(): Instant = clockNow
         }
+
+    protected fun clockToday(): LocalDate = clock.todayIn(TimeZone.currentSystemDefault())
 
     protected fun task(
         id: Long,

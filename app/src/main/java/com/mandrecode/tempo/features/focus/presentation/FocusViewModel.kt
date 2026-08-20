@@ -63,9 +63,13 @@ class FocusViewModel
         /** Cancelled when the sheet closes, so a closed sheet is not still collecting for nobody. */
         internal var planSheetJob: Job? = null
 
+        /** Replaced when an interaction finds that the open screen has crossed into a new day. */
+        private var observeDayJob: Job? = null
+        private var observedDay: LocalDate? = null
+
         init {
             observeSession()
-            observeDay()
+            refreshDayIfStale()
             // The screen being opened is itself a reason to recount: work may have been added or
             // rescheduled from another tab since the last completion.
             viewModelScope.launch { recordDailyActivity(today) }
@@ -86,7 +90,7 @@ class FocusViewModel
 
                 is FocusContract.UiEvent.ToggleHabitCompletion ->
                     viewModelScope.launch {
-                        toggleHabitCompletion(event.habitId, event.isCompleted, today)
+                        toggleHabitCompletion(event.habitId, event.isCompleted, refreshDayIfStale())
                     }
 
                 is FocusContract.UiEvent.ToggleChainCompletion ->
@@ -360,39 +364,45 @@ class FocusViewModel
             }
         }
 
-        private fun observeDay() {
-            viewModelScope.launch {
-                val day = today
-                // The vacation periods are collected here rather than on their own, because the
-                // streak is counted on their terms: pausing while this screen is open has to move
-                // the number as well as the badge, and two collectors would have let the badge
-                // appear beside a streak still counted the old way.
-                combine(
-                    getFocusAgenda(day),
-                    getFocusHistory(day),
-                    vacationModeRepository.periods,
-                ) { agenda, history, periods ->
-                    Triple(agenda, history, periods)
-                }.collect { (agenda, history, periods) ->
-                    val streak = getFocusStreak(day)
-                    mutableUiState.update { state ->
-                        state.copy(
-                            isLoading = false,
-                            today = day,
-                            streakDays = streak,
-                            isVacationModeActive = VacationPeriod.activeOn(periods, day) != null,
-                            history = history.toPersistentList(),
-                            scheduledCount = agenda.scheduledCount,
-                            completedCount = agenda.completedCount,
-                            focusMinutes = history.lastOrNull { it.date == day }?.focusMinutes ?: 0,
-                            upNext = agenda.upNext.toPersistentList(),
-                            overdue = agenda.overdue.toPersistentList(),
-                            todayItems = agenda.today.toPersistentList(),
-                            undatedTaskCount = agenda.undatedTaskCount,
-                        )
+        private fun refreshDayIfStale(): LocalDate {
+            val day = today
+            if (observedDay == day) return day
+
+            observedDay = day
+            observeDayJob?.cancel()
+            observeDayJob =
+                viewModelScope.launch {
+                    // The vacation periods are collected here rather than on their own, because the
+                    // streak is counted on their terms: pausing while this screen is open has to move
+                    // the number as well as the badge, and two collectors would have let the badge
+                    // appear beside a streak still counted the old way.
+                    combine(
+                        getFocusAgenda(day),
+                        getFocusHistory(day),
+                        vacationModeRepository.periods,
+                    ) { agenda, history, periods ->
+                        Triple(agenda, history, periods)
+                    }.collect { (agenda, history, periods) ->
+                        val streak = getFocusStreak(day)
+                        mutableUiState.update { state ->
+                            state.copy(
+                                isLoading = false,
+                                today = day,
+                                streakDays = streak,
+                                isVacationModeActive = VacationPeriod.activeOn(periods, day) != null,
+                                history = history.toPersistentList(),
+                                scheduledCount = agenda.scheduledCount,
+                                completedCount = agenda.completedCount,
+                                focusMinutes = history.lastOrNull { it.date == day }?.focusMinutes ?: 0,
+                                upNext = agenda.upNext.toPersistentList(),
+                                overdue = agenda.overdue.toPersistentList(),
+                                todayItems = agenda.today.toPersistentList(),
+                                undatedTaskCount = agenda.undatedTaskCount,
+                            )
+                        }
                     }
                 }
-            }
+            return day
         }
 
         private suspend fun toggleChain(
@@ -403,8 +413,9 @@ class FocusViewModel
                 (mutableUiState.value.overdue + mutableUiState.value.todayItems)
                     .filterIsInstance<FocusAgendaItem.ChainEntry>()
                     .firstOrNull { it.chain.id == chainId } ?: return
+            val day = refreshDayIfStale()
             chain.habits.forEach { habit ->
-                toggleHabitCompletion(habit.id, isCompleted, today)
+                toggleHabitCompletion(habit.id, isCompleted, day)
             }
         }
 
