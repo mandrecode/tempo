@@ -13,5 +13,5 @@
 
 - [x] 3.1 Run focused tests, `testDebugUnitTest`, ktlint, detekt, and the debug build
 - [x] 3.2 Verify the task-sheet screenshot suite and review the full screenshot report
-- [ ] 3.3 Obtain a clean full screenshot validation; six unrelated `FocusContentMidDay` cases currently render without their content on every form factor
+- [x] 3.3 Obtain a clean full screenshot validation; CI for merged PR #388 passed the full screenshot suite
 - [x] 3.4 Validate the OpenSpec change and review the final scoped diff
