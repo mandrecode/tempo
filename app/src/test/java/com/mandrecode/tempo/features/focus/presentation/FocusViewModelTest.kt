@@ -9,14 +9,19 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import org.junit.Test
+import kotlin.time.Duration.Companion.days
 
 /** The day Focus shows: agenda, counts, streak, and opening items from it. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -156,6 +161,43 @@ class FocusViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
+    fun `toggling a habit after midnight refreshes the observed day`() =
+        runTest {
+            val previousDay = clockToday()
+            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
+            val previousAgenda = MutableStateFlow(agendaOf())
+            val currentHabit = focusHabit(3)
+            val currentAgenda =
+                MutableStateFlow(
+                    agendaOf(
+                        todayItems = listOf(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true)),
+                    ),
+                )
+            every { getFocusAgenda(previousDay) } returns previousAgenda
+            every { getFocusAgenda(currentDay) } returns currentAgenda
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 14
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            viewModel.onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId = 3, isCompleted = true))
+            advanceUntilIdle()
+
+            coVerify { toggleHabitCompletion(3, true, currentDay) }
+            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
+            assertThat(viewModel.uiState.value.todayItems)
+                .containsExactly(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true))
+
+            previousAgenda.value = agendaOf()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.todayItems)
+                .containsExactly(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true))
+        }
+
+    @Test
     fun `editing a habit opens its editor in Focus, and only one editor is ever open`() =
         runTest {
             stubDay()
@@ -266,6 +308,30 @@ class FocusViewModelTest : FocusViewModelHarness() {
 
             coVerify { toggleHabitCompletion(1, true, any()) }
             coVerify { toggleHabitCompletion(2, true, any()) }
+        }
+
+    @Test
+    fun `completing a chain after midnight uses the refreshed day`() =
+        runTest {
+            val previousDay = clockToday()
+            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
+            val habits = listOf(focusHabit(1), focusHabit(2))
+            val chainEntry = FocusAgendaItem.ChainEntry(focusChain(7), habits, isCompleted = false)
+            every { getFocusAgenda(previousDay) } returns MutableStateFlow(agendaOf(todayItems = listOf(chainEntry)))
+            every { getFocusAgenda(currentDay) } returns MutableStateFlow(agendaOf(todayItems = listOf(chainEntry)))
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 14
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            viewModel.onEvent(FocusContract.UiEvent.ToggleChainCompletion(chainId = 7, isCompleted = true))
+            advanceUntilIdle()
+
+            coVerify { toggleHabitCompletion(1, true, currentDay) }
+            coVerify { toggleHabitCompletion(2, true, currentDay) }
+            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
         }
 
     @Test
