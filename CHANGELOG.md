@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.3](https://github.com/mandrecode/tempo/compare/v1.13.2...v1.13.3) (2026-08-20)
+
+
+### Bug Fixes
+
+* **#229:** stabilize task sheet keyboard dismissal ([#388](https://github.com/mandrecode/tempo/issues/388)) ([54070af](https://github.com/mandrecode/tempo/commit/54070afa23f58810d28e91a8e455abcdd0b7aacf))
+
 ## [1.13.2](https://github.com/mandrecode/tempo/compare/v1.13.1...v1.13.2) (2026-08-20)
 
 
