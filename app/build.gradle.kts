@@ -146,6 +146,17 @@ if (calculatedVersionCode > Int.MAX_VALUE.toLong()) {
 
 val appVersionCode: Int = calculatedVersionCode.toInt()
 
+val appCommitSha =
+    providers
+        .environmentVariable("GITHUB_SHA")
+        .map { value ->
+            value
+                .trim()
+                .takeIf { it.matches(Regex("[0-9a-fA-F]{7,40}")) }
+                ?.take(7)
+                .orEmpty()
+        }.getOrElse("")
+
 configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.mandrecode.tempo"
     compileSdk = 37
@@ -164,6 +175,7 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         )
         buildConfigField("String", "FEEDBACK_VERSION_ENTRY", "\"entry.863266237\"")
         buildConfigField("String", "SOURCE_CODE_URL", "\"https://github.com/mandrecode/tempo\"")
+        buildConfigField("String", "COMMIT_SHA", "\"$appCommitSha\"")
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
