@@ -239,12 +239,19 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `initialState loads version info`() =
+    fun `initialState formats version info with optional commit sha`() =
         runTest {
+            every { appVersionProvider.getVersionInfo() } returns AppVersionInfo("1.0", 1, "abcdef0")
+            viewModel = createViewModel()
             advanceUntilIdle()
-            val state = viewModel.uiState.value
+            assertThat(viewModel.uiState.value.appVersion).isEqualTo("1.0 (abcdef0)")
 
-            assertThat(state.appVersion).isNotEmpty()
+            every { appVersionProvider.getVersionInfo() } returns AppVersionInfo("1.0", 1, " ")
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.appVersion).isEqualTo("1.0")
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.appVersion).isEqualTo("1.0")
         }
 
     @Test

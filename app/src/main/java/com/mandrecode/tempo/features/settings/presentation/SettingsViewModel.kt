@@ -107,7 +107,7 @@ class SettingsViewModel
         private fun loadVersionInfo() {
             val versionInfo = appVersionProvider.getVersionInfo()
             _uiState.update {
-                it.copy(appVersion = versionInfo.versionName)
+                it.copy(appVersion = versionInfo.displayName)
             }
         }
 
