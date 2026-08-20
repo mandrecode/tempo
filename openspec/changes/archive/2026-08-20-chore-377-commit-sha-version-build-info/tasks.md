@@ -10,4 +10,4 @@
 
 ## 3. Verification
 
-- [ ] 3.1 Run OpenSpec validation, formatting, unit tests, ktlint, and detekt; resolve any failures.
+- [x] 3.1 Run OpenSpec validation, formatting, unit tests, ktlint, and detekt; merged PR #386 passed all required CI checks.
