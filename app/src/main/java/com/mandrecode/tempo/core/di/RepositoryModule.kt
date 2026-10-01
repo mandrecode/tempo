@@ -45,8 +45,8 @@ abstract class RepositoryModule {
     abstract fun bindDailyFocusActivityRepository(impl: DailyFocusActivityRepositoryImpl): DailyFocusActivityRepository
 
     /**
-     * Lets Tasks and Routines trigger a recount on completion without depending on the Focus
-     * feature: they inject the [DailyActivityRecorder] interface declared in `core/domain`.
+     * Lets Tasks trigger a recount on completion without depending on the Focus
+     * feature: it injects the [DailyActivityRecorder] interface declared in `core/domain`.
      */
     @Binds
     abstract fun bindDailyActivityRecorder(impl: RecordDailyActivityUseCase): DailyActivityRecorder

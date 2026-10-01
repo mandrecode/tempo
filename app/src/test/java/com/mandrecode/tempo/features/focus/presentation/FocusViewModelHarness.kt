@@ -12,9 +12,6 @@ import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusAgendaUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
-import com.mandrecode.tempo.features.routines.domain.model.Habit
-import com.mandrecode.tempo.features.routines.domain.model.HabitChain
-import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
@@ -64,7 +61,6 @@ abstract class FocusViewModelHarness {
     protected val getFocusStreak = mockk<GetFocusStreakUseCase>(relaxed = true)
     protected val recordDailyActivity = mockk<RecordDailyActivityUseCase>(relaxed = true)
     protected val toggleTaskCompletion = mockk<ToggleTaskCompletionUseCase>(relaxed = true)
-    protected val toggleHabitCompletion = mockk<ToggleHabitCompletionUseCase>(relaxed = true)
     protected val focusSessionUseCases = mockk<FocusSessionUseCases>(relaxed = true)
     protected val sessionFlow = MutableStateFlow<FocusSession?>(null)
     protected val lengthFlow = MutableStateFlow(25)
@@ -155,7 +151,6 @@ abstract class FocusViewModelHarness {
             toggleTaskCompletion = toggleTaskCompletion,
             focusSessionRepository = focusSessionRepository,
             focusSessionUseCases = focusSessionUseCases,
-            toggleHabitCompletion = toggleHabitCompletion,
             getUndatedTasks = getUndatedTasks,
             updateTask = updateTask,
             restoreTaskReminders = restoreTaskReminders,
@@ -193,22 +188,4 @@ abstract class FocusViewModelHarness {
         sessionFlow.value = null
         advanceUntilIdle()
     }
-
-    protected fun focusHabit(id: Long) =
-        Habit(
-            id = id,
-            title = "Habit $id",
-            description = "",
-            createdDate = LocalDateTime(today, LocalTime(9, 0)),
-        )
-
-    protected fun focusChain(
-        id: Long,
-        habitIds: List<Long> = emptyList(),
-    ) = HabitChain(
-        id = id,
-        title = "Chain $id",
-        habitIds = habitIds,
-        createdDate = LocalDateTime(today, LocalTime(9, 0)),
-    )
 }

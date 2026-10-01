@@ -510,7 +510,7 @@
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar a usar Tempo</string>
     <string name="onboarding_focus_title">Empieza con el día delante</string>
-    <string name="onboarding_focus_description">Focus es donde vive el hoy: las tareas, hábitos y cadenas que tocan ahora, en un solo sitio y con un temporizador para lo que tengas entre manos.</string>
+    <string name="onboarding_focus_description">Enfoque reúne las tareas para hoy y las tareas vencidas pendientes de todas tus categorías, con un temporizador para trabajar por sesiones.</string>
     <string name="onboarding_focus_today_concept_title">Hoy, no todo</string>
     <string name="onboarding_focus_today_concept_description">Focus solo enseña lo de hoy, junto a lo que se te pasó y lo que merece la pena empezar ahora.</string>
     <string name="onboarding_focus_session_concept_title">Trabaja por sesiones</string>
@@ -533,8 +533,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Planifica lo que quedó suelto sin salir de Enfoque</string>
-    <string name="whats_new_description">Toca el recuento de tareas sin fecha al final de Enfoque y se abre una hoja de planificación sobre el día. Dale un día a cada tarea con un toque — Hoy, Mañana o la fecha que elijas — y verás cómo pasan de Sin planificar a Planificadas. ¿Te arrepientes? Listo te ofrece deshacerlo todo.</string>
+    <string name="whats_new_title">Concéntrate en tus tareas</string>
+    <string name="whats_new_description">Enfoque ahora muestra solo las tareas para hoy y las tareas vencidas pendientes de todas tus categorías. Usa Planifica tu día para elegir tareas sin fecha. Los hábitos y las cadenas permanecen en Rutinas.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -655,7 +655,7 @@
     <string name="focus_progress_description">%1$d de %2$d completados</string>
     <string name="focus_history_description">Actividad de los últimos %1$d días</string>
     <string name="focus_empty_title">🌤️ ¡Un día despejado!</string>
-    <string name="focus_empty_message">Planifica una tarea o rutina para hoy</string>
+    <string name="focus_empty_message">Planifica una tarea para hoy</string>
     <plurals name="focus_streak_days">
         <item quantity="one">%1$d día de enfoque</item>
         <item quantity="other">%1$d días de enfoque</item>

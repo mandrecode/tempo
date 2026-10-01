@@ -12,14 +12,16 @@ Shipped in 1.11.0 ([#42](https://github.com/mandrecode/tempo/issues/42)).
 
 ### What the agenda contains
 
-The agenda is built by `GetFocusAgendaUseCase` and holds four kinds of thing:
+The agenda is built by `GetFocusAgendaUseCase` and contains task work across categories:
 
 | Included | Not included |
 |:--|:--|
 | Tasks due today | Tasks dated in the future |
 | Tasks overdue and still open | Tasks with no date (reported as a footer count instead) |
-| Habits scheduled today | Habits outside their repeat days |
-| Habit chains scheduled today | Habits that belong to a chain (the chain's card shows them) |
+
+Habits and chains are managed in Routines and do not appear in Focus ([#404](https://github.com/mandrecode/tempo/issues/404)).
+Undated tasks are available through **Plan your day**, which assigns a date using the existing task
+reminder behavior; they are not automatically included in the agenda or its progress.
 
 Membership is one rule, in `FocusDayMembership.kt`, shared with the day's counts so the summary and
 the list can never disagree.
@@ -33,8 +35,7 @@ own row and can be focused on directly
 
 Sections read **Up next → Today → Overdue**
 ([#353](https://github.com/mandrecode/tempo/issues/353)). Within a section: uncompleted work first,
-timed items in clock order, untimed items after them, completed items last. Tasks, habits and chains
-interleave in one list rather than sitting in per-type groups — each row identifies its own type.
+timed items in clock order, untimed items after them, completed items last. Tasks from all categories interleave in one list.
 
 ### Up next
 
@@ -54,9 +55,13 @@ be — a bare "8:00 AM" on last week's task read as something due this morning.
 ### The summary hero
 
 Above the list: today's date, the scheduled/completed counts, a progress indicator, a headline band
-that changes with how the day is going, a streak, and a heatmap of recent days. The counts come from
-`RecordDailyActivityUseCase`, which recomputes today from current state on every relevant change —
-past days keep whatever was last written while they were current, so history is never rewritten.
+that changes with how the day is going, a streak, and a heatmap of recent days. The hero counts come
+from the agenda. `RecordDailyActivityUseCase` writes matching counts for the history, recomputing
+today from current state on every relevant change. Past days keep whatever was last written while
+they were current, so history is never rewritten.
+From #404 onward, scheduled/completed counts are task-only. Earlier aggregate snapshots can include
+habits and chains; they are preserved because per-type counts were not stored. Completing routines
+no longer records Focus activity.
 
 ## Sessions
 

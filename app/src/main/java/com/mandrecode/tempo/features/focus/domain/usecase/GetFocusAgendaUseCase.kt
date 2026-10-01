@@ -5,15 +5,10 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.domain.model.isOnFocusDay
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
-import com.mandrecode.tempo.features.routines.domain.model.Habit
-import com.mandrecode.tempo.features.routines.domain.model.HabitChain
-import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
-import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
-import com.mandrecode.tempo.util.CompletionHistoryUtil
 import jakarta.inject.Inject
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
@@ -32,8 +27,6 @@ class GetFocusAgendaUseCase
     @Inject
     constructor(
         private val taskRepository: TaskRepository,
-        private val habitRepository: HabitRepository,
-        private val habitChainRepository: HabitChainRepository,
         private val categoryRepository: CategoryRepository,
         private val getUpNextItem: GetUpNextItemUseCase,
         private val sessionRepository: FocusSessionRepository,
@@ -41,16 +34,12 @@ class GetFocusAgendaUseCase
         operator fun invoke(today: LocalDate): Flow<FocusAgenda> =
             combine(
                 taskRepository.getAllTasks(),
-                habitRepository.getAllHabits(),
-                habitChainRepository.getAllHabitChains(),
                 categoryRepository.getAllCategories(),
                 sessionRepository.focusToday,
-            ) { tasks, habits, chains, categories, focusByTask ->
+            ) { tasks, categories, focusByTask ->
                 build(
                     today = today,
                     tasks = tasks,
-                    habits = habits,
-                    chains = chains,
                     categoriesById = categories.associateBy { it.id },
                     focusByTask = focusByTask,
                 )
@@ -59,8 +48,6 @@ class GetFocusAgendaUseCase
         private fun build(
             today: LocalDate,
             tasks: List<Task>,
-            habits: List<Habit>,
-            chains: List<HabitChain>,
             categoriesById: Map<Long, Category>,
             focusByTask: Map<Long, TaskFocusToday>,
         ): FocusAgenda {
@@ -91,36 +78,8 @@ class GetFocusAgendaUseCase
                     .filter { it.reminderDate?.date == today }
                     .map { it.toEntry(subtasksByParent, categoriesById, focusByTask) }
 
-            // Habits inside a chain are shown by the chain's own card, not as separate rows.
-            val chainedHabitIds = chains.flatMap { it.habitIds }.toSet()
-            val todayHabits =
-                habits
-                    .filter { it.id !in chainedHabitIds }
-                    .filter { CompletionHistoryUtil.isScheduledOn(today, it.repeatDays) }
-                    .map { habit ->
-                        FocusAgendaItem.HabitEntry(
-                            habit = habit,
-                            isCompleted = habit.wasCompletedOn(today),
-                        )
-                    }
-
-            // A chain is an ordered thing — the editor lets you drag its steps into the order you
-            // do them in. Filtering the habits list kept that list's order instead of the chain's,
-            // so Focus showed the same steps in a different sequence from Routines.
-            val habitsById = habits.associateBy { it.id }
-            val todayChains =
-                chains
-                    .filter { CompletionHistoryUtil.isScheduledOn(today, it.repeatDays) }
-                    .map { chain ->
-                        FocusAgendaItem.ChainEntry(
-                            chain = chain,
-                            habits = chain.habitIds.mapNotNull { habitsById[it] },
-                            isCompleted = chain.wasCompletedOn(today),
-                        )
-                    }
-
             val overdue = overdueTasks.sortedByAgendaOrder()
-            val todayItems = (todayTasks + todayHabits + todayChains).sortedByAgendaOrder()
+            val todayItems = todayTasks.sortedByAgendaOrder()
 
             // A shortlist over the day rather than a slice taken out of it: the row is somewhere
             // to start from, not a fourth section, so the work still appears where it belongs.
@@ -160,10 +119,4 @@ class GetFocusAgendaUseCase
                     .thenBy { it.dueTime }
                     .thenBy { it.id },
             )
-
-        private fun Habit.wasCompletedOn(date: LocalDate): Boolean =
-            CompletionHistoryUtil.isDateInHistory(completionHistory, date.toString())
-
-        private fun HabitChain.wasCompletedOn(date: LocalDate): Boolean =
-            CompletionHistoryUtil.isDateInHistory(completionHistory, date.toString())
     }

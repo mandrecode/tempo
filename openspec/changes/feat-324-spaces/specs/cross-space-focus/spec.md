@@ -91,3 +91,7 @@ The system SHALL record focus activity and calculate its streak across every spa
 #### Scenario: Sessions in different spaces contribute to one streak
 - **WHEN** focus sessions are completed in different spaces on consecutive days
 - **THEN** the streak counts those days continuously
+
+## Compatibility with task-only Focus (#404)
+
+Focus items are tasks only. The cross-space agenda, density counts, imminence rules, Up next, and session rules apply to tasks; habits and chains remain in Routines. Undated tasks remain deliberately scheduled through the planning picker.

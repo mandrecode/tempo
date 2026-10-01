@@ -6,7 +6,6 @@ import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
-import com.mandrecode.tempo.features.routines.domain.model.Habit
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -16,8 +15,6 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.junit.Test
@@ -69,35 +66,6 @@ class FocusViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
-    fun `a day of habits alone starts nothing and goes nowhere`() =
-        runTest {
-            val habitEntry =
-                FocusAgendaItem.HabitEntry(
-                    habit =
-                        com.mandrecode.tempo.features.routines.domain.model
-                            .Habit(
-                                id = 1,
-                                title = "Water",
-                                description = "",
-                                createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                            ),
-                    isCompleted = false,
-                )
-            stubDay(agendaOf(todayItems = listOf(habitEntry)))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.uiEffect.test {
-                viewModel.onEvent(FocusContract.UiEvent.StartSession())
-                advanceUntilIdle()
-
-                expectNoEvents()
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
     fun `editing a task opens its editor in Focus, without leaving the tab`() =
         runTest {
             stubDay()
@@ -145,206 +113,6 @@ class FocusViewModelTest : FocusViewModelHarness() {
             assertThat(sheet).isNotNull()
             assertThat(sheet?.rows?.map { it.task.id }).containsExactly(1L, 2L)
             assertThat(sheet?.isLoading).isFalse()
-        }
-
-    @Test
-    fun `toggling a habit delegates with today's date`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId = 3, isCompleted = true))
-            advanceUntilIdle()
-
-            coVerify { toggleHabitCompletion(3, true, any()) }
-        }
-
-    @Test
-    fun `toggling a habit after midnight refreshes the observed day`() =
-        runTest {
-            val previousDay = clockToday()
-            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
-            val previousAgenda = MutableStateFlow(agendaOf())
-            val currentHabit = focusHabit(3)
-            val currentAgenda =
-                MutableStateFlow(
-                    agendaOf(
-                        todayItems = listOf(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true)),
-                    ),
-                )
-            every { getFocusAgenda(previousDay) } returns previousAgenda
-            every { getFocusAgenda(currentDay) } returns currentAgenda
-            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
-            coEvery { getFocusStreak(any()) } returns 14
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            clockNow += 1.days
-            viewModel.onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId = 3, isCompleted = true))
-            advanceUntilIdle()
-
-            coVerify { toggleHabitCompletion(3, true, currentDay) }
-            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
-            assertThat(viewModel.uiState.value.todayItems)
-                .containsExactly(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true))
-
-            previousAgenda.value = agendaOf()
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.todayItems)
-                .containsExactly(FocusAgendaItem.HabitEntry(currentHabit, isCompleted = true))
-        }
-
-    @Test
-    fun `editing a habit opens its editor in Focus, and only one editor is ever open`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
-            viewModel.onEvent(FocusContract.UiEvent.EditHabit(focusHabit(5)))
-            advanceUntilIdle()
-
-            val target = viewModel.uiState.value.routineEditor
-            assertThat(target).isInstanceOf(FocusContract.RoutineEditorTarget.SingleHabit::class.java)
-            assertThat((target as FocusContract.RoutineEditorTarget.SingleHabit).habit.id).isEqualTo(5)
-            assertThat(viewModel.uiState.value.taskEditor).isNull()
-        }
-
-    @Test
-    fun `editing a chain opens the same editor, on the chain`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.EditTask(task(2)))
-            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
-            advanceUntilIdle()
-
-            val target = viewModel.uiState.value.routineEditor
-            assertThat(target).isInstanceOf(FocusContract.RoutineEditorTarget.Chain::class.java)
-            assertThat((target as FocusContract.RoutineEditorTarget.Chain).chain.id).isEqualTo(7)
-            assertThat(viewModel.uiState.value.taskEditor).isNull()
-        }
-
-    @Test
-    fun `dismissing closes whichever editor was open`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
-            viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.routineEditor).isNull()
-            assertThat(viewModel.uiState.value.taskEditor).isNull()
-        }
-
-    @Test
-    fun `opening a chain leaves its expansion alone`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.EditChain(focusChain(7)))
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.expandedChainIds).doesNotContain(7L)
-        }
-
-    @Test
-    fun `expanding a chain toggles it on and off again`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.ToggleChainExpanded(2))
-            assertThat(viewModel.uiState.value.expandedChainIds).contains(2L)
-
-            viewModel.onEvent(FocusContract.UiEvent.ToggleChainExpanded(2))
-            assertThat(viewModel.uiState.value.expandedChainIds).doesNotContain(2L)
-        }
-
-    @Test
-    fun `completing a chain completes each of its habits`() =
-        runTest {
-            val habits =
-                listOf(1L, 2L).map {
-                    com.mandrecode.tempo.features.routines.domain.model
-                        .Habit(
-                            id = it,
-                            title = "Habit $it",
-                            description = "",
-                            createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                        )
-                }
-            val chainEntry =
-                FocusAgendaItem.ChainEntry(
-                    chain =
-                        com.mandrecode.tempo.features.routines.domain.model
-                            .HabitChain(
-                                id = 7,
-                                title = "Morning",
-                                createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                            ),
-                    habits = habits,
-                    isCompleted = false,
-                )
-            stubDay(agendaOf(todayItems = listOf(chainEntry)))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.ToggleChainCompletion(chainId = 7, isCompleted = true))
-            advanceUntilIdle()
-
-            coVerify { toggleHabitCompletion(1, true, any()) }
-            coVerify { toggleHabitCompletion(2, true, any()) }
-        }
-
-    @Test
-    fun `completing a chain after midnight uses the refreshed day`() =
-        runTest {
-            val previousDay = clockToday()
-            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
-            val habits = listOf(focusHabit(1), focusHabit(2))
-            val chainEntry = FocusAgendaItem.ChainEntry(focusChain(7), habits, isCompleted = false)
-            every { getFocusAgenda(previousDay) } returns MutableStateFlow(agendaOf(todayItems = listOf(chainEntry)))
-            every { getFocusAgenda(currentDay) } returns MutableStateFlow(agendaOf(todayItems = listOf(chainEntry)))
-            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
-            coEvery { getFocusStreak(any()) } returns 14
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            clockNow += 1.days
-            viewModel.onEvent(FocusContract.UiEvent.ToggleChainCompletion(chainId = 7, isCompleted = true))
-            advanceUntilIdle()
-
-            coVerify { toggleHabitCompletion(1, true, currentDay) }
-            coVerify { toggleHabitCompletion(2, true, currentDay) }
-            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
-        }
-
-    @Test
-    fun `completing an unknown chain does nothing`() =
-        runTest {
-            stubDay()
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.ToggleChainCompletion(chainId = 404, isCompleted = true))
-            advanceUntilIdle()
-
-            coVerify(exactly = 0) { toggleHabitCompletion(any(), any(), any()) }
         }
 
     @Test
@@ -426,5 +194,53 @@ class FocusViewModelTest : FocusViewModelHarness() {
 
             viewModel.onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(9))
             assertThat(viewModel.uiState.value.expandedTaskIds).isEmpty()
+        }
+
+    @Test
+    fun `completing a task after midnight replaces the observed day`() =
+        runTest {
+            val previousDay = clockToday()
+            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
+            val previousAgenda = MutableStateFlow(agendaOf())
+            val entry = FocusAgendaItem.TaskEntry(task(3, isCompleted = true))
+            val currentAgenda = MutableStateFlow(agendaOf(todayItems = listOf(entry)))
+            every { getFocusAgenda(previousDay) } returns previousAgenda
+            every { getFocusAgenda(currentDay) } returns currentAgenda
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 14
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            viewModel.onEvent(FocusContract.UiEvent.ToggleTaskCompletion(task(3)))
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(task(3)) }
+            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
+            assertThat(viewModel.uiState.value.todayItems).containsExactly(entry)
+
+            previousAgenda.value = agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(task(99))))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.todayItems).containsExactly(entry)
+
+            viewModel.onEvent(FocusContract.UiEvent.ToggleTaskCompletion(task(4)))
+            advanceUntilIdle()
+            io.mockk.verify(exactly = 1) { getFocusAgenda(currentDay) }
+        }
+
+    @Test
+    fun `an empty task day has zero progress and no session candidate`() =
+        runTest {
+            stubDay(agendaOf())
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.isDayEmpty).isTrue()
+            assertThat(viewModel.uiState.value.scheduledCount).isEqualTo(0)
+            assertThat(viewModel.uiState.value.completedCount).isEqualTo(0)
+            assertThat(viewModel.uiState.value.progress).isEqualTo(0f)
+            viewModel.onEvent(FocusContract.UiEvent.StartSession())
+            advanceUntilIdle()
+            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any()) }
         }
 }

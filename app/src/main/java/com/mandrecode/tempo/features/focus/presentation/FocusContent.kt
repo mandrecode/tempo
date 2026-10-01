@@ -51,11 +51,8 @@ import com.mandrecode.tempo.features.focus.presentation.components.StartSessionB
 import com.mandrecode.tempo.features.focus.presentation.components.UpNextCard
 import com.mandrecode.tempo.features.focus.presentation.components.WorkedOnActions
 import com.mandrecode.tempo.features.focus.presentation.components.upNextMetadata
-import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitCard
-import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.datetime.LocalDate
 
 private val ContentBlockTopCornerRadius = 28.dp
 
@@ -120,12 +117,10 @@ fun FocusContent(
                         onUndatedClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
                     )
                 } else {
-                    // `today` is always set once loading finishes; the guard keeps the chain card
-                    // from needing a sentinel date.
-                    uiState.today?.let { day ->
+                    // Render the agenda once its current day is known.
+                    uiState.today?.let {
                         FocusAgendaList(
                             uiState = uiState,
-                            today = day,
                             onEvent = onEvent,
                             bottomPadding = listBottomPadding,
                         )
@@ -139,7 +134,6 @@ fun FocusContent(
 @Composable
 private fun FocusAgendaList(
     uiState: FocusContract.UiState,
-    today: LocalDate,
     onEvent: (FocusContract.UiEvent) -> Unit,
     bottomPadding: Dp,
 ) {
@@ -157,7 +151,6 @@ private fun FocusAgendaList(
             label = { stringResource(R.string.focus_section_today, uiState.visibleToday.size) },
             entries = uiState.visibleToday,
             uiState = uiState,
-            today = today,
             onEvent = onEvent,
         )
 
@@ -166,7 +159,6 @@ private fun FocusAgendaList(
             label = { stringResource(R.string.focus_section_overdue, uiState.visibleOverdue.size) },
             entries = uiState.visibleOverdue,
             uiState = uiState,
-            today = today,
             onEvent = onEvent,
         )
 
@@ -191,7 +183,6 @@ private fun LazyListScope.agendaSection(
     label: @Composable () -> String,
     entries: List<FocusAgendaItem>,
     uiState: FocusContract.UiState,
-    today: LocalDate,
     onEvent: (FocusContract.UiEvent) -> Unit,
 ) {
     if (entries.isEmpty()) return
@@ -202,8 +193,6 @@ private fun LazyListScope.agendaSection(
     items(entries, key = { it.id }) { entry ->
         AgendaRow(
             entry = entry,
-            today = today,
-            expandedChainIds = uiState.expandedChainIds,
             expandedTaskIds = uiState.expandedTaskIds,
             onEvent = onEvent,
             // Rows slide out of each other's way when one grows, the way they do in Routines and
@@ -361,8 +350,6 @@ private const val SINGLE_PEEK_FRACTION = 0.88f
 @Composable
 private fun AgendaRow(
     entry: FocusAgendaItem,
-    today: LocalDate,
-    expandedChainIds: ImmutableList<Long>,
     expandedTaskIds: ImmutableList<Long>,
     onEvent: (FocusContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
@@ -382,48 +369,6 @@ private fun AgendaRow(
                     onEvent(FocusContract.UiEvent.ToggleSubtasksExpanded(entry.task.id))
                 },
                 onAddSubtask = { onEvent(FocusContract.UiEvent.AddSubtask(it)) },
-            )
-
-        is FocusAgendaItem.HabitEntry ->
-            // HabitCard, not HabitItem: the card is what resolves the habit's colour and draws its
-            // surface — HabitItem is only the row inside it, and on its own renders an uncoloured
-            // habit as bare text on the background.
-            HabitCard(
-                modifier = modifier,
-                habit = entry.habit,
-                selectedDate = today,
-                onEdit = { onEvent(FocusContract.UiEvent.EditHabit(entry.habit)) },
-                // Focus has no destructive actions; deleting a habit stays in Routines.
-                onDelete = {},
-                onToggle = { habitId, isCompleted ->
-                    onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
-                },
-                showTimeline = false,
-            )
-
-        is FocusAgendaItem.ChainEntry ->
-            HabitChainCard(
-                modifier = modifier,
-                habitChain = entry.chain,
-                chainHabits = entry.habits,
-                selectedDate = today,
-                isExpanded = entry.chain.id in expandedChainIds,
-                // A chain opens like everything else on the day. It was the one card whose body
-                // answered a tap with nothing, which read as the row being broken rather than as
-                // Focus having decided chains are not editable from here.
-                onEdit = { onEvent(FocusContract.UiEvent.EditChain(entry.chain)) },
-                onToggleExpansion = {
-                    onEvent(FocusContract.UiEvent.ToggleChainExpanded(entry.chain.id))
-                },
-                onHabitToggle = { habitId, isCompleted ->
-                    onEvent(FocusContract.UiEvent.ToggleHabitCompletion(habitId, isCompleted))
-                },
-                onHabitClick = { habitId ->
-                    entry.habits.firstOrNull { it.id == habitId }?.let { habit ->
-                        onEvent(FocusContract.UiEvent.EditHabit(habit))
-                    }
-                },
-                showTimeline = false,
             )
     }
 }
@@ -529,6 +474,4 @@ private fun FocusEmptyState(
 private fun FocusAgendaItem.displayTitle(): String =
     when (this) {
         is FocusAgendaItem.TaskEntry -> task.title
-        is FocusAgendaItem.HabitEntry -> habit.title
-        is FocusAgendaItem.ChainEntry -> chain.title
     }

@@ -4,8 +4,6 @@ import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
-import com.mandrecode.tempo.features.routines.domain.model.Habit
-import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import kotlinx.collections.immutable.ImmutableList
@@ -31,7 +29,6 @@ object FocusContract {
         val overdue: ImmutableList<FocusAgendaItem> = persistentListOf(),
         val todayItems: ImmutableList<FocusAgendaItem> = persistentListOf(),
         val undatedTaskCount: Int = 0,
-        val expandedChainIds: ImmutableList<Long> = persistentListOf(),
         /**
          * Tasks whose subtasks are unfolded. Folded is the resting state: the day is a list of what
          * is on today, and every step of every task opened by default buried that under itself.
@@ -53,12 +50,6 @@ object FocusContract {
          * looking at.
          */
         val taskEditor: TaskEditorTarget? = null,
-        /**
-         * What the routine editor is open on: a habit, or a chain. One field rather than two,
-         * because the sheet can only show one of them and two nullables would encode a state it
-         * cannot render.
-         */
-        val routineEditor: RoutineEditorTarget? = null,
         /**
          * The planning sheet, when it is open. Undated work has no place in a day, so the one
          * thing Focus can offer it is somewhere to be given one.
@@ -262,20 +253,6 @@ object FocusContract {
         ) : TaskEditorTarget
     }
 
-    /**
-     * What the routine editor is open on. Routines drives both from one form, so Focus does too
-     * rather than standing up a second view model for chains.
-     */
-    sealed interface RoutineEditorTarget {
-        data class SingleHabit(
-            val habit: Habit,
-        ) : RoutineEditorTarget
-
-        data class Chain(
-            val chain: HabitChain,
-        ) : RoutineEditorTarget
-    }
-
     /** What the completion sheet reports: plain facts, no score and no streak. */
     data class FinishedSession(
         val taskTitle: String,
@@ -291,38 +268,12 @@ object FocusContract {
             val task: Task,
         ) : UiEvent
 
-        data class ToggleHabitCompletion(
-            val habitId: Long,
-            val isCompleted: Boolean,
-        ) : UiEvent
-
-        data class ToggleChainCompletion(
-            val chainId: Long,
-            val isCompleted: Boolean,
-        ) : UiEvent
-
-        data class ToggleChainExpanded(
-            val chainId: Long,
-        ) : UiEvent
-
         data class ToggleSubtasksExpanded(
             val taskId: Long,
         ) : UiEvent
 
         data class EditTask(
             val task: Task,
-        ) : UiEvent
-
-        data class EditHabit(
-            val habit: Habit,
-        ) : UiEvent
-
-        /**
-         * Opening a chain is opening its card, the same way a task or a habit opens. The chevron
-         * beside it still only folds the chain out; the two are different questions.
-         */
-        data class EditChain(
-            val chain: HabitChain,
         ) : UiEvent
 
         data class AddSubtask(

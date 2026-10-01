@@ -10,7 +10,7 @@ import kotlinx.datetime.LocalDate
  * counts both ask this, so the hero can never disagree with the list underneath it.
  *
  * A task is on the day when it is due that day, or overdue and still open. Undated work never is —
- * it is reported as a count and left to the Tasks tab.
+ * it is reported as a count and offered through the planning picker.
  *
  * A subtask is on the day on those same terms, *and* only when its parent is not. A parent already
  * shows its steps inside its own card, so promoting them to rows as well would list the same work

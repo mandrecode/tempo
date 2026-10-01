@@ -1,8 +1,11 @@
-# focus-agenda-day-freshness Specification
+## REMOVED Requirements
 
-## Purpose
-Keep the task-only Focus agenda aligned with the current local day while the screen stays open.
-## Requirements
+### Requirement: Habit completion uses the current Focus day
+**Reason**: Habits and chains no longer appear in Focus.
+**Migration**: Complete routines from Routines; Focus offers task interactions only.
+
+## MODIFIED Requirements
+
 ### Requirement: Single active Focus day observation
 The system SHALL keep only one active Focus day observation after refreshing an open screen for a new local date.
 
