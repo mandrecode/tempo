@@ -55,9 +55,10 @@ be — a bare "8:00 AM" on last week's task read as something due this morning.
 ### The summary hero
 
 Above the list: today's date, the scheduled/completed counts, a progress indicator, a headline band
-that changes with how the day is going, a streak, and a heatmap of recent days. The counts come from
-`RecordDailyActivityUseCase`, which recomputes today from current state on every relevant change —
-past days keep whatever was last written while they were current, so history is never rewritten.
+that changes with how the day is going, a streak, and a heatmap of recent days. The hero counts come
+from the agenda. `RecordDailyActivityUseCase` writes matching counts for the history, recomputing
+today from current state on every relevant change. Past days keep whatever was last written while
+they were current, so history is never rewritten.
 From #404 onward, scheduled/completed counts are task-only. Earlier aggregate snapshots can include
 habits and chains; they are preserved because per-type counts were not stored. Completing routines
 no longer records Focus activity.

@@ -9,6 +9,6 @@
 
 - [x] 2.1 Validate OpenSpec and run assembleDebug, testDebugUnitTest, ktlintFormat, ktlintCheck, detekt, lintDebug, coverage, and screenshot validation; review intended reference changes if any.
 - [x] 2.2 Prune resolved detekt entries and lower CI baseline ceiling if applicable (no resolved suppressions; baseline remains 155).
-- [ ] 2.3 Run the FocusContent and PlanTasksSheet instrumented checks on the user-created Pixel 10 AVD.
-- [ ] 2.4 Sync/archive completed change and run final verification of delivered state.
-- [x] 2.5 Commit and open a draft PR against main closing #404 (device verification remains pending).
+- [x] 2.3 Run the FocusContent and PlanTasksSheet instrumented checks on the user-created Pixel 10 AVD.
+- [x] 2.4 Sync/archive completed change and run final verification of delivered state.
+- [x] 2.5 Commit and open a draft PR against main closing #404 (device verification subsequently passed).

@@ -18,11 +18,9 @@ import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.Delet
 /**
  * The task editor, opened from Focus without leaving it.
  *
- * They are the Tasks tab's editor driven by its own view model:
- * Focus holds a second instance of the Tasks view model, so the form logic, validation, auto-save and
- * deletion all behave exactly as they do in Tasks, with no second implementation to
- * keep in step. The instances are created on the first edit rather than with the screen, so simply
- * looking at your day costs nothing.
+ * Focus reuses the Tasks editor and a separate instance of its view model, so validation,
+ * auto-save and deletion behave exactly as they do in Tasks. The view model is created on the
+ * first edit rather than with the screen, so simply looking at your day costs nothing.
  *
  * Always a bottom sheet, never the docked pane the tabs can use on a wide window: Focus has no
  * list-detail layout for a pane to dock beside.

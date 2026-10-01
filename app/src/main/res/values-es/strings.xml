@@ -510,7 +510,7 @@
     <string name="onboarding_next">Siguiente</string>
     <string name="onboarding_start">Empezar a usar Tempo</string>
     <string name="onboarding_focus_title">Empieza con el día delante</string>
-    <string name="onboarding_focus_description">Focus es donde vive el hoy: las tareas, hábitos y cadenas que tocan ahora, en un solo sitio y con un temporizador para lo que tengas entre manos.</string>
+    <string name="onboarding_focus_description">Enfoque reúne las tareas para hoy y las tareas vencidas pendientes de todas tus categorías, con un temporizador para trabajar por sesiones.</string>
     <string name="onboarding_focus_today_concept_title">Hoy, no todo</string>
     <string name="onboarding_focus_today_concept_description">Focus solo enseña lo de hoy, junto a lo que se te pasó y lo que merece la pena empezar ahora.</string>
     <string name="onboarding_focus_session_concept_title">Trabaja por sesiones</string>

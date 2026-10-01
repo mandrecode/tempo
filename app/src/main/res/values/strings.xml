@@ -506,7 +506,7 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_start">Start using Tempo</string>
     <string name="onboarding_focus_title">Start with the day in front of you</string>
-    <string name="onboarding_focus_description">Focus is where today lives: the tasks, habits and chains due now, in one place, with a timer for whatever you are on.</string>
+    <string name="onboarding_focus_description">Focus brings tasks due today and unfinished overdue tasks across your categories into one place, with a timer for working in sessions.</string>
     <string name="onboarding_focus_today_concept_title">Today, not everything</string>
     <string name="onboarding_focus_today_concept_description">Focus shows only what is due today, with anything overdue and the work worth starting next.</string>
     <string name="onboarding_focus_session_concept_title">Work in sessions</string>
