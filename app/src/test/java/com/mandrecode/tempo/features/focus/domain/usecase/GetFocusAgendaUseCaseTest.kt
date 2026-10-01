@@ -2,14 +2,9 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
-import com.mandrecode.tempo.features.routines.domain.model.Habit
-import com.mandrecode.tempo.features.routines.domain.model.HabitChain
-import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
-import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
@@ -30,17 +25,13 @@ class GetFocusAgendaUseCaseTest {
     // A Wednesday.
     private val today = LocalDate(2026, 7, 29)
 
-    private val taskRepository = mockk<TaskRepository>()
-    private val habitRepository = mockk<HabitRepository>()
-    private val habitChainRepository = mockk<HabitChainRepository>()
-    private val categoryRepository = mockk<CategoryRepository>()
+    private val taskRepository = mockk<TaskRepository>(relaxed = true)
+    private val categoryRepository = mockk<CategoryRepository>(relaxed = true)
     private val focusTodayFlow = MutableStateFlow<Map<Long, TaskFocusToday>>(emptyMap())
-    private val sessionRepository = mockk<FocusSessionRepository>()
+    private val sessionRepository = mockk<FocusSessionRepository>(relaxed = true)
     private val useCase =
         GetFocusAgendaUseCase(
             taskRepository = taskRepository,
-            habitRepository = habitRepository,
-            habitChainRepository = habitChainRepository,
             categoryRepository = categoryRepository,
             getUpNextItem = GetUpNextItemUseCase(),
             sessionRepository = sessionRepository,
@@ -63,29 +54,12 @@ class GetFocusAgendaUseCaseTest {
         reminderDate = date?.let { LocalDateTime(it, LocalTime(hour, 0)) },
     )
 
-    private fun habit(
-        id: Long,
-        repeatDays: Set<DayOfWeek>? = null,
-        completionHistory: String = "",
-    ) = Habit(
-        id = id,
-        title = "Habit $id",
-        description = "",
-        createdDate = LocalDateTime(today, LocalTime(0, 0)),
-        repeatDays = repeatDays,
-        completionHistory = completionHistory,
-    )
-
     private suspend fun agenda(
         tasks: List<Task> = emptyList(),
-        habits: List<Habit> = emptyList(),
-        chains: List<HabitChain> = emptyList(),
         assertions: (com.mandrecode.tempo.features.focus.domain.model.FocusAgenda) -> Unit,
     ) {
         every { sessionRepository.focusToday } returns focusTodayFlow
         every { taskRepository.getAllTasks() } returns flowOf(tasks)
-        every { habitRepository.getAllHabits() } returns flowOf(habits)
-        every { habitChainRepository.getAllHabitChains() } returns flowOf(chains)
         every { categoryRepository.getAllCategories() } returns flowOf(emptyList())
 
         useCase(today).test {
@@ -263,75 +237,6 @@ class GetFocusAgendaUseCaseTest {
         }
 
     @Test
-    fun `habits outside their repeat days are hidden`() =
-        runTest {
-            agenda(habits = listOf(habit(1, repeatDays = setOf(DayOfWeek.MONDAY)))) {
-                assertThat(it.today).isEmpty()
-            }
-        }
-
-    @Test
-    fun `a habit completed today is marked complete`() =
-        runTest {
-            agenda(habits = listOf(habit(1, completionHistory = today.toString()))) {
-                val entry = it.today.single() as FocusAgendaItem.HabitEntry
-                assertThat(entry.isCompleted).isTrue()
-            }
-        }
-
-    @Test
-    fun `habits belonging to a chain are shown by the chain, not twice`() =
-        runTest {
-            val chain =
-                HabitChain(
-                    id = 1,
-                    title = "Morning Routine",
-                    habitIds = listOf(1),
-                    createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                )
-
-            agenda(habits = listOf(habit(1)), chains = listOf(chain)) {
-                assertThat(it.today.single()).isInstanceOf(FocusAgendaItem.ChainEntry::class.java)
-            }
-        }
-
-    @Test
-    fun `a chain's habits keep the chain's own order, not the habit list's`() =
-        runTest {
-            // The chain runs 3, 1, 2 — the order its editor was left in. The habits arrive in id
-            // order, which is what the screen used to show instead.
-            val chain =
-                HabitChain(
-                    id = 1,
-                    title = "Morning Routine",
-                    habitIds = listOf(3, 1, 2),
-                    createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                )
-
-            agenda(habits = listOf(habit(1), habit(2), habit(3)), chains = listOf(chain)) {
-                val entry = it.today.single() as FocusAgendaItem.ChainEntry
-                assertThat(entry.habits.map(Habit::id)).containsExactly(3L, 1L, 2L).inOrder()
-            }
-        }
-
-    @Test
-    fun `a chain naming a habit that no longer exists just drops it`() =
-        runTest {
-            val chain =
-                HabitChain(
-                    id = 1,
-                    title = "Morning Routine",
-                    habitIds = listOf(3, 99, 1),
-                    createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                )
-
-            agenda(habits = listOf(habit(1), habit(3)), chains = listOf(chain)) {
-                val entry = it.today.single() as FocusAgendaItem.ChainEntry
-                assertThat(entry.habits.map(Habit::id)).containsExactly(3L, 1L).inOrder()
-            }
-        }
-
-    @Test
     fun `timed work sorts before untimed, and completed work sinks last`() =
         runTest {
             agenda(
@@ -341,11 +246,10 @@ class GetFocusAgendaUseCaseTest {
                         task(2, today, hour = 8),
                         task(3, today, hour = 6, isCompleted = true),
                     ),
-                habits = listOf(habit(4)),
             ) {
                 // The section keeps every item; the row is a separate view onto the same day.
                 val ids = it.today.map { entry -> entry.id }
-                assertThat(ids).containsExactly("task_2", "task_1", "habit_4", "task_3").inOrder()
+                assertThat(ids).containsExactly("task_2", "task_1", "task_3").inOrder()
             }
         }
 
@@ -459,6 +363,31 @@ class GetFocusAgendaUseCaseTest {
             ) {
                 assertThat(it.scheduledCount).isEqualTo(3)
                 assertThat(it.completedCount).isEqualTo(1)
+            }
+        }
+
+    @Test
+    fun `tasks from different categories share the day and keep their category names`() =
+        runTest {
+            val tasks = listOf(task(1, today).copy(categoryId = 10), task(2, today).copy(categoryId = 20))
+            every { taskRepository.getAllTasks() } returns flowOf(tasks)
+            every { sessionRepository.focusToday } returns focusTodayFlow
+            every { categoryRepository.getAllCategories() } returns
+                flowOf(
+                    listOf(
+                        com.mandrecode.tempo.features.tasks.domain.model
+                            .Category(id = 10, name = "Work"),
+                        com.mandrecode.tempo.features.tasks.domain.model
+                            .Category(id = 20, name = "Home"),
+                    ),
+                )
+
+            useCase(today).test {
+                val agenda = awaitItem()
+                assertThat(agenda.today.map { (it as FocusAgendaItem.TaskEntry).categoryName })
+                    .containsExactly("Work", "Home")
+                assertThat(agenda.scheduledCount).isEqualTo(2)
+                cancelAndIgnoreRemainingEvents()
             }
         }
 }

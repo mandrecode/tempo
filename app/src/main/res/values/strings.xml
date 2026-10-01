@@ -529,8 +529,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Plan your loose ends without leaving Focus</string>
-    <string name="whats_new_description">Tap the tasks-without-a-date count at the bottom of Focus and a planning sheet opens over the day. Give each task a day with one tap — Today, Tomorrow, or a date you pick — and watch them move from Unplanned to Planned as you go. Change your mind? Done offers to undo the whole batch.</string>
+    <string name="whats_new_title">Focus on your tasks</string>
+    <string name="whats_new_description">Focus now shows only tasks due today and unfinished overdue tasks across your categories. Use Plan your day to choose undated work. Habits and chains stay in Routines.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -651,7 +651,7 @@
     <string name="focus_progress_description">%1$d of %2$d done</string>
     <string name="focus_history_description">Activity over the last %1$d days</string>
     <string name="focus_empty_title">🌤️ A clear day!</string>
-    <string name="focus_empty_message">Plan a task or routine for today</string>
+    <string name="focus_empty_message">Plan a task for today</string>
     <plurals name="focus_streak_days">
         <item quantity="one">%1$d day focusing</item>
         <item quantity="other">%1$d days focusing</item>
