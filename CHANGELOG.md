@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.14.0](https://github.com/mandrecode/tempo/compare/v1.13.5...v1.14.0) (2026-10-01)
+
+
+### Features
+
+* **#404:** make Focus a task-only view of the day ([#424](https://github.com/mandrecode/tempo/issues/424)) ([5f4df1c](https://github.com/mandrecode/tempo/commit/5f4df1ccdef0aad5a8c7541259ae70ae43392f0b))
+
 ## [1.13.5](https://github.com/mandrecode/tempo/compare/v1.13.4...v1.13.5) (2026-08-20)
 
 
