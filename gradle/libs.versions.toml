@@ -1,8 +1,8 @@
 [versions]
 activityCompose = "1.13.0"
 agp = "9.3.2"
-composeBom = "2026.08.00"
-composeMaterial3 = "1.5.0-alpha26"
+composeBom = "2026.09.00"
+composeMaterial3 = "1.5.0-alpha29"
 coreKtx = "1.19.1"
 detekt = "2.0.0-alpha.6"
 coreSplashScreen = "1.2.0"
