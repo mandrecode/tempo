@@ -2,18 +2,12 @@
 
 ## Context
 
-`TasksScreen` works out `hasCompletedTasks` and an `onClearCompleted` callback and passes both up to the app-level floating bar through `TasksFloatingBarState`. Three things depend on that flag there:
-
-- `TaskActionButtons` (portrait) and `VerticalTaskActionButtons` (rail) show `ClearCompletedButton`.
-- The single-tab portrait bar sizes its task-action slot from it (`TASK_ACTIONS_WIDTH` vs one button).
-- `TempoBottomNavigation` gets `hasContextualActions = isTasksRoute && hasCompletedTasks`, which makes the running-session chip compact because the bar is otherwise short of room.
-
-`TasksContent` draws the `CompletedTasksSeparator` (toggle pill, optional `WavyDivider`, optional inline `firstGroupLabel`) and skips the header for the first completed group because the separator already showed it.
+`TasksScreen` worked out `hasCompletedTasks` and an `onClearCompleted` callback and passed both up to the app-level floating bar through `TasksFloatingBarState`. There, `TaskActionButtons` (portrait) and `VerticalTaskActionButtons` (rail) showed `ClearCompletedButton`, and the single-tab portrait bar sized its task-action slot from the flag.
 
 ## Goals / Non-Goals
 
 **Goals:**
-- Put the clear action in the separator and take everything that only existed for it out of the floating bar.
+- Put the clear action with the completed tasks and take everything that only existed for it out of the floating bar.
 
 **Non-Goals:**
 - Reworking the floating bar's motion or spacing beyond removing the clear button.
@@ -21,18 +15,20 @@
 
 ## Decisions
 
-**The separator raises the existing event.** `TasksContent` already receives `onEvent`, so the separator's "Clear" sends `UiEvent.RequestDeleteCompletedTasks` directly. No new `UiEvent`, and the `TasksScreen` callback goes away. Visibility needs no new flag either: the separator only renders when the category has completed tasks.
+**A footer item after the expanded completed tasks.** `TasksContent` adds a `completed_clear` lazy item after the last completed group, only when `showCompletedTasks` is true. It sends the existing `UiEvent.RequestDeleteCompletedTasks` through `onEvent`, so no new event or screen callback is needed.
 
-**A text button in the error color.** The issue asks for a text button instead of an icon. It keeps `colorScheme.error` content color as the destructive cue the red FAB used to give. The label is a new short "Clear" string, since "Clear completed" next to a "Completed" pill repeats itself. Once `ClearCompletedButton` is gone, `clear_completed` and `delete_all_completed_tasks` have no users and are deleted from every locale.
+Alternatives tried or considered:
+- *A "Clear" button at the trailing end of the separator row* (first implementation in this PR). The first group's label had to move to its own header row to make room, which stacked two wavy dividers and read as clutter. It was rejected after review on device.
+- *Clear in the separator while collapsed, at the bottom while expanded.* The button would change place on toggle. The user chose to show it only when expanded.
 
-**The first group gets its own header instead of an inline label.** With the button at the trailing end, an inline group label between divider and button doesn't fit on narrow phones with long date labels. Giving every group a `CompletedGroupHeader` makes the list uniform and keeps the separator row the same whether collapsed or expanded. Alternatives considered: moving the button below the last completed task when expanded (the button changes place on toggle and ends up far down long lists), and keeping the inline label (crowded). The user chose this option.
+**Error-colored text button with the remove-done icon.** It keeps the destructive cue the red FAB gave, and the icon ties it to the old action. The label is "Clear completed", since at the bottom of the list it has no "Completed" pill beside it.
 
-**In manual sort, a weighted spacer stands in for the divider** so "Clear" still sits at the trailing end.
+**Floating bar simplification.** Remove `hasCompletedTasks` and `onClearCompleted` from `TasksFloatingBarState`, the clear button from both action layouts, and `TASK_ACTIONS_WIDTH` (the single-tab slot is always one button wide).
 
-**Floating bar simplification.** Remove `hasCompletedTasks` and `onClearCompleted` from `TasksFloatingBarState`, the clear button from both action layouts, `TASK_ACTIONS_WIDTH` (the single-tab slot is always one button wide), and `hasContextualActions` from `TempoBottomNavigation` / `isSessionChipCompact`. With sort alone, its own KDoc already says the bar has room for the countdown, so the parameter would always be false. Keeping a parameter that is always false was the alternative; dropping it is simpler.
+**Session chip compactness keys off the Tasks route.** Previously `hasContextualActions` was `isTasksRoute && hasCompletedTasks`, on the assumption that sort alone left room for the countdown. Review showed that a 360dp portrait window with all tabs needs 352dp but has 328dp, which squeezes the add button. The chip is now compact whenever Tasks is shown. A width-based rule was considered, but the route already identifies the only tab with an extra action, and it stays deterministic and testable through `isSessionChipCompact`.
 
 ## Risks / Trade-offs
 
-- [The running-session chip on the Tasks tab now always shows its countdown in portrait] → this is the "sort alone" case the existing code already treats as roomy; check on a narrow device.
-- [Portrait floating-bar motion tests assert the clear button's gap and movement] → drop the clear-specific cases; keep the pill-stays-put and sort/pill/add gap checks.
-- [Error-colored text could read as alarming] → the confirmation dialog and undo still guard it, and it matches the old red FAB.
+- [Clear is hidden while the section is collapsed] → intentional: you only clear what you can see. Expanding is one tap.
+- [Wide phones lose the countdown on Tasks] → it is still shown on Routines and in the rail layouts, and tapping the chip opens the session.
+- [Portrait floating-bar motion tests asserted the clear button's gap and movement] → the clear-specific cases are dropped; the pill-stays-put and sort/pill/add gap checks remain.

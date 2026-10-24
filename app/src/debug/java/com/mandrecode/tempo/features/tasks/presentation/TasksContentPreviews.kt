@@ -98,7 +98,7 @@ private fun ActiveGroupHeaderNullPreview() {
 @Composable
 private fun CompletedTasksSeparatorCollapsedPreview() {
     TempoTheme {
-        CompletedTasksSeparator(isExpanded = false, onToggle = {}, onClear = {})
+        CompletedTasksSeparator(isExpanded = false, onToggle = {})
     }
 }
 
@@ -110,8 +110,8 @@ private fun CompletedTasksSeparatorExpandedWithDividerPreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
-            onClear = {},
             showDivider = true,
+            firstGroupLabel = "Today",
         )
     }
 }
@@ -124,9 +124,21 @@ private fun CompletedTasksSeparatorExpandedNoDividerPreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
-            onClear = {},
             showDivider = false,
         )
+    }
+}
+
+// endregion
+
+// region ClearCompletedFooter Previews
+
+@Preview(name = "Light", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ClearCompletedFooterPreview() {
+    TempoTheme {
+        ClearCompletedFooter(onClick = {})
     }
 }
 
@@ -142,8 +154,8 @@ private fun CompletedTasksSeparatorByTitlePreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
-            onClear = {},
             showDivider = true,
+            firstGroupLabel = "A → Z",
         )
     }
 }

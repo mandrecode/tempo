@@ -163,7 +163,7 @@ class TasksContentTest {
     }
 
     @Test
-    fun completedSeparator_clear_requestsDeletionWhetherCollapsedOrExpanded() {
+    fun clearCompleted_showsOnlyWhenExpanded_andRequestsDeletion() {
         val completedTask =
             Task(
                 id = 1,
@@ -195,20 +195,22 @@ class TasksContentTest {
             }
         }
 
-        composeTestRule.onNodeWithText("Clear").performClick()
+        composeTestRule.onNodeWithText("Clear completed").assertDoesNotExist()
+
         showCompleted = true
         composeTestRule.waitForIdle()
-        composeTestRule.onNodeWithText("Done task").assertIsDisplayed()
-        composeTestRule.onNodeWithText("Clear").performClick()
-        // The toggle is a separate target: it must not ask to delete anything.
-        composeTestRule.onNodeWithText("Completed", substring = true).performClick()
+        val taskBottom =
+            composeTestRule
+                .onNodeWithText("Done task")
+                .fetchSemanticsNode()
+                .boundsInRoot.bottom
+        val clear = composeTestRule.onNodeWithText("Clear completed")
+        clear.assertIsDisplayed()
+        // Below the last completed task, not up in the separator.
+        assertThat(clear.fetchSemanticsNode().boundsInRoot.top).isGreaterThan(taskBottom)
+        clear.performClick()
 
-        assertThat(events)
-            .containsExactly(
-                TasksContract.UiEvent.RequestDeleteCompletedTasks,
-                TasksContract.UiEvent.RequestDeleteCompletedTasks,
-                TasksContract.UiEvent.ToggleCompletedTasksVisibility,
-            ).inOrder()
+        assertThat(events).containsExactly(TasksContract.UiEvent.RequestDeleteCompletedTasks)
     }
 
     @Test

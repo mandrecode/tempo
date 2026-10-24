@@ -97,6 +97,9 @@ internal fun PersistentFloatingBar(
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
             onOpenSession = onOpenSession,
+            // Tasks carries sort beside the pill and the add button; on a 360dp phone with every tab
+            // enabled that leaves no room for the countdown, so the chip stays compact there.
+            hasContextualActions = isTasksRoute,
         )
     }
 
