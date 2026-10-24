@@ -99,6 +99,16 @@
         <item quantity="many">🛡️ %1$d días sin caer</item>
         <item quantity="other">🛡️ %1$d días sin caer</item>
     </plurals>
+    <plurals name="habit_streak_recovering_label">
+        <item quantity="one">💪 %1$d día de racha, ¡sigue así!</item>
+        <item quantity="many">💪 %1$d días de racha, ¡sigue así!</item>
+        <item quantity="other">💪 %1$d días de racha, ¡sigue así!</item>
+    </plurals>
+    <plurals name="habit_streak_quit_recovering_label">
+        <item quantity="one">💪 %1$d día sin caer, ¡sigue así!</item>
+        <item quantity="many">💪 %1$d días sin caer, ¡sigue así!</item>
+        <item quantity="other">💪 %1$d días sin caer, ¡sigue así!</item>
+    </plurals>
     <string name="habit_history_last_days">Últimos %1$d días</string>
     <string name="habit_history_today">Hoy</string>
     <string name="habit_history_dot_completed">%1$s, completado</string>
