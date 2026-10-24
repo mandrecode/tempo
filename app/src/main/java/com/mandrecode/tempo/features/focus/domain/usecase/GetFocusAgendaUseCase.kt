@@ -104,12 +104,19 @@ class GetFocusAgendaUseCase
             subtasksByParent: Map<Long?, List<Task>>,
             categoriesById: Map<Long, Category>,
             focusByTask: Map<Long, TaskFocusToday>,
-        ) = FocusAgendaItem.TaskEntry(
-            task = this,
-            subtasks = subtasksByParent[id].orEmpty(),
-            categoryName = categoriesById[categoryId]?.name,
-            focusToday = focusByTask[id] ?: TaskFocusToday(),
-        )
+        ): FocusAgendaItem.TaskEntry {
+            val subtasks = subtasksByParent[id].orEmpty()
+            return FocusAgendaItem.TaskEntry(
+                task = this,
+                subtasks = subtasks,
+                categoryName = categoriesById[categoryId]?.name,
+                focusToday = focusByTask[id] ?: TaskFocusToday(),
+                subtaskFocusToday =
+                    subtasks
+                        .mapNotNull { subtask -> focusByTask[subtask.id]?.let { subtask.id to it } }
+                        .toMap(),
+            )
+        }
 
         /** Timed items first in clock order, then untimed ones, with completed work sinking last. */
         private fun List<FocusAgendaItem>.sortedByAgendaOrder(): List<FocusAgendaItem> =

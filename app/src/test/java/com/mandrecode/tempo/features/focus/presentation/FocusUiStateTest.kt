@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.focus.presentation
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.LocalDate
@@ -102,11 +103,18 @@ class FocusUiStateTest {
                 session = FocusSession.start(taskId = 2, taskTitle = "Task 2", now = now),
                 todayItems =
                     persistentListOf(
-                        FocusAgendaItem.TaskEntry(task(1), subtasks = listOf(task(2)), categoryName = "Work"),
+                        FocusAgendaItem.TaskEntry(
+                            task(1),
+                            subtasks = listOf(task(2)),
+                            categoryName = "Work",
+                            subtaskFocusToday = mapOf(2L to TaskFocusToday(sessions = 1, minutes = 25)),
+                        ),
                     ),
             )
 
         assertThat(state.sessionEntry?.task?.id).isEqualTo(2L)
+        // The subtask's own time, banked by earlier sessions on it, stays on its card.
+        assertThat(state.sessionEntry?.focusToday).isEqualTo(TaskFocusToday(sessions = 1, minutes = 25))
         assertThat(state.sessionEntry?.categoryName).isEqualTo("Work")
         assertThat(state.runningEntry?.task?.id).isEqualTo(2L)
     }

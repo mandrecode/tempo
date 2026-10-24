@@ -4,6 +4,7 @@ import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import kotlinx.collections.immutable.ImmutableList
@@ -144,7 +145,13 @@ object FocusContract {
                 ?: entries.firstNotNullOfOrNull { parent ->
                     parent.subtasks
                         .firstOrNull { it.id == taskId }
-                        ?.let { FocusAgendaItem.TaskEntry(task = it, categoryName = parent.categoryName) }
+                        ?.let { subtask ->
+                            FocusAgendaItem.TaskEntry(
+                                task = subtask,
+                                categoryName = parent.categoryName,
+                                focusToday = parent.subtaskFocusToday[subtask.id] ?: TaskFocusToday(),
+                            )
+                        }
                 }
         }
     }

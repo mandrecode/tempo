@@ -269,6 +269,19 @@ class GetFocusAgendaUseCaseTest {
         }
 
     @Test
+    fun `a nested subtask's own focus time rides on its parent's entry`() =
+        runTest {
+            focusTodayFlow.value = mapOf(2L to TaskFocusToday(sessions = 1, minutes = 25))
+
+            agenda(tasks = listOf(task(1, today), task(2, today, parentTaskId = 1), task(3, today, parentTaskId = 1))) {
+                val entry = it.today.single() as FocusAgendaItem.TaskEntry
+                assertThat(entry.subtaskFocusToday).containsExactly(2L, TaskFocusToday(sessions = 1, minutes = 25))
+                // The parent's own record is untouched by its step's time.
+                assertThat(entry.focusToday.hasHistory).isFalse()
+            }
+        }
+
+    @Test
     fun `up next draws from the day's sections without emptying them`() =
         runTest {
             agenda(tasks = listOf(task(1, today, hour = 9))) {
