@@ -5,7 +5,7 @@
 The fix sits in the shared `TempoLoadingIndicator`, so all four loading surfaces get it at once and no ViewModel timing changes.
 
 - A `revealed` flag starts `false` (or `true` when `revealDelayMillis <= 0`). A `LaunchedEffect` waits `revealDelayMillis` and then sets it.
-- The indicator sits in an `AnimatedVisibility` with a 200 ms fade-in, inside the same `Box` as before. The box keeps its size and alignment from the first frame, so nothing around it moves when the indicator appears.
+- The indicator is always measured and laid out. Only its alpha animates, from 0 to 1 over 200 ms. A caller that wraps its height around it, like the plan sheet, therefore does not grow when it appears. An `AnimatedVisibility` would not reserve the 96 dp while hidden. Until the indicator is revealed it carries no content description, so accessibility services do not announce it either.
 - When loading finishes, callers drop the composable. That cancels the effect, so a quick load never shows the indicator.
 
 ## Why 400 ms

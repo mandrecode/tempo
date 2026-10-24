@@ -1,8 +1,7 @@
 package com.mandrecode.tempo.core.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
@@ -17,6 +16,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -39,8 +39,10 @@ private const val LOADING_INDICATOR_FADE_IN_MILLIS = 200
  * accessibility label.
  *
  * The indicator stays hidden for [revealDelayMillis] and then fades in, so a load that finishes
- * quickly leaves the space empty instead of flashing the indicator. The space itself is laid out
- * from the start, so nothing around it moves when the indicator appears.
+ * quickly leaves the space empty instead of flashing the indicator. It is measured and laid out
+ * from the first frame and only its alpha changes, so a caller that wraps its own size around it
+ * (the plan sheet does) does not grow when it appears. Until it shows it is also kept out of the
+ * semantics tree, so accessibility services do not announce a load nobody can see.
  */
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -65,17 +67,18 @@ fun TempoLoadingIndicator(
                 verticalBias = TempoSpacing.CENTERED_CONTENT_VERTICAL_BIAS,
             ),
     ) {
-        AnimatedVisibility(
-            visible = revealed,
-            enter = fadeIn(tween(LOADING_INDICATOR_FADE_IN_MILLIS)),
-        ) {
-            LoadingIndicator(
-                modifier =
-                    Modifier
-                        .size(96.dp)
-                        .semantics { contentDescription = message },
-                color = MaterialTheme.colorScheme.primary,
-            )
-        }
+        val alpha by animateFloatAsState(
+            targetValue = if (revealed) 1f else 0f,
+            animationSpec = tween(LOADING_INDICATOR_FADE_IN_MILLIS),
+            label = "loadingIndicatorReveal",
+        )
+        LoadingIndicator(
+            modifier =
+                Modifier
+                    .size(96.dp)
+                    .alpha(alpha)
+                    .then(if (revealed) Modifier.semantics { contentDescription = message } else Modifier),
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
