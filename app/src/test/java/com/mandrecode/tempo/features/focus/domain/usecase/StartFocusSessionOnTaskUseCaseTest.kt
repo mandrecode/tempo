@@ -71,6 +71,34 @@ class StartFocusSessionOnTaskUseCaseTest {
         }
 
     @Test
+    fun `resumes a paused session on the same task`() =
+        runTest {
+            coEvery { taskRepository.getTaskById(TASK_ID) } returns task()
+            activeSession.value = session(taskId = TASK_ID).pause(Instant.fromEpochMilliseconds(1_800_000_060_000))
+
+            assertThat(useCase(TASK_ID)).isTrue()
+
+            verify { focusSessionUseCases.resume() }
+            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any(), any(), any()) }
+        }
+
+    @Test
+    fun `settles an expired session before deciding, then starts afresh`() =
+        runTest {
+            coEvery { taskRepository.getTaskById(TASK_ID) } returns task()
+            activeSession.value = session(taskId = TASK_ID)
+            // The end alarm is late: reconciling finds the session over and clears it.
+            coEvery { focusSessionUseCases.reconcile() } answers {
+                activeSession.value = null
+                null
+            }
+
+            assertThat(useCase(TASK_ID)).isTrue()
+
+            coVerify { focusSessionUseCases.start(taskId = TASK_ID, taskTitle = "Report") }
+        }
+
+    @Test
     fun `does nothing for a task that no longer exists`() =
         runTest {
             coEvery { taskRepository.getTaskById(TASK_ID) } returns null

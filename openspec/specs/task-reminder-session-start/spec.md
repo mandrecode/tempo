@@ -24,8 +24,20 @@ Pressing Start session SHALL start a focus session on the notified task at the c
 - **THEN** that session ends with its earned minutes banked and a new session starts on the notified task
 
 #### Scenario: Same task already in session
-- **WHEN** the user presses Start session while a session on the same task is already running
-- **THEN** the running session continues unchanged and the reminder notification is dismissed
+- **WHEN** the user presses Start session while a session on the same task is already running or paused
+- **THEN** that session continues (resuming it if paused) without restarting, and the reminder notification is dismissed
+
+#### Scenario: Same task's session has already run out
+- **WHEN** the user presses Start session while the stored session on the same task has expired but its end has not been processed yet
+- **THEN** the expired session is ended first and a new session starts on the task
+
+#### Scenario: Reminder belongs to a subtask
+- **WHEN** the user starts a session from a subtask's reminder
+- **THEN** the session's controls in the app act on that subtask, even though Focus shows it nested under its parent
+
+#### Scenario: Two reminders pressed at once
+- **WHEN** Start session is pressed on two reminders in quick succession
+- **THEN** the starts apply one after the other, leaving a single consistent session on the last task
 
 #### Scenario: Task gone or completed
 - **WHEN** the user presses Start session for a task that has been deleted or completed

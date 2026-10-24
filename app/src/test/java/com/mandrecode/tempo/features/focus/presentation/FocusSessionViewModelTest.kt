@@ -336,6 +336,29 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
+    fun `marking done a subtask session started from its reminder completes the subtask`() =
+        runTest {
+            // A subtask's own reminder can start a session on it, while the agenda only ever
+            // shows the subtask nested inside its parent.
+            val parent = task(4, "Report")
+            val subtask = task(5, "Charts")
+            stubDay(agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(parent, subtasks = listOf(subtask)))))
+            val session = FocusSession.start(5, "Charts", nowInstant)
+            sessionFlow.value = session
+            coEvery { focusSessionUseCases.end() } returns session
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(subtask) }
+            coVerify(exactly = 0) { toggleTaskCompletion(parent) }
+            coVerify { focusSessionUseCases.end() }
+        }
+
+    @Test
     fun `marking a previewed task done leaves the session running on its own task`() =
         runTest {
             val running = task(4, "Cocinar")

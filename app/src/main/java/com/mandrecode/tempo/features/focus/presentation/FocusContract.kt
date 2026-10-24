@@ -133,12 +133,19 @@ object FocusContract {
          * The row is searched too, not only the sections. It normally mirrors them, but this is a
          * lookup and a duplicate costs nothing, whereas missing the task the session is on costs
          * the screen its subject.
+         *
+         * Subtasks as well: a subtask's own reminder can start a session on it from the
+         * notification, and the agenda only ever shows it nested inside its parent.
          */
         private fun entryFor(taskId: Long?): FocusAgendaItem.TaskEntry? {
             if (taskId == null) return null
-            return (upNext + overdue + todayItems)
-                .filterIsInstance<FocusAgendaItem.TaskEntry>()
-                .firstOrNull { it.task.id == taskId }
+            val entries = (upNext + overdue + todayItems).filterIsInstance<FocusAgendaItem.TaskEntry>()
+            return entries.firstOrNull { it.task.id == taskId }
+                ?: entries.firstNotNullOfOrNull { parent ->
+                    parent.subtasks
+                        .firstOrNull { it.id == taskId }
+                        ?.let { FocusAgendaItem.TaskEntry(task = it, categoryName = parent.categoryName) }
+                }
         }
     }
 

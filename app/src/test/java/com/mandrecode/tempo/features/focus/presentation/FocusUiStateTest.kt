@@ -96,6 +96,22 @@ class FocusUiStateTest {
     }
 
     @Test
+    fun `a session on a nested subtask resolves to that subtask`() {
+        val state =
+            FocusContract.UiState(
+                session = FocusSession.start(taskId = 2, taskTitle = "Task 2", now = now),
+                todayItems =
+                    persistentListOf(
+                        FocusAgendaItem.TaskEntry(task(1), subtasks = listOf(task(2)), categoryName = "Work"),
+                    ),
+            )
+
+        assertThat(state.sessionEntry?.task?.id).isEqualTo(2L)
+        assertThat(state.sessionEntry?.categoryName).isEqualTo("Work")
+        assertThat(state.runningEntry?.task?.id).isEqualTo(2L)
+    }
+
+    @Test
     fun `a session on a task that left the agenda yields no subtasks`() {
         val state =
             FocusContract.UiState(
