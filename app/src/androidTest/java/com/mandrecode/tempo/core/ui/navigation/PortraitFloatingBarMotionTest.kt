@@ -65,13 +65,12 @@ class PortraitFloatingBarMotionTest {
         val Tolerance = 2.5.dp
 
         const val SORT_DESCRIPTION = "Sort tasks by"
-        const val CLEAR_DESCRIPTION = "Delete all completed"
         const val ADD_DESCRIPTION = "Add Task"
     }
 
     private var isTasksRoute by mutableStateOf(true)
 
-    private fun setBar(hasCompletedTasks: Boolean = true) {
+    private fun setBar() {
         composeTestRule.setContent {
             TempoTheme {
                 val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
@@ -82,7 +81,7 @@ class PortraitFloatingBarMotionTest {
                         Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
                     },
                     routinesState = RoutinesFloatingBarState(),
-                    tasksState = TasksFloatingBarState(hasCompletedTasks = hasCompletedTasks),
+                    tasksState = TasksFloatingBarState(),
                     isSingleTabMode = false,
                 )
             }
@@ -172,7 +171,7 @@ class PortraitFloatingBarMotionTest {
     }
 
     /**
-     * With nothing to clear, Tasks flanks the pill with one button on each side, and the two are
+     * Tasks flanks the pill with one button on each side, and the two are
      * the same size on the same spring — so the pill sits where Focus, which flanks it with none,
      * had it, and it stays there for every frame in between rather than only at the two ends.
      *
@@ -183,9 +182,9 @@ class PortraitFloatingBarMotionTest {
      * work", not "the springs have stopped".
      */
     @Test
-    fun withNothingToClear_thePillStaysWhereFocusHadItThroughout() {
+    fun arrivingOnTasks_thePillStaysWhereFocusHadItThroughout() {
         isTasksRoute = false
-        setBar(hasCompletedTasks = false)
+        setBar()
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
         val onFocus = pillLeft()
@@ -204,31 +203,6 @@ class PortraitFloatingBarMotionTest {
     }
 
     /**
-     * With something to clear the pill does move — the left side ends up heavier — but it only ever
-     * moves that one way.
-     *
-     * Guarding the direction, not a known defect: a transition that sets off the opposite way
-     * before turning around reads as a bounce, however it comes about.
-     */
-    @Test
-    fun arrivingOnTasks_withSomethingToClear_thePillOnlyEverMovesOneWay() {
-        isTasksRoute = false
-        setBar(hasCompletedTasks = true)
-        composeTestRule.mainClock.autoAdvance = false
-        composeTestRule.waitForIdle()
-        val start = pillLeft()
-
-        isTasksRoute = true
-        composeTestRule.mainClock.advanceTimeByFrame()
-
-        val positions = samplePositions()
-        assertMotionFinished(positions)
-        // It settles to the right of where it started, so nothing on the way may sit to the left.
-        assertThat((positions.last() - start).value).isGreaterThan(Tolerance.value)
-        assertThat(positions.minOf { (it - start).value }).isGreaterThan(-Tolerance.value)
-    }
-
-    /**
      * The gaps moved from the row into the buttons; they must not have changed size on the way.
      */
     @Test
@@ -236,16 +210,12 @@ class PortraitFloatingBarMotionTest {
         setBar()
         composeTestRule.waitForIdle()
 
-        val clear = composeTestRule.onNodeWithContentDescription(CLEAR_DESCRIPTION, substring = true)
         val sort = composeTestRule.onNodeWithContentDescription(SORT_DESCRIPTION, substring = true)
         val add = composeTestRule.onNodeWithContentDescription(ADD_DESCRIPTION, substring = true)
         val pill = composeTestRule.onNodeWithTag(PILL_TAG).getUnclippedBoundsInRoot()
 
-        // A dp of slack for pixel rounding; the gaps being guarded are 6dp and 8dp, so a genuine
-        // change to either would still be caught.
-        assertThat((sort.getUnclippedBoundsInRoot().left - clear.getUnclippedBoundsInRoot().right).value)
-            .isWithin(GAP_TOLERANCE_DP)
-            .of(TASK_ACTIONS_BUTTON_SPACING.value)
+        // A dp of slack for pixel rounding; the gaps being guarded are 8dp, so a genuine change
+        // would still be caught.
         assertThat((pill.left - sort.getUnclippedBoundsInRoot().right).value)
             .isWithin(GAP_TOLERANCE_DP)
             .of(FloatingToolbarItemSpacing.value)
