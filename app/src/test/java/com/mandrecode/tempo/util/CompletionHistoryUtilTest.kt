@@ -104,7 +104,7 @@ class CompletionHistoryUtilTest {
     }
 
     @Test
-    fun `getCurrentStreak stops at first gap`() {
+    fun `getCurrentStreak forgives a lone missed day`() {
         val today = LocalDate(2026, 2, 24)
         val yesterday = LocalDate(2026, 2, 23)
         val threeDaysAgo = LocalDate(2026, 2, 21)
@@ -113,18 +113,40 @@ class CompletionHistoryUtilTest {
         val history = "$threeDaysAgo,$yesterday,$today"
         val result = CompletionHistoryUtil.getCurrentStreak(history, today)
 
-        assertThat(result).isEqualTo(2) // Only counts today and yesterday
+        assertThat(result).isEqualTo(3) // The missed day is skipped, not counted
     }
 
     @Test
-    fun `getCurrentStreak returns zero if today not completed`() {
+    fun `getCurrentStreak stops at two consecutive missed days`() {
+        val today = LocalDate(2026, 2, 24)
+        val fourDaysAgo = LocalDate(2026, 2, 20)
+
+        // -1, -2 and -3 are all missed
+        val history = "$fourDaysAgo,$today"
+        val result = CompletionHistoryUtil.getCurrentStreak(history, today)
+
+        assertThat(result).isEqualTo(1)
+    }
+
+    @Test
+    fun `getCurrentStreak keeps the streak while today is still open`() {
         val today = LocalDate(2026, 2, 24)
         val yesterday = LocalDate(2026, 2, 23)
 
         val history = "$yesterday"
         val result = CompletionHistoryUtil.getCurrentStreak(history, today)
 
-        assertThat(result).isEqualTo(0) // Today is not completed, so streak is 0
+        assertThat(result).isEqualTo(1) // Unchecked today is not a miss yet
+    }
+
+    @Test
+    fun `getCurrentStreak breaks when yesterday and the day before were missed`() {
+        val today = LocalDate(2026, 2, 24)
+        val threeDaysAgo = LocalDate(2026, 2, 21)
+
+        val result = CompletionHistoryUtil.getCurrentStreak("$threeDaysAgo", today)
+
+        assertThat(result).isEqualTo(0)
     }
 
     @Test
@@ -151,7 +173,7 @@ class CompletionHistoryUtilTest {
     }
 
     @Test
-    fun `getCurrentStreak breaks if planned day is missed`() {
+    fun `getCurrentStreak forgives a lone missed planned day`() {
         val today = LocalDate(2026, 2, 24) // Tuesday
         val monday = LocalDate(2026, 2, 23)
         val friday = LocalDate(2026, 2, 20)
@@ -169,13 +191,9 @@ class CompletionHistoryUtilTest {
 
         val result = CompletionHistoryUtil.getCurrentStreak(history, today, repeatDays)
 
-        // Breaks because Sat was missed. Only Mon counts. -> 1.
-        // Wait, today is Tue (not planned). It checks Tue -> skips.
-        // Checks Mon -> completed (streak = 1).
-        // Checks Sun -> not planned -> skips.
-        // Checks Sat -> planned but missed -> breaks!
-        // So streak should be 1.
-        assertThat(result).isEqualTo(1)
+        // Tue and Sun are not planned, Sat is a lone miss that is forgiven.
+        // Mon and Fri count -> 2.
+        assertThat(result).isEqualTo(2)
     }
 
     @Test
@@ -227,7 +245,7 @@ class CompletionHistoryUtilTest {
     }
 
     @Test
-    fun `getCurrentStreak breaks MWF habit when a scheduled day is missed`() {
+    fun `getCurrentStreak forgives MWF habit missing one scheduled day`() {
         val today = LocalDate(2026, 2, 27) // Friday
         val wednesday = LocalDate(2026, 2, 25)
         // Mon (2/23) intentionally missed
@@ -246,8 +264,20 @@ class CompletionHistoryUtilTest {
         val result = CompletionHistoryUtil.getCurrentStreak(history, today, repeatDays)
 
         // Walking back from today: Fri done (1), Thu skip, Wed done (2),
-        // Tue skip, Mon scheduled but missed -> break. Streak = 2.
-        assertThat(result).isEqualTo(2)
+        // Tue skip, Mon missed but forgiven, prev Fri done (3).
+        assertThat(result).isEqualTo(3)
+    }
+
+    @Test
+    fun `getCurrentStreak breaks MWF habit when two scheduled days in a row are missed`() {
+        val today = LocalDate(2026, 2, 27) // Friday
+        // Wed (2/25) and Mon (2/23) missed; the unscheduled Tue between them doesn't reset the run.
+        val previousFriday = LocalDate(2026, 2, 20)
+        val repeatDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY, DayOfWeek.FRIDAY)
+
+        val result = CompletionHistoryUtil.getCurrentStreak("$previousFriday,$today", today, repeatDays)
+
+        assertThat(result).isEqualTo(1)
     }
 
     @Test
@@ -448,15 +478,15 @@ class CompletionHistoryUtilTest {
     }
 
     @Test
-    fun `getCurrentStreak still breaks on a missed day after the pause`() {
-        // Paused 03-06..03-08, back on 03-09 but 03-10 was missed.
+    fun `getCurrentStreak still breaks on two missed days after the pause`() {
+        // Paused 03-06..03-08, back on 03-09 but 03-10 and 03-11 were missed.
         val history = "2026-03-04,2026-03-05,2026-03-09"
         val periods = listOf(VacationPeriod(LocalDate(2026, 3, 6), LocalDate(2026, 3, 8)))
 
         val result =
             CompletionHistoryUtil.getCurrentStreak(
                 completionHistory = history,
-                today = LocalDate(2026, 3, 11),
+                today = LocalDate(2026, 3, 12),
                 vacationPeriods = periods,
             )
 
@@ -496,6 +526,121 @@ class CompletionHistoryUtilTest {
 
         assertThat(withDefault).isEqualTo(2)
         assertThat(withEmptyPeriods).isEqualTo(2)
+    }
+
+    // endregion
+
+    // region streak grace (#422)
+
+    @Test
+    fun `getStreakStatus is recovering when yesterday was missed and today is open`() {
+        val today = LocalDate(2026, 2, 24)
+        val history = "2026-02-21,2026-02-22"
+
+        val status = CompletionHistoryUtil.getStreakStatus(history, today)
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 2, isRecovering = true))
+    }
+
+    @Test
+    fun `getStreakStatus is recovering when yesterday was missed and today is done`() {
+        val today = LocalDate(2026, 2, 24)
+        val history = "2026-02-22,$today"
+
+        val status = CompletionHistoryUtil.getStreakStatus(history, today)
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 2, isRecovering = true))
+    }
+
+    @Test
+    fun `getStreakStatus is not recovering when only today is open`() {
+        val today = LocalDate(2026, 2, 24)
+        val history = "2026-02-21,2026-02-23"
+
+        val status = CompletionHistoryUtil.getStreakStatus(history, today)
+
+        // 02-22 was forgiven earlier, but the latest past day was done.
+        assertThat(status).isEqualTo(StreakStatus(streak = 2, isRecovering = false))
+    }
+
+    @Test
+    fun `getStreakStatus is not recovering once the streak is broken`() {
+        val today = LocalDate(2026, 2, 24)
+
+        val status = CompletionHistoryUtil.getStreakStatus("2026-02-21", today)
+
+        assertThat(status).isEqualTo(StreakStatus.NONE)
+    }
+
+    @Test
+    fun `getStreakStatus ignores unplanned days when looking for the latest miss`() {
+        val today = LocalDate(2026, 2, 24) // Tuesday, not planned
+        val repeatDays = setOf(DayOfWeek.MONDAY, DayOfWeek.FRIDAY)
+        // Mon 02-23 missed, Fri 02-20 done.
+        val status = CompletionHistoryUtil.getStreakStatus("2026-02-20", today, repeatDays)
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 1, isRecovering = true))
+    }
+
+    @Test
+    fun `getStreakStatus treats a paused day as neither a miss nor a reset`() {
+        // 03-09 missed, 03-10 paused, 03-11 missed: the pause doesn't split the miss run.
+        val history = "2026-03-08,2026-03-12"
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 10), LocalDate(2026, 3, 10)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = history,
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status.streak).isEqualTo(1)
+    }
+
+    @Test
+    fun `getStreakStatus is not recovering when the latest required day was paused and done`() {
+        // 03-11 is paused and missed (optional), 03-10 done.
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 11), LocalDate(2026, 3, 11)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = "2026-03-10",
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 1, isRecovering = false))
+    }
+
+    @Test
+    fun `getStreakStatus does not let a paused completion split required misses`() {
+        // 03-09 and 03-11 missed; 03-10 is paused but done, so it's credited without a reset.
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 10), LocalDate(2026, 3, 10)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = "2026-03-08,2026-03-10,2026-03-12",
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status.streak).isEqualTo(2)
+    }
+
+    @Test
+    fun `getStreakStatus is recovering when a paused completion follows the latest required miss`() {
+        // 03-11 is paused but done; the latest required day, 03-10, was missed.
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 11), LocalDate(2026, 3, 11)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = "2026-03-09,2026-03-11",
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 2, isRecovering = true))
     }
 
     // endregion
