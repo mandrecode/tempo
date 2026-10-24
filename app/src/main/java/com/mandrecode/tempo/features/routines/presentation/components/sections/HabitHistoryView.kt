@@ -75,8 +75,9 @@ private const val STREAK_TIER_YELLOW_DAYS = 7
 private const val STREAK_TIER_GREEN_DAYS = 14
 private const val STREAK_TIER_PURPLE_DAYS = 21
 
-// Pill corner radius percentage — fully rounded ends.
-private const val STREAK_PILL_CORNER_PERCENT = 50
+// Fixed pill corner radius: fully rounds a single-line pill at default font size, yet stays
+// inside the text padding when the label wraps, so the corners never clip it.
+private val STREAK_PILL_CORNER_RADIUS = 12.dp
 private val STREAK_PILL_HORIZONTAL_PADDING = 8.dp
 private val STREAK_PILL_VERTICAL_PADDING = 3.dp
 private const val STREAK_LABEL_MAX_WIDTH_FRACTION = 0.5f
@@ -367,7 +368,7 @@ private fun StreakLabel(
 
     Surface(
         modifier = Modifier.testTag(HABIT_HISTORY_STREAK_PILL_TEST_TAG),
-        shape = RoundedCornerShape(STREAK_PILL_CORNER_PERCENT),
+        shape = RoundedCornerShape(STREAK_PILL_CORNER_RADIUS),
         color = backgroundColor,
     ) {
         Box(
