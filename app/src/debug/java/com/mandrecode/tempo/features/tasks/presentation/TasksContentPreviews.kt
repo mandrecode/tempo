@@ -131,6 +131,19 @@ private fun CompletedTasksSeparatorExpandedNoDividerPreview() {
 
 // endregion
 
+// region ClearCompletedFooter Previews
+
+@Preview(name = "Light", showBackground = true, device = "id:pixel_9")
+@Preview(name = "Dark", showBackground = true, device = "id:pixel_9", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun ClearCompletedFooterPreview() {
+    TempoTheme {
+        ClearCompletedFooter(onClick = {})
+    }
+}
+
+// endregion
+
 // region CompletedTasksSeparator – ByTitle Previews
 
 @Preview(name = "Light", showBackground = true, device = "id:pixel_9")

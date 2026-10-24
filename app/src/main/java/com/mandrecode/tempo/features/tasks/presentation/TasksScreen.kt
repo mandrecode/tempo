@@ -169,12 +169,6 @@ fun TasksScreen(
     LaunchedEffect(isDockedEditor, uiState.taskForm.isVisible) {
         currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.taskForm.isVisible)
     }
-    val hasCompletedTasks =
-        remember(uiState.tasks, uiState.selectedCategoryId) {
-            uiState.tasks.any {
-                it.categoryId == uiState.selectedCategoryId && it.isCompleted && it.parentTaskId == null
-            }
-        }
     val onAddTask =
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog()) }
@@ -182,10 +176,6 @@ fun TasksScreen(
     val onSort =
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.ShowSortMenu) }
-        }
-    val onClearCompleted =
-        remember(viewModel) {
-            { viewModel.onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) }
         }
     val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onContentEvent: (TasksContract.UiEvent) -> Unit = { event ->
@@ -207,14 +197,12 @@ fun TasksScreen(
             TasksFloatingBarState(
                 visible = showAddTaskRailButton,
                 compactSoloAction = compactSoloAction,
-                hasCompletedTasks = hasCompletedTasks,
                 sortOption = uiState.sortOption,
                 onAddTask = onAddTask,
                 onSort = onSort,
                 sortMenuExpanded = isRailLayout && uiState.showSortBottomSheet,
                 onSelectSortOption = { viewModel.onEvent(TasksContract.UiEvent.SetSortOption(it)) },
                 onDismissSort = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
-                onClearCompleted = onClearCompleted,
             ),
         )
     }

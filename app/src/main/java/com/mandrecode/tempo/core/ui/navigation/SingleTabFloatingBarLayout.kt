@@ -15,7 +15,6 @@ internal fun rememberSingleTabFloatingBarLayout(
     maxWidth: Dp,
     isTasksRoute: Boolean,
     compact: Boolean,
-    visibleTaskActionsWidth: Dp,
 ): SingleTabFloatingBarLayout {
     val density = LocalDensity.current
     var expandedAddButtonWidth by remember { mutableStateOf(FloatingToolbarActionButtonSize) }
@@ -24,7 +23,7 @@ internal fun rememberSingleTabFloatingBarLayout(
             if (compact) {
                 (maxWidth - FloatingToolbarActionButtonSize) / 2
             } else if (isTasksRoute) {
-                (visibleTaskActionsWidth + FloatingToolbarItemSpacing) / 2
+                (TASK_ACTIONS_BUTTON_SIZE + FloatingToolbarItemSpacing) / 2
             } else {
                 0.dp
             },
@@ -34,7 +33,7 @@ internal fun rememberSingleTabFloatingBarLayout(
     val actionOffset by animateDpAsState(
         targetValue =
             if (compact) {
-                -(maxWidth - visibleTaskActionsWidth) / 2
+                -(maxWidth - TASK_ACTIONS_BUTTON_SIZE) / 2
             } else {
                 -(expandedAddButtonWidth + FloatingToolbarItemSpacing) / 2
             },
