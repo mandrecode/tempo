@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,6 +41,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
@@ -77,6 +79,8 @@ private const val STREAK_TIER_PURPLE_DAYS = 21
 private const val STREAK_PILL_CORNER_PERCENT = 50
 private val STREAK_PILL_HORIZONTAL_PADDING = 8.dp
 private val STREAK_PILL_VERTICAL_PADDING = 3.dp
+private const val STREAK_LABEL_MAX_WIDTH_FRACTION = 0.5f
+private const val STREAK_LABEL_MAX_LINES = 2
 
 private data class StreakLabelUiModel(
     val text: String,
@@ -159,74 +163,82 @@ fun HabitHistoryView(
             vacationPeriods = vacationPeriods,
         )
 
-    Row(
+    BoxWithConstraints(
         modifier =
             modifier
                 .padding(vertical = 4.dp)
                 .padding(start = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
     ) {
-        BoxWithConstraints(
-            modifier = Modifier.weight(1f),
+        // Cap the label so a long one (e.g. the recovering copy at a large font scale) wraps
+        // instead of taking the dots' space.
+        val maxLabelWidth = maxWidth * STREAK_LABEL_MAX_WIDTH_FRACTION
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            val fittingDots = computeFittingDots(maxWidth)
-            val needsTruncation = dateRange.size > fittingDots
-            // Reserve one dot's worth of space for the ellipsis when truncating,
-            // but show at least one dot (skip ellipsis if space is too tight).
-            // When nothing fits at all, render nothing.
-            val effectiveMaxDots =
-                if (needsTruncation && fittingDots >= 2) {
-                    fittingDots - 1
-                } else {
-                    minOf(fittingDots, dateRange.size)
-                }
-
-            val visibleDates = dateRange.takeLast(effectiveMaxDots)
-            val showEllipsis = needsTruncation && fittingDots >= 2
-
-            Row(
-                modifier = Modifier.testTag(HABIT_HISTORY_DOT_ROW_TEST_TAG),
-                horizontalArrangement = Arrangement.spacedBy(DotSpacing),
-                verticalAlignment = Alignment.CenterVertically,
+            BoxWithConstraints(
+                modifier = Modifier.weight(1f),
             ) {
-                if (showEllipsis) {
-                    Text(
-                        text = stringResource(R.string.ellipsis),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.testTag(HABIT_HISTORY_ELLIPSIS_TEST_TAG),
-                    )
-                }
+                val fittingDots = computeFittingDots(maxWidth)
+                val needsTruncation = dateRange.size > fittingDots
+                // Reserve one dot's worth of space for the ellipsis when truncating,
+                // but show at least one dot (skip ellipsis if space is too tight).
+                // When nothing fits at all, render nothing.
+                val effectiveMaxDots =
+                    if (needsTruncation && fittingDots >= 2) {
+                        fittingDots - 1
+                    } else {
+                        minOf(fittingDots, dateRange.size)
+                    }
 
-                visibleDates.forEach { date ->
-                    val isScheduled = CompletionHistoryUtil.isScheduledOn(date, repeatDays)
-                    val isCompleted = isScheduled && date in completedDates
-                    val isBeforeCreation = date < effectiveCreatedDate
-                    // A completion recorded while paused still reads as completed, matching the
-                    // streak rule that credits it.
-                    val isPaused =
-                        isScheduled &&
-                            !isCompleted &&
-                            CompletionHistoryUtil.isPausedOn(date, vacationPeriods)
+                val visibleDates = dateRange.takeLast(effectiveMaxDots)
+                val showEllipsis = needsTruncation && fittingDots >= 2
 
-                    HabitDot(
-                        date = date,
-                        isCompleted = isCompleted,
-                        isBeforeCreation = isBeforeCreation,
-                        isScheduled = isScheduled,
-                        isPaused = isPaused,
-                    )
+                Row(
+                    modifier = Modifier.testTag(HABIT_HISTORY_DOT_ROW_TEST_TAG),
+                    horizontalArrangement = Arrangement.spacedBy(DotSpacing),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    if (showEllipsis) {
+                        Text(
+                            text = stringResource(R.string.ellipsis),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.testTag(HABIT_HISTORY_ELLIPSIS_TEST_TAG),
+                        )
+                    }
+
+                    visibleDates.forEach { date ->
+                        val isScheduled = CompletionHistoryUtil.isScheduledOn(date, repeatDays)
+                        val isCompleted = isScheduled && date in completedDates
+                        val isBeforeCreation = date < effectiveCreatedDate
+                        // A completion recorded while paused still reads as completed, matching the
+                        // streak rule that credits it.
+                        val isPaused =
+                            isScheduled &&
+                                !isCompleted &&
+                                CompletionHistoryUtil.isPausedOn(date, vacationPeriods)
+
+                        HabitDot(
+                            date = date,
+                            isCompleted = isCompleted,
+                            isBeforeCreation = isBeforeCreation,
+                            isScheduled = isScheduled,
+                            isPaused = isPaused,
+                        )
+                    }
                 }
             }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            StreakLabel(
+                text = streakLabelUiModel.text,
+                streak = streakStatus.streak,
+                minWidth = streakLabelUiModel.minWidth,
+                maxWidth = maxLabelWidth,
+            )
         }
-
-        Spacer(modifier = Modifier.width(8.dp))
-
-        StreakLabel(
-            text = streakLabelUiModel.text,
-            streak = streakStatus.streak,
-            minWidth = streakLabelUiModel.minWidth,
-        )
     }
 }
 
@@ -328,6 +340,7 @@ private fun StreakLabel(
     text: String,
     streak: Int,
     minWidth: Dp,
+    maxWidth: Dp,
 ) {
     val hasStreak = streak > 0
     val tierColor = streakTierColor(streak)
@@ -359,7 +372,7 @@ private fun StreakLabel(
         color = backgroundColor,
     ) {
         Box(
-            modifier = Modifier.widthIn(min = minWidth),
+            modifier = Modifier.widthIn(min = minWidth.coerceAtMost(maxWidth), max = maxWidth),
             contentAlignment = Alignment.CenterEnd,
         ) {
             AnimatedContent(
@@ -376,7 +389,8 @@ private fun StreakLabel(
                     text = animatedText,
                     style = MaterialTheme.typography.labelSmall,
                     color = textColor,
-                    maxLines = 1,
+                    textAlign = TextAlign.End,
+                    maxLines = STREAK_LABEL_MAX_LINES,
                     modifier =
                         Modifier.padding(
                             horizontal = STREAK_PILL_HORIZONTAL_PADDING,

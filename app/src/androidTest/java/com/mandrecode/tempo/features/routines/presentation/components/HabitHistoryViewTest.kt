@@ -5,11 +5,13 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
@@ -18,6 +20,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -262,6 +265,67 @@ class HabitHistoryViewTest {
                 .size
 
         assertThat(dotsAfterToggle).isEqualTo(dotsBeforeToggle)
+    }
+
+    @Test
+    fun keepsDotsVisible_withRecoveringLabelAtLargeFontScale() {
+        // Yesterday was missed, so the longer recovering copy is shown.
+        val history = "2026-02-21,2026-02-22"
+        val createdDate = LocalDate(2026, 1, 1)
+        val historySlotTag = "history_slot"
+
+        composeTestRule.setContent {
+            TempoTheme {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .width(320.dp)
+                                .padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(modifier = Modifier.width(48.dp))
+                        Box(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .testTag(historySlotTag),
+                        ) {
+                            HabitHistoryView(
+                                completionHistory = history,
+                                createdDate = createdDate,
+                                modifier = Modifier.fillMaxWidth(),
+                                today = fixedToday,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        composeTestRule.onNodeWithText("keep going!", substring = true).assertIsDisplayed()
+        val dotRowWidth =
+            composeTestRule
+                .onNodeWithTag(HABIT_HISTORY_DOT_ROW_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+        val streakPillWidth =
+            composeTestRule
+                .onNodeWithTag(HABIT_HISTORY_STREAK_PILL_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+        val historySlotWidth =
+            composeTestRule
+                .onNodeWithTag(historySlotTag)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+
+        assertThat(dotRowWidth).isGreaterThan(0f)
+        assertThat(streakPillWidth).isAtMost(historySlotWidth / 2f)
     }
 
     @Test
