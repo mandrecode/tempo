@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -70,16 +71,24 @@ class PortraitFloatingBarMotionTest {
 
     private var isTasksRoute by mutableStateOf(true)
 
+    /**
+     * The other end of each transition: a destination with no buttons beside the pill. Focus used
+     * to be that destination, until it gained its own add button (#434); Settings on a rail is the
+     * one left that has neither.
+     */
+    private var otherRoute: NavKey = SettingsRoute
+
     private fun setBar() {
         composeTestRule.setContent {
             TempoTheme {
-                val route: NavKey = if (isTasksRoute) TasksRoute else FocusRoute
+                val route: NavKey = if (isTasksRoute) TasksRoute else otherRoute
                 PersistentPortraitFloatingBar(
                     isTasksRoute = isTasksRoute,
                     topLevelRoute = route,
                     navigationContent = {
                         Box(modifier = Modifier.size(PillWidth).testTag(PILL_TAG))
                     },
+                    focusState = FocusFloatingBarState(),
                     routinesState = RoutinesFloatingBarState(),
                     tasksState = TasksFloatingBarState(),
                     isSingleTabMode = false,
@@ -172,8 +181,8 @@ class PortraitFloatingBarMotionTest {
 
     /**
      * Tasks flanks the pill with one button on each side, and the two are
-     * the same size on the same spring — so the pill sits where Focus, which flanks it with none,
-     * had it, and it stays there for every frame in between rather than only at the two ends.
+     * the same size on the same spring — so the pill sits where a destination that flanks it with
+     * none had it, and it stays there for every frame in between rather than only at the two ends.
      *
      * At rest the add button used to be 4dp wider than sort, and centring the group put half of
      * that on the pill — see issue #355.
@@ -182,24 +191,36 @@ class PortraitFloatingBarMotionTest {
      * work", not "the springs have stopped".
      */
     @Test
-    fun arrivingOnTasks_thePillStaysWhereFocusHadItThroughout() {
+    fun arrivingOnTasks_thePillStaysWhereAnUnflankedPillWasThroughout() {
         isTasksRoute = false
         setBar()
         composeTestRule.mainClock.autoAdvance = false
         composeTestRule.waitForIdle()
-        val onFocus = pillLeft()
+        val unflanked = pillLeft()
 
         isTasksRoute = true
         composeTestRule.mainClock.advanceTimeByFrame()
 
         val positions = samplePositions()
         assertMotionFinished(positions)
-        // Nothing on the way may lean either side of where Focus had it...
-        assertThat(positions.maxOf { abs((it - onFocus).value) }).isLessThan(Tolerance.value)
+        // Nothing on the way may lean either side of where the unflanked pill was...
+        assertThat(positions.maxOf { abs((it - unflanked).value) }).isLessThan(Tolerance.value)
         // ...and the rest has to land back on it, bar pixel rounding.
         // Inclusive: on mdpi one device pixel *is* 1dp, so two adjacent quantised positions differ
         // by exactly [Settled] without either having moved. The 2dp this guards still fails.
-        assertThat(abs((positions.last() - onFocus).value)).isAtMost(Settled.value)
+        assertThat(abs((positions.last() - unflanked).value)).isAtMost(Settled.value)
+    }
+
+    /** Focus adds a task from the bar, with the same button Tasks uses (#434). */
+    @Test
+    fun focus_offersTheAddTaskButton_andNoSort() {
+        isTasksRoute = false
+        otherRoute = FocusRoute
+        setBar()
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithContentDescription(ADD_DESCRIPTION, substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription(SORT_DESCRIPTION, substring = true).assertDoesNotExist()
     }
 
     /**

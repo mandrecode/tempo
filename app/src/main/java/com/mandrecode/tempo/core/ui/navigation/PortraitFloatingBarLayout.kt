@@ -21,11 +21,12 @@ internal fun PersistentPortraitFloatingBar(
     isTasksRoute: Boolean,
     topLevelRoute: NavKey,
     navigationContent: @Composable () -> Unit,
+    focusState: FocusFloatingBarState,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     isSingleTabMode: Boolean,
 ) {
-    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
+    val addAction = rememberAddAction(topLevelRoute, focusState, routinesState, tasksState)
     // The button that is leaving has to keep drawing itself. The action goes null the instant the
     // route changes, so rendering straight from it left AnimatedVisibility shrinking an empty box:
     // the button blinked out and the gap closed after it. Holding the last one lets the exit

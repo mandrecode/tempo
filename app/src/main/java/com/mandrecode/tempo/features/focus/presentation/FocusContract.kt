@@ -256,8 +256,11 @@ object FocusContract {
         val replacingTaskTitle: String,
     )
 
-    /** Why the task editor is open: to change a task, or to add a subtask beneath one. */
+    /** Why the task editor is open: to add a task, change one, or add a subtask beneath one. */
     sealed interface TaskEditorTarget {
+        /** A new top-level task, from the floating bar's add button — the same form Tasks opens. */
+        data object NewTask : TaskEditorTarget
+
         data class Existing(
             val task: Task,
         ) : TaskEditorTarget
@@ -289,6 +292,8 @@ object FocusContract {
         data class EditTask(
             val task: Task,
         ) : UiEvent
+
+        data object AddTask : UiEvent
 
         data class AddSubtask(
             val parentTaskId: Long,

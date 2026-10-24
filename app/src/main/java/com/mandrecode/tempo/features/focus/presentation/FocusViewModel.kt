@@ -119,6 +119,9 @@ class FocusViewModel
                         )
                     }
 
+                FocusContract.UiEvent.AddTask ->
+                    mutableUiState.update { it.copy(taskEditor = FocusContract.TaskEditorTarget.NewTask) }
+
                 is FocusContract.UiEvent.AddSubtask ->
                     mutableUiState.update {
                         it.copy(

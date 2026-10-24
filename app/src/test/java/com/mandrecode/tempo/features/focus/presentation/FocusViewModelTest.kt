@@ -146,6 +146,22 @@ class FocusViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
+    fun `adding a task from the bar opens a blank task form over Focus`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.AddTask)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskEditor).isEqualTo(FocusContract.TaskEditorTarget.NewTask)
+
+            viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
     fun `adding a subtask opens the editor on the parent rather than on a task`() =
         runTest {
             stubDay()

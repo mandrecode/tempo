@@ -63,6 +63,7 @@ internal fun PersistentFloatingBar(
     navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
     onOpenSession: () -> Unit,
+    focusState: FocusFloatingBarState,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onNavigateToTopLevel: (NavKey) -> Unit,
@@ -117,6 +118,7 @@ internal fun PersistentFloatingBar(
                 isTasksRoute = isTasksRoute,
                 topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
+                focusState = focusState,
                 routinesState = routinesState,
                 tasksState = tasksState,
                 onOpenSettings = onOpenSettings,
@@ -127,6 +129,7 @@ internal fun PersistentFloatingBar(
                 isTasksRoute = isTasksRoute,
                 topLevelRoute = topLevelRoute,
                 navigationContent = navigationContent,
+                focusState = focusState,
                 routinesState = routinesState,
                 tasksState = tasksState,
                 isSingleTabMode = isSingleTabMode,
@@ -140,12 +143,13 @@ private fun PersistentLandscapeFloatingBar(
     isTasksRoute: Boolean,
     topLevelRoute: NavKey,
     navigationContent: @Composable () -> Unit,
+    focusState: FocusFloatingBarState,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
     onOpenSettings: () -> Unit,
     settingsSelected: Boolean,
 ) {
-    val addAction = rememberAddAction(topLevelRoute, routinesState, tasksState)
+    val addAction = rememberAddAction(topLevelRoute, focusState, routinesState, tasksState)
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
@@ -364,16 +368,24 @@ internal fun <T : Any> rememberLastNonNull(value: T?): T? {
 }
 
 /**
- * The primary add action for the active tab, or `null` for a tab that has none — Focus adds
- * through the tab it is showing work from rather than owning a create action of its own.
+ * The primary add action for the active tab, or `null` for a tab that has none. Focus adds a task,
+ * through the same form Tasks opens, since tasks are what Focus is made of (#434).
  */
 @Composable
 internal fun rememberAddAction(
     topLevelRoute: NavKey,
+    focusState: FocusFloatingBarState,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
 ): AddAction? =
     when (topLevelRoute) {
+        FocusRoute ->
+            AddAction(
+                label = stringResource(R.string.add_task),
+                compact = false,
+                onClick = focusState.onAddTask,
+            )
+
         TasksRoute ->
             AddAction(
                 label = stringResource(R.string.add_task),

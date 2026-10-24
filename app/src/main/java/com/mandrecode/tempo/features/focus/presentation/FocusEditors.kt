@@ -37,6 +37,9 @@ internal fun FocusTaskEditor(
     LaunchedEffect(target) {
         viewModel.onEvent(
             when (target) {
+                FocusContract.TaskEditorTarget.NewTask ->
+                    TasksContract.UiEvent.ShowTaskDialog()
+
                 is FocusContract.TaskEditorTarget.Existing ->
                     TasksContract.UiEvent.ShowTaskDialog(task = target.task)
 

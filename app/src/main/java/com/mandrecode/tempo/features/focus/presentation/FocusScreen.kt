@@ -14,6 +14,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -27,6 +28,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
+import com.mandrecode.tempo.core.ui.navigation.FocusFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
@@ -46,6 +48,8 @@ fun FocusScreen(
      * being counted on holiday terms.
      */
     topBar: @Composable (isVacationModeActive: Boolean) -> Unit = {},
+    /** Hands the floating bar its add action, which opens the task form over Focus (#434). */
+    onFloatingBarStateChange: (FocusFloatingBarState) -> Unit = {},
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -56,6 +60,8 @@ fun FocusScreen(
         viewModel.onTabShown()
         onPauseOrDispose { }
     }
+    val onAddTask = remember(viewModel) { { viewModel.onEvent(FocusContract.UiEvent.AddTask) } }
+    SideEffect { onFloatingBarStateChange(FocusFloatingBarState(onAddTask = onAddTask)) }
     val railContentClearance = floatingRailContentClearance()
     val snackbarHostState = remember { SnackbarHostState() }
 
