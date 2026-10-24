@@ -99,6 +99,16 @@
         <item quantity="many">🛡️ %1$d días sin caer</item>
         <item quantity="other">🛡️ %1$d días sin caer</item>
     </plurals>
+    <plurals name="habit_streak_recovering_label">
+        <item quantity="one">💪 %1$d día de racha, ¡sigue así!</item>
+        <item quantity="many">💪 %1$d días de racha, ¡sigue así!</item>
+        <item quantity="other">💪 %1$d días de racha, ¡sigue así!</item>
+    </plurals>
+    <plurals name="habit_streak_quit_recovering_label">
+        <item quantity="one">💪 %1$d día sin caer, ¡sigue así!</item>
+        <item quantity="many">💪 %1$d días sin caer, ¡sigue así!</item>
+        <item quantity="other">💪 %1$d días sin caer, ¡sigue así!</item>
+    </plurals>
     <string name="habit_history_last_days">Últimos %1$d días</string>
     <string name="habit_history_today">Hoy</string>
     <string name="habit_history_dot_completed">%1$s, completado</string>
@@ -533,8 +543,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Concéntrate en tus tareas</string>
-    <string name="whats_new_description">Enfoque ahora muestra solo las tareas para hoy y las tareas vencidas pendientes de todas tus categorías. Usa Planifica tu día para elegir tareas sin fecha. Los hábitos y las cadenas permanecen en Rutinas.</string>
+    <string name="whats_new_title">Un fallo no rompe tu racha</string>
+    <string name="whats_new_description">Saltarte un solo día ya no reinicia la racha de un hábito. Solo dos días seguidos sin cumplirlo la rompen, así que retómalo y ¡sigue así!</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
