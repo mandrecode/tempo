@@ -80,7 +80,6 @@ private const val STREAK_PILL_CORNER_PERCENT = 50
 private val STREAK_PILL_HORIZONTAL_PADDING = 8.dp
 private val STREAK_PILL_VERTICAL_PADDING = 3.dp
 private const val STREAK_LABEL_MAX_WIDTH_FRACTION = 0.5f
-private const val STREAK_LABEL_MAX_LINES = 2
 
 private data class StreakLabelUiModel(
     val text: String,
@@ -390,7 +389,6 @@ private fun StreakLabel(
                     style = MaterialTheme.typography.labelSmall,
                     color = textColor,
                     textAlign = TextAlign.End,
-                    maxLines = STREAK_LABEL_MAX_LINES,
                     modifier =
                         Modifier.padding(
                             horizontal = STREAK_PILL_HORIZONTAL_PADDING,

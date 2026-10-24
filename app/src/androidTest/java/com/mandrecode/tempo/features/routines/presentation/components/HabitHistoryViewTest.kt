@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -20,6 +21,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
@@ -304,7 +306,16 @@ class HabitHistoryViewTest {
             }
         }
 
-        composeTestRule.onNodeWithText("keep going!", substring = true).assertIsDisplayed()
+        val labelNode = composeTestRule.onNodeWithText("keep going!", substring = true)
+        labelNode.assertIsDisplayed()
+        val textLayouts = mutableListOf<TextLayoutResult>()
+        labelNode
+            .fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult]
+            .action
+            ?.invoke(textLayouts)
+        assertThat(textLayouts).isNotEmpty()
+        assertThat(textLayouts.first().hasVisualOverflow).isFalse()
         val dotRowWidth =
             composeTestRule
                 .onNodeWithTag(HABIT_HISTORY_DOT_ROW_TEST_TAG)
