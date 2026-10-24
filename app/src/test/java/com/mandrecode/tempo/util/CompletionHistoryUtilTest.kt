@@ -613,5 +613,35 @@ class CompletionHistoryUtilTest {
         assertThat(status).isEqualTo(StreakStatus(streak = 1, isRecovering = false))
     }
 
+    @Test
+    fun `getStreakStatus does not let a paused completion split required misses`() {
+        // 03-09 and 03-11 missed; 03-10 is paused but done, so it's credited without a reset.
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 10), LocalDate(2026, 3, 10)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = "2026-03-08,2026-03-10,2026-03-12",
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status.streak).isEqualTo(2)
+    }
+
+    @Test
+    fun `getStreakStatus is recovering when a paused completion follows the latest required miss`() {
+        // 03-11 is paused but done; the latest required day, 03-10, was missed.
+        val periods = listOf(VacationPeriod(LocalDate(2026, 3, 11), LocalDate(2026, 3, 11)))
+
+        val status =
+            CompletionHistoryUtil.getStreakStatus(
+                completionHistory = "2026-03-09,2026-03-11",
+                today = LocalDate(2026, 3, 12),
+                vacationPeriods = periods,
+            )
+
+        assertThat(status).isEqualTo(StreakStatus(streak = 2, isRecovering = true))
+    }
+
     // endregion
 }

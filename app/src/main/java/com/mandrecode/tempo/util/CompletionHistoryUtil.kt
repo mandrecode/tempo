@@ -164,8 +164,8 @@ object CompletionHistoryUtil {
      * the count. Today is still open, so leaving it unchecked never counts as a miss.
      *
      * Days covered by [vacationPeriods] are *optional* rather than out of scope: missing one
-     * never breaks the streak nor extends a run of misses, but a completion recorded on one
-     * still counts, so keeping a habit up while away is credited instead of ignored.
+     * never breaks the streak nor extends a run of misses, and a completion recorded on one
+     * is credited to the count without resetting a run of required-day misses.
      *
      * @param completionHistory Comma-separated ISO-8601 date strings.
      * @param today The reference date (defaults to the system's current date).
@@ -195,17 +195,19 @@ object CompletionHistoryUtil {
         while (checkDate >= oldestCompletion) {
             if (isScheduledOn(checkDate, repeatDays)) {
                 val isCompleted = checkDate in completedDates
+                // Paused days are optional: a completion is credited, but neither a miss nor a
+                // completion there changes the required-day miss tracking.
+                val isPaused = isPausedOn(checkDate, vacationPeriods)
                 // Today is still open, so leaving it unchecked is not a miss yet.
-                val isRequired = checkDate < today && !isPausedOn(checkDate, vacationPeriods)
+                val isRequiredPastDay = checkDate < today && !isPaused
                 if (isCompleted) {
                     streak++
-                    consecutiveMisses = 0
-                } else if (isRequired) {
+                    if (!isPaused) consecutiveMisses = 0
+                } else if (isRequiredPastDay) {
                     consecutiveMisses++
                     if (consecutiveMisses > MAX_FORGIVEN_MISSES) break
                 }
-                val countsForLastPastDay = isCompleted || isRequired
-                if (lastPastRequiredMissed == null && checkDate < today && countsForLastPastDay) {
+                if (lastPastRequiredMissed == null && isRequiredPastDay) {
                     lastPastRequiredMissed = !isCompleted
                 }
             }
