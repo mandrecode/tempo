@@ -544,8 +544,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Empieza una sesión desde un recordatorio</string>
-    <string name="whats_new_description">Los recordatorios de tareas ahora tienen un botón Empezar sesión para que te concentres en una tarea directamente desde la notificación.</string>
+    <string name="whats_new_title">Empieza antes, sin perder la racha</string>
+    <string name="whats_new_description">Los recordatorios de tareas ahora tienen un botón Empezar sesión para que te concentres directamente desde la notificación. Y saltarte un solo día ya no reinicia la racha de un hábito: solo dos días seguidos sin cumplirlo la rompen.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
