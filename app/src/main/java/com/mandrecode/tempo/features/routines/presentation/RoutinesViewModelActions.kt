@@ -542,7 +542,7 @@ internal fun RoutinesViewModel.addHabit(habit: Habit) {
                                 R.string.msg_habit_created_chain_link_failed
 
                             result.scheduleResult is ScheduleResult.PermissionError -> {
-                                mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+                                requestReminderPermission()
                                 R.string.msg_permission_needed
                             }
 
@@ -602,7 +602,7 @@ internal fun RoutinesViewModel.updateHabit(
                     val messageResId =
                         when {
                             result.scheduleResult is ScheduleResult.PermissionError -> {
-                                mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+                                requestReminderPermission()
                                 R.string.msg_permission_needed
                             }
 
@@ -1057,8 +1057,6 @@ internal fun RoutinesViewModel.clearHabitErrors() {
 }
 
 internal fun RoutinesViewModel.checkPermissionsAndSyncRemindersInternal() {
-    val wasGrantedBefore = uiState.value.permissionInfo.areAllGranted
-
     val hasNotifications = permissionChecker.hasNotificationPermissions()
     val canScheduleAlarms = permissionChecker.canScheduleExactAlarms()
     val permissionInfo = PermissionInfo(hasNotifications, canScheduleAlarms)
@@ -1069,17 +1067,28 @@ internal fun RoutinesViewModel.checkPermissionsAndSyncRemindersInternal() {
         viewModelScope.launch {
             val habitsWithReminders = habitRepository.getHabitsWithReminders()
             if (habitsWithReminders.isNotEmpty()) {
+                remindersAwaitingPermission = true
                 mutableUiState.update { it.copy(showPermissionRevokedDialog = true) }
             }
         }
     } else {
-        if (!wasGrantedBefore) {
-            onPermissionsGranted()
-        }
+        onPermissionsGranted()
     }
 }
 
+internal fun RoutinesViewModel.requestReminderPermission() {
+    remindersAwaitingPermission = true
+    mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+}
+
+/**
+ * Announces that reminders work again, but only to answer this screen's own request for
+ * permission. Both the request flow and the resume check land here when permission comes back,
+ * and only the first of them speaks.
+ */
 internal fun RoutinesViewModel.onPermissionsGranted() {
+    if (!remindersAwaitingPermission) return
+    remindersAwaitingPermission = false
     viewModelScope.launch {
         showSnackbar(R.string.msg_all_set_reminders_active)
     }
@@ -1096,6 +1105,7 @@ internal fun RoutinesViewModel.dismissPermissionRevokedDialog() {
 internal fun RoutinesViewModel.confirmClearAllHabitReminders() {
     viewModelScope.launch {
         clearAllHabitRemindersUseCase()
+        remindersAwaitingPermission = false
         mutableUiState.update { it.copy(showPermissionRevokedDialog = false) }
         showSnackbar(R.string.msg_reminders_cleared)
     }

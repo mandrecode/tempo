@@ -47,6 +47,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -353,7 +354,7 @@ class TasksViewModelTest {
             assertThat(
                 effects
                     .filterIsInstance<TasksContract.UiEffect.ShowSnackbar>()
-                    .map { it.messageResId },
+                    .mapNotNull { it.messageResId },
             ).doesNotContain(R.string.msg_task_updated_success)
         }
 
@@ -1090,13 +1091,52 @@ class TasksViewModelTest {
             assertThat(viewModel.uiState.value.taskForm.editorSessionId).isGreaterThan(firstSessionId)
         }
 
+    /** Permission granted somewhere else — the task sheet, another tab — is not this screen's news (#437). */
     @Test
-    fun `onPermissionsGranted shows success message`() =
+    fun `onPermissionsGranted stays silent when this screen never asked for permission`() =
         runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
             viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
             advanceUntilIdle()
 
-            // The ViewModel now sends a @StringRes Int via UiEffect, no context needed
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    @Test
+    fun `permission granted after a save asked for it is announced once`() =
+        runTest {
+            coEvery { createTaskUseCase.invoke(any()) } returns
+                CreateTaskUseCase.Result.Success(100L, ScheduleResult.PermissionError("denied"))
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            viewModel.onEvent(TasksContract.UiEvent.SetReminder(2030, 1, 1, 10, 0))
+            viewModel.onEvent(TasksContract.UiEvent.CreateOrUpdateTask("New Task", "Desc", 1L))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRequestDialog).isTrue()
+
+            // Coming back from the system dialog resumes the screen as well as finishing the request.
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
+            viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
         }
 
     @Test
@@ -1945,4 +1985,7 @@ class TasksViewModelTest {
         }
 
     // endregion
+
+    private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =
+        filterIsInstance<TasksContract.UiEffect.ShowSnackbar>().mapNotNull { it.messageResId }
 }

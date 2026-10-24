@@ -166,7 +166,7 @@ internal fun TasksViewModel.addTask(task: Task) {
                     val messageResId =
                         when {
                             result.scheduleResult is ScheduleResult.PermissionError -> {
-                                mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+                                requestReminderPermission()
                                 R.string.msg_permission_needed
                             }
                             result.scheduleResult is ScheduleResult.Failure ->
@@ -219,7 +219,7 @@ internal fun TasksViewModel.updateTask(
                     val message =
                         when {
                             result.scheduleResult is ScheduleResult.PermissionError -> {
-                                mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+                                requestReminderPermission()
                                 R.string.msg_permission_needed
                             }
                             result.scheduleResult is ScheduleResult.Failure ->
@@ -402,7 +402,7 @@ internal suspend fun TasksViewModel.handleSchedulePermissionError(updateResult: 
     if (updateResult is UpdateTaskUseCase.Result.Success &&
         updateResult.scheduleResult is ScheduleResult.PermissionError
     ) {
-        mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+        requestReminderPermission()
         showSnackbar(R.string.msg_permission_needed)
     }
 }

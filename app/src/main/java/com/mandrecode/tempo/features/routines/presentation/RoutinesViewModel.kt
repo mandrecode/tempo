@@ -60,6 +60,11 @@ class RoutinesViewModel
         // at startup, ahead of the tab, and can outlive a midnight before the tab is first shown.
         internal var lastSeenToday: LocalDate = _uiState.value.selectedDate
 
+        // Set only when this screen has told the user their reminders need permission — a request
+        // after a save, or the revoked-permission dialog. The "reminders are active again" message
+        // answers that, so it is shown once when permission comes back and never otherwise (#437).
+        internal var remindersAwaitingPermission = false
+
         init {
             loadData()
             observeVacationPeriods()

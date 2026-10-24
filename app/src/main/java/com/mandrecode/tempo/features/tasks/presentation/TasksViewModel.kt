@@ -95,6 +95,11 @@ class TasksViewModel
         /** The day the tab was last shown on; a new one regroups the list (see [onTabShown]). */
         internal val currentDay = MutableStateFlow(systemToday())
 
+        // Set only when this screen has told the user their reminders need permission — a request
+        // after a save, or the revoked-permission dialog. The "reminders are active again" message
+        // answers that, so it is shown once when permission comes back and never otherwise (#437).
+        internal var remindersAwaitingPermission = false
+
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,
             formatArgs: List<Any> = emptyList(),
