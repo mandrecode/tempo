@@ -29,7 +29,8 @@ None.
 ## Impact
 
 - Navigation: `FloatingBarState.kt` (new `FocusFloatingBarState`), `Navigation.kt`, `NavigationDestinations.kt`, `PersistentFloatingBar.kt` (`rememberAddAction`), `PortraitFloatingBarLayout.kt`.
-- Focus: `FocusContract` (`UiEvent.AddTask`, `TaskEditorTarget.NewTask`), `FocusViewModel`, `FocusEditors`, `FocusScreen`.
+- Focus: `FocusContract` (`UiEvent.AddTask`, `TaskEditorTarget.NewTask`), `FocusViewModel`, `FocusEditors`, `FocusScreen` (which now also shows the editor's snackbar messages).
+- Tasks: `TasksEffects.kt` (`showTasksEffect`, extracted from `TasksScreen`).
 - Strings: What's New entry (en, es).
 - Tests: `FocusViewModelTest`, `PortraitFloatingBarMotionTest`.
 - No domain, data, or persistence changes.

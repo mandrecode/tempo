@@ -4,6 +4,7 @@
 
 - [x] 1.1 Add `UiEvent.AddTask` and `TaskEditorTarget.NewTask`; handle it in `FocusViewModel.onEditorEvent` and map it to `ShowTaskDialog()` in `FocusTaskEditor`.
 - [x] 1.2 Publish `FocusFloatingBarState(onAddTask)` from `FocusScreen`.
+- [x] 1.3 Extract `showTasksEffect` from `TasksScreen` and collect the Focus-hosted `TasksViewModel`'s effects on Focus's snackbar once an editor has opened. Checked by hand ("Task added successfully" on Focus); `TasksScreenTest` still passes.
 
 ## 2. Floating bar
 
