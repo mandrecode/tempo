@@ -55,6 +55,7 @@ import com.mandrecode.tempo.core.ui.theme.PastelYellowLight
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.util.CompletionHistoryUtil
 import com.mandrecode.tempo.util.DateTimeFormatter
+import com.mandrecode.tempo.util.StreakStatus
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -142,15 +143,15 @@ fun HabitHistoryView(
             }
         }
 
-    val streak =
+    val streakStatus =
         remember(completionHistory, repeatDays, today, vacationPeriods) {
-            CompletionHistoryUtil.getCurrentStreak(completionHistory, today, repeatDays, vacationPeriods)
+            CompletionHistoryUtil.getStreakStatus(completionHistory, today, repeatDays, vacationPeriods)
         }
 
     val streakLabelUiModel =
         rememberStreakLabelUiModel(
             completionHistory = completionHistory,
-            streak = streak,
+            streakStatus = streakStatus,
             daysToShow = daysToShow,
             habitType = habitType,
             today = today,
@@ -223,7 +224,7 @@ fun HabitHistoryView(
 
         StreakLabel(
             text = streakLabelUiModel.text,
-            streak = streak,
+            streak = streakStatus.streak,
             minWidth = streakLabelUiModel.minWidth,
         )
     }
@@ -232,7 +233,7 @@ fun HabitHistoryView(
 @Composable
 private fun rememberStreakLabelUiModel(
     completionHistory: String,
-    streak: Int,
+    streakStatus: StreakStatus,
     daysToShow: Int,
     habitType: HabitType,
     today: LocalDate,
@@ -245,13 +246,8 @@ private fun rememberStreakLabelUiModel(
         } else {
             stringResource(R.string.habit_history_last_days, daysToShow)
         }
-    val streakText =
-        if (streak > 0) {
-            streakLabelText(streak = streak, habitType = habitType)
-        } else {
-            noStreakText
-        }
-    val toggledStreak =
+    val streakText = streakLabelText(streakStatus, habitType) ?: noStreakText
+    val toggledStreakStatus =
         remember(completionHistory, today, repeatDays, vacationPeriods) {
             val isTodayCompleted = CompletionHistoryUtil.isDateInHistory(completionHistory, today.toString())
             val toggledHistory =
@@ -260,19 +256,14 @@ private fun rememberStreakLabelUiModel(
                     date = today,
                     isCompleted = !isTodayCompleted,
                 )
-            CompletionHistoryUtil.getCurrentStreak(
+            CompletionHistoryUtil.getStreakStatus(
                 completionHistory = toggledHistory,
                 today = today,
                 repeatDays = repeatDays,
                 vacationPeriods = vacationPeriods,
             )
         }
-    val toggledStreakText =
-        if (toggledStreak > 0) {
-            streakLabelText(streak = toggledStreak, habitType = habitType)
-        } else {
-            noStreakText
-        }
+    val toggledStreakText = streakLabelText(toggledStreakStatus, habitType) ?: noStreakText
 
     val textMeasurer = rememberTextMeasurer()
     val labelTextStyle = MaterialTheme.typography.labelSmall
@@ -300,16 +291,25 @@ private fun rememberStreakLabelUiModel(
     )
 }
 
+/**
+ * The streak label for [status], or `null` when there is no streak. A streak surviving a missed
+ * day (#422) gets the encouraging variant.
+ */
 @Composable
 private fun streakLabelText(
-    streak: Int,
+    status: StreakStatus,
     habitType: HabitType,
-): String =
-    if (habitType == HabitType.QUIT) {
-        pluralStringResource(R.plurals.habit_streak_quit_label, streak, streak)
-    } else {
-        pluralStringResource(R.plurals.habit_streak_label, streak, streak)
-    }
+): String? {
+    if (status.streak <= 0) return null
+    val pluralRes =
+        when {
+            habitType == HabitType.QUIT && status.isRecovering -> R.plurals.habit_streak_quit_recovering_label
+            habitType == HabitType.QUIT -> R.plurals.habit_streak_quit_label
+            status.isRecovering -> R.plurals.habit_streak_recovering_label
+            else -> R.plurals.habit_streak_label
+        }
+    return pluralStringResource(pluralRes, status.streak, status.streak)
+}
 
 /**
  * Renders the streak label. For active streaks (>0) wraps the text in a pill whose

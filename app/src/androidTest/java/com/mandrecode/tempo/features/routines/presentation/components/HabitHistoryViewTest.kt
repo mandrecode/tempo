@@ -57,6 +57,25 @@ class HabitHistoryViewTest {
     }
 
     @Test
+    fun displaysEncouragingStreakLabel_afterALoneMissedDay() {
+        // Yesterday (Feb 23) was missed and today is still open.
+        val history = "2026-02-21,2026-02-22"
+        val createdDate = LocalDate(2026, 1, 1)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitHistoryView(
+                    completionHistory = history,
+                    createdDate = createdDate,
+                    today = fixedToday,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("2 day streak, keep going!", substring = true).assertIsDisplayed()
+    }
+
+    @Test
     fun displaysLastDaysLabel_whenNoStreak() {
         val history = "2026-01-10"
         val createdDate = LocalDate(2026, 1, 1)
@@ -153,8 +172,8 @@ class HabitHistoryViewTest {
 
     @Test
     fun displaysCorrectDaysLabel_whenCompletionsAreBeforeCreatedDate() {
-        // Created today, but backfilled for yesterday and the day before
-        val history = "2026-02-22,2026-02-23"
+        // Created today, but backfilled three days ago; the two missed days since break the streak
+        val history = "2026-02-21"
 
         composeTestRule.setContent {
             TempoTheme {
@@ -166,8 +185,8 @@ class HabitHistoryViewTest {
             }
         }
 
-        // Even though created today, it should expand to show the 3 days (22nd, 23rd, 24th)
-        composeTestRule.onNodeWithText("Last 3 days", substring = true).assertIsDisplayed()
+        // Even though created today, it should expand to show the 4 days (21st to 24th)
+        composeTestRule.onNodeWithText("Last 4 days", substring = true).assertIsDisplayed()
     }
 
     @Test

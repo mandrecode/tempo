@@ -2,8 +2,10 @@ package com.mandrecode.tempo.util
 
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
@@ -137,70 +139,101 @@ object CompletionHistoryUtil {
     ): Boolean = isScheduledOn(date, repeatDays) && !isPausedOn(date, vacationPeriods)
 
     /**
-     * Gets the current streak of consecutive planned days completed up to today.
+     * Gets the current streak of planned days completed up to today.
      *
-     * When [repeatDays] is provided (non-null and non-empty), only planned days are
-     * considered: unplanned days are skipped without breaking the streak, and
-     * completions recorded on unplanned days are ignored (not counted toward the streak).
-     * The streak breaks only when a **planned** day has no completion.
-     *
-     * When [repeatDays] is `null` or empty every day is treated as planned (daily habit).
-     *
-     * Days covered by [vacationPeriods] are *optional* rather than out of scope: missing one
-     * never breaks the streak, but a completion recorded on one still counts, so keeping a habit
-     * up while away is credited instead of ignored.
-     *
-     * @param completionHistory Comma-separated ISO-8601 date strings.
-     * @param today The reference date (defaults to the system's current date).
-     * @param repeatDays The set of days the habit is planned for, or `null`/empty for daily.
-     * @param vacationPeriods The stored vacation-mode periods; empty means nothing is paused.
-     * @return Number of consecutive planned days completed.
+     * See [getStreakStatus] for the rules; this returns only the count.
      */
     fun getCurrentStreak(
         completionHistory: String,
         today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
         repeatDays: Set<DayOfWeek>? = null,
         vacationPeriods: List<VacationPeriod> = emptyList(),
-    ): Int {
-        if (completionHistory.isBlank()) return 0
+    ): Int = getStreakStatus(completionHistory, today, repeatDays, vacationPeriods).streak
 
+    /**
+     * Computes the current streak of planned days completed up to today.
+     *
+     * When [repeatDays] is provided (non-null and non-empty), only planned days are
+     * considered: unplanned days are skipped without breaking the streak, and
+     * completions recorded on unplanned days are ignored (not counted toward the streak).
+     *
+     * When [repeatDays] is `null` or empty every day is treated as planned (daily habit).
+     *
+     * Missing a lone **required** day is forgiven (#422): the streak breaks only after
+     * [MAX_FORGIVEN_MISSES] + 1 consecutive missed required days, and missed days never add to
+     * the count. Today is still open, so leaving it unchecked never counts as a miss.
+     *
+     * Days covered by [vacationPeriods] are *optional* rather than out of scope: missing one
+     * never breaks the streak nor extends a run of misses, but a completion recorded on one
+     * still counts, so keeping a habit up while away is credited instead of ignored.
+     *
+     * @param completionHistory Comma-separated ISO-8601 date strings.
+     * @param today The reference date (defaults to the system's current date).
+     * @param repeatDays The set of days the habit is planned for, or `null`/empty for daily.
+     * @param vacationPeriods The stored vacation-mode periods; empty means nothing is paused.
+     * @return The streak count and whether it is surviving a missed day before today.
+     */
+    fun getStreakStatus(
+        completionHistory: String,
+        today: LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault()),
+        repeatDays: Set<DayOfWeek>? = null,
+        vacationPeriods: List<VacationPeriod> = emptyList(),
+    ): StreakStatus {
         val completedDates =
             completionHistory
                 .split(",")
-                .mapNotNull {
-                    try {
-                        LocalDate.parse(it.trim())
-                    } catch (_: Exception) {
-                        null
-                    }
-                }.sortedDescending()
-
-        if (completedDates.isEmpty()) return 0
+                .mapNotNull { runCatching { LocalDate.parse(it.trim()) }.getOrNull() }
+                .toSet()
+        val oldestCompletion = completedDates.minOrNull() ?: return StreakStatus.NONE
 
         var streak = 0
+        var consecutiveMisses = 0
+        // Whether the most recent required day before today was missed; null until one is seen.
+        var lastPastRequiredMissed: Boolean? = null
         var checkDate = today
-        var completedIndex = 0
 
-        while (completedIndex < completedDates.size) {
-            val date = completedDates[completedIndex]
-
-            if (date == checkDate) {
-                if (isScheduledOn(checkDate, repeatDays)) {
+        while (checkDate >= oldestCompletion) {
+            if (isScheduledOn(checkDate, repeatDays)) {
+                val isCompleted = checkDate in completedDates
+                // Today is still open, so leaving it unchecked is not a miss yet.
+                val isRequired = checkDate < today && !isPausedOn(checkDate, vacationPeriods)
+                if (isCompleted) {
                     streak++
+                    consecutiveMisses = 0
+                } else if (isRequired) {
+                    consecutiveMisses++
+                    if (consecutiveMisses > MAX_FORGIVEN_MISSES) break
                 }
-                checkDate = LocalDate.fromEpochDays(checkDate.toEpochDays() - 1)
-                completedIndex++
-            } else if (date < checkDate) {
-                if (!isRequiredOn(checkDate, repeatDays, vacationPeriods)) {
-                    checkDate = LocalDate.fromEpochDays(checkDate.toEpochDays() - 1)
-                } else {
-                    break
+                val countsForLastPastDay = isCompleted || isRequired
+                if (lastPastRequiredMissed == null && checkDate < today && countsForLastPastDay) {
+                    lastPastRequiredMissed = !isCompleted
                 }
-            } else {
-                completedIndex++
             }
+            checkDate = checkDate.minus(DatePeriod(days = 1))
         }
 
-        return streak
+        return StreakStatus(
+            streak = streak,
+            isRecovering = streak > 0 && lastPastRequiredMissed == true,
+        )
+    }
+
+    /** Consecutive missed required days a streak survives (#422). */
+    const val MAX_FORGIVEN_MISSES = 1
+}
+
+/**
+ * The current streak of a habit.
+ *
+ * @property streak Number of planned days completed in the current streak.
+ * @property isRecovering Whether the streak is alive although the most recent required day
+ *   before today was missed, so the user should be cheered on to keep it going.
+ */
+data class StreakStatus(
+    val streak: Int,
+    val isRecovering: Boolean,
+) {
+    companion object {
+        val NONE = StreakStatus(streak = 0, isRecovering = false)
     }
 }
