@@ -1,5 +1,8 @@
 package com.mandrecode.tempo.features.tasks.presentation.components
 
+import android.os.Build
+import android.os.ParcelFileDescriptor
+import android.view.KeyEvent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,6 +38,7 @@ import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -176,6 +180,63 @@ class TaskBottomSheetTest {
 
         // Verify dismissed
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun givenPreAndroid13KeyboardOpen_whenSystemBackPressed_thenFirstClosesKeyboardAndSecondReachesSheet() {
+        assumeTrue(Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU)
+        var dismissed = false
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskBottomSheet(
+                    task = null,
+                    categories = listOf(DEFAULT_INBOX_CATEGORY),
+                    selectedCategoryIdFromFilter = null,
+                    formState = defaultFormState(),
+                    onSetPriority = {},
+                    onClearPriority = {},
+                    onSetReminder = { _, _, _, _, _ -> },
+                    onClearReminder = {},
+                    onSetPeriodicity = {},
+                    onClearPeriodicity = {},
+                    onSetPeriodicityInterval = {},
+                    onSetRepeatDays = {},
+                    onSetMonthDayOption = {},
+                    onDismiss = { dismissed = true },
+                    onClearErrors = {},
+                    onConfirm = { _, _, _ -> },
+                )
+            }
+        }
+        val title = composeTestRule.onNodeWithTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
+        title.performTextInput("My Task")
+        composeTestRule.waitUntil(timeoutMillis = 5000) { isSoftKeyboardShown() }
+
+        sendSystemBackKey()
+
+        composeTestRule.waitUntil(timeoutMillis = 5000) { !isSoftKeyboardShown() }
+        title.assertIsNotFocused()
+        title.assertTextContains("My Task")
+        composeTestRule.onNodeWithText(discardChangesLabel).assertDoesNotExist()
+        assertFalse(dismissed)
+
+        sendSystemBackKey()
+
+        composeTestRule.onNodeWithText(discardChangesLabel).assertIsDisplayed()
+        assertFalse(dismissed)
+    }
+
+    private fun sendSystemBackKey() {
+        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        composeTestRule.waitForIdle()
+    }
+
+    private fun isSoftKeyboardShown(): Boolean {
+        val output =
+            InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand("dumpsys input_method")
+        return ParcelFileDescriptor.AutoCloseInputStream(output).bufferedReader().use { reader ->
+            reader.readText().contains("mInputShown=true")
+        }
     }
 
     @Test
