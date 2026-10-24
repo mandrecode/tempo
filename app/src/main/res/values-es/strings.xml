@@ -165,8 +165,7 @@
         <item quantity="many">subtareas</item>
         <item quantity="other">subtareas</item>
     </plurals>
-    <string name="delete_all_completed_tasks">Eliminar todas las tareas completadas</string>
-    <string name="clear_completed">Limpiar completadas</string>
+    <string name="clear">Limpiar</string>
     <string name="delete_completed_tasks_confirm_message">¿Estás seguro de que quieres eliminar todas las tareas completadas? Podrás deshacerlo durante unos instantes.</string>
     <string name="delete_category_message_prefix">¿Estás seguro de que quieres eliminar la categoría </string>
     <string name="delete_category_message_suffix">\u003F Esto también eliminará todas las tareas dentro de ella. Podrás deshacerlo durante unos instantes.</string>
@@ -533,8 +532,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Concéntrate en tus tareas</string>
-    <string name="whats_new_description">Enfoque ahora muestra solo las tareas para hoy y las tareas vencidas pendientes de todas tus categorías. Usa Planifica tu día para elegir tareas sin fecha. Los hábitos y las cadenas permanecen en Rutinas.</string>
+    <string name="whats_new_title">Limpia las completadas donde están</string>
+    <string name="whats_new_description">Limpiar las tareas completadas ya no está en la barra inferior: ahora está en la sección Completadas de tu lista. Toca Limpiar junto a Completadas.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>

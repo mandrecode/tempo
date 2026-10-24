@@ -98,7 +98,7 @@ private fun ActiveGroupHeaderNullPreview() {
 @Composable
 private fun CompletedTasksSeparatorCollapsedPreview() {
     TempoTheme {
-        CompletedTasksSeparator(isExpanded = false, onToggle = {})
+        CompletedTasksSeparator(isExpanded = false, onToggle = {}, onClear = {})
     }
 }
 
@@ -110,8 +110,8 @@ private fun CompletedTasksSeparatorExpandedWithDividerPreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
+            onClear = {},
             showDivider = true,
-            firstGroupLabel = "Today",
         )
     }
 }
@@ -124,6 +124,7 @@ private fun CompletedTasksSeparatorExpandedNoDividerPreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
+            onClear = {},
             showDivider = false,
         )
     }
@@ -141,8 +142,8 @@ private fun CompletedTasksSeparatorByTitlePreview() {
         CompletedTasksSeparator(
             isExpanded = true,
             onToggle = {},
+            onClear = {},
             showDivider = true,
-            firstGroupLabel = "A → Z",
         )
     }
 }

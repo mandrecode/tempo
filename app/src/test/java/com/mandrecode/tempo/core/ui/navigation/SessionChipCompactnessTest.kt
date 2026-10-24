@@ -14,9 +14,6 @@ class SessionChipCompactnessTest {
     fun `a narrow rail is always compact, wherever you are`() {
         assertThat(compact(isRail = true, isExpandedRail = false, onFocus = false)).isTrue()
         assertThat(compact(isRail = true, isExpandedRail = false, onFocus = true)).isTrue()
-        assertThat(
-            compact(isRail = true, isExpandedRail = false, onFocus = false, hasActions = true),
-        ).isTrue()
     }
 
     @Test
@@ -24,9 +21,6 @@ class SessionChipCompactnessTest {
         // Its rows are wide and labelled, so a bare icon would be the one row saying nothing.
         assertThat(compact(isRail = true, isExpandedRail = true, onFocus = false)).isFalse()
         assertThat(compact(isRail = true, isExpandedRail = true, onFocus = true)).isFalse()
-        assertThat(
-            compact(isRail = true, isExpandedRail = true, onFocus = true, hasActions = true),
-        ).isFalse()
     }
 
     @Test
@@ -39,23 +33,13 @@ class SessionChipCompactnessTest {
         assertThat(compact(isRail = false, isExpandedRail = false, onFocus = true)).isTrue()
     }
 
-    @Test
-    fun `the bottom bar stays compact when a tab brings its own actions`() {
-        // The case the bar actually runs out of width in.
-        assertThat(
-            compact(isRail = false, isExpandedRail = false, onFocus = false, hasActions = true),
-        ).isTrue()
-    }
-
     private fun compact(
         isRail: Boolean,
         isExpandedRail: Boolean,
         onFocus: Boolean,
-        hasActions: Boolean = false,
     ) = isSessionChipCompact(
         isRailLayout = isRail,
         isExpandedRail = isExpandedRail,
         currentRoute = if (onFocus) FocusRoute else RoutinesRoute,
-        hasContextualActions = hasActions,
     )
 }

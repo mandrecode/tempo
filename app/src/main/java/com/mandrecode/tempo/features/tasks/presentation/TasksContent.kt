@@ -20,10 +20,12 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -43,6 +45,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
@@ -274,26 +277,21 @@ fun TasksContent(
                                     )
 
                                 item(key = "completed_separator") {
-                                    val firstGroupLabel =
-                                        if (showDivider) {
-                                            resolveGroupLabel(completedEntries.firstOrNull()?.key)
-                                        } else {
-                                            null
-                                        }
                                     CompletedTasksSeparator(
                                         isExpanded = uiState.showCompletedTasks,
                                         onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
+                                        onClear = { onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) },
                                         showDivider = showDivider,
-                                        firstGroupLabel = firstGroupLabel,
                                         isFirstVisibleItem = !hasActiveTasks,
                                         modifier = Modifier.animateItem(),
                                     )
                                 }
 
                                 if (uiState.showCompletedTasks) {
-                                    completedEntries.forEachIndexed { index, (key, tasksForGroup) ->
-                                        // Skip first group header — it's shown in the separator
-                                        if (index > 0 && showDivider) {
+                                    completedEntries.forEach { (key, tasksForGroup) ->
+                                        // Every group gets its own header: the separator's trailing
+                                        // end belongs to "Clear", so it no longer carries a label.
+                                        if (showDivider) {
                                             item(key = "group_header_${key.stableKey}") {
                                                 CompletedGroupHeader(
                                                     label = resolveGroupLabel(key),
@@ -473,9 +471,9 @@ private fun Modifier.taskReorderGestures(
 internal fun CompletedTasksSeparator(
     isExpanded: Boolean,
     onToggle: () -> Unit,
+    onClear: () -> Unit,
     modifier: Modifier = Modifier,
     showDivider: Boolean = true,
-    firstGroupLabel: String? = null,
     // Whether this separator is the first *visible* content in the list, which is a question about
     // whether there are any active tasks above it rather than about its index.
     isFirstVisibleItem: Boolean = false,
@@ -525,15 +523,32 @@ internal fun CompletedTasksSeparator(
         }
         if (showDivider) {
             WavyDivider(modifier = Modifier.weight(1f))
-            if (isExpanded && firstGroupLabel != null) {
-                Text(
-                    text = firstGroupLabel,
-                    style = MaterialTheme.typography.groupLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 12.dp, end = 8.dp),
-                )
-            }
+        } else {
+            Spacer(modifier = Modifier.weight(1f))
         }
+        CompletedClearButton(onClick = onClear)
+    }
+}
+
+@Composable
+private fun CompletedClearButton(onClick: () -> Unit) {
+    TextButton(
+        onClick = onClick,
+        colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+        modifier =
+            Modifier
+                .padding(start = 4.dp)
+                // The 48dp touch target is taller than the pill. Letting it set the row's
+                // height would push "Completed" below where the first task's title sits, so
+                // it takes no height of its own and is centred on the row instead.
+                .layout { measurable, constraints ->
+                    val placeable = measurable.measure(constraints.copy(minHeight = 0))
+                    layout(placeable.width, 0) {
+                        placeable.place(0, -placeable.height / 2)
+                    }
+                },
+    ) {
+        Text(text = stringResource(R.string.clear))
     }
 }
 

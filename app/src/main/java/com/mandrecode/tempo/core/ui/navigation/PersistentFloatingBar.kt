@@ -97,9 +97,6 @@ internal fun PersistentFloatingBar(
             onNavigateToTopLevel = onNavigateToTopLevel,
             onRouteChange = onRouteChange,
             onOpenSession = onOpenSession,
-            // Only a Tasks tab that also has completed tasks to clear is actually short of room;
-            // with sort alone the bar still has space for the countdown.
-            hasContextualActions = isTasksRoute && tasksState.hasCompletedTasks,
         )
     }
 
@@ -149,10 +146,9 @@ private fun PersistentLandscapeFloatingBar(
     val isExpandedRail = isExpandedFloatingRailLayout()
 
     // Rail hierarchy: app identity first on expanded rails, then the primary add action,
-    // navigation tabs, contextual secondary actions (sort, clear completed), and finally
-    // settings pinned to the bottom. The scrollable/weighted content above settings is split
-    // into its own Column so settings never gets pushed out of bounds when the rail runs out
-    // of vertical space (e.g. an expanded rail with both task action buttons visible).
+    // navigation tabs, the contextual sort action, and finally settings pinned to the bottom.
+    // The scrollable/weighted content above settings is split into its own Column so settings
+    // never gets pushed out of bounds when the rail runs out of vertical space.
     Column(
         modifier =
             Modifier
@@ -310,18 +306,11 @@ internal fun PersistentSingleTabPortraitFloatingBar(
                 .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
-        val visibleTaskActionsWidth =
-            if (tasksState.hasCompletedTasks) {
-                TASK_ACTIONS_WIDTH
-            } else {
-                TASK_ACTIONS_BUTTON_SIZE
-            }
         val layout =
             rememberSingleTabFloatingBarLayout(
                 maxWidth = maxWidth,
                 isTasksRoute = isTasksRoute,
                 compact = addAction.compact,
-                visibleTaskActionsWidth = visibleTaskActionsWidth,
             )
 
         TempoSoloActionButton(

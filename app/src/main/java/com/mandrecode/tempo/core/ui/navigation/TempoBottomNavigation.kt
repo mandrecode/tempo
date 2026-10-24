@@ -76,7 +76,6 @@ fun TempoBottomNavigation(
     modifier: Modifier = Modifier,
     onRouteChange: (String) -> Unit = {},
     onOpenSession: () -> Unit = {},
-    hasContextualActions: Boolean = false,
 ) {
     val enabledTabs by navigationPreferencesRepository
         .enabledTabs()
@@ -94,7 +93,6 @@ fun TempoBottomNavigation(
                 isRailLayout = isRailLayout,
                 isExpandedRail = isExpandedRail,
                 currentRoute = currentRoute,
-                hasContextualActions = hasContextualActions,
                 onOpenSession = onOpenSession,
             )
         }
@@ -343,19 +341,17 @@ private fun ExpandedRailNavigationRow(
  * - A narrow rail is one icon wide by construction, so there is nowhere for a countdown to go —
  *   expanding pushed the pill straight out of the rail and over the content behind it.
  * - On the bottom bar it expands away from Focus, where you are not already looking at the session
- *   card, and only when the bar is not also carrying a tab's own action buttons — which is the case
- *   it actually runs out of width in.
+ *   card. No tab carries more than a single action beside the bar, which leaves room for it.
  */
 internal fun isSessionChipCompact(
     isRailLayout: Boolean,
     isExpandedRail: Boolean,
     currentRoute: NavKey,
-    hasContextualActions: Boolean,
 ): Boolean =
     when {
         isExpandedRail -> false
         isRailLayout -> true
-        else -> currentRoute == FocusRoute || hasContextualActions
+        else -> currentRoute == FocusRoute
     }
 
 /** The Focus tab's slot while a session is running, sized to the room the bar actually has. */
@@ -364,7 +360,6 @@ private fun focusSessionSlot(
     isRailLayout: Boolean,
     isExpandedRail: Boolean,
     currentRoute: NavKey,
-    hasContextualActions: Boolean,
     onOpenSession: () -> Unit,
 ): @Composable (Modifier) -> Unit =
     { slotModifier ->
@@ -377,7 +372,6 @@ private fun focusSessionSlot(
                     isRailLayout = isRailLayout,
                     isExpandedRail = isExpandedRail,
                     currentRoute = currentRoute,
-                    hasContextualActions = hasContextualActions,
                 ),
             selected = currentRoute == FocusRoute,
         )

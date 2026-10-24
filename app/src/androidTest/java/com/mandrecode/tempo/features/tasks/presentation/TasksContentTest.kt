@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -159,6 +160,55 @@ class TasksContentTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Completed", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Done task").assertIsDisplayed()
+    }
+
+    @Test
+    fun completedSeparator_clear_requestsDeletionWhetherCollapsedOrExpanded() {
+        val completedTask =
+            Task(
+                id = 1,
+                title = "Done task",
+                description = "",
+                isCompleted = true,
+                categoryId = DEFAULT_INBOX_CATEGORY.id,
+                sortOrder = 0,
+            )
+        val events = mutableListOf<TasksContract.UiEvent>()
+        var showCompleted by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(
+                    uiState =
+                        TasksContract.UiState(
+                            isLoading = false,
+                            tasks = persistentListOf(completedTask),
+                            completedTaskGroups =
+                                persistentMapOf(
+                                    CompletedGroupKey.Flat to persistentListOf(completedTask),
+                                ),
+                            categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+                            showCompletedTasks = showCompleted,
+                        ),
+                    onEvent = { events += it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Clear").performClick()
+        showCompleted = true
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Done task").assertIsDisplayed()
+        composeTestRule.onNodeWithText("Clear").performClick()
+        // The toggle is a separate target: it must not ask to delete anything.
+        composeTestRule.onNodeWithText("Completed", substring = true).performClick()
+
+        assertThat(events)
+            .containsExactly(
+                TasksContract.UiEvent.RequestDeleteCompletedTasks,
+                TasksContract.UiEvent.RequestDeleteCompletedTasks,
+                TasksContract.UiEvent.ToggleCompletedTasksVisibility,
+            ).inOrder()
     }
 
     @Test
