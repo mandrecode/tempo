@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
@@ -159,6 +160,57 @@ class TasksContentTest {
         composeTestRule.waitForIdle()
         composeTestRule.onNodeWithText("Completed", substring = true).assertIsDisplayed()
         composeTestRule.onNodeWithText("Done task").assertIsDisplayed()
+    }
+
+    @Test
+    fun clearCompleted_showsOnlyWhenExpanded_andRequestsDeletion() {
+        val completedTask =
+            Task(
+                id = 1,
+                title = "Done task",
+                description = "",
+                isCompleted = true,
+                categoryId = DEFAULT_INBOX_CATEGORY.id,
+                sortOrder = 0,
+            )
+        val events = mutableListOf<TasksContract.UiEvent>()
+        var showCompleted by mutableStateOf(false)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(
+                    uiState =
+                        TasksContract.UiState(
+                            isLoading = false,
+                            tasks = persistentListOf(completedTask),
+                            completedTaskGroups =
+                                persistentMapOf(
+                                    CompletedGroupKey.Flat to persistentListOf(completedTask),
+                                ),
+                            categories = persistentListOf(DEFAULT_INBOX_CATEGORY),
+                            showCompletedTasks = showCompleted,
+                        ),
+                    onEvent = { events += it },
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Clear completed").assertDoesNotExist()
+
+        showCompleted = true
+        composeTestRule.waitForIdle()
+        val taskBottom =
+            composeTestRule
+                .onNodeWithText("Done task")
+                .fetchSemanticsNode()
+                .boundsInRoot.bottom
+        val clear = composeTestRule.onNodeWithText("Clear completed")
+        clear.assertIsDisplayed()
+        // Below the last completed task, not up in the separator.
+        assertThat(clear.fetchSemanticsNode().boundsInRoot.top).isGreaterThan(taskBottom)
+        clear.performClick()
+
+        assertThat(events).containsExactly(TasksContract.UiEvent.RequestDeleteCompletedTasks)
     }
 
     @Test
