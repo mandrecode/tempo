@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.components.LOADING_INDICATOR_REVEAL_DELAY_MILLIS
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
@@ -48,7 +49,8 @@ class TasksContentTest {
             }
         }
 
-        composeTestRule.waitForIdle()
+        // The indicator holds back for a moment so a quick load does not flash it (#438).
+        composeTestRule.mainClock.advanceTimeBy(LOADING_INDICATOR_REVEAL_DELAY_MILLIS + 500)
         composeTestRule.onNodeWithContentDescription("Loading tasks", substring = true).assertIsDisplayed()
     }
 

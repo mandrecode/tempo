@@ -12,7 +12,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 @Composable
 private fun TempoLoadingIndicatorTasksPreview() {
     TempoTheme {
-        TempoLoadingIndicator(message = stringResource(R.string.loading_tasks))
+        TempoLoadingIndicator(message = stringResource(R.string.loading_tasks), revealDelayMillis = 0L)
     }
 }
 
@@ -21,6 +21,6 @@ private fun TempoLoadingIndicatorTasksPreview() {
 @Composable
 private fun TempoLoadingIndicatorHabitsPreview() {
     TempoTheme {
-        TempoLoadingIndicator(message = stringResource(R.string.loading_habits))
+        TempoLoadingIndicator(message = stringResource(R.string.loading_habits), revealDelayMillis = 0L)
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.ui.components.LOADING_INDICATOR_REVEAL_DELAY_MILLIS
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -58,6 +59,8 @@ class RoutinesContentTest {
             }
         }
 
+        // The indicator holds back for a moment so a quick load does not flash it (#438).
+        composeTestRule.mainClock.advanceTimeBy(LOADING_INDICATOR_REVEAL_DELAY_MILLIS + 500)
         composeTestRule.onNodeWithContentDescription("Loading habits…", substring = true).assertIsDisplayed()
     }
 
