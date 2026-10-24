@@ -8,6 +8,7 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.datetime.LocalDateTime
 
@@ -64,6 +65,14 @@ internal data class TaskBottomSheetBodyActions(
     val onDelete: (() -> Unit)?,
     val onToggleCompletion: ((Task) -> Unit)?,
     val onConfirmClick: () -> Unit,
+    val attachmentActions: TaskAttachmentActions? = null,
+)
+
+/** What the attachments section can ask for; the section is only shown when the host provides it. */
+data class TaskAttachmentActions(
+    val onAddAttachments: (List<String>) -> Unit,
+    val onRemoveAttachment: (TaskAttachment) -> Unit,
+    val onOpenAttachmentFailed: () -> Unit,
 )
 
 internal data class TaskBottomSheetFocusConfig(

@@ -7,6 +7,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
+import com.mandrecode.tempo.features.tasks.domain.usecase.PruneOrphanedTaskAttachmentsUseCase
 import dagger.Lazy
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CancellationException
@@ -29,6 +30,9 @@ class TempoApp :
 
     @Inject
     lateinit var databaseWarmupSignal: DatabaseWarmupSignal
+
+    @Inject
+    lateinit var pruneOrphanedTaskAttachments: Lazy<PruneOrphanedTaskAttachmentsUseCase>
 
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -65,6 +69,15 @@ class TempoApp :
                 // Runs on success, failure, and cancellation alike: MainActivity's splash-screen
                 // hold only cares that the warm-up attempt has concluded, not how.
                 databaseWarmupSignal.markReady()
+            }
+            // After the warm-up, so it never competes with the first screen for the database.
+            // Same failure contract: nothing here may take the app down.
+            try {
+                pruneOrphanedTaskAttachments.get()()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Orphans left now are pruned on the next start.
             }
         }
     }

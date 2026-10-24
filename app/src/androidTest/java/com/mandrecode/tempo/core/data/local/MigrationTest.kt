@@ -326,4 +326,40 @@ class MigrationTest {
                 }
             }
     }
+
+    @Test
+    fun migrate10To11_addsTaskAttachmentsAndPreservesTasks() {
+        helper.createDatabase(DB_NAME, 10).use { db ->
+            db.execSQL(
+                """
+                INSERT INTO tasks (id, title, description, isCompleted, categoryId, priority,
+                    parentTaskId, sortOrder, periodicityInterval)
+                VALUES (1, 'Pay rent', 'desc', 0, -1, 1, NULL, 0, 1)
+                """.trimIndent(),
+            )
+        }
+
+        helper
+            .runMigrationsAndValidate(
+                DB_NAME,
+                11,
+                true,
+                TempoDatabase.MIGRATION_10_11,
+            ).use { db ->
+                db.execSQL(
+                    """
+                    INSERT INTO task_attachments (taskId, displayName, mimeType, sizeBytes, storedName)
+                    VALUES (1, 'lease.pdf', 'application/pdf', 2048, 'abc')
+                    """.trimIndent(),
+                )
+                db.query("SELECT displayName FROM task_attachments WHERE taskId = 1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.getString(0)).isEqualTo("lease.pdf")
+                }
+                db.query("SELECT title FROM tasks WHERE id = 1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.getString(0)).isEqualTo("Pay rent")
+                }
+            }
+    }
 }

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Task attachments (#380): only the private attachments folder is shareable, one file at a time
+     with a read grant, so a viewer app can open what the user tapped and nothing else. -->
+<paths>
+    <files-path name="attachments" path="attachments/" />
+</paths>

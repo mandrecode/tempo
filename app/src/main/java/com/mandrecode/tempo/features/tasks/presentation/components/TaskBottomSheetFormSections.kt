@@ -109,6 +109,16 @@ internal fun TaskBottomSheetBody(
             actions = actions,
         )
 
+        actions.attachmentActions?.let { attachmentActions ->
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+            TaskAttachmentsSection(
+                attachments = state.formState.attachments,
+                onAddAttachments = attachmentActions.onAddAttachments,
+                onRemoveAttachment = attachmentActions.onRemoveAttachment,
+                onOpenAttachmentFailed = attachmentActions.onOpenAttachmentFailed,
+            )
+        }
+
         TaskBottomSheetFooter(
             isEditingTask = state.isEditingTask,
             taskTitle = state.taskTitle,

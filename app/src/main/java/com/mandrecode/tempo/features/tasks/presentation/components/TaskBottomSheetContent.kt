@@ -78,6 +78,7 @@ internal fun TaskBottomSheetContent(
     onToggleCompletion: ((Task) -> Unit)? = null,
     placement: SheetPlacement? = null,
     dismissRequestKey: Int = 0,
+    attachmentActions: TaskAttachmentActions? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -424,6 +425,7 @@ internal fun TaskBottomSheetContent(
                                 )
                             }
                         },
+                        attachmentActions = attachmentActions,
                     ),
                 focusConfig =
                     TaskBottomSheetFocusConfig(

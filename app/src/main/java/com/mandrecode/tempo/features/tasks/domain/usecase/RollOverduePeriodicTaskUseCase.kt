@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.tasks.domain.usecase
 
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.util.TaskReminderDateUtil
@@ -18,6 +19,7 @@ class RollOverduePeriodicTaskUseCase
     constructor(
         private val taskRepository: TaskRepository,
         private val taskReminderScheduler: TaskReminderScheduler,
+        private val taskAttachmentRepository: TaskAttachmentRepository,
     ) {
         sealed class Result {
             data object NotApplicable : Result()
@@ -138,6 +140,8 @@ class RollOverduePeriodicTaskUseCase
 
             taskRepository.updateTaskNextInstanceId(currentTask.id, newParentId)
             cloneSubtasksUnder(newParentId, subtasksBefore)
+            // The next occurrence is the same piece of work, so it keeps the same files.
+            taskAttachmentRepository.copyAttachments(currentTask.id, newParentId)
 
             return TransactionResult.Committed(
                 RolloverCommit(

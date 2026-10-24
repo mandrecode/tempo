@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.tasks.domain.usecase
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import com.mandrecode.tempo.features.tasks.domain.util.TaskReminderDateUtil
@@ -21,6 +22,7 @@ class ToggleTaskCompletionUseCase
         private val taskReminderScheduler: TaskReminderScheduler,
         private val updateTaskUseCase: UpdateTaskUseCase,
         private val dailyActivityRecorder: DailyActivityRecorder,
+        private val taskAttachmentRepository: TaskAttachmentRepository,
     ) {
         sealed class Result {
             data class PeriodicCompleted(
@@ -153,6 +155,8 @@ class ToggleTaskCompletionUseCase
                 if (newParentId > 0) {
                     taskRepository.updateTaskNextInstanceId(currentTask.id, newParentId)
                     cloneSubtasksUnder(newParentId, subtasksBefore)
+                    // The next occurrence is the same piece of work, so it keeps the same files.
+                    taskAttachmentRepository.copyAttachments(currentTask.id, newParentId)
                     nextInstance = nextTaskInstance.copy(id = newParentId)
                 }
             }

@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.di.DefaultDispatcher
 import com.mandrecode.tempo.core.ui.components.SnackbarBoldSegment
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateCategoryUseCase
@@ -62,6 +63,7 @@ class TasksViewModel
         @DefaultDispatcher internal val defaultDispatcher: CoroutineDispatcher,
         internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
         internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
+        internal val taskAttachmentRepository: TaskAttachmentRepository,
         private val clock: Clock,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
@@ -140,6 +142,7 @@ class TasksViewModel
 
         init {
             loadData()
+            observeEditedTaskAttachments()
         }
 
         /**
@@ -194,6 +197,9 @@ class TasksViewModel
                         event.minute,
                     )
                 is TasksContract.UiEvent.ClearReminder -> clearReminder()
+                is TasksContract.UiEvent.AddAttachments -> addAttachments(event.uris)
+                is TasksContract.UiEvent.RemoveAttachment -> removeAttachment(event.attachment)
+                is TasksContract.UiEvent.AttachmentOpenFailed -> onAttachmentOpenFailed()
                 is TasksContract.UiEvent.SetPeriodicity -> onSetPeriodicity(event.periodicity)
                 is TasksContract.UiEvent.ClearPeriodicity -> onClearPeriodicity()
                 is TasksContract.UiEvent.SetPeriodicityInterval -> onSetPeriodicityInterval(event.interval)

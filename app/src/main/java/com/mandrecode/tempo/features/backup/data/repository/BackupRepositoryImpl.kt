@@ -170,6 +170,10 @@ class BackupRepositoryImpl
                 database.habitChainDao().deleteAllHabitChains()
                 database.habitDao().deleteAllHabits()
                 database.taskDao().deleteAllTasks()
+                // The backup carries no attachments, and its tasks come back under their old ids:
+                // rows left here would hang a deleted task's files on whichever imported task
+                // reuses its id. The files themselves go at the next start (pruneOrphans).
+                database.taskAttachmentDao().deleteAll()
                 database.categoryDao().deleteAllCategories()
 
                 data.categories.forEach { database.categoryDao().insertCategory(it.toEntity()) }

@@ -38,6 +38,7 @@ fun TaskBottomSheet(
     onToggleCompletion: ((Task) -> Unit)? = null,
     placement: SheetPlacement? = null,
     dismissRequestKey: Int = 0,
+    attachmentActions: TaskAttachmentActions? = null,
 ) {
     TaskBottomSheetContent(
         categories = categories,
@@ -62,5 +63,6 @@ fun TaskBottomSheet(
         onToggleCompletion = onToggleCompletion,
         placement = placement,
         dismissRequestKey = dismissRequestKey,
+        attachmentActions = attachmentActions,
     )
 }
