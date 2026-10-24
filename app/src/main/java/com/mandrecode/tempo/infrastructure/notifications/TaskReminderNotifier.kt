@@ -8,6 +8,7 @@ import androidx.core.app.NotificationCompat
 import com.mandrecode.tempo.MainActivity
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.infrastructure.focus.StartFocusSessionReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.TaskReminderReceiver
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -92,10 +93,31 @@ class TaskReminderNotifier
                         R.drawable.ic_check,
                         context.getString(R.string.mark_as_completed),
                         markAsCompletePendingIntent,
+                    ).addAction(
+                        R.drawable.ic_play_arrow,
+                        context.getString(R.string.task_reminder_start_session),
+                        startSessionPendingIntent(task.id, taskRequestCode),
                     ).build()
 
             notificationManager.notify(taskRequestCode, notification)
         }
+
+        /**
+         * Same request code as the completion action: broadcasts to different receivers are
+         * distinct PendingIntents, so the two never overwrite each other.
+         */
+        private fun startSessionPendingIntent(
+            taskId: Long,
+            requestCode: Int,
+        ): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                requestCode,
+                Intent(context, StartFocusSessionReceiver::class.java).apply {
+                    putExtra(TaskReminderReceiver.EXTRA_TASK_ID, taskId)
+                },
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
 
         /**
          * Embeds the task's current reminderDate as [MarkAsCompletedReceiver.EXTRA_ORIGINAL_REMINDER_DATE]
