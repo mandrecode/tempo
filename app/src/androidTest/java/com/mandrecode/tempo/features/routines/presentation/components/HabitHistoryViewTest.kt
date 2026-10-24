@@ -5,12 +5,15 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
@@ -18,6 +21,8 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
@@ -54,6 +59,25 @@ class HabitHistoryViewTest {
         }
 
         composeTestRule.onNodeWithText("3 day streak", substring = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun displaysEncouragingStreakLabel_afterALoneMissedDay() {
+        // Yesterday (Feb 23) was missed and today is still open.
+        val history = "2026-02-21,2026-02-22"
+        val createdDate = LocalDate(2026, 1, 1)
+
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitHistoryView(
+                    completionHistory = history,
+                    createdDate = createdDate,
+                    today = fixedToday,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("2 day streak, keep going!", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -153,8 +177,8 @@ class HabitHistoryViewTest {
 
     @Test
     fun displaysCorrectDaysLabel_whenCompletionsAreBeforeCreatedDate() {
-        // Created today, but backfilled for yesterday and the day before
-        val history = "2026-02-22,2026-02-23"
+        // Created today, but backfilled three days ago; the two missed days since break the streak
+        val history = "2026-02-21"
 
         composeTestRule.setContent {
             TempoTheme {
@@ -166,8 +190,8 @@ class HabitHistoryViewTest {
             }
         }
 
-        // Even though created today, it should expand to show the 3 days (22nd, 23rd, 24th)
-        composeTestRule.onNodeWithText("Last 3 days", substring = true).assertIsDisplayed()
+        // Even though created today, it should expand to show the 4 days (21st to 24th)
+        composeTestRule.onNodeWithText("Last 4 days", substring = true).assertIsDisplayed()
     }
 
     @Test
@@ -243,6 +267,76 @@ class HabitHistoryViewTest {
                 .size
 
         assertThat(dotsAfterToggle).isEqualTo(dotsBeforeToggle)
+    }
+
+    @Test
+    fun keepsDotsVisible_withRecoveringLabelAtLargeFontScale() {
+        // Yesterday was missed, so the longer recovering copy is shown.
+        val history = "2026-02-21,2026-02-22"
+        val createdDate = LocalDate(2026, 1, 1)
+        val historySlotTag = "history_slot"
+
+        composeTestRule.setContent {
+            TempoTheme {
+                val density = LocalDensity.current
+                CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                    Row(
+                        modifier =
+                            Modifier
+                                .width(320.dp)
+                                .padding(horizontal = 24.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(modifier = Modifier.width(48.dp))
+                        Box(
+                            modifier =
+                                Modifier
+                                    .weight(1f)
+                                    .testTag(historySlotTag),
+                        ) {
+                            HabitHistoryView(
+                                completionHistory = history,
+                                createdDate = createdDate,
+                                modifier = Modifier.fillMaxWidth(),
+                                today = fixedToday,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        val labelNode = composeTestRule.onNodeWithText("keep going!", substring = true)
+        labelNode.assertIsDisplayed()
+        val textLayouts = mutableListOf<TextLayoutResult>()
+        labelNode
+            .fetchSemanticsNode()
+            .config[SemanticsActions.GetTextLayoutResult]
+            .action
+            ?.invoke(textLayouts)
+        assertThat(textLayouts).isNotEmpty()
+        assertThat(textLayouts.first().hasVisualOverflow).isFalse()
+        val dotRowWidth =
+            composeTestRule
+                .onNodeWithTag(HABIT_HISTORY_DOT_ROW_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+        val streakPillWidth =
+            composeTestRule
+                .onNodeWithTag(HABIT_HISTORY_STREAK_PILL_TEST_TAG)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+        val historySlotWidth =
+            composeTestRule
+                .onNodeWithTag(historySlotTag)
+                .fetchSemanticsNode()
+                .boundsInRoot
+                .width
+
+        assertThat(dotRowWidth).isGreaterThan(0f)
+        assertThat(streakPillWidth).isAtMost(historySlotWidth / 2f)
     }
 
     @Test

@@ -4,6 +4,7 @@ import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusHeadlineBand
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
+import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
 import kotlinx.collections.immutable.ImmutableList
@@ -133,12 +134,25 @@ object FocusContract {
          * The row is searched too, not only the sections. It normally mirrors them, but this is a
          * lookup and a duplicate costs nothing, whereas missing the task the session is on costs
          * the screen its subject.
+         *
+         * Subtasks as well: a subtask's own reminder can start a session on it from the
+         * notification, and the agenda only ever shows it nested inside its parent.
          */
         private fun entryFor(taskId: Long?): FocusAgendaItem.TaskEntry? {
             if (taskId == null) return null
-            return (upNext + overdue + todayItems)
-                .filterIsInstance<FocusAgendaItem.TaskEntry>()
-                .firstOrNull { it.task.id == taskId }
+            val entries = (upNext + overdue + todayItems).filterIsInstance<FocusAgendaItem.TaskEntry>()
+            return entries.firstOrNull { it.task.id == taskId }
+                ?: entries.firstNotNullOfOrNull { parent ->
+                    parent.subtasks
+                        .firstOrNull { it.id == taskId }
+                        ?.let { subtask ->
+                            FocusAgendaItem.TaskEntry(
+                                task = subtask,
+                                categoryName = parent.categoryName,
+                                focusToday = parent.subtaskFocusToday[subtask.id] ?: TaskFocusToday(),
+                            )
+                        }
+                }
         }
     }
 
