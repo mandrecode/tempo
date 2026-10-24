@@ -28,6 +28,11 @@ sealed interface FocusAgendaItem {
          * if nothing had happened.
          */
         val focusToday: TaskFocusToday = TaskFocusToday(),
+        /**
+         * Each subtask's own [focusToday], by id. A subtask's reminder can start a session on it
+         * directly, and that session's card has only this entry to read the subtask's time from.
+         */
+        val subtaskFocusToday: Map<Long, TaskFocusToday> = emptyMap(),
     ) : FocusAgendaItem {
         val sessionsToday: Int get() = focusToday.sessions
         val minutesToday: Int get() = focusToday.minutes
