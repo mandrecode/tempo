@@ -36,7 +36,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -156,7 +155,7 @@ private fun TaskTitleSection(
                 Modifier
                     .weight(1f)
                     .testTag(TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG)
-                    .focusRequester(focusConfig.titleFocusRequester),
+                    .taskTitleFocus(focusConfig),
             keyboardOptions =
                 KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
@@ -244,7 +243,7 @@ private fun TaskDescriptionField(
             Modifier
                 .fillMaxWidth()
                 .testTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
-                .focusRequester(focusConfig.descriptionFocusRequester),
+                .taskDescriptionFocus(focusConfig),
         maxLines = 5,
         keyboardOptions =
             KeyboardOptions(
