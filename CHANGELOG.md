@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.15.0](https://github.com/mandrecode/tempo/compare/v1.14.0...v1.15.0) (2026-10-24)
+
+
+### Features
+
+* **#351:** move clear completed into the completed separator row ([#436](https://github.com/mandrecode/tempo/issues/436)) ([8ced334](https://github.com/mandrecode/tempo/commit/8ced33458452b0cda5ff24f811413556ce017bc4))
+* **#379:** add Start session action to task reminder notifications ([#432](https://github.com/mandrecode/tempo/issues/432)) ([59aaded](https://github.com/mandrecode/tempo/commit/59aaded7ce541586ccfa212db42f9972cd4deec5))
+* **#422:** missing one day doesn't break your streak ([#430](https://github.com/mandrecode/tempo/issues/430)) ([e332eb0](https://github.com/mandrecode/tempo/commit/e332eb045760b1779c3c620b7c5ddb47704f4996))
+
 ## [1.14.0](https://github.com/mandrecode/tempo/compare/v1.13.5...v1.14.0) (2026-10-01)
 
 
