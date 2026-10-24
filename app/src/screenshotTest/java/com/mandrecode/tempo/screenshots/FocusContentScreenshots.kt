@@ -7,7 +7,6 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.presentation.FocusContent
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
-import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.datetime.DateTimeUnit
@@ -37,16 +36,6 @@ private fun task(
     reminderDate = hour?.let { LocalDateTime(date, LocalTime(it, 0)) },
 )
 
-private fun habit(
-    id: Long,
-    title: String,
-) = Habit(
-    id = id,
-    title = title,
-    description = "",
-    createdDate = LocalDateTime(today, LocalTime(0, 0)),
-)
-
 private fun history(vararg pairs: Pair<Int, Int>) =
     pairs
         .mapIndexed { index, (scheduled, completed) ->
@@ -62,9 +51,9 @@ private val midDayState =
         isLoading = false,
         today = today,
         streakDays = 14,
-        history = history(3 to 3, 2 to 1, 0 to 0, 4 to 4, 2 to 2, 3 to 1, 9 to 5),
-        scheduledCount = 9,
-        completedCount = 5,
+        history = history(3 to 3, 2 to 1, 0 to 0, 4 to 4, 2 to 2, 3 to 1, 5 to 1),
+        scheduledCount = 5,
+        completedCount = 1,
         upNext =
             persistentListOf(
                 FocusAgendaItem.TaskEntry(
@@ -88,8 +77,9 @@ private val midDayState =
                 FocusAgendaItem.TaskEntry(
                     task(1, "Finish Q3 budget report", hour = 9, priority = Priority.HIGH),
                 ),
+                FocusAgendaItem.TaskEntry(task(2, "Reply to the design review", hour = 11, priority = Priority.MEDIUM)),
                 FocusAgendaItem.TaskEntry(task(3, "Reply to client emails", hour = 12)),
-                FocusAgendaItem.HabitEntry(habit(1, "Drink Water"), isCompleted = true),
+                FocusAgendaItem.TaskEntry(task(5, "Send the invoice", hour = 14, isCompleted = true)),
             ),
         undatedTaskCount = 12,
     )

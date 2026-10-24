@@ -4,14 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
-import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.domain.usecase.FocusSessionUseCases
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusAgendaUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusHistoryUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.GetFocusStreakUseCase
 import com.mandrecode.tempo.features.focus.domain.usecase.RecordDailyActivityUseCase
-import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.GetUndatedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
@@ -46,7 +44,6 @@ class FocusViewModel
         private val toggleTaskCompletion: ToggleTaskCompletionUseCase,
         private val focusSessionRepository: FocusSessionRepository,
         private val focusSessionUseCases: FocusSessionUseCases,
-        private val toggleHabitCompletion: ToggleHabitCompletionUseCase,
         internal val getUndatedTasks: GetUndatedTasksUseCase,
         internal val updateTask: UpdateTaskUseCase,
         internal val restoreTaskReminders: RestoreTaskRemindersUseCase,
@@ -80,6 +77,7 @@ class FocusViewModel
             when (event) {
                 is FocusContract.UiEvent.ToggleTaskCompletion ->
                     viewModelScope.launch {
+                        refreshDayIfStale()
                         toggleTaskCompletion(event.task)
                         // Finishing the work is finishing the session: no point counting down on
                         // something already done.
@@ -87,19 +85,6 @@ class FocusViewModel
                         if (session?.taskId == event.task.id && !event.task.isCompleted) {
                             finishSession()
                         }
-                    }
-
-                is FocusContract.UiEvent.ToggleHabitCompletion ->
-                    viewModelScope.launch {
-                        toggleHabitCompletion(event.habitId, event.isCompleted, refreshDayIfStale())
-                    }
-
-                is FocusContract.UiEvent.ToggleChainCompletion ->
-                    viewModelScope.launch { toggleChain(event.chainId, event.isCompleted) }
-
-                is FocusContract.UiEvent.ToggleChainExpanded ->
-                    mutableUiState.update {
-                        it.copy(expandedChainIds = it.expandedChainIds.toggling(event.chainId))
                     }
 
                 is FocusContract.UiEvent.ToggleSubtasksExpanded ->
@@ -118,7 +103,6 @@ class FocusViewModel
                     mutableUiState.update {
                         it.copy(
                             taskEditor = FocusContract.TaskEditorTarget.Existing(event.task),
-                            routineEditor = null,
                         )
                     }
 
@@ -126,29 +110,11 @@ class FocusViewModel
                     mutableUiState.update {
                         it.copy(
                             taskEditor = FocusContract.TaskEditorTarget.NewSubtask(event.parentTaskId),
-                            routineEditor = null,
-                        )
-                    }
-
-                // One sheet at a time: opening a routine closes whatever the task editor had.
-                is FocusContract.UiEvent.EditHabit ->
-                    mutableUiState.update {
-                        it.copy(
-                            routineEditor = FocusContract.RoutineEditorTarget.SingleHabit(event.habit),
-                            taskEditor = null,
-                        )
-                    }
-
-                is FocusContract.UiEvent.EditChain ->
-                    mutableUiState.update {
-                        it.copy(
-                            routineEditor = FocusContract.RoutineEditorTarget.Chain(event.chain),
-                            taskEditor = null,
                         )
                     }
 
                 FocusContract.UiEvent.DismissEditor ->
-                    mutableUiState.update { it.copy(taskEditor = null, routineEditor = null) }
+                    mutableUiState.update { it.copy(taskEditor = null) }
 
                 FocusContract.UiEvent.DismissPendingStart ->
                     mutableUiState.update { it.copy(pendingStart = null) }
@@ -406,20 +372,6 @@ class FocusViewModel
                     }
                 }
             return day
-        }
-
-        private suspend fun toggleChain(
-            chainId: Long,
-            isCompleted: Boolean,
-        ) {
-            val chain =
-                (mutableUiState.value.overdue + mutableUiState.value.todayItems)
-                    .filterIsInstance<FocusAgendaItem.ChainEntry>()
-                    .firstOrNull { it.chain.id == chainId } ?: return
-            val day = refreshDayIfStale()
-            chain.habits.forEach { habit ->
-                toggleHabitCompletion(habit.id, isCompleted, day)
-            }
         }
 
         internal fun sendEffect(effect: FocusContract.UiEffect) {

@@ -80,6 +80,10 @@
             android:exported="false" />
 
         <receiver
+            android:name=".infrastructure.focus.StartFocusSessionReceiver"
+            android:exported="false" />
+
+        <receiver
             android:name=".infrastructure.reminders.receivers.BootAndTimeReceiver"
             android:enabled="true"
             android:exported="false">

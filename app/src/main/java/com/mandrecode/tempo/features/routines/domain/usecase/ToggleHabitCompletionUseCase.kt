@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.routines.domain.usecase
 
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
-import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
 import com.mandrecode.tempo.features.routines.domain.scheduler.HabitReminderScheduler
@@ -22,7 +21,6 @@ class ToggleHabitCompletionUseCase
         private val habitChainRepository: HabitChainRepository,
         private val habitReminderScheduler: HabitReminderScheduler,
         private val updateHabitUseCase: UpdateHabitUseCase,
-        private val dailyActivityRecorder: DailyActivityRecorder,
         private val clock: Clock,
     ) {
         suspend operator fun invoke(
@@ -75,10 +73,6 @@ class ToggleHabitCompletionUseCase
 
                 restoreUncompletedChains(habitId, selectedDate, now)
             }
-
-            // Recorded after the toggle so the recount sees the new completion state. Only today
-            // is tracked, so toggling a past day changes no counts.
-            dailyActivityRecorder.recordToday()
         }
 
         private suspend fun restoreUncompletedChains(

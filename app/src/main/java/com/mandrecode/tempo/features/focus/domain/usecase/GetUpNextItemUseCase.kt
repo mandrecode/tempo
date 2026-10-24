@@ -12,9 +12,7 @@ import jakarta.inject.Inject
  * order is today's work and then whatever is left over from before it, exactly as the sections
  * beneath are read down.
  *
- * Tasks only. The row's whole purpose is the one thing you start a session on, and a habit is not
- * something you sit down and run a timer against — it is ticked off in passing. Completed work is
- * never a candidate.
+ * Completed work is never a candidate.
  */
 class GetUpNextItemUseCase
     @Inject

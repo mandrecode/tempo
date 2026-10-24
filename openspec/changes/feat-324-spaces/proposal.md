@@ -45,3 +45,7 @@ Explicitly **not** in this change: sharing a whole space, per-space cloud sync, 
 - **Backup**: `BackupFileDto` gains a spaces section and `spaceId` fields; schema version bumps.
 - **Widget**: the quick-task widget must resolve a target space.
 - **Downstream**: constrains [#298](https://github.com/mandrecode/tempo/issues/298) — space assignment is user-scoped metadata and must never travel inside a shared category's payload.
+
+## Compatibility with task-only Focus (#404)
+
+Focus items are tasks only. The cross-space agenda, density counts, imminence rules, Up next, and session rules apply to tasks; habits and chains remain in Routines. Undated tasks remain deliberately scheduled through the planning picker.

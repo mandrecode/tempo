@@ -4,14 +4,11 @@ import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
-import com.mandrecode.tempo.features.routines.domain.model.Habit
 import io.mockk.coEvery
 import io.mockk.coVerify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
 import org.junit.Test
 import kotlin.time.Duration.Companion.minutes
 
@@ -72,23 +69,6 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
         }
 
     @Test
-    fun `a day of habits alone leaves the row with nothing to preview`() =
-        runTest {
-            val habitEntry =
-                FocusAgendaItem.HabitEntry(
-                    habit = focusHabit(4),
-                    isCompleted = false,
-                )
-            stubDay(agendaOf(todayItems = listOf(habitEntry)))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.upNext).isEmpty()
-            assertThat(viewModel.uiState.value.sessionEntry).isNull()
-        }
-
-    @Test
     fun `starting a session takes the user into it`() =
         runTest {
             val entry = FocusAgendaItem.TaskEntry(task(9, "Report"))
@@ -121,32 +101,6 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
                 assertThat(awaitItem()).isEqualTo(FocusContract.UiEffect.OpenSessionScreen)
                 cancelAndIgnoreRemainingEvents()
             }
-        }
-
-    @Test
-    fun `a day of habits alone never reaches the session use case`() =
-        runTest {
-            val habitEntry =
-                FocusAgendaItem.HabitEntry(
-                    habit =
-                        com.mandrecode.tempo.features.routines.domain.model
-                            .Habit(
-                                id = 1,
-                                title = "Water",
-                                description = "",
-                                createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                            ),
-                    isCompleted = false,
-                )
-            stubDay(agendaOf(todayItems = listOf(habitEntry)))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(FocusContract.UiEvent.StartSession())
-            advanceUntilIdle()
-
-            coVerify(exactly = 0) { focusSessionUseCases.start(any(), any()) }
         }
 
     @Test
@@ -378,6 +332,29 @@ class FocusSessionViewModelTest : FocusViewModelHarness() {
             advanceUntilIdle()
 
             coVerify { toggleTaskCompletion(open) }
+            coVerify { focusSessionUseCases.end() }
+        }
+
+    @Test
+    fun `marking done a subtask session started from its reminder completes the subtask`() =
+        runTest {
+            // A subtask's own reminder can start a session on it, while the agenda only ever
+            // shows the subtask nested inside its parent.
+            val parent = task(4, "Report")
+            val subtask = task(5, "Charts")
+            stubDay(agendaOf(todayItems = listOf(FocusAgendaItem.TaskEntry(parent, subtasks = listOf(subtask)))))
+            val session = FocusSession.start(5, "Charts", nowInstant)
+            sessionFlow.value = session
+            coEvery { focusSessionUseCases.end() } returns session
+
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.CompleteSessionTask)
+            advanceUntilIdle()
+
+            coVerify { toggleTaskCompletion(subtask) }
+            coVerify(exactly = 0) { toggleTaskCompletion(parent) }
             coVerify { focusSessionUseCases.end() }
         }
 

@@ -3,7 +3,6 @@ package com.mandrecode.tempo.features.focus.domain.usecase
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
-import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -30,22 +29,6 @@ class GetUpNextItemUseCaseTest {
         ),
     )
 
-    private fun habitEntry(
-        id: Long,
-        hour: Int?,
-        isCompleted: Boolean = false,
-    ) = FocusAgendaItem.HabitEntry(
-        habit =
-            Habit(
-                id = id,
-                title = "Habit $id",
-                description = "",
-                createdDate = LocalDateTime(today, LocalTime(0, 0)),
-                reminderDate = hour?.let { LocalDateTime(today, LocalTime(it, 0)) },
-            ),
-        isCompleted = isCompleted,
-    )
-
     @Test
     fun `no candidates yields nothing`() {
         assertThat(useCase(emptyList())).isEmpty()
@@ -68,30 +51,6 @@ class GetUpNextItemUseCaseTest {
         val open = taskEntry(2, hour = 16)
 
         assertThat(useCase(listOf(done, open))).containsExactly(open)
-    }
-
-    @Test
-    fun `everything completed yields nothing`() {
-        val candidates =
-            listOf(
-                taskEntry(1, hour = 8, isCompleted = true),
-                habitEntry(2, hour = 9, isCompleted = true),
-            )
-
-        assertThat(useCase(candidates)).isEmpty()
-    }
-
-    @Test
-    fun `a habit never takes the slot, however early it is due`() {
-        val habit = habitEntry(1, hour = 7)
-        val task = taskEntry(2, hour = 9)
-
-        assertThat(useCase(listOf(task, habit))).containsExactly(task)
-    }
-
-    @Test
-    fun `a day of habits alone leaves the slot empty`() {
-        assertThat(useCase(listOf(habitEntry(1, hour = 7), habitEntry(2, hour = 8)))).isEmpty()
     }
 
     @Test
