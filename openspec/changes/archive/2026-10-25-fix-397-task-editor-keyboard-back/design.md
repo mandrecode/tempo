@@ -27,6 +27,10 @@ through to the sheet handler while disabled. See proposal.md - Why.
   `enabled`. Progress is collected and ignored; completion calls `focusManager.clearFocus()` once;
   cancellation rethrows without side effects. Alternative: `BackHandler` — rejected because a
   non-predictive callback would let the system play the default back preview.
+- **Pre-Android 13 back key is taken before the keyboard.** Without predictive back the keyboard
+  consumes the first back key and hides while the field keeps focus, which would cost an extra back
+  press. On API < 33 the task fields intercept the back key before the soft keyboard and clear focus
+  themselves. API 33+ is left to the predictive handler so a 3-button back key is never handled twice.
 - **No change to the shared sheet.** Habit, category, and sort sheets therefore keep baseline
   behavior.
 

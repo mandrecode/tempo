@@ -430,6 +430,7 @@ internal fun TaskBottomSheetContent(
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
                         focusState = editorFocusState,
+                        clearEditorFocus = { focusManager.clearFocus() },
                     ),
             )
         }

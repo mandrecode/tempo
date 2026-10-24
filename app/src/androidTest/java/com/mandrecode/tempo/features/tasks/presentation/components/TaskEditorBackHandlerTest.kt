@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation.components
 
+import android.view.KeyEvent
 import androidx.activity.BackEventCompat
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.PredictiveBackHandler
@@ -10,7 +11,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsFocused
 import androidx.compose.ui.test.assertIsNotFocused
@@ -35,7 +37,7 @@ class TaskEditorBackHandlerTest {
     private var sheetProgressEvents = 0
     private var sheetDismissals = 0
 
-    private fun renderEditor() {
+    private fun renderEditor(interceptsLegacyImeBack: Boolean = false) {
         composeTestRule.setContent {
             PredictiveBackHandler { progress ->
                 progress.collect { sheetProgressEvents++ }
@@ -43,24 +45,29 @@ class TaskEditorBackHandlerTest {
             }
             val focusState = remember { TaskEditorFocusState() }
             TaskEditorBackHandler(focusState = focusState)
+            val focusManager = LocalFocusManager.current
+            val focusConfig =
+                remember {
+                    TaskBottomSheetFocusConfig(
+                        titleFocusRequester = FocusRequester(),
+                        descriptionFocusRequester = FocusRequester(),
+                        focusState = focusState,
+                        clearEditorFocus = { focusManager.clearFocus() },
+                        interceptsLegacyImeBack = interceptsLegacyImeBack,
+                    )
+                }
             Column {
                 var title by remember { mutableStateOf("") }
                 var description by remember { mutableStateOf("") }
                 TextField(
                     value = title,
                     onValueChange = { title = it },
-                    modifier =
-                        Modifier
-                            .testTag(TITLE_TAG)
-                            .onFocusChanged { focusState.onTitleFocusChanged(it.isFocused) },
+                    modifier = Modifier.testTag(TITLE_TAG).taskTitleFocus(focusConfig),
                 )
                 TextField(
                     value = description,
                     onValueChange = { description = it },
-                    modifier =
-                        Modifier
-                            .testTag(DESCRIPTION_TAG)
-                            .onFocusChanged { focusState.onDescriptionFocusChanged(it.isFocused) },
+                    modifier = Modifier.testTag(DESCRIPTION_TAG).taskDescriptionFocus(focusConfig),
                 )
             }
         }
@@ -124,17 +131,54 @@ class TaskEditorBackHandlerTest {
         description.performClick()
         composeTestRule.waitForIdle()
 
+        val dispatcher = composeTestRule.activity.onBackPressedDispatcher
         composeTestRule.runOnUiThread {
-            val dispatcher = composeTestRule.activity.onBackPressedDispatcher
             dispatcher.dispatchOnBackStarted(backEvent(0f))
             dispatcher.dispatchOnBackProgressed(backEvent(0.5f))
-            dispatcher.dispatchOnBackCancelled()
         }
+        // Let the gesture collectors drain queued progress before cancelling, so a sheet that
+        // wrongly owned the gesture would have counted it.
+        composeTestRule.waitForIdle()
+        description.assertIsFocused()
+        assertEquals(0, sheetProgressEvents)
+
+        composeTestRule.runOnUiThread { dispatcher.dispatchOnBackCancelled() }
         composeTestRule.waitForIdle()
 
         description.assertIsFocused()
         assertEquals(0, sheetProgressEvents)
         assertEquals(0, sheetDismissals)
+    }
+
+    @Test
+    fun givenLegacyImeBack_whenSystemBackKeyPressedTwice_thenFirstClearsFocusAndSecondReachesSheet() {
+        renderEditor(interceptsLegacyImeBack = true)
+        val title = composeTestRule.onNodeWithTag(TITLE_TAG)
+        title.performClick()
+        composeTestRule.waitForIdle()
+
+        sendLegacyImeBackKey()
+        title.assertIsNotFocused()
+        assertEquals(0, sheetDismissals)
+
+        pressBack()
+        assertEquals(1, sheetDismissals)
+    }
+
+    /**
+     * Before Android 13 the window delivers the back key to the view hierarchy's pre-IME stage and
+     * only then to the keyboard. Newer releases route the key to predictive back first, so the key is
+     * injected at that same pre-IME stage to exercise the legacy path on any test device.
+     */
+    private fun sendLegacyImeBackKey() {
+        val view = composeTestRule.activity.window.decorView
+        composeTestRule.runOnUiThread {
+            listOf(KeyEvent.ACTION_DOWN, KeyEvent.ACTION_UP).forEach { action ->
+                val consumed = view.dispatchKeyEventPreIme(KeyEvent(action, KeyEvent.KEYCODE_BACK))
+                assertEquals(true, consumed)
+            }
+        }
+        composeTestRule.waitForIdle()
     }
 
     private fun backEvent(progress: Float) =
