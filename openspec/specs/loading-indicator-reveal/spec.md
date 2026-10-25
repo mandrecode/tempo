@@ -20,12 +20,19 @@ The shared loading indicator SHALL stay invisible for a grace period of 400 ms a
 - **WHEN** the indicator is created with a reveal delay of zero
 - **THEN** it is visible from the first frame
 
-### Requirement: Screens appear whole on first load
-On a cold start, the launch splash SHALL stay up (within a 2.5 s cap) until the app's settings and the first screen's first content have loaded, so that it hands over directly to a finished screen. Every top-level tab SHALL have its first data loaded in the background once the database is ready, so that a tab opened later appears complete on its first frame. A tab opened before its data is ready SHALL fade its content in over its loading state rather than swapping it in on a single frame. The what's-new sheet SHALL NOT open until the splash has handed over.
+### Requirement: Cold start hands over to a finished screen
+On a cold start, the launch splash SHALL stay up, within a 2.5 s cap, until the app's settings and the first screen's first content have loaded. The what's-new sheet SHALL NOT open until the splash has handed over.
 
 #### Scenario: Cold start
 - **WHEN** the app is launched cold onto Focus
 - **THEN** the splash is followed directly by the complete Focus screen, with no frame of only its background, title and navigation bar
+
+#### Scenario: What's new after an update
+- **WHEN** a what's-new entry is pending on a cold start
+- **THEN** the sheet opens over the complete first screen, after the splash has handed over
+
+### Requirement: Tabs open fully drawn
+Every top-level tab SHALL have its first data loaded in the background once the database is ready, so that a tab opened later appears complete on its first frame. A tab opened before its data is ready SHALL fade its content in over its loading state.
 
 #### Scenario: First visit to another tab
 - **WHEN** the user opens Routines for the first time in a session, after the app has started
@@ -34,7 +41,3 @@ On a cold start, the launch splash SHALL stay up (within a 2.5 s cap) until the 
 #### Scenario: Tab opened before its data is ready
 - **WHEN** a tab is opened before its background load has finished
 - **THEN** its content fades in, rather than appearing all at once over the bare background
-
-#### Scenario: What's new after an update
-- **WHEN** a what's-new entry is pending on a cold start
-- **THEN** the sheet opens over the complete first screen, after the splash has handed over
