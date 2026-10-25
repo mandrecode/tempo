@@ -1066,7 +1066,11 @@ internal fun RoutinesViewModel.checkPermissionsAndSyncRemindersInternal() {
     if (!permissionInfo.areAllGranted) {
         viewModelScope.launch {
             val habitsWithReminders = habitRepository.getHabitsWithReminders()
-            if (habitsWithReminders.isNotEmpty()) {
+            // The lookup can outlast the grant itself: if permission came back meanwhile, the
+            // grant has already been answered, and flagging now would announce it a second time.
+            val stillMissing =
+                !(permissionChecker.hasNotificationPermissions() && permissionChecker.canScheduleExactAlarms())
+            if (habitsWithReminders.isNotEmpty() && stillMissing) {
                 remindersAwaitingPermission = true
                 mutableUiState.update { it.copy(showPermissionRevokedDialog = true) }
             }

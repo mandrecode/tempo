@@ -8,6 +8,8 @@ Each of the two ViewModels keeps a private `remindersAwaitingPermission` flag. I
 - **Consumed** by `onPermissionsGranted()`. It shows the message only when the flag is set, and clears the flag first. Both the screen's `OnPermissionsGranted` event and the resume check call it, so the first one to see the grant shows the message and the second does nothing.
 - **Cleared** by "clear all reminders".
 
+The revoked-permission branch re-checks permissions after its reminder lookup returns. The lookup is a suspended database query, so the grant can arrive and be announced while it is still running. Setting the flag after that would re-arm an announcement that has already been made, and the next resume would repeat it. The `a slow reminder lookup finishing after the grant does not announce it twice` tests cover this for both screens (Copilot raised it in review).
+
 The previous `wasGrantedBefore` comparison is removed. It was the source of the bug, because it reacted to any transition, whoever caused it.
 
 ## Alternatives considered

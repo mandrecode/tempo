@@ -42,12 +42,14 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -1985,6 +1987,37 @@ class TasksViewModelTest {
         }
 
     // endregion
+
+    /** A reminder lookup that outlasts the grant must not re-arm the announcement it answered. */
+    @Test
+    fun `a slow reminder lookup finishing after the grant does not announce it twice`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            val withReminder = Task(id = 1L, title = "Pay rent", description = "")
+            coEvery { taskRepository.getTasksWithReminders() } returns listOf(withReminder)
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            // Another resume while still denied starts a lookup that takes its time...
+            coEvery { taskRepository.getTasksWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+            // ...and the grant arrives, and is announced, before it finishes.
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
+        }
 
     private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =
         filterIsInstance<TasksContract.UiEffect.ShowSnackbar>().mapNotNull { it.messageResId }
