@@ -8,11 +8,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
@@ -93,22 +95,27 @@ class DayOfWeekSelectorTest {
             }
         }
 
-        val others = listOf("Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
-        listOf("Monday", "Sunday").plus(others).forEach { name ->
+        val others =
+            listOf(
+                "Tuesday" to DayOfWeek.TUESDAY,
+                "Wednesday" to DayOfWeek.WEDNESDAY,
+                "Thursday" to DayOfWeek.THURSDAY,
+                "Friday" to DayOfWeek.FRIDAY,
+                "Saturday" to DayOfWeek.SATURDAY,
+            )
+        listOf("Monday", "Sunday").plus(others.map { it.first }).forEach { name ->
             val bounds = composeTestRule.onNodeWithContentDescription(name).getUnclippedBoundsInRoot()
             assertThat(bounds.width.value).isAtLeast(40f)
             assertThat(bounds.height.value).isAtLeast(48f)
         }
-        others.forEach { name -> composeTestRule.onNodeWithContentDescription(name).performClick() }
-
-        assertThat(days).containsExactly(
-            DayOfWeek.MONDAY,
-            DayOfWeek.TUESDAY,
-            DayOfWeek.WEDNESDAY,
-            DayOfWeek.THURSDAY,
-            DayOfWeek.FRIDAY,
-            DayOfWeek.SATURDAY,
-        )
+        // A real touch at each day's centre, not its semantic click action: the touch areas
+        // overlap at this width, and only hit-testing shows a tap reaching the day under it.
+        var expected = setOf(DayOfWeek.MONDAY)
+        others.forEach { (name, day) ->
+            composeTestRule.onNodeWithContentDescription(name).performTouchInput { click(center) }
+            expected = expected + day
+            assertThat(days).containsExactlyElementsIn(expected)
+        }
         composeTestRule.onNodeWithContentDescription("Sunday").assertIsOff()
     }
 
