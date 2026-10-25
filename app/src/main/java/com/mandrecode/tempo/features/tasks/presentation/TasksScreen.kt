@@ -255,7 +255,12 @@ fun TasksScreen(
                                 bottom = DockedEditorPadding,
                             ),
                 ) {
-                    editorContent(frozenUiState, editorPlacement)
+                    // Only while docked is where the editor belongs. When the window narrows past the
+                    // breakpoint the pane still plays its exit, but the editor has to move to the sheet
+                    // in the same frame, not be in both: a second copy would start empty and lose the draft.
+                    if (isDockedEditor) {
+                        editorContent(frozenUiState, editorPlacement)
+                    }
                 }
             }
         }

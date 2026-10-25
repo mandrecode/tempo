@@ -1,10 +1,25 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.platform.WindowInfo
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.dp
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.preferences.TasksScreenPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.Priority
@@ -26,6 +41,7 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseC
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
+import com.mandrecode.tempo.features.tasks.presentation.components.TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
 import io.mockk.coEvery
 import io.mockk.every
@@ -234,5 +250,42 @@ class TasksScreenTest {
         // Same blank task-creation sheet the in-app "+" button opens (widget entry path)
         composeTestRule.onNodeWithText("New task…").assertIsDisplayed()
         assertThat(consumed).isTrue()
+    }
+
+    /**
+     * Narrowing the window past the docked-pane breakpoint with the editor open moves the editor
+     * into a bottom sheet. The docked pane plays its exit as the sheet appears, and both must not
+     * hold the editor at once: a second copy would start empty and the draft would be lost (#163).
+     */
+    @Test
+    fun shrinkingTheWindow_withTheEditorOpen_keepsOneEditorAndItsDraft() {
+        var widthDp by mutableIntStateOf(1300)
+        composeTestRule.setContent {
+            val density = LocalDensity.current
+            val window = LocalWindowInfo.current
+            val resizable =
+                remember(window, density) {
+                    object : WindowInfo {
+                        override val isWindowFocused: Boolean get() = window.isWindowFocused
+                        override val containerSize: IntSize
+                            get() = with(density) { IntSize(widthDp.dp.roundToPx(), 900.dp.roundToPx()) }
+                    }
+                }
+            CompositionLocalProvider(LocalWindowInfo provides resizable) {
+                TempoTheme { TasksScreen(viewModel = viewModel) }
+            }
+        }
+        composeTestRule.runOnIdle { viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog()) }
+        composeTestRule
+            .onNodeWithTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+            .performTextInput("Call the landlord first")
+
+        widthDp = 400
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onAllNodesWithTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG).assertCountEquals(1)
+        composeTestRule
+            .onNodeWithTag(TASK_BOTTOM_SHEET_DESCRIPTION_FIELD_TEST_TAG)
+            .assertTextContains("Call the landlord first")
     }
 }
