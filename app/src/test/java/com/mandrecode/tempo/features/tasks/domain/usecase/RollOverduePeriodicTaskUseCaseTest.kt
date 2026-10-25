@@ -6,6 +6,7 @@ import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import io.mockk.coEvery
@@ -18,6 +19,7 @@ import org.junit.Before
 import org.junit.Test
 
 class RollOverduePeriodicTaskUseCaseTest {
+    private val taskAttachmentRepository = mockk<TaskAttachmentRepository>(relaxed = true)
     private lateinit var useCase: RollOverduePeriodicTaskUseCase
     private lateinit var taskRepository: TaskRepository
     private lateinit var taskReminderScheduler: TaskReminderScheduler
@@ -33,7 +35,7 @@ class RollOverduePeriodicTaskUseCaseTest {
         }
         coEvery { taskRepository.insertTask(any()) } returns 10L
 
-        useCase = RollOverduePeriodicTaskUseCase(taskRepository, taskReminderScheduler)
+        useCase = RollOverduePeriodicTaskUseCase(taskRepository, taskReminderScheduler, taskAttachmentRepository)
     }
 
     @Test
@@ -56,6 +58,7 @@ class RollOverduePeriodicTaskUseCaseTest {
             assertThat(result).isInstanceOf(RollOverduePeriodicTaskUseCase.Result.CreatedNextInstance::class.java)
             coVerify(exactly = 0) { taskRepository.updateTaskReminderDate(overdueTask.id, any()) }
             coVerify { taskRepository.updateTaskNextInstanceId(1L, 10L) }
+            coVerify { taskAttachmentRepository.copyAttachments(1L, 10L) }
             coVerify { taskRepository.updateTask(capture(updatedOriginalSlot)) }
             coVerify(exactly = 0) { taskReminderScheduler.cancel(overdueTask.copy(nextInstanceId = 10L)) }
             assertRolledOverOriginal(
@@ -253,6 +256,7 @@ class RollOverduePeriodicTaskUseCaseTest {
             assertThat(clone.completedAt).isNull()
             assertThat(clone.reminderDate).isNull()
             assertThat(clone.periodicity).isNull()
+            coVerify { taskAttachmentRepository.copyAttachments(2L, 11L) }
         }
 
     @Test

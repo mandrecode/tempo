@@ -15,11 +15,15 @@
         <exclude domain="database" path="tempo_database-wal"/>
         <exclude domain="database" path="tempo_database-shm"/>
         <exclude domain="sharedpref" path="tempo_secure_prefs.xml"/>
+        <!-- Task attachments are only reachable through rows in the excluded database. -->
+        <exclude domain="file" path="attachments/"/>
     </cloud-backup>
     <device-transfer>
         <exclude domain="database" path="tempo_database"/>
         <exclude domain="database" path="tempo_database-wal"/>
         <exclude domain="database" path="tempo_database-shm"/>
         <exclude domain="sharedpref" path="tempo_secure_prefs.xml"/>
+        <!-- Task attachments are only reachable through rows in the excluded database. -->
+        <exclude domain="file" path="attachments/"/>
     </device-transfer>
 </data-extraction-rules>

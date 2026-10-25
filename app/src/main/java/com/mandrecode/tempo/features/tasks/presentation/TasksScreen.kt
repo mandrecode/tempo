@@ -54,6 +54,7 @@ import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomP
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
 import com.mandrecode.tempo.features.tasks.presentation.components.CategoryEditSheet
+import com.mandrecode.tempo.features.tasks.presentation.components.TaskAttachmentActions
 import com.mandrecode.tempo.features.tasks.presentation.components.TaskBottomSheet
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCategoryDialog
 import com.mandrecode.tempo.features.tasks.presentation.components.dialogs.DeleteCompletedConfirmationDialog
@@ -423,6 +424,12 @@ internal fun TaskEditor(
         onToggleCompletion = { onEvent(TasksContract.UiEvent.ToggleTaskCompletion(it)) },
         placement = placement,
         dismissRequestKey = dismissRequestKey,
+        attachmentActions =
+            TaskAttachmentActions(
+                onAddAttachments = { onEvent(TasksContract.UiEvent.AddAttachments(it)) },
+                onRemoveAttachment = { onEvent(TasksContract.UiEvent.RemoveAttachment(it)) },
+                onAttachmentOpenFail = { onEvent(TasksContract.UiEvent.AttachmentOpenFailed) },
+            ),
     )
 }
 

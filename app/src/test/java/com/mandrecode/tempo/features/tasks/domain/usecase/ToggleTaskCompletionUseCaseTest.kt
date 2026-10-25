@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import io.mockk.coEvery
@@ -29,6 +30,7 @@ import kotlin.time.Clock
  */
 class ToggleTaskCompletionUseCaseTest {
     private val dailyActivityRecorder = mockk<DailyActivityRecorder>(relaxed = true)
+    private val taskAttachmentRepository = mockk<TaskAttachmentRepository>(relaxed = true)
     private lateinit var useCase: ToggleTaskCompletionUseCase
     private lateinit var taskRepository: TaskRepository
     private lateinit var taskReminderScheduler: TaskReminderScheduler
@@ -58,6 +60,7 @@ class ToggleTaskCompletionUseCaseTest {
                 taskReminderScheduler,
                 updateTaskUseCase,
                 dailyActivityRecorder,
+                taskAttachmentRepository,
             )
     }
 
@@ -527,6 +530,30 @@ class ToggleTaskCompletionUseCaseTest {
             coVerify { taskRepository.updateTask(capture(archivedSlot)) }
             assertThat(archivedSlot.captured.nextInstanceId).isNull()
             coVerify { taskRepository.updateTaskNextInstanceId(1L, 42L) }
+            coVerify { taskAttachmentRepository.copyAttachments(1L, 42L) }
+        }
+
+    @Test
+    fun `completing a periodic task gives each cloned step the files of the step it came from`() =
+        runTest {
+            val task =
+                Task(
+                    id = 1,
+                    title = "Periodic",
+                    description = "",
+                    isCompleted = false,
+                    periodicity = Periodicity.DAILY,
+                    reminderDate = LocalDateTime(2024, 6, 15, 10, 0),
+                )
+            val step = Task(id = 5, title = "Step", description = "", parentTaskId = 1)
+            coEvery { taskRepository.insertTask(any()) } returns 42L
+            coEvery { taskRepository.getSubtasksSync(1) } returns listOf(step)
+            coEvery { taskRepository.insertTasks(any()) } returns listOf(43L)
+
+            useCase(task)
+
+            coVerify { taskAttachmentRepository.copyAttachments(1L, 42L) }
+            coVerify { taskAttachmentRepository.copyAttachments(5L, 43L) }
         }
 
     @Test

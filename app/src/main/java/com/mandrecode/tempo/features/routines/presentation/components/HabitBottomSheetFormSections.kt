@@ -40,7 +40,10 @@ import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
+import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
+import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.inputTitle
@@ -129,7 +132,7 @@ internal fun HabitBottomSheetBody(
             focusConfig = focusConfig,
         )
 
-        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP - EDITOR_TEXT_FIELD_BOTTOM_INSET))
 
         HabitIconSection(
             selectedIcon = state.formState.selectedIcon,
@@ -588,22 +591,14 @@ private fun HabitReminderSection(
                 border = null,
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                        .padding(start = 4.dp),
+                        .padding(start = 4.dp)
+                        .height(EDITOR_CONTROL_HEIGHT),
             )
         } else {
-            ExpressiveChip(
+            EditorAddButton(
                 label = stringResource(R.string.add_reminder),
-                isSelected = false,
-                isFirst = true,
-                isLast = true,
                 onClick = onSetReminderClick,
-                horizontalArrangement = Arrangement.Start,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(start = 4.dp),
+                modifier = Modifier.padding(start = 4.dp),
             )
         }
     }

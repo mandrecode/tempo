@@ -120,6 +120,7 @@ private fun Task.hasMetadataToShow(
         periodicity != null ||
         reminderDate != null ||
         completedAt != null ||
+        hasAttachments ||
         subtasks.isNotEmpty()
 }
 

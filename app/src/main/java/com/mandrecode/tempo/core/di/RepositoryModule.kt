@@ -13,10 +13,14 @@ import com.mandrecode.tempo.features.routines.data.repository.HabitChainReposito
 import com.mandrecode.tempo.features.routines.data.repository.HabitRepositoryImpl
 import com.mandrecode.tempo.features.routines.domain.repository.HabitChainRepository
 import com.mandrecode.tempo.features.routines.domain.repository.HabitRepository
+import com.mandrecode.tempo.features.tasks.data.attachment.AttachmentFileStore
 import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImpl
+import com.mandrecode.tempo.features.tasks.data.repository.TaskAttachmentRepositoryImpl
 import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.infrastructure.attachments.AndroidAttachmentFileStore
 import com.mandrecode.tempo.infrastructure.focus.AndroidFocusSessionScheduler
 import dagger.Binds
 import dagger.Module
@@ -28,6 +32,12 @@ import dagger.hilt.components.SingletonComponent
 abstract class RepositoryModule {
     @Binds
     abstract fun bindTaskRepository(impl: TaskRepositoryImpl): TaskRepository
+
+    @Binds
+    abstract fun bindTaskAttachmentRepository(impl: TaskAttachmentRepositoryImpl): TaskAttachmentRepository
+
+    @Binds
+    abstract fun bindAttachmentFileStore(impl: AndroidAttachmentFileStore): AttachmentFileStore
 
     @Binds
     abstract fun bindHabitRepository(impl: HabitRepositoryImpl): HabitRepository

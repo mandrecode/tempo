@@ -10,11 +10,14 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.domain.model.RestoreResult
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
+import com.mandrecode.tempo.features.tasks.domain.model.AttachmentImportResult
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.DEFAULT_INBOX_CATEGORY
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.usecase.ClearAllTaskRemindersUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateCategoryUseCase
@@ -82,6 +85,7 @@ class TasksViewModelTest {
     private lateinit var clearAllRemindersUseCase: ClearAllTaskRemindersUseCase
     private lateinit var reorderTasksUseCase: ReorderTasksUseCase
     private lateinit var permissionChecker: PermissionChecker
+    private lateinit var taskAttachmentRepository: TaskAttachmentRepository
     private lateinit var tasksScreenPreferencesRepository: TasksScreenPreferencesRepository
     private lateinit var restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase
     private lateinit var restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase
@@ -105,6 +109,8 @@ class TasksViewModelTest {
         clearAllRemindersUseCase = mockk(relaxed = true)
         reorderTasksUseCase = mockk(relaxed = true)
         permissionChecker = mockk(relaxed = true)
+        taskAttachmentRepository = mockk(relaxed = true)
+        every { taskAttachmentRepository.observeAttachments(any()) } returns flowOf(emptyList())
         tasksScreenPreferencesRepository = mockk(relaxed = true)
         restoreDeletedTasksUseCase = mockk(relaxed = true)
         restoreDeletedCategoryUseCase = mockk(relaxed = true)
@@ -139,6 +145,7 @@ class TasksViewModelTest {
             testDispatcher,
             restoreDeletedTasksUseCase,
             restoreDeletedCategoryUseCase,
+            taskAttachmentRepository,
             clock,
         )
 
@@ -2068,6 +2075,239 @@ class TasksViewModelTest {
             advanceUntilIdle()
 
             assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    // --- Attachments (#380) ---
+
+    private fun pickedAttachment(name: String = "receipt.pdf") =
+        TaskAttachment(
+            displayName = name,
+            mimeType = "application/pdf",
+            sizeBytes = 1_024,
+            storedName = "stored-$name",
+        )
+
+    @Test
+    fun `files picked into a new task wait in the form and are attached once it is saved`() =
+        runTest {
+            val picked = pickedAttachment()
+            coEvery { taskAttachmentRepository.importFile("content://picked/1") } returns
+                AttachmentImportResult.Imported(picked)
+            coEvery { createTaskUseCase.invoke(any()) } returns
+                CreateTaskUseCase.Result.Success(100L, ScheduleResult.Skipped)
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).containsExactly(picked)
+            coVerify(exactly = 0) { taskAttachmentRepository.attach(any(), any()) }
+
+            viewModel.onEvent(TasksContract.UiEvent.CreateOrUpdateTask("Pay rent", "", 1L))
+            advanceUntilIdle()
+
+            coVerify { taskAttachmentRepository.attach(listOf(picked), 100L) }
+        }
+
+    @Test
+    fun `files picked into a saved task are attached at once and the form follows the database`() =
+        runTest {
+            val task = Task(id = 7L, title = "Pay rent", description = "")
+            val saved = pickedAttachment().copy(id = 3L, taskId = 7L)
+            every { taskAttachmentRepository.observeAttachments(7L) } returns flowOf(listOf(saved))
+            coEvery { taskAttachmentRepository.importFile(any()) } returns
+                AttachmentImportResult.Imported(pickedAttachment("photo.jpg"))
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.taskForm.attachments).containsExactly(saved)
+
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/2")))
+            advanceUntilIdle()
+
+            coVerify { taskAttachmentRepository.attach(listOf(pickedAttachment("photo.jpg")), 7L) }
+        }
+
+    @Test
+    fun `a file too large to attach is reported in the editor and nothing is added`() =
+        runTest {
+            coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.TooLarge
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://huge")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_too_large)
+        }
+
+    /** A pick with an oversized file and an unreadable one names both problems. */
+    @Test
+    fun `every kind of rejected file in a pick is reported`() =
+        runTest {
+            coEvery { taskAttachmentRepository.importFile("content://huge") } returns AttachmentImportResult.TooLarge
+            coEvery { taskAttachmentRepository.importFile("content://gone") } returns AttachmentImportResult.Unreadable
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://huge", "content://gone")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_too_large, R.string.msg_attachment_failed)
+        }
+
+    @Test
+    fun `the next attachment action clears the last one's errors`() =
+        runTest {
+            coEvery { taskAttachmentRepository.importFile("content://huge") } returns AttachmentImportResult.TooLarge
+            coEvery { taskAttachmentRepository.importFile("content://ok") } returns
+                AttachmentImportResult.Imported(pickedAttachment())
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://huge")))
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://ok")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors).isEmpty()
+        }
+
+    @Test
+    fun `files that finish copying after the editor closed are discarded`() =
+        runTest {
+            val picked = pickedAttachment()
+            coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.Imported(picked)
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            viewModel.onEvent(TasksContract.UiEvent.HideTaskDialog)
+            advanceUntilIdle()
+
+            coVerify { taskAttachmentRepository.discard(picked) }
+            coVerify(exactly = 0) { taskAttachmentRepository.attach(any(), any()) }
+        }
+
+    @Test
+    fun `removing an unsaved attachment drops it from the form and its file`() =
+        runTest {
+            val picked = pickedAttachment()
+            coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.Imported(picked)
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(picked))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
+            coVerify { taskAttachmentRepository.discard(picked) }
+            coVerify(exactly = 0) { taskAttachmentRepository.remove(any()) }
+        }
+
+    @Test
+    fun `removing a saved attachment deletes its row`() =
+        runTest {
+            val saved = pickedAttachment().copy(id = 3L, taskId = 7L)
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(saved))
+            advanceUntilIdle()
+
+            coVerify { taskAttachmentRepository.remove(saved) }
+        }
+
+    @Test
+    fun `reopening the task already being edited shows its attachments again`() =
+        runTest {
+            val task = Task(id = 7L, title = "Pay rent", description = "")
+            val saved = pickedAttachment().copy(id = 3L, taskId = 7L)
+            every { taskAttachmentRepository.observeAttachments(7L) } returns flowOf(listOf(saved))
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).containsExactly(saved)
+        }
+
+    @Test
+    fun `a failed attach to a saved task is reported instead of thrown`() =
+        runTest {
+            val picked = AttachmentImportResult.Imported(pickedAttachment())
+            coEvery { taskAttachmentRepository.importFile(any()) } returns picked
+            coEvery { taskAttachmentRepository.attach(any(), any()) } throws IllegalStateException("disk full")
+            val task = Task(id = 7L, title = "Pay rent", description = "")
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_failed)
+        }
+
+    @Test
+    fun `a failed removal is reported instead of thrown`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            coEvery { taskAttachmentRepository.remove(any()) } throws IllegalStateException("db closed")
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(pickedAttachment().copy(id = 3L, taskId = 7L)))
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_remove_failed)
+        }
+
+    @Test
+    fun `a file that cannot be discarded does not crash the editor`() =
+        runTest {
+            val picked = pickedAttachment()
+            coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.Imported(picked)
+            coEvery { taskAttachmentRepository.discard(any()) } throws IllegalStateException("io")
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(picked))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
+        }
+
+    @Test
+    fun `an attachment no app can open is reported in the open editor`() =
+        runTest {
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.AttachmentOpenFailed)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_no_app)
+        }
+
+    /** With no editor open there is no sheet to cover a snackbar, so one is shown. */
+    @Test
+    fun `an attachment no app can open is reported`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+
+            viewModel.onEvent(TasksContract.UiEvent.AttachmentOpenFailed)
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_no_app)
         }
 
     private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =

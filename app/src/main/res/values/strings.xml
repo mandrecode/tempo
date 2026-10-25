@@ -537,8 +537,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add tasks right from Focus</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks. Tap it to create a task without leaving your day.</string>
+    <string name="whats_new_title">Add tasks from Focus, attach files to them</string>
+    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. And any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
@@ -722,4 +722,14 @@
         <item quantity="other">%1$d sessions done</item>
     </plurals>
     <string name="focus_today_minutes">%1$d min today</string>
+
+    <!-- Task attachments (#380) -->
+    <string name="attachments">Attachments</string>
+    <string name="add_attachment">Add attachment</string>
+    <string name="open_attachment">Open %1$s</string>
+    <string name="remove_attachment">Remove %1$s</string>
+    <string name="msg_attachment_too_large">That file is too large to attach (25 MB max)</string>
+    <string name="msg_attachment_failed">Couldn\'t attach that file</string>
+    <string name="msg_attachment_remove_failed">Couldn\'t remove that attachment</string>
+    <string name="msg_attachment_no_app">No app on this device can open this file</string>
 </resources>

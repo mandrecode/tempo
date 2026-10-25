@@ -27,6 +27,11 @@ data class Task(
      * (delete next instance, restore recurrence) when the user unchecks the archived task.
      */
     val nextInstanceId: Long? = null,
+    /**
+     * Whether any file is attached (#380), for the card's paperclip. Read from the attachments
+     * table when tasks are loaded, never stored on the task itself.
+     */
+    val hasAttachments: Boolean = false,
 )
 
 /**

@@ -11,6 +11,7 @@ import com.mandrecode.tempo.core.domain.util.TitleDescriptionValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.core.ui.util.toUserFacingMessage
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
@@ -86,7 +87,7 @@ internal fun TasksViewModel.createOrUpdateTask(
                 monthDayOption = sanitized.monthDayOption,
                 parentTaskId = parentTaskId,
             )
-        addTask(newTask)
+        addTask(newTask, pendingAttachments = mutableUiState.value.taskForm.attachments)
 
         if (parentTaskId != null) {
             expandTask(parentTaskId)
@@ -145,7 +146,10 @@ internal fun TasksViewModel.sanitizePeriodicityFields(): TaskFormState {
     )
 }
 
-internal fun TasksViewModel.addTask(task: Task) {
+internal fun TasksViewModel.addTask(
+    task: Task,
+    pendingAttachments: List<TaskAttachment> = emptyList(),
+) {
     viewModelScope.launch {
         try {
             when (val result = createTaskUseCase(task)) {
@@ -163,6 +167,10 @@ internal fun TasksViewModel.addTask(task: Task) {
                 }
 
                 is CreateTaskUseCase.Result.Success -> {
+                    // The editor has closed by now, so a failure is a snackbar, not a line in it.
+                    if (!attachPendingAttachments(pendingAttachments, result.taskId)) {
+                        showSnackbar(R.string.msg_attachment_failed)
+                    }
                     val messageResId =
                         when {
                             result.scheduleResult is ScheduleResult.PermissionError -> {

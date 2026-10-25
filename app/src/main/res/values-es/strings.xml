@@ -543,8 +543,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Añade tareas desde Enfoque</string>
-    <string name="whats_new_description">Enfoque ahora tiene el mismo botón de añadir que Tareas. Tócalo para crear una tarea sin salir de tu día.</string>
+    <string name="whats_new_title">Añade tareas desde Enfoque y adjunta archivos</string>
+    <string name="whats_new_description">Enfoque ahora tiene el mismo botón de añadir que Tareas, así que puedes crear una tarea sin salir de tu día. Y cualquier tarea puede llevar adjuntos: añade fotos, PDF u otros documentos desde el editor de la tarea y ábrelos con un toque.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
@@ -728,4 +728,14 @@
         <item quantity="other">%1$d sesiones hechas</item>
     </plurals>
     <string name="focus_today_minutes">%1$d min hoy</string>
+
+    <!-- Task attachments (#380) -->
+    <string name="attachments">Adjuntos</string>
+    <string name="add_attachment">Adjuntar archivo</string>
+    <string name="open_attachment">Abrir %1$s</string>
+    <string name="remove_attachment">Quitar %1$s</string>
+    <string name="msg_attachment_too_large">Ese archivo es demasiado grande para adjuntarlo (máx. 25 MB)</string>
+    <string name="msg_attachment_failed">No se ha podido adjuntar ese archivo</string>
+    <string name="msg_attachment_remove_failed">No se ha podido quitar ese adjunto</string>
+    <string name="msg_attachment_no_app">Ninguna app de este dispositivo puede abrir este archivo</string>
 </resources>

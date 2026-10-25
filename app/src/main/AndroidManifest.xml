@@ -107,6 +107,17 @@
                 android:resource="@xml/quick_task_widget_info" />
         </receiver>
 
+        <!-- Hands one task attachment at a time to a viewer app (#380). -->
+        <provider
+            android:name=".infrastructure.attachments.AttachmentFileProvider"
+            android:authorities="${applicationId}.attachments"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/attachment_paths" />
+        </provider>
+
         <!-- Disable default WorkManager Initializer to use Hilt configuration -->
         <provider
             android:name="androidx.startup.InitializationProvider"

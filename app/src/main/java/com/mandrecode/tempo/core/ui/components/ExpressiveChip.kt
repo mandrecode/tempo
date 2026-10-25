@@ -48,6 +48,12 @@ fun ExpressiveChip(
     isLast: Boolean,
     modifier: Modifier = Modifier,
     height: Dp = 52.dp,
+    /**
+     * Space inside [height] above and below the visible chip. A run of chips needs it; a chip
+     * standing as an editor row's whole content passes zero, so the gaps around it match the rows
+     * whose controls fill their own height.
+     */
+    verticalInset: Dp = 4.dp,
     enabled: Boolean = true,
     icon: @Composable (() -> Unit)? = null,
     horizontalPadding: Dp = 16.dp,
@@ -126,7 +132,7 @@ fun ExpressiveChip(
             modifier =
                 modifier
                     .height(height)
-                    .padding(vertical = 4.dp)
+                    .padding(vertical = verticalInset)
                     .clip(
                         RoundedCornerShape(
                             topStart = startRadius,

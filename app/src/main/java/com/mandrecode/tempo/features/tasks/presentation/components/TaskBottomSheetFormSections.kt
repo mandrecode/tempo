@@ -51,7 +51,10 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
+import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
@@ -87,7 +90,7 @@ internal fun TaskBottomSheetBody(
             focusConfig = focusConfig,
         )
 
-        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+        Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP - EDITOR_TEXT_FIELD_BOTTOM_INSET))
 
         TaskCategorySection(
             state = state,
@@ -108,6 +111,17 @@ internal fun TaskBottomSheetBody(
             state = state,
             actions = actions,
         )
+
+        actions.attachmentActions?.let { attachmentActions ->
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+            TaskAttachmentsSection(
+                attachments = state.formState.attachments,
+                errors = state.formState.attachmentErrors,
+                onAddAttachments = attachmentActions.onAddAttachments,
+                onRemoveAttachment = attachmentActions.onRemoveAttachment,
+                onAttachmentOpenFail = attachmentActions.onAttachmentOpenFail,
+            )
+        }
 
         TaskBottomSheetFooter(
             isEditingTask = state.isEditingTask,
@@ -447,9 +461,8 @@ private fun TaskReminderAndPeriodicitySection(
                     border = null,
                     modifier =
                         Modifier
-                            .weight(1f)
-                            .height(56.dp)
-                            .padding(start = 4.dp),
+                            .padding(start = 4.dp)
+                            .height(EDITOR_CONTROL_HEIGHT),
                 )
             }
 
@@ -466,18 +479,11 @@ private fun TaskReminderAndPeriodicitySection(
                 iconPainter = painterResource(R.drawable.ic_reminder),
                 iconContentDescription = stringResource(R.string.reminder_label),
             ) {
-                ExpressiveChip(
+                EditorAddButton(
                     label = stringResource(R.string.add_reminder),
-                    isSelected = false,
-                    isFirst = true,
-                    isLast = true,
                     onClick = actions.onSetReminderClicked,
                     enabled = state.task == null || !state.task.isCompleted,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
+                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
         }

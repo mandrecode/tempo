@@ -78,6 +78,7 @@ internal fun TaskBottomSheetContent(
     onToggleCompletion: ((Task) -> Unit)? = null,
     placement: SheetPlacement? = null,
     dismissRequestKey: Int = 0,
+    attachmentActions: TaskAttachmentActions? = null,
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -256,10 +257,13 @@ internal fun TaskBottomSheetContent(
             formState.periodicityInterval,
             formState.repeatDays,
             formState.monthDayOption,
+            formState.attachments,
         ) {
             if (taskSnapshot == null) {
                 taskTitle.isNotBlank() ||
                     isDescriptionDirty ||
+                    // Files picked into a task that does not exist yet go with the form.
+                    formState.attachments.isNotEmpty() ||
                     selectedCategoryId != initialCategoryId ||
                     formState.priority != null ||
                     formState.reminderDate != null ||
@@ -424,6 +428,7 @@ internal fun TaskBottomSheetContent(
                                 )
                             }
                         },
+                        attachmentActions = attachmentActions,
                     ),
                 focusConfig =
                     TaskBottomSheetFocusConfig(

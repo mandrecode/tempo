@@ -9,6 +9,7 @@ import com.mandrecode.tempo.core.ui.components.SnackbarBoldSegment
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
@@ -74,6 +75,17 @@ object TasksContract {
         val parentTask: Task? = null,
         @StringRes val titleError: Int? = null,
         @StringRes val descriptionError: Int? = null,
+        /**
+         * The task's attachments. For a task being edited these are its saved rows, kept live; for
+         * a new task they are files already copied in and waiting for the task to be saved (#380).
+         */
+        val attachments: ImmutableList<TaskAttachment> = persistentListOf(),
+        /**
+         * What went wrong with the last attachment action, shown inside the editor: a snackbar
+         * would sit under the sheet's own window and could expire unseen. Every problem of a
+         * multi-file pick is listed. Cleared by the next attachment action.
+         */
+        val attachmentErrors: ImmutableList<Int> = persistentListOf(),
     )
 
     data class CategoryFormState(
@@ -177,6 +189,18 @@ object TasksContract {
         ) : UiEvent
 
         data object ClearReminder : UiEvent
+
+        /** Files picked in the editor, as `content://` URIs. */
+        data class AddAttachments(
+            val uris: List<String>,
+        ) : UiEvent
+
+        data class RemoveAttachment(
+            val attachment: TaskAttachment,
+        ) : UiEvent
+
+        /** No app on the device could open an attachment. */
+        data object AttachmentOpenFailed : UiEvent
 
         data class SetPeriodicity(
             val periodicity: Periodicity,

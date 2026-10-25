@@ -5,6 +5,7 @@ import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.ScheduleResult
 import com.mandrecode.tempo.core.domain.usecase.DailyActivityRecorder
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import com.mandrecode.tempo.features.tasks.domain.scheduler.TaskReminderScheduler
 import io.mockk.coEvery
@@ -23,6 +24,7 @@ import org.junit.Test
  */
 class ToggleTaskCompletionUseCaseRolloverTest {
     private val dailyActivityRecorder = mockk<DailyActivityRecorder>(relaxed = true)
+    private val taskAttachmentRepository = mockk<TaskAttachmentRepository>(relaxed = true)
     private lateinit var useCase: ToggleTaskCompletionUseCase
     private lateinit var taskRepository: TaskRepository
     private lateinit var taskReminderScheduler: TaskReminderScheduler
@@ -46,6 +48,7 @@ class ToggleTaskCompletionUseCaseRolloverTest {
                 taskReminderScheduler,
                 updateTaskUseCase,
                 dailyActivityRecorder,
+                taskAttachmentRepository,
             )
     }
 

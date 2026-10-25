@@ -1,6 +1,9 @@
 package com.mandrecode.tempo.features.tasks.presentation.components.cards
 
 import androidx.compose.foundation.layout.width
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
@@ -29,6 +32,9 @@ private val priorityLabel: String
 
 private val periodicityLabel: String
     get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.periodicity_label)
+
+private val attachmentsLabel: String
+    get() = InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.attachments)
 
 private val markAsNotCompletedLabel: String
     get() =
@@ -142,6 +148,32 @@ class TaskCardTest {
 
         composeTestRule
             .onNodeWithContentDescription(periodicityLabel, substring = true)
+            .assertIsDisplayed()
+    }
+
+    /** A paperclip beside the other badges, as soon as a file is attached (#380). */
+    @Test
+    fun showsAttachmentIcon_onlyWhenTaskHasAttachments() {
+        var task by mutableStateOf(Task(id = 1, title = "Lease", description = ""))
+
+        composeTestRule.setContent {
+            TempoTheme {
+                TaskItem(
+                    task = task,
+                    onToggleCompletion = {},
+                    onEdit = {},
+                )
+            }
+        }
+
+        composeTestRule
+            .onNodeWithContentDescription(attachmentsLabel, substring = true)
+            .assertDoesNotExist()
+
+        task = task.copy(hasAttachments = true)
+
+        composeTestRule
+            .onNodeWithContentDescription(attachmentsLabel, substring = true)
             .assertIsDisplayed()
     }
 

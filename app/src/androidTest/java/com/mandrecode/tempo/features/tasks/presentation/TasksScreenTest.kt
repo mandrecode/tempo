@@ -118,6 +118,7 @@ class TasksScreenTest {
                 testDispatcher,
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                mockk(relaxed = true),
                 kotlin.time.Clock.System,
             )
     }
@@ -177,6 +178,7 @@ class TasksScreenTest {
                 permissionChecker,
                 tasksScreenPreferencesRepository,
                 testDispatcher,
+                mockk(relaxed = true),
                 mockk(relaxed = true),
                 mockk(relaxed = true),
                 kotlin.time.Clock.System,
