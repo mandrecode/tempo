@@ -2019,6 +2019,33 @@ class TasksViewModelTest {
                 .isEqualTo(1)
         }
 
+    /** A lookup started before every reminder was cleared must not bring the revoked dialog back. */
+    @Test
+    fun `a reminder lookup outlasting clear all does not re-arm the dialog or the announcement`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            val withReminder = Task(id = 1L, title = "Pay rent", description = "")
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders)
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isFalse()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
     private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =
         filterIsInstance<TasksContract.UiEffect.ShowSnackbar>().mapNotNull { it.messageResId }
 }

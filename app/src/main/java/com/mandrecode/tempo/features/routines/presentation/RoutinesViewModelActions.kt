@@ -1063,18 +1063,20 @@ internal fun RoutinesViewModel.checkPermissionsAndSyncRemindersInternal() {
 
     mutableUiState.update { it.copy(permissionInfo = permissionInfo) }
 
+    permissionLookupJob?.cancel()
     if (!permissionInfo.areAllGranted) {
-        viewModelScope.launch {
-            val habitsWithReminders = habitRepository.getHabitsWithReminders()
-            // The lookup can outlast the grant itself: if permission came back meanwhile, the
-            // grant has already been answered, and flagging now would announce it a second time.
-            val stillMissing =
-                !(permissionChecker.hasNotificationPermissions() && permissionChecker.canScheduleExactAlarms())
-            if (habitsWithReminders.isNotEmpty() && stillMissing) {
-                remindersAwaitingPermission = true
-                mutableUiState.update { it.copy(showPermissionRevokedDialog = true) }
+        permissionLookupJob =
+            viewModelScope.launch {
+                val habitsWithReminders = habitRepository.getHabitsWithReminders()
+                // The lookup can outlast the grant itself: if permission came back meanwhile, the
+                // grant has already been answered, and flagging now would announce it a second time.
+                val stillMissing =
+                    !(permissionChecker.hasNotificationPermissions() && permissionChecker.canScheduleExactAlarms())
+                if (habitsWithReminders.isNotEmpty() && stillMissing) {
+                    remindersAwaitingPermission = true
+                    mutableUiState.update { it.copy(showPermissionRevokedDialog = true) }
+                }
             }
-        }
     } else {
         onPermissionsGranted()
     }
@@ -1107,6 +1109,7 @@ internal fun RoutinesViewModel.dismissPermissionRevokedDialog() {
 }
 
 internal fun RoutinesViewModel.confirmClearAllHabitReminders() {
+    permissionLookupJob?.cancel()
     viewModelScope.launch {
         clearAllHabitRemindersUseCase()
         remindersAwaitingPermission = false

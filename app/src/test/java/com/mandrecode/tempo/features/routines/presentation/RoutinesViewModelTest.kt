@@ -1548,6 +1548,33 @@ class RoutinesViewModelTest {
                 .isEqualTo(1)
         }
 
+    /** A lookup started before every reminder was cleared must not bring the revoked dialog back. */
+    @Test
+    fun `a reminder lookup outlasting clear all does not re-arm the dialog or the announcement`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            val withReminder = habit(1L)
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+
+            viewModel.onEvent(RoutinesContract.UiEvent.ConfirmClearAllHabitReminders)
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isFalse()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
     private fun List<RoutinesContract.UiEffect>.snackbarMessages(): List<Int> =
         filterIsInstance<RoutinesContract.UiEffect.ShowSnackbar>().map { it.messageResId }
 }
