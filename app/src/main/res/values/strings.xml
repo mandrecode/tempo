@@ -315,6 +315,10 @@
     <string name="yesterday">Yesterday</string>
     <string name="today">Today</string>
     <string name="tomorrow">Tomorrow</string>
+    <!-- Routines day row, read by a screen reader: weekday and date, e.g. "Sunday 25" (#335) -->
+    <string name="day_filter_day_description">%1$s %2$d</string>
+    <!-- The same, led by Yesterday / Today / Tomorrow, e.g. "Today, Sunday 25" -->
+    <string name="day_filter_relative_day_description">%1$s, %2$s %3$d</string>
     <string name="natural_date_format">%1$s, %2$s</string>
     <string name="monday">Monday</string>
     <string name="tuesday">Tuesday</string>
@@ -544,8 +548,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add from Focus, attach files, pick days like an alarm</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. And habits and chains pick their days the way an alarm does: tap the initials of the days you want.</string>
+    <string name="whats_new_title">Add from Focus, attach files, and new day pickers</string>
+    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. Habits and chains pick their days the way an alarm does, and the whole week now fits at the top of Routines.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

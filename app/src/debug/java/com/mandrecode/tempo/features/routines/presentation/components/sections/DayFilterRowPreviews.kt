@@ -69,34 +69,3 @@ private fun DayFilterRowFutureDaySelectedPreview() {
         }
     }
 }
-
-@Preview(name = "Light", showBackground = true)
-@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun DayFilterChipUnselectedPreview() {
-    TempoTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            DayFilterChip(
-                label = "Mon",
-                isSelected = false,
-                onClick = {},
-            )
-        }
-    }
-}
-
-@Preview(name = "Light", showBackground = true)
-@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun DayFilterChipSelectedPreview() {
-    TempoTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            DayFilterChip(
-                label = "Today",
-                isSelected = true,
-                onClick = {},
-                showIcon = true,
-            )
-        }
-    }
-}
