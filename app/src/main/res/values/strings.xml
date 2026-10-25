@@ -549,7 +549,7 @@
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
     <string name="whats_new_title">Add from Focus, attach files, and new day pickers</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. Habits and chains pick their days the way an alarm does, and the whole week now fits at the top of Routines.</string>
+    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. Habits and chains pick their days the way an alarm does, the whole week now fits at the top of Routines, and the editors\' choices (priority, repeat, category) are now grouped buttons.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
