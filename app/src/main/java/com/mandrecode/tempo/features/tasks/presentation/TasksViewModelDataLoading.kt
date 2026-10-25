@@ -24,7 +24,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.LocalDate
 
 internal fun TasksViewModel.selectCategory(categoryId: Long) {
     val sortOption = tasksScreenPreferencesRepository.getSortOption(categoryId)
@@ -54,16 +53,6 @@ private fun <K, V> Map<K, List<V>>.toImmutableListMap(): ImmutableMap<K, Immutab
         .associate { (key, values) -> key to values.toPersistentList() }
         .toPersistentMap()
 
-/**
- * The Tasks tab has come into view, or the app back to the front with it showing (#438). The tab
- * is warmed up before it is first opened, so the day the date groups were drawn for may have ended
- * since: a new [today] regroups the list even though no task changed, and yesterday's tasks move
- * to Overdue. Any other regrouping reads the clock as well, so it never falls behind either.
- */
-internal fun TasksViewModel.onTabShownOn(today: LocalDate) {
-    currentDay.value = today
-}
-
 internal fun TasksViewModel.loadData() {
     viewModelScope.launch {
         combine(
@@ -71,8 +60,10 @@ internal fun TasksViewModel.loadData() {
             categoryRepository.getAllCategories(),
             mutableUiState.map { it.selectedCategoryId }.distinctUntilChanged(),
             mutableUiState.map { it.sortOption }.distinctUntilChanged(),
+            // Only a trigger: the day itself is read from the clock below, which may also have
+            // moved backward (a time-zone or clock correction).
             currentDay,
-        ) { tasks, dbCategories, selectedCategoryId, sortOption, dayShown ->
+        ) { tasks, dbCategories, selectedCategoryId, sortOption, _ ->
             val allCategories = dbCategories.toPersistentList()
 
             val effectiveSelectedId =
@@ -99,9 +90,7 @@ internal fun TasksViewModel.loadData() {
                             .then(TaskSortCriteria.comparator(sortOption)),
                     )
 
-            // The day the tab was last shown, or the clock's if midnight has passed since: an edit
-            // made with the tab open across midnight regroups for the new day too.
-            val today = maxOf(dayShown, systemToday())
+            val today = systemToday()
 
             val parentTasks = filteredTasks.filter { it.parentTaskId == null }
             val (activeTasks, completedTasks) = parentTasks.partition { !it.isCompleted }

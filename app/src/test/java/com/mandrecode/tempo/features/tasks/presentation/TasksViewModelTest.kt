@@ -59,6 +59,7 @@ import kotlinx.datetime.todayIn
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TasksViewModelTest {
@@ -135,7 +136,17 @@ class TasksViewModelTest {
             testDispatcher,
             restoreDeletedTasksUseCase,
             restoreDeletedCategoryUseCase,
+            clock,
         )
+
+    /** Moved by the tests that cross midnight; the real time otherwise. */
+    private var clockNow =
+        kotlin.time.Clock.System
+            .now()
+    private val clock =
+        object : kotlin.time.Clock {
+            override fun now() = clockNow
+        }
 
     @After
     fun tearDown() {
@@ -1709,26 +1720,14 @@ class TasksViewModelTest {
     @Test
     fun `showing the tab on a new day moves yesterday's tasks to Overdue without any data change`() =
         runTest {
-            val today =
-                kotlinx.datetime.Clock.System.todayIn(
-                    kotlinx.datetime.TimeZone.currentSystemDefault(),
-                )
-            val task =
-                Task(
-                    id = 1,
-                    title = "Due today",
-                    description = "",
-                    reminderDate = LocalDateTime(today.year, today.monthNumber, today.dayOfMonth, 9, 0),
-                    categoryId = DEFAULT_INBOX_CATEGORY.id,
-                )
-            coEvery { taskRepository.getAllTasks() } returns flowOf(listOf(task))
-            coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
-            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+            val today = clockToday()
+            dueTasks(MutableStateFlow(listOf(taskDueOn(today))))
             viewModel = createViewModel()
             advanceUntilIdle()
             assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(today))
 
-            viewModel.onTabShownOn(today = today.plus(1, kotlinx.datetime.DateTimeUnit.DAY))
+            clockNow += 1.days
+            viewModel.onTabShown()
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
@@ -1738,34 +1737,53 @@ class TasksViewModelTest {
     @Test
     fun `regrouping after midnight with the tab still open uses the new day`() =
         runTest {
-            val today =
-                kotlinx.datetime.Clock.System.todayIn(
-                    kotlinx.datetime.TimeZone.currentSystemDefault(),
-                )
-            val yesterday = today.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
+            val today = clockToday()
             val tasks = MutableStateFlow(emptyList<Task>())
-            coEvery { taskRepository.getAllTasks() } returns tasks
-            coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
-            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+            dueTasks(tasks)
             viewModel = createViewModel()
-            // Last shown yesterday; midnight has passed since without the tab being shown again.
-            viewModel.currentDay.value = yesterday
             advanceUntilIdle()
 
-            tasks.value =
-                listOf(
-                    Task(
-                        id = 1,
-                        title = "Due yesterday",
-                        description = "",
-                        reminderDate = LocalDateTime(yesterday.year, yesterday.monthNumber, yesterday.dayOfMonth, 9, 0),
-                        categoryId = DEFAULT_INBOX_CATEGORY.id,
-                    ),
-                )
+            clockNow += 1.days
+            tasks.value = listOf(taskDueOn(today))
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
         }
+
+    /** A time-zone or clock correction can move the date backward with the tab open. */
+    @Test
+    fun `regrouping after the date moves backward does not leave today's tasks overdue`() =
+        runTest {
+            val tasks = MutableStateFlow(emptyList<Task>())
+            dueTasks(tasks)
+            viewModel = createViewModel()
+            viewModel.onTabShown()
+            advanceUntilIdle()
+
+            clockNow -= 1.days
+            val dayBefore = clockToday()
+            tasks.value = listOf(taskDueOn(dayBefore))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(dayBefore))
+        }
+
+    private fun clockToday() = clock.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault())
+
+    private fun dueTasks(tasks: MutableStateFlow<List<Task>>) {
+        coEvery { taskRepository.getAllTasks() } returns tasks
+        coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+        every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+    }
+
+    private fun taskDueOn(day: kotlinx.datetime.LocalDate) =
+        Task(
+            id = 1,
+            title = "Due",
+            description = "",
+            reminderDate = LocalDateTime(day.year, day.monthNumber, day.dayOfMonth, 9, 0),
+            categoryId = DEFAULT_INBOX_CATEGORY.id,
+        )
 
     @Test
     fun `activeTaskGroups groups tasks by priority when sorted by priority`() =
