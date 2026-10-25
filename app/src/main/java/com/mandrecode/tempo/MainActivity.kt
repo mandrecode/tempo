@@ -319,7 +319,11 @@ class MainActivity :
     }
 
     private companion object {
-        const val MAX_SPLASH_HOLD_MS = 1_500L
+        // A safety cap, not a target: the splash lets go the moment the first screen has content.
+        // 2.5 s rather than 1.5 s since the splash also waits for that content (#438) — measured
+        // cold starts on a Pixel 10 AVD reach content in 1.3–1.7 s, and a cap below that lifts the
+        // splash onto a still-empty screen.
+        const val MAX_SPLASH_HOLD_MS = 2_500L
     }
 }
 

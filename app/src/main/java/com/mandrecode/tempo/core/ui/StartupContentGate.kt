@@ -5,33 +5,30 @@ package com.mandrecode.tempo.core.ui
  *
  * Without it the splash gives way as soon as the database is ready, and the first tab spends its
  * first few frames as its bare background before the list arrives on top of it — a visible
- * flash. The first screen that loads data reports through `HoldSplashWhileFirstLoad`: while it is
- * still loading the gate holds, and the moment it has content the gate opens for good. Screens
- * that never load (onboarding) never hold it.
+ * flash. The gate starts closed and opens for good the first time a screen reports content
+ * through `HoldSplashWhileFirstLoad` — a tab once its data has loaded, onboarding straight away,
+ * as it has nothing to load. Starting closed matters: the splash checks the app's own state the
+ * moment it changes, a frame before the first screen has composed and could report anything, and
+ * a gate that started open let the splash go in that gap. The splash's time cap bounds the wait
+ * in every case, and releases the gate when it runs out.
  *
  * Read from the splash screen's keep-on-screen condition on the main thread and written from
  * composition, which also runs there.
  */
 class StartupContentGate {
-    private enum class State { WAITING, HOLDING, RELEASED }
-
     @Volatile
-    private var state = State.WAITING
+    private var released = false
 
-    /** True while the first screen is still loading its first content. */
-    val isHolding: Boolean get() = state == State.HOLDING
+    /** True until the first screen has shown content (or the splash has gone without it). */
+    val isHolding: Boolean get() = !released
 
     /** Opens the gate for good: the splash has gone, whether or not the first load finished. */
     fun release() {
-        state = State.RELEASED
+        released = true
     }
 
+    /** A screen's loading state; the first report of content opens the gate. */
     fun report(isLoading: Boolean) {
-        state =
-            when {
-                state == State.RELEASED -> State.RELEASED
-                isLoading -> State.HOLDING
-                else -> State.RELEASED
-            }
+        if (!isLoading) released = true
     }
 }

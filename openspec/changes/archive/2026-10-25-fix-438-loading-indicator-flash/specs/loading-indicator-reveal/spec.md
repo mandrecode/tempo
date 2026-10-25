@@ -22,7 +22,7 @@ The shared loading indicator SHALL stay invisible for a grace period of 400 ms a
 - **THEN** it is visible from the first frame
 
 ### Requirement: Screens appear whole on first load
-On a cold start, the launch splash SHALL stay up (within its existing 1.5 s cap) until the app's settings and the first screen's first content have loaded, so that it hands over directly to a finished screen. A screen opened for the first time later SHALL fade its content in over its loading state rather than swapping it in on a single frame. The what's-new sheet SHALL NOT open until the splash has handed over.
+On a cold start, the launch splash SHALL stay up (within a 2.5 s cap) until the app's settings and the first screen's first content have loaded, so that it hands over directly to a finished screen. A screen opened for the first time later SHALL fade its content in over its loading state rather than swapping it in on a single frame. The what's-new sheet SHALL NOT open until the splash has handed over.
 
 #### Scenario: Cold start
 - **WHEN** the app is launched cold onto Focus

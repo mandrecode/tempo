@@ -4,13 +4,17 @@ import com.google.common.truth.Truth.assertThat
 import org.junit.Test
 
 class StartupContentGateTest {
+    /**
+     * The splash checks the gate a frame before the first screen has composed: open by default, it
+     * let the splash go onto an empty screen in that gap.
+     */
     @Test
-    fun `nothing holds the splash until a screen reports`() {
-        assertThat(StartupContentGate().isHolding).isFalse()
+    fun `the splash is held before any screen has reported`() {
+        assertThat(StartupContentGate().isHolding).isTrue()
     }
 
     @Test
-    fun `a first screen still loading holds the splash until it has content`() {
+    fun `a first screen still loading keeps holding until it has content`() {
         val gate = StartupContentGate()
 
         gate.report(isLoading = true)

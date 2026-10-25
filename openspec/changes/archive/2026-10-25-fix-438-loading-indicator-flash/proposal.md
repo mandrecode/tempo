@@ -12,7 +12,7 @@ The first time each screen loads (Tasks, Routines, Focus, and the Focus plan she
 - Every caller gets this behavior without changes. Debug previews pass `revealDelayMillis = 0` so the static preview still shows the indicator.
 
 - **The whole first screen** (raised on device after the first fix): the bare background, title and navigation bar still showed for a moment before the content arrived on top.
-  - On a cold start, the splash now also waits for the app's settings and for the first screen's first content (`StartupContentGate`, reported by Tasks, Routines and Focus), within the same 1.5 s cap.
+  - On a cold start, the splash now also waits for the app's settings and for the first screen's first content (`StartupContentGate`, reported by Tasks, Routines and Focus), within a cap raised from 1.5 s to 2.5 s (cold starts measured at 1.3–1.7 s on the AVD).
   - A tab opened for the first time crossfades from its loading state to its content over 250 ms (`FirstLoadCrossfade`) instead of swapping on one frame.
   - The what's-new sheet waits until the splash has handed over. As a separate window it otherwise ended the splash over an undrawn screen, which showed as a black frame.
 
