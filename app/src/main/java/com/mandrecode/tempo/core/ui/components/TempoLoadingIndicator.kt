@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.components
 
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -80,5 +81,31 @@ fun TempoLoadingIndicator(
                     .then(if (revealed) Modifier.semantics { contentDescription = message } else Modifier),
             color = MaterialTheme.colorScheme.primary,
         )
+    }
+}
+
+private const val FIRST_CONTENT_FADE_MILLIS = 250
+
+/**
+ * Shows [loading] until the screen's first content is ready, then fades the content in over it
+ * instead of swapping it in on one frame (#438). Without the fade, a tab opened for the first time
+ * showed its bare background and then the whole screen at once on top — a flash, however short
+ * the load. A screen that is already loaded when it first composes shows its content straight
+ * away; only the change from loading to loaded animates.
+ */
+@Composable
+fun FirstLoadCrossfade(
+    isLoading: Boolean,
+    loading: @Composable () -> Unit,
+    modifier: Modifier = Modifier.fillMaxSize(),
+    content: @Composable () -> Unit,
+) {
+    Crossfade(
+        targetState = isLoading,
+        modifier = modifier,
+        animationSpec = tween(FIRST_CONTENT_FADE_MILLIS),
+        label = "firstLoad",
+    ) { stillLoading ->
+        if (stillLoading) loading() else content()
     }
 }

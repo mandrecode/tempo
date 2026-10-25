@@ -34,6 +34,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
@@ -73,57 +74,57 @@ fun FocusContent(
         // resolves against the right colour when previewed or tested standalone.
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        if (uiState.isLoading) {
-            TempoLoadingIndicator(message = stringResource(R.string.focus))
-            return@Box
-        }
+        FirstLoadCrossfade(
+            isLoading = uiState.isLoading,
+            loading = { TempoLoadingIndicator(message = stringResource(R.string.focus)) },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                FocusSummaryHero(
+                    today = uiState.today,
+                    streakDays = uiState.streakDays,
+                    history = uiState.history,
+                    scheduledCount = uiState.scheduledCount,
+                    completedCount = uiState.completedCount,
+                    progress = uiState.progress,
+                    band = uiState.headlineBand,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                )
 
-        Column(modifier = Modifier.fillMaxWidth()) {
-            FocusSummaryHero(
-                today = uiState.today,
-                streakDays = uiState.streakDays,
-                history = uiState.history,
-                scheduledCount = uiState.scheduledCount,
-                completedCount = uiState.completedCount,
-                progress = uiState.progress,
-                band = uiState.headlineBand,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            )
-
-            Box(
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth()
-                        // clip before background so list overscroll cannot draw past the seam.
-                        .clip(
-                            RoundedCornerShape(
-                                topStart = ContentBlockTopCornerRadius,
-                                topEnd = ContentBlockTopCornerRadius,
-                            ),
-                        ).background(MaterialTheme.colorScheme.surface),
-            ) {
-                uiState.finishedSession?.let { finished ->
-                    SessionFinishedSheet(
-                        finished = finished,
-                        nextSessionMinutes = uiState.defaultSessionLengthMinutes,
-                        onEvent = onEvent,
-                    )
-                }
-
-                if (uiState.isDayEmpty) {
-                    FocusEmptyState(
-                        undatedTaskCount = uiState.undatedTaskCount,
-                        onUndatedClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
-                    )
-                } else {
-                    // Render the agenda once its current day is known.
-                    uiState.today?.let {
-                        FocusAgendaList(
-                            uiState = uiState,
+                Box(
+                    modifier =
+                        Modifier
+                            .weight(1f)
+                            .fillMaxWidth()
+                            // clip before background so list overscroll cannot draw past the seam.
+                            .clip(
+                                RoundedCornerShape(
+                                    topStart = ContentBlockTopCornerRadius,
+                                    topEnd = ContentBlockTopCornerRadius,
+                                ),
+                            ).background(MaterialTheme.colorScheme.surface),
+                ) {
+                    uiState.finishedSession?.let { finished ->
+                        SessionFinishedSheet(
+                            finished = finished,
+                            nextSessionMinutes = uiState.defaultSessionLengthMinutes,
                             onEvent = onEvent,
-                            bottomPadding = listBottomPadding,
                         )
+                    }
+
+                    if (uiState.isDayEmpty) {
+                        FocusEmptyState(
+                            undatedTaskCount = uiState.undatedTaskCount,
+                            onUndatedClick = { onEvent(FocusContract.UiEvent.UndatedTasksClicked) },
+                        )
+                    } else {
+                        // Render the agenda once its current day is known.
+                        uiState.today?.let {
+                            FocusAgendaList(
+                                uiState = uiState,
+                                onEvent = onEvent,
+                                bottomPadding = listBottomPadding,
+                            )
+                        }
                     }
                 }
             }

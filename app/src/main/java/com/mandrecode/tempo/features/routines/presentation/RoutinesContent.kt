@@ -45,6 +45,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
+import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
@@ -102,9 +103,10 @@ fun RoutinesContent(
         // to the correct tinted color when this composable is previewed/tested standalone.
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        if (uiState.isLoading) {
-            TempoLoadingIndicator(message = stringResource(R.string.loading_habits))
-        } else {
+        FirstLoadCrossfade(
+            isLoading = uiState.isLoading,
+            loading = { TempoLoadingIndicator(message = stringResource(R.string.loading_habits)) },
+        ) {
             val scheduledItems = uiState.scheduledTimelineItems
             val unscheduledItems = uiState.unscheduledTimelineItems
             val quitHabits =

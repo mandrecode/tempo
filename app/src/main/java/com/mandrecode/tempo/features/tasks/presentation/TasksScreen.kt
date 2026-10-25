@@ -43,6 +43,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
@@ -82,6 +83,7 @@ fun TasksScreen(
     onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val currentOnConsumePendingNotificationAction by rememberUpdatedState(onConsumePendingNotificationAction)

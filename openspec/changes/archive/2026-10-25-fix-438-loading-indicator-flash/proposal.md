@@ -11,6 +11,11 @@ The first time each screen loads (Tasks, Routines, Focus, and the Focus plan she
 - `TempoLoadingIndicator` keeps its space laid out but stays invisible for a short grace period (400 ms). If loading is still in progress afterwards, the indicator fades in. Loads that finish inside the grace period never show it.
 - Every caller gets this behavior without changes. Debug previews pass `revealDelayMillis = 0` so the static preview still shows the indicator.
 
+- **The whole first screen** (raised on device after the first fix): the bare background, title and navigation bar still showed for a moment before the content arrived on top.
+  - On a cold start, the splash now also waits for the app's settings and for the first screen's first content (`StartupContentGate`, reported by Tasks, Routines and Focus), within the same 1.5 s cap.
+  - A tab opened for the first time crossfades from its loading state to its content over 250 ms (`FirstLoadCrossfade`) instead of swapping on one frame.
+  - The what's-new sheet waits until the splash has handed over. As a separate window it otherwise ended the splash over an undrawn screen, which showed as a black frame.
+
 ### Non-goals
 
 - No change to how or when screens load their data, or to the error path.
@@ -27,6 +32,6 @@ None.
 
 ## Impact
 
-- UI: `core/ui/components/TempoLoadingIndicator.kt`, its debug previews.
+- UI: `core/ui/components/TempoLoadingIndicator.kt` (`FirstLoadCrossfade`), its debug previews; `TasksContent`, `RoutinesContent`, `FocusContent` and their screens; new `core/ui/StartupContentGate.kt`; `MainActivity` (splash condition, what's-new timing).
 - Tests: new `TempoLoadingIndicatorTest`; `TasksContentTest` and `RoutinesContentTest` advance past the delay.
 - No domain, data, or persistence changes.

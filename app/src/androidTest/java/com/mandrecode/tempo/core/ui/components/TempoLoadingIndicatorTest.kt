@@ -1,6 +1,10 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.material3.Text
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -78,5 +82,54 @@ class TempoLoadingIndicatorTest {
 
         assertThat(hiddenHeight.value).isAtLeast(96.dp.value)
         assertThat(hiddenHeight).isEqualTo(shownHeight)
+    }
+
+    /** The first content fades in over the empty loading state instead of appearing at once. */
+    @Test
+    fun firstContent_fadesIn_ratherThanAppearingAtOnce() {
+        var isLoading by mutableStateOf(true)
+        composeTestRule.setContent {
+            TempoTheme {
+                FirstLoadCrossfade(
+                    isLoading = isLoading,
+                    loading = {
+                        TempoLoadingIndicator(message = "Loading tasks", modifier = Modifier.testTag("loading"))
+                    },
+                ) {
+                    Text("Pay rent", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        isLoading = false
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeBy(80)
+        // Midway through the fade both states are on screen, one going and one coming, rather than
+        // the content replacing the empty state in a single frame.
+        composeTestRule.onNodeWithTag("content").assertExists()
+        composeTestRule.onNodeWithTag("loading").assertExists()
+
+        composeTestRule.mainClock.advanceTimeBy(1_000)
+        composeTestRule.onNodeWithTag("content").assertIsDisplayed()
+        composeTestRule.onNodeWithTag("loading").assertDoesNotExist()
+    }
+
+    /** Content that is ready on first composition (tests, previews, a warm tab) shows at once. */
+    @Test
+    fun contentReadyFromTheStart_showsWithoutFading() {
+        composeTestRule.setContent {
+            TempoTheme {
+                FirstLoadCrossfade(
+                    isLoading = false,
+                    loading = { TempoLoadingIndicator(message = "Loading tasks") },
+                ) {
+                    Text("Pay rent", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        composeTestRule.onNodeWithTag("content").assertIsDisplayed()
     }
 }

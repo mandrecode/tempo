@@ -29,6 +29,8 @@ import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.core.ui.MainViewModel
+import com.mandrecode.tempo.core.ui.StartupContentGate
+import com.mandrecode.tempo.core.ui.StartupContentGateHost
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -48,7 +50,9 @@ import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity :
+    ComponentActivity(),
+    StartupContentGateHost {
     @Inject
     lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
 
@@ -62,6 +66,13 @@ class MainActivity : ComponentActivity() {
     lateinit var databaseWarmupSignal: DatabaseWarmupSignal
 
     private val mainViewModel: MainViewModel by viewModels()
+
+    override val startupContentGate = StartupContentGate()
+
+    // Set once the splash has given way to the app. The what's-new sheet waits for it: the sheet
+    // is a window of its own, and showing it while the splash is held ends the splash over a
+    // screen that has not drawn yet, which shows as a black frame.
+    private var hasSplashHandedOver by mutableStateOf(false)
 
     // Triggers for navigation
     private val routinesNavigationTrigger = mutableLongStateOf(0L)
@@ -80,10 +91,20 @@ class MainActivity : ComponentActivity() {
         // — a much more jarring place for a startup cost to become visible. The bound keeps a
         // slow device or a failed warm-up (see DatabaseWarmupSignal) from holding the splash
         // indefinitely.
+        //
+        // It also holds while the app's own settings are loading and while the first screen is
+        // still fetching its first content (StartupContentGate), so the splash hands over to a
+        // finished screen rather than to its bare background with the content arriving on top a
+        // moment later (#438). The same bound applies to all three.
         val splashStartElapsedMs = SystemClock.elapsedRealtime()
         splashScreen.setKeepOnScreenCondition {
-            !databaseWarmupSignal.isReady.value &&
-                SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
+            val stillStarting =
+                !databaseWarmupSignal.isReady.value ||
+                    mainViewModel.uiState.value is MainUiState.Loading ||
+                    startupContentGate.isHolding
+            val keep = stillStarting && SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
+            if (!keep) hasSplashHandedOver = true
+            keep
         }
 
         // Establish edge-to-edge before first composition so the app draws behind the system bars
@@ -160,7 +181,7 @@ class MainActivity : ComponentActivity() {
                             )
 
                             val whatsNewEntry = state.whatsNewEntry
-                            if (whatsNewEntry != null && !isOnboardingSectionActive) {
+                            if (whatsNewEntry != null && !isOnboardingSectionActive && hasSplashHandedOver) {
                                 WhatsNewBottomSheet(
                                     entry = whatsNewEntry,
                                     versionName = state.whatsNewVersionName,

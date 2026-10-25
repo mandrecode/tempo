@@ -16,3 +16,13 @@ Room-backed first loads on a Pixel 7 finish in roughly 50–250 ms. 400 ms cover
 
 - **Delaying `isLoading` in each ViewModel.** This repeats the same timing logic in four places and mixes a presentation concern into state.
 - **Starting with `isLoading = false`.** This would flash the empty state instead, which is worse.
+
+## The whole first screen
+
+Hiding the indicator did not remove the flash; it moved it. The first frames after the splash were the screen's background, title and navigation bar, followed by the content.
+
+- **Cold start:** `MainActivity`'s splash condition now also holds while `MainUiState` is `Loading` and while `StartupContentGate.isHolding`. Tasks, Routines and Focus call `HoldSplashWhileFirstLoad(uiState.isLoading)` from their screens, which reports in a `SideEffect`, so the report is in place before the splash's next pre-draw check. The gate holds only for the first screen's first load. Once any content has shown it stays open, and screens that never load (onboarding) never hold it. The gate is reached through `LocalActivity` (`StartupContentGateHost`) rather than a new `CompositionLocal`, which the project's Compose rules forbid. The existing 1.5 s cap bounds the wait.
+- **Later first visits:** the three contents switch on `FirstLoadCrossfade(isLoading)`, a 250 ms `Crossfade`. Content that is ready on first composition (previews, screenshot tests, a warm tab) shows immediately; only a loading-to-loaded change fades.
+- **What's new:** the sheet is a separate window, and opening it while the main window's drawing was still held ended the splash over an undrawn screen (a black frame). It now waits for `hasSplashHandedOver`, which the splash condition sets the first time it lets go.
+
+Verified with screenshot bursts during cold starts on the Pixel 10 AVD. Before: splash, blank, bare Focus chrome, content. After: splash, then the complete Focus screen, and with a pending what's-new entry the sheet opens over it with no black frame.
