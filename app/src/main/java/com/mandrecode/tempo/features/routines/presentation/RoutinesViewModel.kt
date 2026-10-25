@@ -16,6 +16,7 @@ import com.mandrecode.tempo.features.routines.domain.usecase.ToggleHabitCompleti
 import com.mandrecode.tempo.features.routines.domain.usecase.UpdateHabitUseCase
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -59,6 +60,16 @@ class RoutinesViewModel
         // The day the timeline was last brought up to date with (#438). The view model is created
         // at startup, ahead of the tab, and can outlive a midnight before the tab is first shown.
         internal var lastSeenToday: LocalDate = _uiState.value.selectedDate
+
+        // Set only when this screen has told the user their reminders need permission — a request
+        // after a save, or the revoked-permission dialog. The "reminders are active again" message
+        // answers that, so it is shown once when permission comes back and never otherwise (#437).
+        internal var remindersAwaitingPermission = false
+
+        // The reminder lookup behind the revoked-permission check, kept so a newer check or
+        // clearing every reminder can cancel it: a lookup that finishes after either would act on
+        // reminders that no longer matter.
+        internal var permissionLookupJob: Job? = null
 
         init {
             loadData()

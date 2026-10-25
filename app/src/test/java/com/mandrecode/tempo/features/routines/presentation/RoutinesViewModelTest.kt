@@ -30,11 +30,14 @@ import io.mockk.mockk
 import io.mockk.slot
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -923,7 +926,7 @@ class RoutinesViewModelTest {
     // --- Permissions ---
 
     @Test
-    fun `checkPermissionsAndSyncReminders with all granted and previously not granted sends snackbar`() =
+    fun `checkPermissionsAndSyncReminders with all granted records permission info`() =
         runTest {
             every { permissionChecker.hasNotificationPermissions() } returns true
             every { permissionChecker.canScheduleExactAlarms() } returns true
@@ -932,6 +935,76 @@ class RoutinesViewModelTest {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.permissionInfo.areAllGranted).isTrue()
+        }
+
+    /** Permission granted somewhere else — the habit sheet, another tab — is not this screen's news (#437). */
+    @Test
+    fun `permission returning on resume is not announced when this screen never asked for it`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } returns emptyList()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            viewModel.onEvent(RoutinesContract.UiEvent.OnPermissionsGranted)
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    @Test
+    fun `permission returning after the revoked dialog is announced once`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } returns listOf(habit(1L))
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
+        }
+
+    @Test
+    fun `clearing every reminder drops the pending announcement`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } returns listOf(habit(1L))
+            viewModel.checkPermissionsAndSyncReminders()
+            // Let the lookup finish, so there is a pending announcement for clear-all to drop —
+            // otherwise clear-all only cancels a lookup that never armed anything.
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isTrue()
+
+            viewModel.onEvent(RoutinesContract.UiEvent.ConfirmClearAllHabitReminders)
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
         }
 
     @Test
@@ -1449,4 +1522,64 @@ class RoutinesViewModelTest {
         // Same structure — chain habits never leak to standalone
         assertThat(resultNewHabits).isEqualTo(resultOldHabits)
     }
+
+    /** A reminder lookup that outlasts the grant must not re-arm the announcement it answered. */
+    @Test
+    fun `a slow reminder lookup finishing after the grant does not announce it twice`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } returns listOf(habit(1L))
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            // Another resume while still denied starts a lookup that takes its time...
+            coEvery { habitRepository.getHabitsWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(habit(1L))
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+            // ...and the grant arrives, and is announced, before it finishes.
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
+        }
+
+    /** A lookup started before every reminder was cleared must not bring the revoked dialog back. */
+    @Test
+    fun `a reminder lookup outlasting clear all does not re-arm the dialog or the announcement`() =
+        runTest {
+            val effects = mutableListOf<RoutinesContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            val withReminder = habit(1L)
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { habitRepository.getHabitsWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+
+            viewModel.onEvent(RoutinesContract.UiEvent.ConfirmClearAllHabitReminders)
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isFalse()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    private fun List<RoutinesContract.UiEffect>.snackbarMessages(): List<Int> =
+        filterIsInstance<RoutinesContract.UiEffect.ShowSnackbar>().map { it.messageResId }
 }

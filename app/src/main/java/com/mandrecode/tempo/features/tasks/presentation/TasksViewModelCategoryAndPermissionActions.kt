@@ -327,40 +327,57 @@ internal fun TasksViewModel.dismissPermissionRequestDialog() {
     mutableUiState.update { it.copy(showPermissionRequestDialog = false) }
 }
 
+internal fun TasksViewModel.requestReminderPermission() {
+    remindersAwaitingPermission = true
+    mutableUiState.update { it.copy(showPermissionRequestDialog = true) }
+}
+
+/**
+ * Announces that reminders work again, but only to answer this screen's own request for
+ * permission. Both the request flow and the resume check land here when permission comes back,
+ * and only the first of them speaks.
+ */
 internal fun TasksViewModel.onPermissionsGranted() {
+    if (!remindersAwaitingPermission) return
+    remindersAwaitingPermission = false
     viewModelScope.launch {
         showSnackbar(R.string.msg_all_set_reminders_active)
     }
 }
 
 internal fun TasksViewModel.checkPermissionsAndSyncRemindersInternal() {
-    val wasGrantedBefore = uiState.value.permissionInfo.areAllGranted
-
     val hasNotifications = permissionChecker.hasNotificationPermissions()
     val canScheduleAlarms = permissionChecker.canScheduleExactAlarms()
     val permissionInfo = PermissionInfo(hasNotifications, canScheduleAlarms)
 
     mutableUiState.update { it.copy(permissionInfo = permissionInfo) }
 
+    permissionLookupJob?.cancel()
     if (!permissionInfo.areAllGranted) {
-        viewModelScope.launch {
-            val tasksWithReminders = taskRepository.getTasksWithReminders()
-            if (tasksWithReminders.isNotEmpty()) {
-                mutableUiState.update {
-                    it.copy(showPermissionRevokedDialog = true)
+        permissionLookupJob =
+            viewModelScope.launch {
+                val tasksWithReminders = taskRepository.getTasksWithReminders()
+                // The lookup can outlast the grant itself: if permission came back meanwhile, the
+                // grant has already been answered, and flagging now would announce it a second time.
+                val stillMissing =
+                    !(permissionChecker.hasNotificationPermissions() && permissionChecker.canScheduleExactAlarms())
+                if (tasksWithReminders.isNotEmpty() && stillMissing) {
+                    remindersAwaitingPermission = true
+                    mutableUiState.update {
+                        it.copy(showPermissionRevokedDialog = true)
+                    }
                 }
             }
-        }
     } else {
-        if (!wasGrantedBefore) {
-            onPermissionsGranted()
-        }
+        onPermissionsGranted()
     }
 }
 
 internal fun TasksViewModel.confirmClearAllReminders() {
+    permissionLookupJob?.cancel()
     viewModelScope.launch {
         clearAllRemindersUseCase()
+        remindersAwaitingPermission = false
         mutableUiState.update {
             it.copy(showPermissionRevokedDialog = false)
         }

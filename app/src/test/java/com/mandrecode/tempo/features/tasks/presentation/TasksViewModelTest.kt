@@ -42,11 +42,14 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -353,7 +356,7 @@ class TasksViewModelTest {
             assertThat(
                 effects
                     .filterIsInstance<TasksContract.UiEffect.ShowSnackbar>()
-                    .map { it.messageResId },
+                    .mapNotNull { it.messageResId },
             ).doesNotContain(R.string.msg_task_updated_success)
         }
 
@@ -1090,13 +1093,52 @@ class TasksViewModelTest {
             assertThat(viewModel.uiState.value.taskForm.editorSessionId).isGreaterThan(firstSessionId)
         }
 
+    /** Permission granted somewhere else — the task sheet, another tab — is not this screen's news (#437). */
     @Test
-    fun `onPermissionsGranted shows success message`() =
+    fun `onPermissionsGranted stays silent when this screen never asked for permission`() =
         runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } returns emptyList()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
             viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
             advanceUntilIdle()
 
-            // The ViewModel now sends a @StringRes Int via UiEffect, no context needed
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    @Test
+    fun `permission granted after a save asked for it is announced once`() =
+        runTest {
+            coEvery { createTaskUseCase.invoke(any()) } returns
+                CreateTaskUseCase.Result.Success(100L, ScheduleResult.PermissionError("denied"))
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            // Unconfined: advanceUntilIdle stops once only background work is left, which would
+            // leave the last effect sitting in the channel uncollected.
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            viewModel.onEvent(TasksContract.UiEvent.SetReminder(2030, 1, 1, 10, 0))
+            viewModel.onEvent(TasksContract.UiEvent.CreateOrUpdateTask("New Task", "Desc", 1L))
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRequestDialog).isTrue()
+
+            // Coming back from the system dialog resumes the screen as well as finishing the request.
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            viewModel.onEvent(TasksContract.UiEvent.DismissPermissionRequestDialog)
+            viewModel.onEvent(TasksContract.UiEvent.OnPermissionsGranted)
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
         }
 
     @Test
@@ -1945,4 +1987,89 @@ class TasksViewModelTest {
         }
 
     // endregion
+
+    /** A reminder lookup that outlasts the grant must not re-arm the announcement it answered. */
+    @Test
+    fun `a slow reminder lookup finishing after the grant does not announce it twice`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            val withReminder = Task(id = 1L, title = "Pay rent", description = "")
+            coEvery { taskRepository.getTasksWithReminders() } returns listOf(withReminder)
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            // Another resume while still denied starts a lookup that takes its time...
+            coEvery { taskRepository.getTasksWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+            // ...and the grant arrives, and is announced, before it finishes.
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages().count { it == R.string.msg_all_set_reminders_active })
+                .isEqualTo(1)
+        }
+
+    /** A lookup started before every reminder was cleared must not bring the revoked dialog back. */
+    @Test
+    fun `a reminder lookup outlasting clear all does not re-arm the dialog or the announcement`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            val withReminder = Task(id = 1L, title = "Pay rent", description = "")
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } coAnswers {
+                delay(1_000)
+                listOf(withReminder)
+            }
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceTimeBy(100)
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders)
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isFalse()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    @Test
+    fun `clearing every reminder drops the pending announcement`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } returns
+                listOf(Task(id = 1L, title = "Pay rent", description = ""))
+            viewModel.checkPermissionsAndSyncReminders()
+            // The lookup finishes first, so clear-all has a pending announcement to drop.
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isTrue()
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders)
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
+    private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =
+        filterIsInstance<TasksContract.UiEffect.ShowSnackbar>().mapNotNull { it.messageResId }
 }
