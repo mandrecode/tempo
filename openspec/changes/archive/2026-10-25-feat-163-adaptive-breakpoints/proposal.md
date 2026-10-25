@@ -13,6 +13,7 @@ When a breakpoint is crossed (a foldable opening, a desktop window being resized
 ## What Changes
 
 - **One breakpoint source:** `WindowWidthClass` (Compact, Medium, Expanded, Large, Extra-large), built on WindowManager 1.5's official `WIDTH_DP_*_LOWER_BOUND` constants and `currentWindowAdaptiveInfoV2()` (Large/Extra-large aware). The rail (`≥ Medium`) and docked editors (`≥ Large`) both read it, so they cannot disagree, and the hand-coded 1200 dp and its separate rounding logic are gone. Extra-large windows are treated as Large.
+- **No recreation on size changes:** `MainActivity` handles rotation, fold, split-screen and window-resize configuration changes in place (Compose re-lays out from the new window size), so state and running animations survive them.
 - **Smooth adaptation:** the content's start clearance for the floating rail animates on the same spring the floating controls use (`animatedRailClearance`). When the window crosses a breakpoint, or when an editor docks beside the list (which widens the rail), the content slides instead of jumping. This applies to Tasks, Routines, Focus and Settings.
 - What's New: the entry becomes `434-380-115-335-336-440-163` (en, es).
 
@@ -32,5 +33,6 @@ None.
 
 ## Impact
 
+- Manifest: `MainActivity` `configChanges` (orientation, screen size, screen layout, smallest screen size).
 - UI: new `core/ui/adaptive/WindowWidthClass.kt`; `SheetPlacement.kt` (derived from the width class); `FloatingNavigationLayout.kt` (rail check, `animatedRailClearance`); `TasksScreen.kt` and `RoutinesScreen.kt` (animated clearance).
 - Tests: new unit `WindowWidthClassTest`, new instrumented `AnimatedRailClearanceTest`. `SheetPlacementTest` and the adaptive screenshot tests pass unchanged.
