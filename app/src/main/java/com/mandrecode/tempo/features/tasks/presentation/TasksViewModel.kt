@@ -135,7 +135,7 @@ class TasksViewModel
             onTabShownOn(today = systemToday())
         }
 
-        private fun systemToday(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
+        internal fun systemToday(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
         fun onEvent(event: TasksContract.UiEvent) {
             when (event) {

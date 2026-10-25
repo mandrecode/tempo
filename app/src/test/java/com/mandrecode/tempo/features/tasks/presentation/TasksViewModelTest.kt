@@ -42,6 +42,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -1728,6 +1729,39 @@ class TasksViewModelTest {
             assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(today))
 
             viewModel.onTabShownOn(today = today.plus(1, kotlinx.datetime.DateTimeUnit.DAY))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
+        }
+
+    /** The tab stays open across midnight and a task changes before it is shown again (#438). */
+    @Test
+    fun `regrouping after midnight with the tab still open uses the new day`() =
+        runTest {
+            val today =
+                kotlinx.datetime.Clock.System.todayIn(
+                    kotlinx.datetime.TimeZone.currentSystemDefault(),
+                )
+            val yesterday = today.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
+            val tasks = MutableStateFlow(emptyList<Task>())
+            coEvery { taskRepository.getAllTasks() } returns tasks
+            coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+            viewModel = createViewModel()
+            // Last shown yesterday; midnight has passed since without the tab being shown again.
+            viewModel.currentDay.value = yesterday
+            advanceUntilIdle()
+
+            tasks.value =
+                listOf(
+                    Task(
+                        id = 1,
+                        title = "Due yesterday",
+                        description = "",
+                        reminderDate = LocalDateTime(yesterday.year, yesterday.monthNumber, yesterday.dayOfMonth, 9, 0),
+                        categoryId = DEFAULT_INBOX_CATEGORY.id,
+                    ),
+                )
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)

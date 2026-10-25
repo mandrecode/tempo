@@ -58,7 +58,7 @@ private fun <K, V> Map<K, List<V>>.toImmutableListMap(): ImmutableMap<K, Immutab
  * The Tasks tab has come into view, or the app back to the front with it showing (#438). The tab
  * is warmed up before it is first opened, so the day the date groups were drawn for may have ended
  * since: a new [today] regroups the list even though no task changed, and yesterday's tasks move
- * to Overdue.
+ * to Overdue. Any other regrouping reads the clock as well, so it never falls behind either.
  */
 internal fun TasksViewModel.onTabShownOn(today: LocalDate) {
     currentDay.value = today
@@ -72,7 +72,7 @@ internal fun TasksViewModel.loadData() {
             mutableUiState.map { it.selectedCategoryId }.distinctUntilChanged(),
             mutableUiState.map { it.sortOption }.distinctUntilChanged(),
             currentDay,
-        ) { tasks, dbCategories, selectedCategoryId, sortOption, today ->
+        ) { tasks, dbCategories, selectedCategoryId, sortOption, dayShown ->
             val allCategories = dbCategories.toPersistentList()
 
             val effectiveSelectedId =
@@ -98,6 +98,10 @@ internal fun TasksViewModel.loadData() {
                         compareBy<Task> { it.isCompleted }
                             .then(TaskSortCriteria.comparator(sortOption)),
                     )
+
+            // The day the tab was last shown, or the clock's if midnight has passed since: an edit
+            // made with the tab open across midnight regroups for the new day too.
+            val today = maxOf(dayShown, systemToday())
 
             val parentTasks = filteredTasks.filter { it.parentTaskId == null }
             val (activeTasks, completedTasks) = parentTasks.partition { !it.isCompleted }
