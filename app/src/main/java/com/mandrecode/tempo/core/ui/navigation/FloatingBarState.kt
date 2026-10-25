@@ -21,4 +21,6 @@ data class TasksFloatingBarState(
     val onSort: () -> Unit = {},
     val onSelectSortOption: (SortOption) -> Unit = {},
     val onDismissSort: () -> Unit = {},
+    /** The Tasks tab was tapped while already open. */
+    val onReselect: () -> Unit = {},
 )

@@ -174,6 +174,7 @@ fun TasksScreen(
                 sortMenuExpanded = isRailLayout && uiState.showSortBottomSheet,
                 onSelectSortOption = { viewModel.onEvent(TasksContract.UiEvent.SetSortOption(it)) },
                 onDismissSort = { viewModel.onEvent(TasksContract.UiEvent.HideSortMenu) },
+                onReselect = { viewModel.onEvent(TasksContract.UiEvent.ShowDefaultCategory) },
             ),
         )
     }

@@ -103,6 +103,9 @@ object TasksContract {
             val categoryId: Long,
         ) : UiEvent
 
+        /** The Tasks tab was tapped while already open: go back to the default category (#452). */
+        data object ShowDefaultCategory : UiEvent
+
         data class ShowCategoryDialog(
             val category: Category? = null,
         ) : UiEvent
