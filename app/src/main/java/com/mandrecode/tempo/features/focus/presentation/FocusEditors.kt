@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -34,9 +35,19 @@ internal fun FocusTaskEditor(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnDismiss by rememberUpdatedState(onDismiss)
 
+    // Opened once per target, not once per composition. The view model outlives a configuration
+    // change but this composable does not, and asking it to open again would reset the form the
+    // user is half-way through — and the session its draft is saved under.
+    var openedFor by rememberSaveable { mutableStateOf<String?>(null) }
     LaunchedEffect(target) {
+        val key = target.editorKey()
+        if (openedFor == key && viewModel.uiState.value.taskForm.isVisible) return@LaunchedEffect
+        openedFor = key
         viewModel.onEvent(
             when (target) {
+                FocusContract.TaskEditorTarget.NewTask ->
+                    TasksContract.UiEvent.ShowTaskDialog()
+
                 is FocusContract.TaskEditorTarget.Existing ->
                     TasksContract.UiEvent.ShowTaskDialog(task = target.task)
 
@@ -70,6 +81,14 @@ internal fun FocusTaskEditor(
         )
     }
 }
+
+/** Which editor a target opens, stable across recreation (a task's id, not its contents). */
+private fun FocusContract.TaskEditorTarget.editorKey(): String =
+    when (this) {
+        FocusContract.TaskEditorTarget.NewTask -> "new"
+        is FocusContract.TaskEditorTarget.Existing -> "task:${task.id}"
+        is FocusContract.TaskEditorTarget.NewSubtask -> "subtask:$parentTaskId"
+    }
 
 /** Reports [onClose] the first time [isOpen] goes true and back to false, never before. */
 @Composable

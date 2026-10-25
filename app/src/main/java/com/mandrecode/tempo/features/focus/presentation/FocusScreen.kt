@@ -14,9 +14,13 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -27,11 +31,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
+import com.mandrecode.tempo.core.ui.navigation.FocusFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
 import com.mandrecode.tempo.features.focus.presentation.components.PlanTasksSheet
 import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
+import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
+import com.mandrecode.tempo.features.tasks.presentation.showTasksEffect
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 
@@ -46,6 +53,8 @@ fun FocusScreen(
      * being counted on holiday terms.
      */
     topBar: @Composable (isVacationModeActive: Boolean) -> Unit = {},
+    /** Hands the floating bar its add action, which opens the task form over Focus (#434). */
+    onFloatingBarStateChange: (FocusFloatingBarState) -> Unit = {},
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -56,6 +65,8 @@ fun FocusScreen(
         viewModel.onTabShown()
         onPauseOrDispose { }
     }
+    val onAddTask = remember(viewModel) { { viewModel.onEvent(FocusContract.UiEvent.AddTask) } }
+    SideEffect { onFloatingBarStateChange(FocusFloatingBarState(onAddTask = onAddTask)) }
     val railContentClearance = floatingRailContentClearance()
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -65,6 +76,7 @@ fun FocusScreen(
         onOpenSession = onOpenSession,
         onEvent = viewModel::onEvent,
     )
+    TaskEditorEffects(isEditorOpen = uiState.taskEditor != null, snackbarHostState = snackbarHostState)
 
     Box(
         modifier =
@@ -175,6 +187,39 @@ private fun FocusEffects(
                         }
                     }
             }
+        }
+    }
+}
+
+/**
+ * Focus hosts its own Tasks view model for the task editor, created only once an editor has opened
+ * (see FocusTaskEditor). From then on its messages come out here, on Focus's snackbar: a save or a
+ * reminder that fails after the form has closed still has to be reported.
+ */
+@Composable
+private fun TaskEditorEffects(
+    isEditorOpen: Boolean,
+    snackbarHostState: SnackbarHostState,
+) {
+    var hasOpenedTaskEditor by rememberSaveable { mutableStateOf(false) }
+    LaunchedEffect(isEditorOpen) {
+        if (isEditorOpen) hasOpenedTaskEditor = true
+    }
+    if (hasOpenedTaskEditor) {
+        CollectTaskEditorEffects(snackbarHostState)
+    }
+}
+
+/** The view model here is the same instance FocusTaskEditor uses: same owner, same class. */
+@Composable
+private fun CollectTaskEditorEffects(
+    snackbarHostState: SnackbarHostState,
+    viewModel: TasksViewModel = viewModel(),
+) {
+    val context = LocalContext.current
+    LaunchedEffect(viewModel) {
+        viewModel.uiEffect.collect { effect ->
+            showTasksEffect(effect, context, snackbarHostState, viewModel::onEvent)
         }
     }
 }

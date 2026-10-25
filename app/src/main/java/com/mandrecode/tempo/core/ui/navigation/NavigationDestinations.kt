@@ -27,7 +27,10 @@ import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
 
 @Composable
-internal fun FocusDestination(navigator: TempoNavigator) {
+internal fun FocusDestination(
+    navigator: TempoNavigator,
+    onFloatingBarStateChange: (FocusFloatingBarState) -> Unit,
+) {
     FocusScreen(
         viewModel = tabViewModel<FocusViewModel>(),
         topBar = { isVacationModeActive ->
@@ -43,6 +46,7 @@ internal fun FocusDestination(navigator: TempoNavigator) {
             )
         },
         onOpenSession = { navigator.navigate(FocusSessionRoute) },
+        onFloatingBarStateChange = onFloatingBarStateChange,
     )
 }
 

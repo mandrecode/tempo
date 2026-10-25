@@ -2,6 +2,10 @@ package com.mandrecode.tempo.core.ui.navigation
 
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 
+data class FocusFloatingBarState(
+    val onAddTask: () -> Unit = {},
+)
+
 data class RoutinesFloatingBarState(
     val visible: Boolean = true,
     val compactSoloAction: Boolean = false,

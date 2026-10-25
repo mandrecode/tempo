@@ -95,6 +95,29 @@ class FocusViewModelTest : FocusViewModelHarness() {
             }
         }
 
+    /**
+     * A task added while Focus is open — from its own editor, say — changes today's counts, and
+     * the day's history is recounted once the save has landed rather than waiting for the tab to
+     * be shown again (#434).
+     */
+    @Test
+    fun `work added while Focus is open recounts the day`() =
+        runTest {
+            val agenda = MutableStateFlow(agendaOf())
+            every { getFocusAgenda(any()) } returns agenda
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 0
+            createViewModel()
+            advanceUntilIdle()
+            coVerify(exactly = 0) { recordDailyActivity(any()) }
+
+            val entry = FocusAgendaItem.TaskEntry(task(1))
+            agenda.value = agendaOf(todayItems = listOf(entry))
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) { recordDailyActivity(clockToday()) }
+        }
+
     @Test
     fun `state carries the agenda, streak and counts`() =
         runTest {
@@ -142,6 +165,22 @@ class FocusViewModelTest : FocusViewModelHarness() {
             viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
             advanceUntilIdle()
 
+            assertThat(viewModel.uiState.value.taskEditor).isNull()
+        }
+
+    @Test
+    fun `adding a task from the bar opens a blank task form over Focus`() =
+        runTest {
+            stubDay()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onEvent(FocusContract.UiEvent.AddTask)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskEditor).isEqualTo(FocusContract.TaskEditorTarget.NewTask)
+
+            viewModel.onEvent(FocusContract.UiEvent.DismissEditor)
             assertThat(viewModel.uiState.value.taskEditor).isNull()
         }
 

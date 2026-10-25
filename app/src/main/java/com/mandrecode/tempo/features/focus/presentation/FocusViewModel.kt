@@ -70,6 +70,12 @@ class FocusViewModel
         private var observeDayJob: Job? = null
         private var observedDay: LocalDate? = null
 
+        /**
+         * The agenda's counts the last time this day was seen, to tell a real change from the first
+         * load. Reset with the day, so moving onto a new one never reads as a change.
+         */
+        private var lastAgendaCounts: Pair<Int, Int>? = null
+
         init {
             observeSession()
             refreshDayIfStale()
@@ -118,6 +124,9 @@ class FocusViewModel
                             taskEditor = FocusContract.TaskEditorTarget.Existing(event.task),
                         )
                     }
+
+                FocusContract.UiEvent.AddTask ->
+                    mutableUiState.update { it.copy(taskEditor = FocusContract.TaskEditorTarget.NewTask) }
 
                 is FocusContract.UiEvent.AddSubtask ->
                     mutableUiState.update {
@@ -349,6 +358,7 @@ class FocusViewModel
             if (observedDay == day) return day
 
             observedDay = day
+            lastAgendaCounts = null
             val previousObserveDayJob = observeDayJob
             observeDayJob =
                 viewModelScope.launch {
@@ -365,6 +375,18 @@ class FocusViewModel
                         Triple(agenda, history, periods)
                     }.onEach { (agenda, history, periods) ->
                         if (observedDay != day) return@onEach
+                        // Work added, finished or moved while Focus is open — from its own editor, a
+                        // notification, another window — changes today's counts, and the day's
+                        // history has to follow, or a snapshot would still show the day complete
+                        // after a task was added to it. Recounting on the agenda's change rather than
+                        // on the editor closing waits for the save itself, which can land after the
+                        // sheet has gone. The first load is only a baseline.
+                        val counts = agenda.scheduledCount to agenda.completedCount
+                        val previousCounts = lastAgendaCounts
+                        lastAgendaCounts = counts
+                        if (previousCounts != null && previousCounts != counts) {
+                            viewModelScope.launch { recordDailyActivity(day) }
+                        }
                         val streak = getFocusStreak(day)
                         mutableUiState.update { state ->
                             state.copy(

@@ -174,6 +174,7 @@ fun TempoNavHost(
         taskEditorRequests.request(taskId)
         navigator.navigateToTopLevel(TasksRoute)
     }
+    var focusFloatingBarState by remember { mutableStateOf(FocusFloatingBarState()) }
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
 
@@ -195,6 +196,7 @@ fun TempoNavHost(
             onConsumePendingNotificationAction = {
                 taskEditorRequests.consume(onConsumePendingNotificationAction)
             },
+            onFocusFloatingBarStateChange = { focusFloatingBarState = it },
             onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
             onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
             onOpenTaskInTasks = openTaskInTasks,
@@ -222,6 +224,7 @@ fun TempoNavHost(
             navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
             onOpenSession = navigator::openSession,
+            focusState = focusFloatingBarState,
             routinesState = routinesFloatingBarState,
             tasksState = tasksFloatingBarState,
             onNavigateToTopLevel = navigator::navigateToTopLevel,
@@ -319,6 +322,7 @@ private fun rememberActiveEntries(
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
+    onFocusFloatingBarStateChange: (FocusFloatingBarState) -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
@@ -335,6 +339,7 @@ private fun rememberActiveEntries(
             navigationPreferencesRepository,
             pendingNotificationAction,
             onConsumePendingNotificationAction,
+            onFocusFloatingBarStateChange,
             onRoutinesFloatingBarStateChange,
             onTasksFloatingBarStateChange,
             onOpenTaskInTasks,
@@ -369,12 +374,16 @@ private fun rememberNavEntryProvider(
     navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
+    onFocusFloatingBarStateChange: (FocusFloatingBarState) -> Unit,
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
 ) = entryProvider<NavKey> {
     entry<FocusRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to FocusRoute)) {
-        FocusDestination(navigator = navigator)
+        FocusDestination(
+            navigator = navigator,
+            onFloatingBarStateChange = onFocusFloatingBarStateChange,
+        )
     }
     entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
         RoutinesDestination(
