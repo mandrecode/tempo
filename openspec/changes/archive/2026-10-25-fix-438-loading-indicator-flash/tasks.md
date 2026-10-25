@@ -17,3 +17,4 @@
 - [x] 3.2 `FirstLoadCrossfade` in Tasks, Routines and Focus content. Instrumented tests in `TempoLoadingIndicatorTest` (fades rather than swaps; ready content shows at once).
 - [x] 3.3 What's-new sheet waits for the splash to hand over.
 - [x] 3.4 Cold-start screenshot bursts on the Pixel 10 AVD, with and without a pending what's-new entry; `TasksContentTest`, `RoutinesContentTest`, `FocusContentTest`, `TasksScreenTest` and `MainActivityNavigationTest` pass.
+- [x] 3.5 Rendered-pixel tests in `TempoLoadingIndicatorTest` (Copilot): partial opacity mid-fade and full opacity after it, and full opacity in the very first frame under a `StartupContentGateHost` (a stand-in activity provided through `LocalActivity`). The latter fails when the splash branch is disabled.

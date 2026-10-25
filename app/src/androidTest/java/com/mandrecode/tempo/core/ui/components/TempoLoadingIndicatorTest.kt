@@ -1,13 +1,24 @@
 package com.mandrecode.tempo.core.ui.components
 
+import android.app.Activity
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -15,6 +26,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.ui.StartupContentGate
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Before
 import org.junit.Rule
@@ -159,5 +171,75 @@ class TempoLoadingIndicatorTest {
             composeTestRule.onNodeWithContentDescription("Loading tasks").assertDoesNotExist()
         }
         composeTestRule.onNodeWithTag("content").assertIsDisplayed()
+    }
+
+    /**
+     * Renders [FirstLoadCrossfade] as a 100 dp white square whose content is solid black, so the
+     * colour at its centre says exactly how opaque the content is.
+     */
+    private fun setOpacityProbe(
+        isLoading: () -> Boolean,
+        activity: Activity? = null,
+    ) {
+        composeTestRule.setContent {
+            val host = activity ?: LocalActivity.current
+            CompositionLocalProvider(LocalActivity provides host) {
+                Box(modifier = Modifier.size(100.dp).background(Color.White).testTag("probe")) {
+                    FirstLoadCrossfade(isLoading = isLoading(), loading = {}) {
+                        Box(modifier = Modifier.fillMaxSize().background(Color.Black))
+                    }
+                }
+            }
+        }
+    }
+
+    /** Red channel at the probe's centre: 1 is the white background alone, 0 is opaque content. */
+    private fun probeRed(): Float {
+        val image = composeTestRule.onNodeWithTag("probe").captureToImage()
+        return image.toPixelMap()[image.width / 2, image.height / 2].red
+    }
+
+    @Test
+    fun firstContent_isPartlyTransparentMidFade_andOpaqueAfterIt() {
+        var isLoading by mutableStateOf(true)
+        setOpacityProbe(isLoading = { isLoading })
+        composeTestRule.mainClock.advanceTimeByFrame()
+        assertThat(probeRed()).isWithin(0.02f).of(1f)
+
+        isLoading = false
+        composeTestRule.mainClock.advanceTimeByFrame()
+        composeTestRule.mainClock.advanceTimeBy(100)
+        val midway = probeRed()
+        assertThat(midway).isGreaterThan(0.05f)
+        assertThat(midway).isLessThan(0.95f)
+
+        composeTestRule.mainClock.advanceTimeBy(1_000)
+        assertThat(probeRed()).isWithin(0.02f).of(0f)
+    }
+
+    /**
+     * Under the launch splash the content arrives fully opaque in its very first frame: the splash
+     * lets go in that frame, and anything less showed as an empty screen.
+     */
+    @Test
+    fun underTheSplash_firstContentIsOpaqueInItsFirstFrame() {
+        // An Activity can only be constructed on the main thread.
+        val host = composeTestRule.runOnUiThread { SplashHost() }
+        var isLoading by mutableStateOf(true)
+        setOpacityProbe(isLoading = { isLoading }, activity = host)
+        composeTestRule.mainClock.advanceTimeByFrame()
+        assertThat(host.startupContentGate.isHolding).isTrue()
+
+        isLoading = false
+        composeTestRule.mainClock.advanceTimeByFrame()
+
+        assertThat(probeRed()).isWithin(0.02f).of(0f)
+    }
+
+    /** An activity standing in for MainActivity: only its gate is read. */
+    private class SplashHost :
+        ComponentActivity(),
+        StartupContentGateHost {
+        override val startupContentGate = StartupContentGate()
     }
 }
