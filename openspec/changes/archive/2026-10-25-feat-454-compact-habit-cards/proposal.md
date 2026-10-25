@@ -8,10 +8,10 @@ Habit cards take more room than they need. A habit is usually a quick, recurring
 
 ## What Changes
 
-- **Habits:** the row is compact, about 56dp tall: a 40dp checkbox, 12/8dp padding and a pill-shaped card that squares off a little once done. Descriptions still collapse to one line with the expand toggle.
+- **Habits:** the row is more compact, about 72dp tall: a 48dp checkbox and 16/12dp padding. A first pass at 56dp (40dp checkbox) proved too small on device, so this is a middle ground between that and the original 88dp. Descriptions still collapse to one line with the expand toggle.
 - **Chains:** they always list their habits; there is no expand/collapse.
   - The header is tighter: title, done/total pill and add-habit button on one row, an optional one-line description, then a thin full-width progress bar.
-  - Habits inside a chain use a 32dp checkbox and 4dp vertical padding.
+  - Habits inside a chain are exactly the same row as a standalone habit: same checkbox, padding, title style and description behaviour. Only the colours come from the chain.
   - The faded background icon is smaller.
 - Removed with the expansion: `RoutinesContract.UiState.expandedChainIds`, `UiEvent.ToggleChainExpanded`, the auto-collapse when a chain is completed, the future-date habit-icon summary (the habits are listed now), and the `expand_chain`/`collapse_chain` strings.
 

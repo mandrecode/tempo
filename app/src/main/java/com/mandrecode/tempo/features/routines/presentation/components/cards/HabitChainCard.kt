@@ -280,12 +280,11 @@ fun HabitChainCard(
                                         },
                                         onClick = { onHabitClick?.invoke(habit.id) },
                                         color = resolvedChainColor,
-                                        cardShape = RoundedCornerShape(ChainHabitCheckboxSize / 2 + 4.dp),
+                                        // Same row as a standalone habit; only the colours come
+                                        // from the chain.
+                                        cardShape = RoundedCornerShape(24.dp),
                                         contentColor = contentColor,
-                                        verticalPadding = 4.dp,
-                                        checkboxSize = ChainHabitCheckboxSize,
                                         canToggle = canToggle,
-                                        isInsideChain = true,
                                         isContainerCompleted = allCompleted,
                                         isSelected = habit.id == selectedHabitId,
                                     )

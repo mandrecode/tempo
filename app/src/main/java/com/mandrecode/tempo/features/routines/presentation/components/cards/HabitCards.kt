@@ -69,7 +69,6 @@ import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
-import com.mandrecode.tempo.core.ui.theme.subtaskTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -84,11 +83,10 @@ import kotlin.time.Clock
 private const val HABIT_COLLAPSED_MAX_LINES = 1
 
 /**
- * Habits are quick, recurring check-offs, so their rows are deliberately shorter than task rows
- * (#454): a standalone habit is a 40dp checkbox, a habit inside a chain a 32dp one.
+ * Habit rows are a little more compact than they used to be (#454): a 48dp checkbox with 12dp of
+ * vertical padding, about 72dp in all. A habit inside a chain is exactly the same row.
  */
-internal val HabitCheckboxSize = 40.dp
-internal val ChainHabitCheckboxSize = 32.dp
+internal val HabitCheckboxSize = 48.dp
 
 @Composable
 internal fun HabitItem(
@@ -100,11 +98,10 @@ internal fun HabitItem(
     color: Color? = null,
     cardShape: Shape = RoundedCornerShape(24.dp),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    horizontalPadding: Dp = 12.dp,
-    verticalPadding: Dp = 8.dp,
+    horizontalPadding: Dp = 16.dp,
+    verticalPadding: Dp = 12.dp,
     checkboxSize: Dp = HabitCheckboxSize,
     canToggle: Boolean = true,
-    isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
     isSelected: Boolean = false,
     enableClick: Boolean = true,
@@ -121,12 +118,7 @@ internal fun HabitItem(
         isDescriptionOverflowing = false
     }
 
-    val descriptionMaxLines =
-        when {
-            isInsideChain -> 1
-            isDescriptionExpanded -> Int.MAX_VALUE
-            else -> HABIT_COLLAPSED_MAX_LINES
-        }
+    val descriptionMaxLines = if (isDescriptionExpanded) Int.MAX_VALUE else HABIT_COLLAPSED_MAX_LINES
 
     // Snappier spring for radius morphing: a circle that squares off a little once done.
     val checkboxRadius by animateDpAsState(
@@ -291,17 +283,11 @@ internal fun HabitItem(
             Text(
                 text = habit.title,
                 style =
-                    if (isInsideChain) {
-                        MaterialTheme.typography.subtaskTitle.copy(
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                        )
-                    } else {
-                        MaterialTheme.typography.cardTitle.copy(
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                        )
-                    },
+                    MaterialTheme.typography.cardTitle.copy(
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
+                    ),
                 color = if (isCompleted) contentColor.copy(alpha = MutedContentAlpha.TITLE) else contentColor,
-                maxLines = if (isInsideChain) 1 else 2,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
 
@@ -319,20 +305,18 @@ internal fun HabitItem(
                     maxLines = descriptionMaxLines,
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { textLayoutResult ->
-                        if (!isInsideChain) {
-                            isDescriptionOverflowing =
-                                if (isDescriptionExpanded) {
-                                    textLayoutResult.lineCount > HABIT_COLLAPSED_MAX_LINES
-                                } else {
-                                    textLayoutResult.hasVisualOverflow
-                                }
-                        }
+                        isDescriptionOverflowing =
+                            if (isDescriptionExpanded) {
+                                textLayoutResult.lineCount > HABIT_COLLAPSED_MAX_LINES
+                            } else {
+                                textLayoutResult.hasVisualOverflow
+                            }
                     },
                 )
             }
         }
 
-        if (!isInsideChain && isDescriptionOverflowing) {
+        if (isDescriptionOverflowing) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.align(Alignment.Top),
@@ -396,7 +380,7 @@ fun HabitCard(
 
     // A compact habit row reads as a pill; it squares off a little once done.
     val cardCornerRadius by animateDpAsState(
-        targetValue = if (isCompleted) 18.dp else 28.dp,
+        targetValue = if (isCompleted) 24.dp else 32.dp,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioNoBouncy, // More stable for day transitions

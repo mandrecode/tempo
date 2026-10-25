@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.routines.presentation.components.cards
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.assertIsDisplayed
@@ -18,7 +19,7 @@ import kotlinx.datetime.LocalDateTime
 import org.junit.Rule
 import org.junit.Test
 
-/** Habit rows are compact and a chain always lists its habits (#454). */
+/** Habit rows are more compact, a chain always lists its habits, and both rows match (#454). */
 class CompactHabitCardsTest {
     @get:Rule
     val composeTestRule = createComposeRule()
@@ -32,7 +33,7 @@ class CompactHabitCardsTest {
     ) = Habit(id = id, title = title, description = "", createdDate = createdDate)
 
     @Test
-    fun habitCard_isShorterThanATaskRow() {
+    fun habitCard_isShorterThanBefore() {
         composeTestRule.setContent {
             TempoTheme {
                 HabitCard(
@@ -46,9 +47,10 @@ class CompactHabitCardsTest {
             }
         }
 
-        // 40dp checkbox + 2 * 8dp padding; the old card was 88dp.
+        // 48dp checkbox + 2 * 12dp padding = 72dp, plus up to 1dp of pixel rounding; the card
+        // used to be 88dp.
         val height = composeTestRule.onNodeWithTag(ROOT_TAG).getUnclippedBoundsInRoot().height
-        assertThat(height).isAtMost(56.dp)
+        assertThat(height).isAtMost(73.dp)
     }
 
     @Test
@@ -56,13 +58,7 @@ class CompactHabitCardsTest {
         composeTestRule.setContent {
             TempoTheme {
                 HabitChainCard(
-                    habitChain =
-                        HabitChain(
-                            id = 1,
-                            title = "Morning routine",
-                            habitIds = listOf(1, 2),
-                            createdDate = createdDate,
-                        ),
+                    habitChain = chain(),
                     chainHabits = listOf(habit(1, "Stretch"), habit(2, "Meditate")),
                     selectedDate = selectedDate,
                     onEdit = {},
@@ -75,6 +71,43 @@ class CompactHabitCardsTest {
         composeTestRule.onNodeWithText("Stretch").assertIsDisplayed()
         composeTestRule.onNodeWithText("Meditate").assertIsDisplayed()
     }
+
+    @Test
+    fun habitInsideChain_isAsTallAsAStandaloneHabit() {
+        composeTestRule.setContent {
+            TempoTheme {
+                Column {
+                    HabitCard(
+                        habit = habit(1, "Drink water"),
+                        selectedDate = selectedDate,
+                        onEdit = {},
+                        onDelete = {},
+                        showTimeline = false,
+                    )
+                    HabitChainCard(
+                        habitChain = chain(),
+                        chainHabits = listOf(habit(2, "Stretch")),
+                        selectedDate = selectedDate,
+                        onEdit = {},
+                        showTimeline = false,
+                    )
+                }
+            }
+        }
+
+        // Each row is clickable, so its text resolves to the whole row (or card).
+        val standalone = composeTestRule.onNodeWithText("Drink water").getUnclippedBoundsInRoot().height
+        val inChain = composeTestRule.onNodeWithText("Stretch").getUnclippedBoundsInRoot().height
+        assertThat(inChain).isEqualTo(standalone)
+    }
+
+    private fun chain() =
+        HabitChain(
+            id = 1,
+            title = "Morning routine",
+            habitIds = listOf(1, 2),
+            createdDate = createdDate,
+        )
 
     private companion object {
         const val ROOT_TAG = "card_root"
