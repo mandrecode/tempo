@@ -12,6 +12,7 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
@@ -73,9 +74,9 @@ class DayOfWeekSelectorTest {
     }
 
     /**
-     * The editors give the row a 360 dp phone's width less the sheet's padding. Seven days have to
-     * fit there as targets a finger can tell apart: every day at least 40 dp wide and 48 dp tall,
-     * and a tap in the middle of each one lands on that day and no other.
+     * Beside the icon column a 412 dp phone leaves the row about 311 dp. Seven days share it as
+     * targets a finger can tell apart: every day at least 40 dp wide and 48 dp tall, and a tap in
+     * the middle of each one lands on that day and no other.
      */
     @Test
     fun onACompactSheet_everyDayIsItsOwnTarget() {
@@ -109,5 +110,32 @@ class DayOfWeekSelectorTest {
             DayOfWeek.SATURDAY,
         )
         composeTestRule.onNodeWithContentDescription("Sunday").assertIsOff()
+    }
+
+    /**
+     * A 360 dp phone leaves 264 dp beside the icon column: under 38 dp a day. The days keep their
+     * full 48 dp instead and the row scrolls, so Sunday is still there to pick.
+     */
+    @Test
+    fun onANarrowRow_daysKeepFullSizeAndScroll() {
+        days = setOf(DayOfWeek.MONDAY)
+        composeTestRule.setContent {
+            TempoTheme {
+                Box(modifier = Modifier.width(264.dp)) {
+                    DayOfWeekSelector(
+                        selectedDays = days,
+                        onDaysChange = { days = it },
+                        nullMeansEveryDay = false,
+                    )
+                }
+            }
+        }
+
+        val monday = composeTestRule.onNodeWithContentDescription("Monday").getUnclippedBoundsInRoot()
+        assertThat(monday.width.value).isAtLeast(48f)
+        composeTestRule.onNodeWithContentDescription("Sunday").performScrollTo().performClick()
+
+        assertThat(days).containsExactly(DayOfWeek.MONDAY, DayOfWeek.SUNDAY)
+        composeTestRule.onNodeWithContentDescription("Sunday").assertIsOn()
     }
 }

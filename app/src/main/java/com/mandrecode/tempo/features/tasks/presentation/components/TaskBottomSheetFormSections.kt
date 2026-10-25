@@ -627,18 +627,24 @@ private fun TaskPeriodicitySection(
                 Column {
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // The whole row, not the space beside the icon column: seven days need it to
-                    // stay comfortable targets on a compact phone.
-                    DayOfWeekSelector(
-                        selectedDays = state.formState.repeatDays,
-                        onDaysChange = actions.onSetRepeatDays,
-                        nullMeansEveryDay = false,
-                        enabled = !isPeriodicityReadOnly,
-                        selectedContainerColor =
-                            MaterialTheme.colorScheme.tertiaryContainer,
-                        selectedContentColor =
-                            MaterialTheme.colorScheme.onTertiaryContainer,
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Spacer(modifier = Modifier.width(48.dp))
+
+                        DayOfWeekSelector(
+                            selectedDays = state.formState.repeatDays,
+                            onDaysChange = actions.onSetRepeatDays,
+                            modifier = Modifier.weight(1f),
+                            nullMeansEveryDay = false,
+                            enabled = !isPeriodicityReadOnly,
+                            selectedContainerColor =
+                                MaterialTheme.colorScheme.tertiaryContainer,
+                            selectedContentColor =
+                                MaterialTheme.colorScheme.onTertiaryContainer,
+                        )
+                    }
                 }
             }
 

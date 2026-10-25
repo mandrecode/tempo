@@ -501,22 +501,18 @@ private fun HabitColorAndRepeatSection(
             exit = shrinkVertically() + fadeOut(),
         ) {
             Column {
+                // Beside the icon like every other row; the selector scrolls on a phone too narrow
+                // for seven comfortable targets.
                 EditorPropertyRow(
                     iconPainter = painterResource(R.drawable.ic_repeat),
-                    iconContentDescription = null,
+                    iconContentDescription = stringResource(R.string.repeat),
                 ) {
-                    Text(
-                        text = stringResource(R.string.repeat_on),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    DayOfWeekSelector(
+                        selectedDays = state.formState.selectedRepeatDays,
+                        onDaysChange = { days -> actions.onSetRepeatDays?.invoke(days) },
+                        modifier = Modifier.weight(1f).padding(start = 4.dp),
                     )
                 }
-                // Below its label rather than beside the icon: seven days need the sheet's whole
-                // width to keep each one a comfortable target on a compact phone.
-                DayOfWeekSelector(
-                    selectedDays = state.formState.selectedRepeatDays,
-                    onDaysChange = { days -> actions.onSetRepeatDays?.invoke(days) },
-                )
 
                 Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
             }

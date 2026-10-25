@@ -27,6 +27,6 @@ None.
 
 ## Impact
 
-- UI: `core/ui/components/DayOfWeekSelector.kt` (rewritten; `showAllDaysOption` replaced by `nullMeansEveryDay`), the repeat row in `HabitBottomSheetFormSections.kt` and the weekly section in `TaskBottomSheetFormSections.kt` (full-width rows), debug previews.
+- UI: `core/ui/components/DayOfWeekSelector.kt` (rewritten; `showAllDaysOption` replaced by `nullMeansEveryDay`), the repeat row in `HabitBottomSheetFormSections.kt` and the weekly section in `TaskBottomSheetFormSections.kt` (beside the icon column, scrolling when too narrow), debug previews.
 - Strings: What's New (en, es); `everyday` removed.
 - Tests: new unit `DayOfWeekSelectorTest` (toggle rules) and instrumented `DayOfWeekSelectorTest`.

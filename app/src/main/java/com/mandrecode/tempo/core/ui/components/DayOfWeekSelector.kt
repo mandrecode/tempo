@@ -1,17 +1,24 @@
 package com.mandrecode.tempo.core.ui.components
 
+import androidx.annotation.StringRes
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.ButtonGroup
 import androidx.compose.material3.ButtonGroupDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ToggleButton
+import androidx.compose.material3.ToggleButtonColors
 import androidx.compose.material3.ToggleButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -26,19 +33,32 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 
-/** Monday-first, each with its full name (for accessibility) and its short name (for the letter). */
+/** One day of the week: its full name (for accessibility) and its short name (for the letter). */
+private data class WeekdayLabel(
+    val day: DayOfWeek,
+    @StringRes val nameRes: Int,
+    @StringRes val shortRes: Int,
+)
+
+/** Monday-first. */
 private val WeekdayLabels =
     listOf(
-        Triple(DayOfWeek.MONDAY, R.string.monday, R.string.mon),
-        Triple(DayOfWeek.TUESDAY, R.string.tuesday, R.string.tue),
-        Triple(DayOfWeek.WEDNESDAY, R.string.wednesday, R.string.wed),
-        Triple(DayOfWeek.THURSDAY, R.string.thursday, R.string.thu),
-        Triple(DayOfWeek.FRIDAY, R.string.friday, R.string.fri),
-        Triple(DayOfWeek.SATURDAY, R.string.saturday, R.string.sat),
-        Triple(DayOfWeek.SUNDAY, R.string.sunday, R.string.sun),
+        WeekdayLabel(DayOfWeek.MONDAY, R.string.monday, R.string.mon),
+        WeekdayLabel(DayOfWeek.TUESDAY, R.string.tuesday, R.string.tue),
+        WeekdayLabel(DayOfWeek.WEDNESDAY, R.string.wednesday, R.string.wed),
+        WeekdayLabel(DayOfWeek.THURSDAY, R.string.thursday, R.string.thu),
+        WeekdayLabel(DayOfWeek.FRIDAY, R.string.friday, R.string.fri),
+        WeekdayLabel(DayOfWeek.SATURDAY, R.string.saturday, R.string.sat),
+        WeekdayLabel(DayOfWeek.SUNDAY, R.string.sunday, R.string.sun),
     )
 
 private val WeekdayButtonHeight = 48.dp
+
+/**
+ * The narrowest a day may be in the equal-share group. Beside the icon column a 412 dp phone gives
+ * each about 43 dp; below this the days scroll at full size instead.
+ */
+private val MinWeekdayWidth = 40.dp
 
 /**
  * Picks repeat days the way an alarm clock does (#115): seven day initials in an expressive
@@ -60,7 +80,6 @@ fun DayOfWeekSelector(
     selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     enabled: Boolean = true,
 ) {
-    val checkedDays = displayedRepeatDays(selectedDays, nullMeansEveryDay)
     val colors =
         ToggleButtonDefaults.colors(
             // The sheet sits on a container tone already; an off day needs to stand out from it.
@@ -69,48 +88,76 @@ fun DayOfWeekSelector(
             checkedContainerColor = selectedContainerColor,
             checkedContentColor = selectedContentColor,
         )
+    val day: @Composable (WeekdayLabel, Modifier) -> Unit = { label, dayModifier ->
+        WeekdayToggle(label, selectedDays, onDaysChange, nullMeansEveryDay, enabled, colors, dayModifier)
+    }
 
-    ButtonGroup(
-        overflowIndicator = {},
-        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
-    ) {
-        WeekdayLabels.forEach { (day, nameRes, shortRes) ->
-            customItem(
-                buttonGroupContent = {
-                    val interactionSource = remember { MutableInteractionSource() }
-                    val name = stringResource(nameRes)
-                    val initial = stringResource(shortRes).take(1).uppercase()
-                    val checked = day in checkedDays
-                    ToggleButton(
-                        checked = checked,
-                        onCheckedChange = {
-                            val toggle = toggledRepeatDays(selectedDays, day, nullMeansEveryDay)
-                            if (toggle is RepeatDaysToggle.Changed) onDaysChange(toggle.days)
+    BoxWithConstraints(modifier = modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        val spacing = ButtonGroupDefaults.ConnectedSpaceBetween
+        val share = (maxWidth - spacing * (WeekdayLabels.size - 1)) / WeekdayLabels.size
+        if (share >= MinWeekdayWidth) {
+            ButtonGroup(
+                overflowIndicator = {},
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+            ) {
+                WeekdayLabels.forEach { label ->
+                    customItem(
+                        buttonGroupContent = {
+                            val interactionSource = remember { MutableInteractionSource() }
+                            day(label, Modifier.weight(1f).animateWidth(interactionSource))
                         },
-                        enabled = enabled,
-                        colors = colors,
-                        shapes = ToggleButtonDefaults.shapesFor(WeekdayButtonHeight),
-                        interactionSource = interactionSource,
-                        // A single letter in a narrow button: the default side padding would clip it.
-                        contentPadding = PaddingValues(0.dp),
-                        modifier =
-                            Modifier
-                                .weight(1f)
-                                .height(WeekdayButtonHeight)
-                                .animateWidth(interactionSource)
-                                .semantics {
-                                    role = Role.Checkbox
-                                    contentDescription = name
-                                },
-                    ) {
-                        Text(text = initial, style = MaterialTheme.typography.labelLarge)
-                    }
-                },
-                // Seven fixed days; nothing ever overflows.
-                menuContent = {},
-            )
+                        // Seven fixed days; nothing ever overflows.
+                        menuContent = {},
+                    )
+                }
+            }
+        } else {
+            // Too narrow for seven comfortable targets beside the icon column (a compact phone, a
+            // large display size): full-size days in a row that scrolls, rather than squeezed ones.
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(spacing),
+            ) {
+                WeekdayLabels.forEach { label -> day(label, Modifier.width(WeekdayButtonHeight)) }
+            }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun WeekdayToggle(
+    label: WeekdayLabel,
+    selectedDays: Set<DayOfWeek>?,
+    onDaysChange: (Set<DayOfWeek>?) -> Unit,
+    nullMeansEveryDay: Boolean,
+    enabled: Boolean,
+    colors: ToggleButtonColors,
+    modifier: Modifier = Modifier,
+) {
+    val name = stringResource(label.nameRes)
+    val initial = stringResource(label.shortRes).take(1).uppercase()
+    ToggleButton(
+        checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay),
+        onCheckedChange = {
+            val toggle = toggledRepeatDays(selectedDays, label.day, nullMeansEveryDay)
+            if (toggle is RepeatDaysToggle.Changed) onDaysChange(toggle.days)
+        },
+        enabled = enabled,
+        colors = colors,
+        shapes = ToggleButtonDefaults.shapesFor(WeekdayButtonHeight),
+        // A single letter in a narrow button: the default side padding would clip it.
+        contentPadding = PaddingValues(0.dp),
+        modifier =
+            modifier
+                .height(WeekdayButtonHeight)
+                .semantics {
+                    role = Role.Checkbox
+                    contentDescription = name
+                },
+    ) {
+        Text(text = initial, style = MaterialTheme.typography.labelLarge)
     }
 }
 
