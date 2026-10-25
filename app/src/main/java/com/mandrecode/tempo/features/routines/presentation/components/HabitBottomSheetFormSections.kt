@@ -5,7 +5,6 @@ import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,9 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ColorPicker
 import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
-import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
+import com.mandrecode.tempo.core.ui.components.SelectorButtonGroup
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
 import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
@@ -75,25 +74,17 @@ internal fun HabitBottomSheetBody(
         val isCreatingForChain = state.formState.targetChainId != null
 
         if (!isEditing && !isCreatingForChain) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                HabitSheetTab.entries.forEachIndexed { index, tab ->
-                    ExpressiveChip(
-                        label =
-                            when (tab) {
-                                HabitSheetTab.HABIT -> stringResource(R.string.habit)
-                                HabitSheetTab.HABIT_CHAIN -> stringResource(R.string.habit_chain)
-                            },
-                        isSelected = state.formState.selectedTab == tab,
-                        onClick = { actions.onSelectTab(tab) },
-                        isFirst = index == 0,
-                        isLast = index == HabitSheetTab.entries.size - 1,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
+            SelectorButtonGroup(
+                options = HabitSheetTab.entries,
+                isChecked = { it == state.formState.selectedTab },
+                onClick = { actions.onSelectTab(it) },
+                label = { tab ->
+                    when (tab) {
+                        HabitSheetTab.HABIT -> stringResource(R.string.habit)
+                        HabitSheetTab.HABIT_CHAIN -> stringResource(R.string.habit_chain)
+                    }
+                },
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
         }

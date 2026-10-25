@@ -48,9 +48,11 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.components.ConnectedSelectorButton
 import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
-import com.mandrecode.tempo.core.ui.components.ExpressiveChip
+import com.mandrecode.tempo.core.ui.components.SelectorButtonGroup
 import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
+import com.mandrecode.tempo.core.ui.components.selectorButtonColors
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
 import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
@@ -301,11 +303,11 @@ private fun TaskCategorySection(
             itemsIndexed(state.categories) { index, category ->
                 val isSelected = category.id == state.selectedCategoryId
 
-                ExpressiveChip(
+                ConnectedSelectorButton(
                     label = category.name,
-                    isSelected = isSelected,
-                    isFirst = index == 0,
-                    isLast = index == state.categories.size - 1,
+                    checked = isSelected,
+                    index = index,
+                    count = state.categories.size,
                     onClick = {
                         if (categoryEnabled) {
                             onSelectCategory(category.id)
@@ -371,48 +373,26 @@ private fun TaskPrioritySection(
         iconPainter = painterResource(R.drawable.ic_flag),
         iconContentDescription = stringResource(R.string.sort_option_priority),
     ) {
-        LazyRow(
-            contentPadding = PaddingValues(horizontal = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.weight(1f),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            itemsIndexed(Priority.priorities) { index, priority ->
-                val isSelected = state.formState.priority == priority
-
-                ExpressiveChip(
-                    label = stringResource(priority.titleResId),
-                    isSelected = isSelected,
-                    isFirst = index == 0,
-                    isLast = index == Priority.priorities.size - 1,
-                    height = 48.dp,
-                    enabled = !state.isPriorityReadOnly,
-                    onClick = {
-                        if (state.isPriorityReadOnly) {
-                            return@ExpressiveChip
-                        }
-                        if (isSelected) {
-                            onClearPriority()
-                        } else {
-                            onSetPriority(priority)
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_flag),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    },
-                    selectedContainerColor = priority.color.copy(alpha = 0.2f),
-                    selectedContentColor = priority.color,
-                    modifier =
-                        Modifier.testTag(
-                            "taskPriorityChip_${priority.name}",
-                        ),
+        SelectorButtonGroup(
+            options = Priority.priorities,
+            isChecked = { it == state.formState.priority },
+            onClick = { priority ->
+                if (!state.isPriorityReadOnly) {
+                    if (state.formState.priority == priority) onClearPriority() else onSetPriority(priority)
+                }
+            },
+            label = { stringResource(it.titleResId) },
+            enabled = !state.isPriorityReadOnly,
+            colors = { priority ->
+                selectorButtonColors(
+                    checkedContainerColor = priority.color.copy(alpha = 0.2f),
+                    checkedContentColor = priority.color,
                 )
-            }
-        }
+            },
+            itemModifier = { Modifier.testTag("taskPriorityChip_${it.name}") },
+            // No flag per option: the row's own icon is the flag, and three labels need the room.
+            modifier = Modifier.weight(1f).padding(start = 4.dp),
+        )
     }
 }
 
@@ -551,7 +531,7 @@ private fun TaskPeriodicitySection(
             itemsIndexed(Periodicity.periods) { index, period ->
                 val isSelected = state.formState.periodicity == period
 
-                ExpressiveChip(
+                ConnectedSelectorButton(
                     label =
                         periodicityChipLabel(
                             period = period,
@@ -560,10 +540,9 @@ private fun TaskPeriodicitySection(
                             repeatDays = state.formState.repeatDays,
                             monthDayOption = state.formState.monthDayOption,
                         ),
-                    isSelected = isSelected,
-                    isFirst = index == 0,
-                    isLast = index == Periodicity.periods.size - 1,
-                    height = 44.dp,
+                    checked = isSelected,
+                    index = index,
+                    count = Periodicity.periods.size,
                     enabled = !isPeriodicityReadOnly,
                     onClick = {
                         if (isSelected) {
@@ -572,8 +551,11 @@ private fun TaskPeriodicitySection(
                             actions.onSetPeriodicity(period)
                         }
                     },
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    colors =
+                        selectorButtonColors(
+                            checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        ),
                     modifier =
                         Modifier.testTag(
                             "taskPeriodicityChip_${period.name}",
@@ -658,56 +640,31 @@ private fun TaskPeriodicitySection(
                     ) {
                         Spacer(modifier = Modifier.width(48.dp))
 
-                        LazyRow(
-                            contentPadding = PaddingValues(horizontal = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.weight(1f),
-                            horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            itemsIndexed(MonthDayOption.options) { index, option ->
-                                val isOptionSelected =
-                                    state.formState.monthDayOption == option ||
-                                        (
-                                            state.formState.monthDayOption == null &&
-                                                option == MonthDayOption.SAME_DAY
-                                        )
-
-                                ExpressiveChip(
-                                    label =
-                                        when (option) {
-                                            MonthDayOption.SAME_DAY ->
-                                                stringResource(R.string.same_day)
-
-                                            MonthDayOption.FIRST_DAY ->
-                                                stringResource(
-                                                    R.string.first_day_of_month,
-                                                )
-
-                                            MonthDayOption.LAST_DAY ->
-                                                stringResource(
-                                                    R.string.last_day_of_month,
-                                                )
-                                        },
-                                    isSelected = isOptionSelected,
-                                    isFirst = index == 0,
-                                    isLast =
-                                        index == MonthDayOption.options.size - 1,
-                                    height = 44.dp,
-                                    enabled = !isPeriodicityReadOnly,
-                                    onClick = {
-                                        if (option == MonthDayOption.SAME_DAY) {
-                                            actions.onSetMonthDayOption(null)
-                                        } else {
-                                            actions.onSetMonthDayOption(option)
-                                        }
-                                    },
-                                    selectedContainerColor =
-                                        MaterialTheme.colorScheme.tertiaryContainer,
-                                    selectedContentColor =
-                                        MaterialTheme.colorScheme.onTertiaryContainer,
+                        SelectorButtonGroup(
+                            options = MonthDayOption.options,
+                            isChecked = { option ->
+                                state.formState.monthDayOption == option ||
+                                    (state.formState.monthDayOption == null && option == MonthDayOption.SAME_DAY)
+                            },
+                            onClick = { option ->
+                                actions.onSetMonthDayOption(option.takeUnless { it == MonthDayOption.SAME_DAY })
+                            },
+                            label = { option ->
+                                when (option) {
+                                    MonthDayOption.SAME_DAY -> stringResource(R.string.same_day)
+                                    MonthDayOption.FIRST_DAY -> stringResource(R.string.first_day_of_month)
+                                    MonthDayOption.LAST_DAY -> stringResource(R.string.last_day_of_month)
+                                }
+                            },
+                            enabled = !isPeriodicityReadOnly,
+                            colors = {
+                                selectorButtonColors(
+                                    checkedContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                                    checkedContentColor = MaterialTheme.colorScheme.onTertiaryContainer,
                                 )
-                            }
-                        }
+                            },
+                            modifier = Modifier.weight(1f).padding(start = 4.dp),
+                        )
                     }
                 }
             }
