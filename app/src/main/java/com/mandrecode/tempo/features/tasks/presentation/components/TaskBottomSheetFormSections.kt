@@ -54,6 +54,7 @@ import com.mandrecode.tempo.core.ui.components.TaskCompletionCheckbox
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
 import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
+import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
@@ -478,20 +479,11 @@ private fun TaskReminderAndPeriodicitySection(
                 iconPainter = painterResource(R.drawable.ic_reminder),
                 iconContentDescription = stringResource(R.string.reminder_label),
             ) {
-                ExpressiveChip(
+                Spacer(modifier = Modifier.weight(1f))
+                EditorAddButton(
                     label = stringResource(R.string.add_reminder),
-                    isSelected = false,
-                    isFirst = true,
-                    isLast = true,
                     onClick = actions.onSetReminderClicked,
-                    height = EDITOR_CONTROL_HEIGHT,
-                    verticalInset = 0.dp,
                     enabled = state.task == null || !state.task.isCompleted,
-                    horizontalArrangement = Arrangement.Start,
-                    modifier =
-                        Modifier
-                            .weight(1f)
-                            .padding(start = 4.dp),
                 )
             }
         }

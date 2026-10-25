@@ -32,20 +32,21 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
+import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.infrastructure.attachments.attachmentContentUri
 
 /**
  * The task's attachments (#380): one row per file, which opens it in whatever app the device has
- * for its type, and an "Attach file" pill that picks more — pictures, documents, anything the
- * system picker offers.
+ * for its type, and a button at the section's bottom end that picks more — pictures, documents,
+ * anything the system picker offers.
  *
- * Laid out like the sheet's other rows: every item is [EDITOR_CONTROL_HEIGHT] tall and starts where
- * the other rows' controls start, and the icon sits on the first item's line — beside the only file,
- * or the first of several, as a chain's icon sits beside its first habit.
+ * Laid out like the sheet's other rows: every item is [EDITOR_CONTROL_HEIGHT] tall and the files
+ * start where the other rows' controls start, and the icon sits on the first item's line — beside
+ * the only file, or the first of several, as a chain's icon sits beside its first habit, or beside
+ * the button while there are none.
  */
 @Composable
 internal fun TaskAttachmentsSection(
@@ -81,16 +82,10 @@ internal fun TaskAttachmentsSection(
                     onRemove = { onRemoveAttachment(attachment) },
                 )
             }
-            ExpressiveChip(
+            EditorAddButton(
                 label = stringResource(R.string.add_attachment),
-                isSelected = false,
-                isFirst = true,
-                isLast = true,
                 onClick = { picker.launch(arrayOf("*/*")) },
-                height = EDITOR_CONTROL_HEIGHT,
-                verticalInset = 0.dp,
-                horizontalArrangement = Arrangement.Start,
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.align(Alignment.End),
             )
         }
     }

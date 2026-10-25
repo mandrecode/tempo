@@ -41,6 +41,7 @@ import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
 import com.mandrecode.tempo.core.ui.theme.inputTitle
@@ -593,17 +594,10 @@ private fun HabitReminderSection(
                         .padding(start = 4.dp),
             )
         } else {
-            ExpressiveChip(
+            Spacer(modifier = Modifier.weight(1f))
+            EditorAddButton(
                 label = stringResource(R.string.add_reminder),
-                isSelected = false,
-                isFirst = true,
-                isLast = true,
                 onClick = onSetReminderClick,
-                horizontalArrangement = Arrangement.Start,
-                modifier =
-                    Modifier
-                        .weight(1f)
-                        .padding(start = 4.dp),
             )
         }
     }
