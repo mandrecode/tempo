@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
@@ -17,13 +18,17 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.toPersistentList
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -68,8 +73,16 @@ class FocusViewModel
         init {
             observeSession()
             refreshDayIfStale()
-            // The screen being opened is itself a reason to recount: work may have been added or
-            // rescheduled from another tab since the last completion.
+        }
+
+        /**
+         * The Focus tab has come into view, or the app back to the front with it showing. The view
+         * model is created at startup, ahead of the tab (#438), so this — not creation — is when
+         * the tab catches up: onto a new day if one has started, and with a recount, since work
+         * may have been added or rescheduled from another tab since the last completion.
+         */
+        fun onTabShown() {
+            refreshDayIfStale()
             viewModelScope.launch { recordDailyActivity(today) }
         }
 
@@ -350,8 +363,8 @@ class FocusViewModel
                         vacationModeRepository.periods,
                     ) { agenda, history, periods ->
                         Triple(agenda, history, periods)
-                    }.collect { (agenda, history, periods) ->
-                        if (observedDay != day) return@collect
+                    }.onEach { (agenda, history, periods) ->
+                        if (observedDay != day) return@onEach
                         val streak = getFocusStreak(day)
                         mutableUiState.update { state ->
                             state.copy(
@@ -369,7 +382,15 @@ class FocusViewModel
                                 undatedTaskCount = agenda.undatedTaskCount,
                             )
                         }
-                    }
+                    }.catch { exception ->
+                        if (exception is CancellationException) throw exception
+                        // The view model is created at startup ahead of the tab (#438), even when
+                        // Focus is hidden or onboarding is showing, so a failed query — the streak
+                        // included — must not take the app down. Forgetting the day lets the next
+                        // look at the tab, or the next interaction, try again.
+                        Log.w(FOCUS_VIEW_MODEL_TAG, "Unable to load the Focus day", exception)
+                        if (observedDay == day) observedDay = null
+                    }.collect()
                 }
             return day
         }
@@ -378,6 +399,8 @@ class FocusViewModel
             viewModelScope.launch { effectChannel.send(effect) }
         }
     }
+
+private const val FOCUS_VIEW_MODEL_TAG = "FocusViewModel"
 
 /** Adds [id] when absent, removes it when present — the shape both expansion toggles need. */
 private fun ImmutableList<Long>.toggling(id: Long): ImmutableList<Long> =

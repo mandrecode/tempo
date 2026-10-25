@@ -8,6 +8,7 @@ import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 
 @Composable
 fun OnboardingScreen(
@@ -17,6 +18,8 @@ fun OnboardingScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val currentOnExit by rememberUpdatedState(onExit)
+    // Nothing to load: a first launch onto onboarding lets the splash go straight away.
+    HoldSplashWhileFirstLoad(isLoading = false)
 
     LaunchedEffect(viewModel) {
         viewModel.uiEffect.collect { effect ->

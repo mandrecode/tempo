@@ -46,6 +46,7 @@ import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
@@ -75,6 +76,7 @@ fun RoutinesScreen(
     onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
     val isListScrolledFromTop = remember { mutableStateOf(false) }
@@ -104,6 +106,9 @@ fun RoutinesScreen(
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_RESUME) {
+                    // Also on entering the tab: an observer added to a resumed lifecycle is
+                    // brought up to ON_RESUME straight away.
+                    viewModel.onTabShown()
                     viewModel.checkPermissionsAndSyncReminders()
                 }
             }

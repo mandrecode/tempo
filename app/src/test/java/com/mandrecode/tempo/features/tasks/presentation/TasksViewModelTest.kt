@@ -42,6 +42,7 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -58,6 +59,7 @@ import kotlinx.datetime.todayIn
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import kotlin.time.Duration.Companion.days
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class TasksViewModelTest {
@@ -134,7 +136,17 @@ class TasksViewModelTest {
             testDispatcher,
             restoreDeletedTasksUseCase,
             restoreDeletedCategoryUseCase,
+            clock,
         )
+
+    /** Moved by the tests that cross midnight; the real time otherwise. */
+    private var clockNow =
+        kotlin.time.Clock.System
+            .now()
+    private val clock =
+        object : kotlin.time.Clock {
+            override fun now() = clockNow
+        }
 
     @After
     fun tearDown() {
@@ -1703,6 +1715,75 @@ class TasksViewModelTest {
                     nullDate,
                 ).inOrder()
         }
+
+    /** The tab is warmed up the evening before and first opened after midnight (#438). */
+    @Test
+    fun `showing the tab on a new day moves yesterday's tasks to Overdue without any data change`() =
+        runTest {
+            val today = clockToday()
+            dueTasks(MutableStateFlow(listOf(taskDueOn(today))))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(today))
+
+            clockNow += 1.days
+            viewModel.onTabShown()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
+        }
+
+    /** The tab stays open across midnight and a task changes before it is shown again (#438). */
+    @Test
+    fun `regrouping after midnight with the tab still open uses the new day`() =
+        runTest {
+            val today = clockToday()
+            val tasks = MutableStateFlow(emptyList<Task>())
+            dueTasks(tasks)
+            viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            tasks.value = listOf(taskDueOn(today))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
+        }
+
+    /** A time-zone or clock correction can move the date backward with the tab open. */
+    @Test
+    fun `regrouping after the date moves backward does not leave today's tasks overdue`() =
+        runTest {
+            val tasks = MutableStateFlow(emptyList<Task>())
+            dueTasks(tasks)
+            viewModel = createViewModel()
+            viewModel.onTabShown()
+            advanceUntilIdle()
+
+            clockNow -= 1.days
+            val dayBefore = clockToday()
+            tasks.value = listOf(taskDueOn(dayBefore))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(dayBefore))
+        }
+
+    private fun clockToday() = clock.todayIn(kotlinx.datetime.TimeZone.currentSystemDefault())
+
+    private fun dueTasks(tasks: MutableStateFlow<List<Task>>) {
+        coEvery { taskRepository.getAllTasks() } returns tasks
+        coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+        every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+    }
+
+    private fun taskDueOn(day: kotlinx.datetime.LocalDate) =
+        Task(
+            id = 1,
+            title = "Due",
+            description = "",
+            reminderDate = LocalDateTime(day.year, day.monthNumber, day.dayOfMonth, 9, 0),
+            categoryId = DEFAULT_INBOX_CATEGORY.id,
+        )
 
     @Test
     fun `activeTaskGroups groups tasks by priority when sorted by priority`() =

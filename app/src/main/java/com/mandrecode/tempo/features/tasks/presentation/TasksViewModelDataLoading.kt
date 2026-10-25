@@ -24,9 +24,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import kotlin.time.Clock
 
 internal fun TasksViewModel.selectCategory(categoryId: Long) {
     val sortOption = tasksScreenPreferencesRepository.getSortOption(categoryId)
@@ -63,7 +60,10 @@ internal fun TasksViewModel.loadData() {
             categoryRepository.getAllCategories(),
             mutableUiState.map { it.selectedCategoryId }.distinctUntilChanged(),
             mutableUiState.map { it.sortOption }.distinctUntilChanged(),
-        ) { tasks, dbCategories, selectedCategoryId, sortOption ->
+            // Only a trigger: the day itself is read from the clock below, which may also have
+            // moved backward (a time-zone or clock correction).
+            currentDay,
+        ) { tasks, dbCategories, selectedCategoryId, sortOption, _ ->
             val allCategories = dbCategories.toPersistentList()
 
             val effectiveSelectedId =
@@ -90,10 +90,10 @@ internal fun TasksViewModel.loadData() {
                             .then(TaskSortCriteria.comparator(sortOption)),
                     )
 
+            val today = systemToday()
+
             val parentTasks = filteredTasks.filter { it.parentTaskId == null }
             val (activeTasks, completedTasks) = parentTasks.partition { !it.isCompleted }
-
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
             val activeTaskGroups: ImmutableMap<ActiveGroupKey, ImmutableList<Task>> =
                 when (sortOption) {

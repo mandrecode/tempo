@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
@@ -149,9 +150,10 @@ fun TasksContent(
         // the correct tinted color when this composable is previewed/tested standalone.
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
-        if (uiState.isLoading) {
-            TempoLoadingIndicator(message = stringResource(R.string.loading_tasks))
-        } else {
+        FirstLoadCrossfade(
+            isLoading = uiState.isLoading,
+            loading = { TempoLoadingIndicator(message = stringResource(R.string.loading_tasks)) },
+        ) {
             Column(
                 modifier = Modifier.fillMaxWidth(),
             ) {

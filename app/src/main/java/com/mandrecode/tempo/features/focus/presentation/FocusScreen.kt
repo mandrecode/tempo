@@ -21,10 +21,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance
@@ -47,6 +49,13 @@ fun FocusScreen(
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
+    // On entering the tab and on every return to the app: the view model is created at startup,
+    // so this is where Focus catches up with a new day and recounts (#438).
+    LifecycleResumeEffect(viewModel) {
+        viewModel.onTabShown()
+        onPauseOrDispose { }
+    }
     val railContentClearance = floatingRailContentClearance()
     val snackbarHostState = remember { SnackbarHostState() }
 

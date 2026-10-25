@@ -1,0 +1,49 @@
+package com.mandrecode.tempo.core.ui
+
+import com.google.common.truth.Truth.assertThat
+import org.junit.Test
+
+class StartupContentGateTest {
+    /**
+     * The splash checks the gate a frame before the first screen has composed: open by default, it
+     * let the splash go onto an empty screen in that gap.
+     */
+    @Test
+    fun `the splash is held before any screen has reported`() {
+        assertThat(StartupContentGate().isHolding).isTrue()
+    }
+
+    @Test
+    fun `a first screen still loading keeps holding until it has content`() {
+        val gate = StartupContentGate()
+
+        gate.report(isLoading = true)
+        assertThat(gate.isHolding).isTrue()
+
+        gate.report(isLoading = false)
+        assertThat(gate.isHolding).isFalse()
+    }
+
+    /** Opening another tab later loads too, but the app is long past its splash by then. */
+    @Test
+    fun `once content has been shown, later loads never hold the splash again`() {
+        val gate = StartupContentGate()
+        gate.report(isLoading = false)
+
+        gate.report(isLoading = true)
+
+        assertThat(gate.isHolding).isFalse()
+    }
+
+    /** The splash's time cap ran out before the first content: the gate opens with it. */
+    @Test
+    fun `releasing while the first load is still running opens the gate for good`() {
+        val gate = StartupContentGate()
+        gate.report(isLoading = true)
+
+        gate.release()
+        gate.report(isLoading = true)
+
+        assertThat(gate.isHolding).isFalse()
+    }
+}

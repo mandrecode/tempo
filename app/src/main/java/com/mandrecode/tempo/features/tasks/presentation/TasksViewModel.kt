@@ -32,7 +32,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 
 @HiltViewModel
 class TasksViewModel
@@ -57,6 +61,7 @@ class TasksViewModel
         @DefaultDispatcher internal val defaultDispatcher: CoroutineDispatcher,
         internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
         internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
+        private val clock: Clock,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
 
@@ -86,6 +91,9 @@ class TasksViewModel
         internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingTaskDeletion>()
         internal var nextDeletionToken = 0L
         internal var nextEditorSessionId = 0L
+
+        /** The day the tab was last shown on; a new one regroups the list (see [onTabShown]). */
+        internal val currentDay = MutableStateFlow(systemToday())
 
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,
@@ -122,6 +130,18 @@ class TasksViewModel
         init {
             loadData()
         }
+
+        /**
+         * The Tasks tab has come into view, or the app back to the front with it showing (#438).
+         * The tab is warmed up before it is first opened, so the day the date groups were drawn
+         * for may have ended since: a new day regroups the list even though no task changed, and
+         * yesterday's tasks move to Overdue. Every other regrouping reads the clock as well.
+         */
+        fun onTabShown() {
+            currentDay.value = systemToday()
+        }
+
+        internal fun systemToday(): LocalDate = clock.todayIn(TimeZone.currentSystemDefault())
 
         fun onEvent(event: TasksContract.UiEvent) {
             when (event) {

@@ -118,6 +118,7 @@ class TasksScreenTest {
                 testDispatcher,
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                kotlin.time.Clock.System,
             )
     }
 
@@ -178,6 +179,7 @@ class TasksScreenTest {
                 testDispatcher,
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                kotlin.time.Clock.System,
             )
 
         composeTestRule.setContent {

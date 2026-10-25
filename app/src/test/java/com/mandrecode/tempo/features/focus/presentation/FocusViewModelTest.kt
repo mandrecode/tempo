@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.focus.presentation
 
+import android.util.Log
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
@@ -9,8 +10,11 @@ import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -18,20 +22,77 @@ import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import org.junit.Test
+import java.io.IOException
 import kotlin.time.Duration.Companion.days
 
 /** The day Focus shows: agenda, counts, streak, and opening items from it. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FocusViewModelTest : FocusViewModelHarness() {
+    /**
+     * The view model is created at startup, ahead of the tab (#438), so showing the tab — not
+     * creating the view model — is what recounts: work may have changed elsewhere in between.
+     */
     @Test
-    fun `opening the screen recounts the day`() =
+    fun `showing the tab recounts the day, creating the view model does not`() =
         runTest {
             stubDay()
 
-            createViewModel()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            coVerify(exactly = 0) { recordDailyActivity(any()) }
+
+            viewModel.onTabShown()
             advanceUntilIdle()
 
-            coVerify { recordDailyActivity(any()) }
+            coVerify(exactly = 1) { recordDailyActivity(clockToday()) }
+        }
+
+    @Test
+    fun `showing the tab after midnight moves Focus onto the new day`() =
+        runTest {
+            val previousDay = clockToday()
+            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
+            every { getFocusAgenda(previousDay) } returns MutableStateFlow(agendaOf())
+            every { getFocusAgenda(currentDay) } returns MutableStateFlow(agendaOf())
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 0
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            viewModel.onTabShown()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
+            coVerify { recordDailyActivity(currentDay) }
+        }
+
+    /**
+     * The view model is created at startup even when Focus is hidden (#438), so a failed load must
+     * not crash the app, and showing the tab tries again.
+     */
+    @Test
+    fun `a failed load does not crash and showing the tab tries again`() =
+        runTest {
+            mockkStatic(Log::class)
+            try {
+                every { Log.w(any(), any<String>(), any()) } returns 0
+                val today = clockToday()
+                every { getFocusAgenda(today) } returnsMany
+                    listOf(flow { throw IOException("database closed") }, MutableStateFlow(agendaOf()))
+                every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+                coEvery { getFocusStreak(any()) } returns 0
+                val viewModel = createViewModel()
+                advanceUntilIdle()
+                assertThat(viewModel.uiState.value.isLoading).isTrue()
+
+                viewModel.onTabShown()
+                advanceUntilIdle()
+
+                assertThat(viewModel.uiState.value.isLoading).isFalse()
+            } finally {
+                unmockkStatic(Log::class)
+            }
         }
 
     @Test

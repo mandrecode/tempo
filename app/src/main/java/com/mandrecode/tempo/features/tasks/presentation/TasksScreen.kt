@@ -51,6 +51,7 @@ import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.components.TempoSnackbarVisuals
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
@@ -82,6 +83,7 @@ fun TasksScreen(
     onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val currentOnConsumePendingNotificationAction by rememberUpdatedState(onConsumePendingNotificationAction)
@@ -112,6 +114,7 @@ fun TasksScreen(
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_START) {
+                    viewModel.onTabShown()
                     viewModel.checkPermissionsAndSyncReminders()
                 }
             }

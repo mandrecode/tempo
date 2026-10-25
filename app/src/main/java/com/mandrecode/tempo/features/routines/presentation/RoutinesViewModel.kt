@@ -22,7 +22,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
 import javax.inject.Inject
+import kotlin.time.Clock
 
 @HiltViewModel
 class RoutinesViewModel
@@ -52,6 +55,10 @@ class RoutinesViewModel
         internal val pendingDeletionSnapshots = mutableMapOf<Long, PendingRoutineDeletion>()
         internal var nextDeletionToken = 0L
         internal var nextEditorSessionId = 0L
+
+        // The day the timeline was last brought up to date with (#438). The view model is created
+        // at startup, ahead of the tab, and can outlive a midnight before the tab is first shown.
+        internal var lastSeenToday: LocalDate = _uiState.value.selectedDate
 
         init {
             loadData()
@@ -158,5 +165,10 @@ class RoutinesViewModel
 
         fun checkPermissionsAndSyncReminders() {
             checkPermissionsAndSyncRemindersInternal()
+        }
+
+        /** See [onTabShownOn]: the Routines tab is in view, today being the system date. */
+        fun onTabShown() {
+            onTabShownOn(today = Clock.System.todayIn(TimeZone.currentSystemDefault()))
         }
     }
