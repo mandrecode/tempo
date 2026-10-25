@@ -7,6 +7,7 @@ import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
+import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.features.backup.domain.model.BackupSettings
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import io.mockk.every
@@ -115,6 +116,26 @@ class BackupSettingsDataSourceTest {
         dataSource.apply(settings())
 
         verify { vacationModeRepository.replaceAll(emptyList()) }
+    }
+
+    /**
+     * Against the real last-tab guard: restoring a different single tab over the one currently
+     * enabled must end with exactly the restored tab, whatever the display order.
+     */
+    @Test
+    fun `apply switches a single enabled tab for another`() {
+        TempoTab.entries.forEach { current ->
+            TempoTab.entries.filter { it != current }.forEach { restored ->
+                var enabled = setOf(current)
+                every { navigationPreferences.setTabEnabled(any(), any()) } answers {
+                    enabled = TabPreferencesPolicy.withTabEnabled(enabled, firstArg(), secondArg())
+                }
+
+                dataSource.apply(settings(enabledTabs = setOf(restored), defaultTab = restored))
+
+                assertThat(enabled).containsExactly(restored)
+            }
+        }
     }
 
     @Test

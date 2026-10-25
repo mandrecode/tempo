@@ -27,5 +27,6 @@ None.
 ## Impact
 
 - Domain: `TempoTab` (order), `TabPreferencesPolicy.resolveDefaultTab` (home-first fallback).
+- Backup: `BackupSettingsDataSource.apply` enables wanted tabs before disabling others (the restore was order-sensitive).
 - Tests: `TabPreferencesPolicyTest` (home-first fallback, display-order fallback without home, order pinned).
 - Strings: What's New (en, es).

@@ -43,9 +43,12 @@ class BackupSettingsDataSource
             themePreferences.setThemeMode(settings.themeMode)
             themePreferences.setUseTempoColors(settings.useTempoColors)
             val enabledTabs = TabPreferencesPolicy.resolveEnabledTabs(settings.enabledTabs)
-            TempoTab.entries.forEach { tab ->
-                navigationPreferences.setTabEnabled(tab, tab in enabledTabs)
-            }
+            // Every wanted tab on before any unwanted one goes off: the repository refuses to turn
+            // off the last enabled tab, so going in display order could leave a tab on that the
+            // backup disabled (restoring Focus-only over Routines-only kept both).
+            val (wanted, unwanted) = TempoTab.entries.partition { it in enabledTabs }
+            wanted.forEach { navigationPreferences.setTabEnabled(it, true) }
+            unwanted.forEach { navigationPreferences.setTabEnabled(it, false) }
             navigationPreferences.setDefaultTab(
                 TabPreferencesPolicy.resolveDefaultTab(settings.defaultTab, enabledTabs),
             )
