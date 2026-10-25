@@ -96,6 +96,7 @@ internal fun PersistentFloatingBar(
             navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
+            onReselect = { route -> if (route == TasksRoute) tasksState.onReselect() },
             onRouteChange = onRouteChange,
             onOpenSession = onOpenSession,
             // Tasks carries sort beside the pill and the add button; on a 360dp phone with every tab

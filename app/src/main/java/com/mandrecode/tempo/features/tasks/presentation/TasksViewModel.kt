@@ -160,6 +160,7 @@ class TasksViewModel
         fun onEvent(event: TasksContract.UiEvent) {
             when (event) {
                 is TasksContract.UiEvent.CategorySelected -> selectCategory(event.categoryId)
+                is TasksContract.UiEvent.ShowDefaultCategory -> showDefaultCategory()
                 is TasksContract.UiEvent.ShowCategoryDialog -> showCategoryDialog(event.category)
                 is TasksContract.UiEvent.HideCategoryDialog -> hideCategoryDialog()
                 is TasksContract.UiEvent.AddCategory -> addCategory(event.name, event.color, event.icon)

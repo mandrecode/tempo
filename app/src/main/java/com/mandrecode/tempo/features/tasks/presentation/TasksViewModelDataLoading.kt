@@ -31,6 +31,21 @@ internal fun TasksViewModel.selectCategory(categoryId: Long) {
     mutableUiState.update { it.copy(selectedCategoryId = categoryId, sortOption = sortOption) }
 }
 
+/**
+ * Selects the default category, falling back to the first one the same way [loadData] does when the
+ * selection is missing. Does nothing until categories have loaded, or when it is already selected.
+ */
+internal fun TasksViewModel.showDefaultCategory() {
+    val state = mutableUiState.value
+    val defaultCategoryId =
+        state.categories.firstOrNull { it.isDefault }?.id
+            ?: state.categories.firstOrNull()?.id
+            ?: return
+    if (defaultCategoryId != state.selectedCategoryId) {
+        selectCategory(defaultCategoryId)
+    }
+}
+
 internal fun TasksViewModel.setSortOption(sortOption: SortOption) {
     val categoryId = mutableUiState.value.selectedCategoryId
     tasksScreenPreferencesRepository.setSortOption(categoryId, sortOption)
