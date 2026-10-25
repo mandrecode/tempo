@@ -3,7 +3,7 @@
 The bar is a `ButtonGroup` with seven `customItem`s, each a `ToggleButton`:
 
 - Shapes: `ButtonGroupDefaults.connectedLeading/Middle/TrailingButtonShapes()`. The group reads as one segmented control, and the checked segment becomes fully rounded.
-- Spacing: `ButtonGroupDefaults.ConnectedSpaceBetween`. Each segment uses `weight(1f)` and is 56 dp tall, with zero content padding so "Wed" plus "28" fit about 44 dp.
+- Spacing: `ButtonGroupDefaults.ConnectedSpaceBetween`. Each segment uses `weight(1f)` and is at least 56 dp tall (`heightIn`, so large font sizes grow the row instead of clipping the date or the dot), with zero content padding so "Wed" plus "28" fit about 44 dp.
 - Tapping the selected segment does nothing, which makes it single-select.
 - Colours match the repeat-day picker from #115: `surfaceContainerHighest` when off, the primary container pair when on.
 - Today's marker is a 4 dp dot drawn on every segment (transparent except today), so text baselines line up across the row.
