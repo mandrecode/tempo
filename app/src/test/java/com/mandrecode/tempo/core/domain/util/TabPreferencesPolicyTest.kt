@@ -65,7 +65,8 @@ class TabPreferencesPolicyTest {
     }
 
     @Test
-    fun `disabledDefaultTabFallsBackToFirstEnabledInDisplayOrder`() {
+    fun `disabledDefaultTabFallsBackToHomeWhenItIsEnabled`() {
+        // Routines comes first in the bar now (#440), but the app still opens on its home tab.
         val resolved =
             TabPreferencesPolicy.resolveDefaultTab(
                 defaultTab = TempoTab.TASKS,
@@ -73,6 +74,22 @@ class TabPreferencesPolicyTest {
             )
 
         assertThat(resolved).isEqualTo(TempoTab.FOCUS)
+    }
+
+    @Test
+    fun `disabledDefaultTabFallsBackToFirstEnabledInDisplayOrderWithoutHome`() {
+        val resolved =
+            TabPreferencesPolicy.resolveDefaultTab(
+                defaultTab = TempoTab.FOCUS,
+                enabledTabs = setOf(TempoTab.TASKS, TempoTab.ROUTINES),
+            )
+
+        assertThat(resolved).isEqualTo(TempoTab.ROUTINES)
+    }
+
+    @Test
+    fun `focusSitsInTheMiddleOfTheBar`() {
+        assertThat(TempoTab.entries).containsExactly(TempoTab.ROUTINES, TempoTab.FOCUS, TempoTab.TASKS).inOrder()
     }
 
     @Test

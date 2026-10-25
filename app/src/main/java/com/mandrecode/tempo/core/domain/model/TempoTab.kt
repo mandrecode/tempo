@@ -11,8 +11,11 @@ package com.mandrecode.tempo.core.domain.model
 enum class TempoTab(
     val preferenceValue: String,
 ) {
-    FOCUS("focus"),
+    // Focus sits in the middle (#440): it is the home surface, and the centre of the bar is the
+    // easiest reach from either thumb. Identity is preferenceValue, never position, so reordering
+    // touches no stored data.
     ROUTINES("routines"),
+    FOCUS("focus"),
     TASKS("tasks"),
     ;
 

@@ -21,7 +21,9 @@ object TabPreferencesPolicy {
 
     /**
      * The default tab is always an enabled one. When the stored default has been disabled, the
-     * first enabled tab in display order takes over.
+     * app's home tab ([TempoTab.DEFAULT]) takes over if it is enabled, and otherwise the first
+     * enabled tab in display order. Home first, so that moving tabs around in the bar (#440) never
+     * changes where the app opens.
      */
     fun resolveDefaultTab(
         defaultTab: TempoTab,
@@ -31,7 +33,7 @@ object TabPreferencesPolicy {
         return if (defaultTab in enabled) {
             defaultTab
         } else {
-            enabled.minByOrNull { it.ordinal } ?: TempoTab.DEFAULT
+            TempoTab.DEFAULT.takeIf { it in enabled } ?: enabled.minByOrNull { it.ordinal } ?: TempoTab.DEFAULT
         }
     }
 
