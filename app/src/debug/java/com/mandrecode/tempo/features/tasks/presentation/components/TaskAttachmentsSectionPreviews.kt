@@ -27,7 +27,7 @@ private fun TaskAttachmentsSectionPreview() {
                 attachments = previewAttachments,
                 onAddAttachments = {},
                 onRemoveAttachment = {},
-                onOpenAttachmentFailed = {},
+                onAttachmentOpenFail = {},
                 modifier = Modifier.padding(16.dp),
             )
         }
@@ -43,7 +43,7 @@ private fun TaskAttachmentsSectionEmptyPreview() {
                 attachments = emptyList(),
                 onAddAttachments = {},
                 onRemoveAttachment = {},
-                onOpenAttachmentFailed = {},
+                onAttachmentOpenFail = {},
                 modifier = Modifier.padding(16.dp),
             )
         }

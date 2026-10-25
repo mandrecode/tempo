@@ -736,5 +736,6 @@
     <string name="remove_attachment">Quitar %1$s</string>
     <string name="msg_attachment_too_large">Ese archivo es demasiado grande para adjuntarlo (máx. 25 MB)</string>
     <string name="msg_attachment_failed">No se ha podido adjuntar ese archivo</string>
+    <string name="msg_attachment_remove_failed">No se ha podido quitar ese adjunto</string>
     <string name="msg_attachment_no_app">Ninguna app de este dispositivo puede abrir este archivo</string>
 </resources>

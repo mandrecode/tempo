@@ -115,7 +115,7 @@ internal fun TaskBottomSheetBody(
                 attachments = state.formState.attachments,
                 onAddAttachments = attachmentActions.onAddAttachments,
                 onRemoveAttachment = attachmentActions.onRemoveAttachment,
-                onOpenAttachmentFailed = attachmentActions.onOpenAttachmentFailed,
+                onAttachmentOpenFail = attachmentActions.onAttachmentOpenFail,
             )
         }
 

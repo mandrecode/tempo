@@ -15,5 +15,7 @@ class PruneOrphanedTaskAttachmentsUseCase
     constructor(
         private val taskAttachmentRepository: TaskAttachmentRepository,
     ) {
-        suspend operator fun invoke() = taskAttachmentRepository.pruneOrphans()
+        /** [processStartedAtEpochMillis]: files this run of the app wrote are never pruned by it. */
+        suspend operator fun invoke(processStartedAtEpochMillis: Long) =
+            taskAttachmentRepository.pruneOrphans(keepFilesFromEpochMillis = processStartedAtEpochMillis)
     }

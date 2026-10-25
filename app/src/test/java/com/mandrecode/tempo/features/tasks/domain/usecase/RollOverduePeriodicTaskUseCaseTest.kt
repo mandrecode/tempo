@@ -256,6 +256,7 @@ class RollOverduePeriodicTaskUseCaseTest {
             assertThat(clone.completedAt).isNull()
             assertThat(clone.reminderDate).isNull()
             assertThat(clone.periodicity).isNull()
+            coVerify { taskAttachmentRepository.copyAttachments(2L, 11L) }
         }
 
     @Test

@@ -257,10 +257,13 @@ internal fun TaskBottomSheetContent(
             formState.periodicityInterval,
             formState.repeatDays,
             formState.monthDayOption,
+            formState.attachments,
         ) {
             if (taskSnapshot == null) {
                 taskTitle.isNotBlank() ||
                     isDescriptionDirty ||
+                    // Files picked into a task that does not exist yet go with the form.
+                    formState.attachments.isNotEmpty() ||
                     selectedCategoryId != initialCategoryId ||
                     formState.priority != null ||
                     formState.reminderDate != null ||

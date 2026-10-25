@@ -74,11 +74,13 @@ class TaskAttachmentRepositoryImpl
             dao.insertAll(source.map { it.copy(id = 0, taskId = toTaskId) })
         }
 
-        override suspend fun pruneOrphans() {
+        override suspend fun pruneOrphans(keepFilesFromEpochMillis: Long) {
             dao.deleteOrphanedRows()
+            // Files first, rows second: a file copied in after the listing is never a candidate,
+            // and one attached after it is still seen as referenced by the row query that follows.
+            val candidates = fileStore.listStoredNames(modifiedBeforeEpochMillis = keepFilesFromEpochMillis)
             val referenced = dao.getAllStoredNames().toSet()
-            fileStore
-                .listStoredNames()
+            candidates
                 .filterNot { it in referenced }
                 .forEach { fileStore.deleteQuietly(it) }
         }

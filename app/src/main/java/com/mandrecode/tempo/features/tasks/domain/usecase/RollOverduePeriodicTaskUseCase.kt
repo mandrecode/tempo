@@ -189,7 +189,11 @@ class RollOverduePeriodicTaskUseCase
                         nextInstanceId = null,
                     )
                 }
-            taskRepository.insertTasks(clones)
+            val cloneIds = taskRepository.insertTasks(clones)
+            // Each step of the next occurrence keeps the files of the step it was cloned from.
+            subtasksBefore.zip(cloneIds).forEach { (original, cloneId) ->
+                if (cloneId > 0) taskAttachmentRepository.copyAttachments(original.id, cloneId)
+            }
         }
 
         private fun Task.nextTaskInstance(now: LocalDateTime): Task {

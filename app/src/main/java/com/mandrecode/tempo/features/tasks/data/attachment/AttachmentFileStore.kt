@@ -27,5 +27,6 @@ interface AttachmentFileStore {
 
     suspend fun delete(storedName: String)
 
-    suspend fun listStoredNames(): List<String>
+    /** Stored files last written before [modifiedBeforeEpochMillis]. */
+    suspend fun listStoredNames(modifiedBeforeEpochMillis: Long): List<String>
 }

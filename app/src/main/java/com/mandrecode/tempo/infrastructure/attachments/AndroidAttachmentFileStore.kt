@@ -85,9 +85,13 @@ class AndroidAttachmentFileStore
             withContext(ioDispatcher) { File(directory, storedName).delete() }
         }
 
-        override suspend fun listStoredNames(): List<String> =
+        override suspend fun listStoredNames(modifiedBeforeEpochMillis: Long): List<String> =
             withContext(ioDispatcher) {
-                directory.list()?.toList().orEmpty()
+                directory
+                    .listFiles()
+                    ?.filter { it.lastModified() < modifiedBeforeEpochMillis }
+                    ?.map { it.name }
+                    .orEmpty()
             }
 
         /** Providers do not always report a size, so the limit is enforced on the bytes as well. */

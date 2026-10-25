@@ -43,6 +43,10 @@ interface TaskAttachmentRepository {
     /**
      * Deletes rows whose task is gone and files no row points to. Only safe when no deletion can
      * still be undone, which is why it runs when the app starts.
+     *
+     * Files written at or after [keepFilesFromEpochMillis] are left alone even when no row points
+     * to them yet: the editor may be copying one in for a task about to be saved, and the sweep
+     * runs alongside the app rather than before it.
      */
-    suspend fun pruneOrphans()
+    suspend fun pruneOrphans(keepFilesFromEpochMillis: Long)
 }

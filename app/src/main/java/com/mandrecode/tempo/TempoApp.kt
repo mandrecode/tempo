@@ -37,6 +37,7 @@ class TempoApp :
     private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
+        val processStartedAtEpochMillis = System.currentTimeMillis()
         ComposeUiFlags.isMediaQueryIntegrationEnabled = true
         // SQLCipher's native core must be loaded explicitly before any database access —
         // unlike the deprecated android-database-sqlcipher library, this one does not do it
@@ -73,7 +74,7 @@ class TempoApp :
             // After the warm-up, so it never competes with the first screen for the database.
             // Same failure contract: nothing here may take the app down.
             try {
-                pruneOrphanedTaskAttachments.get()()
+                pruneOrphanedTaskAttachments.get()(processStartedAtEpochMillis)
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {

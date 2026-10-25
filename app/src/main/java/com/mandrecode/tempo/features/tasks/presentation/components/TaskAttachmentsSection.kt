@@ -46,7 +46,7 @@ internal fun TaskAttachmentsSection(
     attachments: List<TaskAttachment>,
     onAddAttachments: (List<String>) -> Unit,
     onRemoveAttachment: (TaskAttachment) -> Unit,
-    onOpenAttachmentFailed: () -> Unit,
+    onAttachmentOpenFail: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -70,7 +70,7 @@ internal fun TaskAttachmentsSection(
                 TaskAttachmentRow(
                     attachment = attachment,
                     onOpen = {
-                        if (!context.openAttachment(attachment)) onOpenAttachmentFailed()
+                        if (!context.openAttachment(attachment)) onAttachmentOpenFail()
                     },
                     onRemove = { onRemoveAttachment(attachment) },
                 )

@@ -2191,6 +2191,69 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `reopening the task already being edited shows its attachments again`() =
+        runTest {
+            val task = Task(id = 7L, title = "Pay rent", description = "")
+            val saved = pickedAttachment().copy(id = 3L, taskId = 7L)
+            every { taskAttachmentRepository.observeAttachments(7L) } returns flowOf(listOf(saved))
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).containsExactly(saved)
+        }
+
+    @Test
+    fun `a failed attach to a saved task is reported instead of thrown`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            val picked = AttachmentImportResult.Imported(pickedAttachment())
+            coEvery { taskAttachmentRepository.importFile(any()) } returns picked
+            coEvery { taskAttachmentRepository.attach(any(), any()) } throws IllegalStateException("disk full")
+            val task = Task(id = 7L, title = "Pay rent", description = "")
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog(task = task))
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_failed)
+        }
+
+    @Test
+    fun `a failed removal is reported instead of thrown`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            coEvery { taskAttachmentRepository.remove(any()) } throws IllegalStateException("db closed")
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(pickedAttachment().copy(id = 3L, taskId = 7L)))
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_remove_failed)
+        }
+
+    @Test
+    fun `a file that cannot be discarded does not crash the editor`() =
+        runTest {
+            val picked = pickedAttachment()
+            coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.Imported(picked)
+            coEvery { taskAttachmentRepository.discard(any()) } throws IllegalStateException("io")
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.RemoveAttachment(picked))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
+        }
+
+    @Test
     fun `an attachment no app can open is reported`() =
         runTest {
             val effects = mutableListOf<TasksContract.UiEffect>()

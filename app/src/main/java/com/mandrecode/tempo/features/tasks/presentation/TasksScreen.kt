@@ -428,7 +428,7 @@ internal fun TaskEditor(
             TaskAttachmentActions(
                 onAddAttachments = { onEvent(TasksContract.UiEvent.AddAttachments(it)) },
                 onRemoveAttachment = { onEvent(TasksContract.UiEvent.RemoveAttachment(it)) },
-                onOpenAttachmentFailed = { onEvent(TasksContract.UiEvent.AttachmentOpenFailed) },
+                onAttachmentOpenFail = { onEvent(TasksContract.UiEvent.AttachmentOpenFailed) },
             ),
     )
 }

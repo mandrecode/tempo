@@ -534,6 +534,29 @@ class ToggleTaskCompletionUseCaseTest {
         }
 
     @Test
+    fun `completing a periodic task gives each cloned step the files of the step it came from`() =
+        runTest {
+            val task =
+                Task(
+                    id = 1,
+                    title = "Periodic",
+                    description = "",
+                    isCompleted = false,
+                    periodicity = Periodicity.DAILY,
+                    reminderDate = LocalDateTime(2024, 6, 15, 10, 0),
+                )
+            val step = Task(id = 5, title = "Step", description = "", parentTaskId = 1)
+            coEvery { taskRepository.insertTask(any()) } returns 42L
+            coEvery { taskRepository.getSubtasksSync(1) } returns listOf(step)
+            coEvery { taskRepository.insertTasks(any()) } returns listOf(43L)
+
+            useCase(task)
+
+            coVerify { taskAttachmentRepository.copyAttachments(1L, 42L) }
+            coVerify { taskAttachmentRepository.copyAttachments(5L, 43L) }
+        }
+
+    @Test
     fun `unchecking archived periodic occurrence keeps next occurrence open`() =
         runTest {
             val originalReminderDate = LocalDateTime(2024, 6, 15, 9, 0)

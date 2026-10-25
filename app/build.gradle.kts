@@ -81,6 +81,10 @@ kover {
                     // own logic — timing, banking, reconciliation — lives in FocusSessionUseCases
                     // and FocusSession, both of which are unit-tested.
                     "com.mandrecode.tempo.infrastructure.focus.*",
+                    // Task attachment file store: ContentResolver, File and FileProvider only. The
+                    // rules around it (size cap, sharing, pruning) live in TaskAttachmentRepositoryImpl,
+                    // which is unit-tested against a fake store.
+                    "com.mandrecode.tempo.infrastructure.attachments.*",
                     // Notification builder: NotificationManager/PendingIntent only, was previously
                     // inlined in the (excluded) TaskReminderReceiver.
                     "com.mandrecode.tempo.infrastructure.notifications.TaskReminderNotifier*",

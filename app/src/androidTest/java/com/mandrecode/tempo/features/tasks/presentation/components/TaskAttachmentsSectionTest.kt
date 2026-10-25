@@ -33,7 +33,7 @@ class TaskAttachmentsSectionTest {
                     attachments = listOf(lease, lease.copy(id = 2L, displayName = "photo.jpg", mimeType = "image/jpeg")),
                     onAddAttachments = {},
                     onRemoveAttachment = {},
-                    onOpenAttachmentFailed = {},
+                    onAttachmentOpenFail = {},
                 )
             }
         }
@@ -52,7 +52,7 @@ class TaskAttachmentsSectionTest {
                     attachments = listOf(lease),
                     onAddAttachments = {},
                     onRemoveAttachment = { removed = it },
-                    onOpenAttachmentFailed = {},
+                    onAttachmentOpenFail = {},
                 )
             }
         }

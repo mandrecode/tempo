@@ -72,7 +72,7 @@ internal data class TaskBottomSheetBodyActions(
 data class TaskAttachmentActions(
     val onAddAttachments: (List<String>) -> Unit,
     val onRemoveAttachment: (TaskAttachment) -> Unit,
-    val onOpenAttachmentFailed: () -> Unit,
+    val onAttachmentOpenFail: () -> Unit,
 )
 
 internal data class TaskBottomSheetFocusConfig(

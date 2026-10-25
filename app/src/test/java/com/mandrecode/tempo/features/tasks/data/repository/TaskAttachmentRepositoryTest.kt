@@ -122,13 +122,25 @@ class TaskAttachmentRepositoryTest {
     @Test
     fun `pruning drops rows without a task and files without a row`() =
         runTest {
-            fileStore.stored += listOf("kept", "orphan")
+            fileStore.stored += listOf("kept" to 10L, "orphan" to 10L)
             coEvery { dao.getAllStoredNames() } returns listOf("kept")
 
-            repository.pruneOrphans()
+            repository.pruneOrphans(keepFilesFromEpochMillis = 100L)
 
             coVerify { dao.deleteOrphanedRows() }
             assertThat(fileStore.deleted).containsExactly("orphan")
+        }
+
+    /** A file the editor is copying in right now has no row yet, and must survive the sweep. */
+    @Test
+    fun `pruning leaves files written since the cutoff alone`() =
+        runTest {
+            fileStore.stored += listOf("old-orphan" to 10L, "being-attached" to 150L)
+            coEvery { dao.getAllStoredNames() } returns emptyList()
+
+            repository.pruneOrphans(keepFilesFromEpochMillis = 100L)
+
+            assertThat(fileStore.deleted).containsExactly("old-orphan")
         }
 
     private fun attachment(
@@ -146,7 +158,7 @@ class TaskAttachmentRepositoryTest {
         var next: StoredAttachmentFile? = null
         var failure: Exception? = null
         var lastMaxSize: Long? = null
-        val stored = mutableListOf<String>()
+        val stored = mutableListOf<Pair<String, Long>>()
         val deleted = mutableListOf<String>()
 
         override suspend fun copyIn(
@@ -162,6 +174,7 @@ class TaskAttachmentRepositoryTest {
             deleted += storedName
         }
 
-        override suspend fun listStoredNames(): List<String> = stored
+        override suspend fun listStoredNames(modifiedBeforeEpochMillis: Long): List<String> =
+            stored.filter { (_, modified) -> modified < modifiedBeforeEpochMillis }.map { it.first }
     }
 }

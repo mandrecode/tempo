@@ -22,18 +22,21 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalCoroutinesApi::class)
 internal fun TasksViewModel.observeEditedTaskAttachments() {
     viewModelScope.launch {
+        // Keyed on the editor session too: reopening the task already being edited (from its
+        // notification, say) replaces the form with an empty list, and only a fresh subscription
+        // fills it again — the rows themselves have not changed, so Room has nothing new to emit.
         uiState
-            .map { it.taskForm.editingTask?.id }
+            .map { it.taskForm.editorSessionId to it.taskForm.editingTask?.id }
             .distinctUntilChanged()
-            .flatMapLatest { taskId ->
+            .flatMapLatest { (sessionId, taskId) ->
                 if (taskId == null) {
                     emptyFlow()
                 } else {
-                    taskAttachmentRepository.observeAttachments(taskId).map { taskId to it }
+                    taskAttachmentRepository.observeAttachments(taskId).map { Triple(sessionId, taskId, it) }
                 }
-            }.collect { (taskId, attachments) ->
+            }.collect { (sessionId, taskId, attachments) ->
                 mutableUiState.update { state ->
-                    if (state.taskForm.editingTask?.id != taskId) {
+                    if (state.taskForm.editorSessionId != sessionId || state.taskForm.editingTask?.id != taskId) {
                         state
                     } else {
                         state.copy(taskForm = state.taskForm.copy(attachments = attachments.toPersistentList()))
@@ -67,9 +70,9 @@ internal fun TasksViewModel.addAttachments(uris: List<String>) {
         when {
             // The editor closed, or another one opened, while the files were copying.
             !form.isVisible || form.editorSessionId != editorSessionId ->
-                imported.forEach { taskAttachmentRepository.discard(it) }
+                imported.forEach { discardQuietly(it) }
 
-            editingTask != null -> taskAttachmentRepository.attach(imported, editingTask.id)
+            editingTask != null -> attachPendingAttachments(imported, editingTask.id)
 
             else ->
                 mutableUiState.update {
@@ -97,7 +100,13 @@ private suspend fun TasksViewModel.importAttachment(uri: String): AttachmentImpo
 internal fun TasksViewModel.removeAttachment(attachment: TaskAttachment) {
     viewModelScope.launch {
         if (attachment.isSaved) {
-            taskAttachmentRepository.remove(attachment)
+            try {
+                taskAttachmentRepository.remove(attachment)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                showSnackbar(R.string.msg_attachment_remove_failed)
+            }
         } else {
             mutableUiState.update {
                 it.copy(
@@ -110,12 +119,26 @@ internal fun TasksViewModel.removeAttachment(attachment: TaskAttachment) {
                         ),
                 )
             }
-            taskAttachmentRepository.discard(attachment)
+            discardQuietly(attachment)
         }
     }
 }
 
-/** Gives a just-created task the files that were picked into its form before it existed. */
+/** An unsaved copy that cannot be deleted now is an orphan, and the next start prunes it. */
+private suspend fun TasksViewModel.discardQuietly(attachment: TaskAttachment) {
+    try {
+        taskAttachmentRepository.discard(attachment)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        // Nothing for the user to do about it.
+    }
+}
+
+/**
+ * Attaches files to a saved task: picked into a new task's form before it existed, or straight
+ * into one being edited. A failed insert is reported, never thrown at the user.
+ */
 internal suspend fun TasksViewModel.attachPendingAttachments(
     pending: List<TaskAttachment>,
     taskId: Long,
