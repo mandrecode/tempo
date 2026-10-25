@@ -105,10 +105,10 @@ class TempoLoadingIndicatorTest {
         isLoading = false
         composeTestRule.mainClock.advanceTimeByFrame()
         composeTestRule.mainClock.advanceTimeBy(80)
-        // Midway through the fade both states are on screen, one going and one coming, rather than
-        // the content replacing the empty state in a single frame.
+        // Midway through the fade the content is already coming in, and the outgoing loading state
+        // is empty: the load is over, so it has nothing left to show.
         composeTestRule.onNodeWithTag("content").assertExists()
-        composeTestRule.onNodeWithTag("loading").assertExists()
+        composeTestRule.onNodeWithTag("loading").assertDoesNotExist()
 
         composeTestRule.mainClock.advanceTimeBy(1_000)
         composeTestRule.onNodeWithTag("content").assertIsDisplayed()
@@ -130,6 +130,34 @@ class TempoLoadingIndicatorTest {
         }
         composeTestRule.mainClock.advanceTimeByFrame()
 
+        composeTestRule.onNodeWithTag("content").assertIsDisplayed()
+    }
+
+    /**
+     * A load that ends just before the indicator's reveal delay: the fade-out that follows must not
+     * carry the indicator past its deadline and show it over the loaded content.
+     */
+    @Test
+    fun aLoadEndingJustBeforeTheRevealDelay_neverShowsTheIndicator() {
+        var isLoading by mutableStateOf(true)
+        composeTestRule.setContent {
+            TempoTheme {
+                FirstLoadCrossfade(
+                    isLoading = isLoading,
+                    loading = { TempoLoadingIndicator(message = "Loading tasks") },
+                ) {
+                    Text("Pay rent", modifier = Modifier.testTag("content"))
+                }
+            }
+        }
+        composeTestRule.mainClock.advanceTimeBy(LOADING_INDICATOR_REVEAL_DELAY_MILLIS - 50)
+
+        isLoading = false
+        // Through the reveal deadline and the rest of the fade, frame by frame.
+        repeat(30) {
+            composeTestRule.mainClock.advanceTimeByFrame()
+            composeTestRule.onNodeWithContentDescription("Loading tasks").assertDoesNotExist()
+        }
         composeTestRule.onNodeWithTag("content").assertIsDisplayed()
     }
 }

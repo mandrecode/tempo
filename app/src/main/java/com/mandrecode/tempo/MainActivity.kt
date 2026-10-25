@@ -30,7 +30,7 @@ import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.StartupContentGate
-import com.mandrecode.tempo.core.ui.StartupContentGateHost
+import com.mandrecode.tempo.core.ui.components.StartupContentGateHost
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction

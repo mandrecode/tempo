@@ -26,3 +26,9 @@ Hiding the indicator did not remove the flash; it moved it. The first frames aft
 - **What's new:** the sheet is a separate window, and opening it while the main window's drawing was still held ended the splash over an undrawn screen (a black frame). It now waits for `hasSplashHandedOver`, which the splash condition sets the first time it lets go.
 
 Verified with screenshot bursts during cold starts on the Pixel 10 AVD. Before: splash, blank, bare Focus chrome, content. After: splash, then the complete Focus screen, and with a pending what's-new entry the sheet opens over it with no black frame.
+
+Two follow-ups from review (Copilot):
+- **No fade under the splash.** The first screen reports to the gate after the composition that shows its content, so `FirstLoadCrossfade` can still see the gate holding there (`isSplashCoveringFirstLoad`). For that load it switches with `snap()` rather than fading, so the splash never hands over to content that is still transparent. Later first visits still fade.
+- **No indicator in the outgoing state.** While the content fades in, the outgoing loading slot stays composed but empty once `isLoading` is false. Otherwise a load ending just before the 400 ms reveal could reveal the indicator mid-fade over the loaded content. Covered by `aLoadEndingJustBeforeTheRevealDelay_neverShowsTheIndicator`.
+
+The composable helpers (`HoldSplashWhileFirstLoad`, `isSplashCoveringFirstLoad`, `StartupContentGateHost`) live in `core/ui/components/StartupContentGateHost.kt`. The plain `StartupContentGate` class stays in `core/ui` and is unit-tested.

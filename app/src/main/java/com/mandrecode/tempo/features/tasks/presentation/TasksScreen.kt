@@ -43,7 +43,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
@@ -52,6 +51,7 @@ import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.components.TempoSnackbarVisuals
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding

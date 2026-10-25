@@ -24,8 +24,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
+import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.floatingRailContentClearance

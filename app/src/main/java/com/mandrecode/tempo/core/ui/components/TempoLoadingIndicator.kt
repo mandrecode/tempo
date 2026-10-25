@@ -2,6 +2,7 @@ package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.components.isSplashCoveringFirstLoad
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 import kotlinx.coroutines.delay
 
@@ -92,6 +94,13 @@ private const val FIRST_CONTENT_FADE_MILLIS = 250
  * showed its bare background and then the whole screen at once on top — a flash, however short
  * the load. A screen that is already loaded when it first composes shows its content straight
  * away; only the change from loading to loaded animates.
+ *
+ * Two exceptions keep the fade from causing flashes of its own:
+ * - The first screen of a cold start loads under the launch splash, which lets go the moment the
+ *   content is there; a fade would hand the splash over to content that is still transparent. That
+ *   load switches at once instead ([isSplashCoveringFirstLoad]).
+ * - The outgoing loading state stays composed while the content fades in, but empty: left as it
+ *   was, its indicator could reach its reveal delay mid-fade and appear over the loaded content.
  */
 @Composable
 fun FirstLoadCrossfade(
@@ -100,12 +109,18 @@ fun FirstLoadCrossfade(
     modifier: Modifier = Modifier.fillMaxSize(),
     content: @Composable () -> Unit,
 ) {
+    // Read in the composition where the content arrives, before the screen reports it to the gate.
+    val underSplash = isSplashCoveringFirstLoad()
     Crossfade(
         targetState = isLoading,
         modifier = modifier,
-        animationSpec = tween(FIRST_CONTENT_FADE_MILLIS),
+        animationSpec = if (underSplash) snap() else tween(FIRST_CONTENT_FADE_MILLIS),
         label = "firstLoad",
     ) { stillLoading ->
-        if (stillLoading) loading() else content()
+        when {
+            !stillLoading -> content()
+            // Fading out: the load is over, so there is nothing left to indicate.
+            isLoading -> loading()
+        }
     }
 }
