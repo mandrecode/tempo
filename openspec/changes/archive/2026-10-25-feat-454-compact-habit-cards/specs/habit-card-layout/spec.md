@@ -27,3 +27,18 @@ A habit-chain card SHALL always show its habits, each with its own completion to
 #### Scenario: Chain completed
 - **WHEN** the last habit of a chain is completed
 - **THEN** the chain's habits stay visible, shown as completed
+
+### Requirement: Chain card layout
+A habit-chain card SHALL show, top to bottom: its title and optional description, its progress as a short bar with the done/total count beside it, its habits, and an "Add habit" row as the last row of the list. Once every habit is done, the bar and count SHALL be replaced by a single "All done" chip.
+
+#### Scenario: Chain in progress
+- **WHEN** some of a chain's habits are done for the selected day
+- **THEN** a short progress bar and the done/total count are shown under the title
+
+#### Scenario: Chain all done
+- **WHEN** every habit in the chain is done for the selected day
+- **THEN** an "All done" chip with the total count is shown instead of the bar and count
+
+#### Scenario: Adding a habit
+- **WHEN** the user taps the "Add habit" row at the end of the chain's list
+- **THEN** the habit editor opens for a new habit in that chain

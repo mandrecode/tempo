@@ -8,9 +8,12 @@ import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
+import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
@@ -100,6 +103,50 @@ class CompactHabitCardsTest {
         val inChain = composeTestRule.onNodeWithText("Stretch").getUnclippedBoundsInRoot().height
         assertThat(inChain).isEqualTo(standalone)
     }
+
+    @Test
+    fun habitChainCard_addRowAddsAHabit() {
+        var added = 0
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitChainCard(
+                    habitChain = chain(),
+                    chainHabits = listOf(habit(1, "Stretch")),
+                    selectedDate = selectedDate,
+                    onEdit = {},
+                    onAddHabit = { added++ },
+                    showTimeline = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(string(R.string.add_habit)).performClick()
+
+        composeTestRule.runOnIdle { assertThat(added).isEqualTo(1) }
+    }
+
+    @Test
+    fun habitChainCard_showsAllDoneOnceEveryHabitIsDone() {
+        val done = { id: Long, title: String -> habit(id, title).copy(completionHistory = selectedDate.toString()) }
+        composeTestRule.setContent {
+            TempoTheme {
+                HabitChainCard(
+                    habitChain = chain(),
+                    chainHabits = listOf(done(1, "Stretch"), done(2, "Meditate")),
+                    selectedDate = selectedDate,
+                    onEdit = {},
+                    showTimeline = false,
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText(string(R.string.habit_chain_card_all_done, 2)).assertIsDisplayed()
+    }
+
+    private fun string(
+        id: Int,
+        vararg args: Any,
+    ): String = InstrumentationRegistry.getInstrumentation().targetContext.getString(id, *args)
 
     private fun chain() =
         HabitChain(
