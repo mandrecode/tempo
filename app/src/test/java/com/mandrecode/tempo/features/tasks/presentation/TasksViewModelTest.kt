@@ -234,6 +234,52 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `ShowDefaultCategory selects the default category`() =
+        runTest {
+            coEvery { categoryRepository.getAllCategories() } returns
+                flowOf(
+                    listOf(
+                        Category(id = 1L, name = "Work"),
+                        Category(id = 2L, name = "Inbox", isDefault = true),
+                    ),
+                )
+            every { tasksScreenPreferencesRepository.getSelectedCategoryId() } returns 1L
+            val vm = createViewModel()
+            advanceUntilIdle()
+            assertThat(vm.uiState.value.selectedCategoryId).isEqualTo(1L)
+
+            vm.onEvent(TasksContract.UiEvent.ShowDefaultCategory)
+            advanceUntilIdle()
+
+            assertThat(vm.uiState.value.selectedCategoryId).isEqualTo(2L)
+            verify { tasksScreenPreferencesRepository.setSelectedCategoryId(2L) }
+        }
+
+    @Test
+    fun `ShowDefaultCategory falls back to the first category when none is default`() =
+        runTest {
+            coEvery { categoryRepository.getAllCategories() } returns
+                flowOf(listOf(Category(id = 3L, name = "Home"), Category(id = 4L, name = "Work")))
+            every { tasksScreenPreferencesRepository.getSelectedCategoryId() } returns 4L
+            val vm = createViewModel()
+            advanceUntilIdle()
+
+            vm.onEvent(TasksContract.UiEvent.ShowDefaultCategory)
+            advanceUntilIdle()
+
+            assertThat(vm.uiState.value.selectedCategoryId).isEqualTo(3L)
+        }
+
+    @Test
+    fun `ShowDefaultCategory does nothing before categories load`() =
+        runTest {
+            viewModel.onEvent(TasksContract.UiEvent.CategorySelected(5L))
+            viewModel.onEvent(TasksContract.UiEvent.ShowDefaultCategory)
+
+            assertThat(viewModel.uiState.value.selectedCategoryId).isEqualTo(5L)
+        }
+
+    @Test
     fun `selectCategory persists selected category id`() =
         runTest {
             viewModel.onEvent(TasksContract.UiEvent.CategorySelected(5L))
