@@ -252,7 +252,7 @@ fun HabitChainCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = 14.dp, bottom = 6.dp),
+                            .padding(top = 14.dp),
                 ) {
                     HabitChainHeader(
                         title = habitChain.title,
@@ -404,7 +404,10 @@ private fun ChainProgress(
     }
 }
 
-/** The list's last row: a dashed circle where the checkbox would be, then "Add habit". */
+/**
+ * The list's last row: a dashed circle where the checkbox would be, then "Add habit". Same size
+ * as a habit row, so the card ends with the same 12dp a standalone habit has under its checkbox.
+ */
 @Composable
 private fun AddHabitRow(
     onClick: () -> Unit,
@@ -416,7 +419,7 @@ private fun AddHabitRow(
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(24.dp))
                 .clickable(onClick = onClick)
-                .padding(horizontal = 16.dp, vertical = 4.dp),
+                .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
