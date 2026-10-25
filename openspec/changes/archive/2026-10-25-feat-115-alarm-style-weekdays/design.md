@@ -7,7 +7,8 @@ The control is a `ButtonGroup` with seven `customItem`s, each a `ToggleButton`:
 - `shapesFor(48.dp)`: round off, rounded-square on, with the standard pressed morph.
 - `Modifier.weight(1f).animateWidth(interactionSource)`: the expressive "pressed item widens" behaviour.
 - `ButtonGroupDefaults.ConnectedSpaceBetween` spacing, so the seven read as one control.
-- Zero content padding, so a single initial is not clipped on a 360 dp phone (each button is about 36 dp wide in the editor row).
+- Zero content padding, so a single initial is never clipped.
+- **Placement and touch targets.** In both editors the row spans the sheet's full width, below a "Repeat on" label (habits) or the weekly chip (tasks), rather than sitting beside the 48 dp icon column. On a 360 dp phone that is 312 dp, so each day is about 43 dp wide and 48 dp tall; beside the icon it was under 38 dp. Seven 48 dp-wide targets plus gaps (≥ 348 dp) cannot fit inside the sheet's 24 dp side padding. Compose's minimum interactive size extends each toggle's touch area to 48 dp, and overlapping touch areas go to the nearest bounds, so a tap always lands on the day under the finger. `DayOfWeekSelectorTest.onACompactSheet_everyDayIsItsOwnTarget` checks this at 312 dp.
 - Colours: checked uses the caller's container pair (primary container for habits, tertiary container for tasks, as before); unchecked uses `surfaceContainerHighest` so it stands out from the sheet.
 - Each toggle has `Role.Checkbox` and the full day name as its content description; the visible label is the first letter of the localized short name.
 
