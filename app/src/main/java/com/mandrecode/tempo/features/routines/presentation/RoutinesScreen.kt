@@ -53,6 +53,7 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.animatedRailClearance
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
@@ -128,7 +129,7 @@ fun RoutinesScreen(
     val isRailLayout = isFloatingNavigationRailLayout()
     val editorPlacement = rememberSheetPlacement()
     val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
-    val railContentClearance = routinesRailClearance(isRailLayout, isDockedEditor)
+    val railContentClearance = animatedRailClearance(routinesRailClearance(isRailLayout, isDockedEditor))
     var editorDismissRequestKey by remember { mutableIntStateOf(0) }
     val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
     LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
