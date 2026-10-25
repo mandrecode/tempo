@@ -1,10 +1,12 @@
 package com.mandrecode.tempo
 
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
+import com.mandrecode.tempo.core.ui.navigation.tabViewModelKey
 import com.mandrecode.tempo.features.focus.presentation.FocusViewModel
 import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
 import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
@@ -27,7 +29,7 @@ class MainActivityTabWarmupTest {
                 InstrumentationRegistry.getInstrumentation().waitForIdleSync()
                 Thread.sleep(POLL_MS)
                 scenario.onActivity { activity ->
-                    focusLoaded = !ViewModelProvider(activity)[FocusViewModel::class.java].uiState.value.isLoading
+                    focusLoaded = !tab<FocusViewModel>(activity).uiState.value.isLoading
                 }
             }
             assertThat(focusLoaded).isTrue()
@@ -38,15 +40,35 @@ class MainActivityTabWarmupTest {
             var routinesLoading = true
             var tasksLoading = true
             scenario.onActivity { activity ->
-                val provider = ViewModelProvider(activity)
-                routinesLoading = provider[RoutinesViewModel::class.java].uiState.value.isLoading
-                tasksLoading = provider[TasksViewModel::class.java].uiState.value.isLoading
+                routinesLoading = tab<RoutinesViewModel>(activity).uiState.value.isLoading
+                tasksLoading = tab<TasksViewModel>(activity).uiState.value.isLoading
             }
 
             assertThat(routinesLoading).isFalse()
             assertThat(tasksLoading).isFalse()
         }
     }
+
+    /**
+     * The Focus session overlay and the task editor it opens sit outside the tabs' navigation
+     * entries and resolve their own view models against the activity; the tabs' must be separate
+     * instances, or the overlay would drive the Focus tab's editor and share the Tasks tab's form.
+     */
+    @Test
+    fun tabViewModels_areSeparateFromTheOverlaysOwn() {
+        ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val provider = ViewModelProvider(activity)
+                assertThat(tab<FocusViewModel>(activity))
+                    .isNotSameInstanceAs(provider[FocusViewModel::class.java])
+                assertThat(tab<TasksViewModel>(activity))
+                    .isNotSameInstanceAs(provider[TasksViewModel::class.java])
+            }
+        }
+    }
+
+    private inline fun <reified VM : ViewModel> tab(activity: MainActivity): VM =
+        ViewModelProvider(activity)[tabViewModelKey(VM::class.java), VM::class.java]
 
     private companion object {
         const val WAIT_MS = 5_000L

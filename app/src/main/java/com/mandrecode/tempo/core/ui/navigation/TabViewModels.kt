@@ -18,10 +18,17 @@ import androidx.lifecycle.viewmodel.compose.viewModel
  * their back stacks — so holding the view model there changes when it is created, not how long
  * it lives.
  *
+ * Each is held under its own [tabViewModelKey], never the default key: other screens outside the
+ * tabs' navigation entries (the Focus session overlay and the task editor it opens) resolve their
+ * own view models of the same classes against the activity, and must keep getting separate ones.
+ *
  * Outside an activity that owns view models (previews, tests) it falls back to the usual owner.
  */
 @Composable
 inline fun <reified VM : ViewModel> tabViewModel(): VM {
     val owner = LocalActivity.current as? ViewModelStoreOwner ?: checkNotNull(LocalViewModelStoreOwner.current)
-    return viewModel(viewModelStoreOwner = owner)
+    return viewModel(viewModelStoreOwner = owner, key = tabViewModelKey(VM::class.java))
 }
+
+/** The key a tab's view model is held under in the activity; see [tabViewModel]. */
+fun tabViewModelKey(viewModelClass: Class<out ViewModel>): String = "tempo.tab:${viewModelClass.name}"

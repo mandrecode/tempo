@@ -953,6 +953,18 @@ internal fun RoutinesViewModel.openHabitChainFromNotificationInternal(
     }
 }
 
+/**
+ * The Routines tab has come into view, or the app back to the front with it showing (#438). If a
+ * new day has started since the timeline was last looked at, a timeline still on the old "today"
+ * moves to the new one — checking a routine off would otherwise record it against yesterday. A day
+ * the user picked themselves is left alone.
+ */
+internal fun RoutinesViewModel.onTabShownOn(today: LocalDate) {
+    if (today == lastSeenToday) return
+    if (uiState.value.selectedDate == lastSeenToday) selectDate(today)
+    lastSeenToday = today
+}
+
 internal fun RoutinesViewModel.selectDate(date: LocalDate) {
     mutableUiState.update { currentState ->
         val (scheduled, unscheduled) =

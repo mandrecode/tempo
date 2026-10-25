@@ -39,6 +39,7 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
@@ -864,6 +865,43 @@ class RoutinesViewModelTest {
             assertThat(viewModel.uiState.value.selectedDate).isEqualTo(selectedDate)
             assertThat(viewModel.uiState.value.habitForm.isVisible).isTrue()
             assertThat(viewModel.uiState.value.habitForm.editingHabitChain).isEqualTo(ch)
+        }
+
+    // --- Tab shown (#438) ---
+
+    @Test
+    fun `showing the tab after midnight moves a timeline still on today to the new day`() =
+        runTest {
+            val launchDay = viewModel.uiState.value.selectedDate
+            val nextDay = launchDay.plus(DatePeriod(days = 1))
+
+            viewModel.onTabShownOn(today = nextDay)
+
+            assertThat(viewModel.uiState.value.selectedDate).isEqualTo(nextDay)
+        }
+
+    @Test
+    fun `showing the tab after midnight keeps a day the user picked`() =
+        runTest {
+            val launchDay = viewModel.uiState.value.selectedDate
+            val picked = launchDay.plus(DatePeriod(days = 3))
+            viewModel.onEvent(RoutinesContract.UiEvent.SelectDate(picked))
+
+            viewModel.onTabShownOn(today = launchDay.plus(DatePeriod(days = 1)))
+
+            assertThat(viewModel.uiState.value.selectedDate).isEqualTo(picked)
+        }
+
+    @Test
+    fun `showing the tab on the same day changes nothing`() =
+        runTest {
+            val launchDay = viewModel.uiState.value.selectedDate
+            val picked = launchDay.plus(DatePeriod(days = 2))
+            viewModel.onEvent(RoutinesContract.UiEvent.SelectDate(picked))
+
+            viewModel.onTabShownOn(today = launchDay)
+
+            assertThat(viewModel.uiState.value.selectedDate).isEqualTo(picked)
         }
 
     // --- Permissions ---

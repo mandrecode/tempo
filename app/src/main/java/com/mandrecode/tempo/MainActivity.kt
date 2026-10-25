@@ -39,6 +39,7 @@ import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
 import com.mandrecode.tempo.core.ui.navigation.route
 import com.mandrecode.tempo.core.ui.navigation.tabViewModel
+import com.mandrecode.tempo.core.ui.navigation.tabViewModelKey
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.focus.presentation.FocusViewModel
@@ -51,6 +52,7 @@ import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderRece
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.TaskReminderReceiver
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
@@ -338,10 +340,19 @@ class MainActivity :
     private fun warmTabsWhenDatabaseIsReady() {
         lifecycleScope.launch {
             databaseWarmupSignal.isReady.first { it }
-            val provider = ViewModelProvider(this@MainActivity)
-            provider[FocusViewModel::class.java]
-            provider[RoutinesViewModel::class.java]
-            provider[TasksViewModel::class.java]
+            // "Ready" means the warm-up attempt is over, not that it worked: if the database could
+            // not be opened, creating these fails the same way. The warm-up is only an
+            // optimisation, so it gives up quietly; the screen that needs the database reports the
+            // failure through the usual path when it is opened.
+            try {
+                val provider = ViewModelProvider(this@MainActivity)
+                listOf(FocusViewModel::class.java, RoutinesViewModel::class.java, TasksViewModel::class.java)
+                    .forEach { provider[tabViewModelKey(it), it] }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Intentionally ignored — see above.
+            }
         }
     }
 

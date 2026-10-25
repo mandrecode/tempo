@@ -106,6 +106,9 @@ fun RoutinesScreen(
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_RESUME) {
+                    // Also on entering the tab: an observer added to a resumed lifecycle is
+                    // brought up to ON_RESUME straight away.
+                    viewModel.onTabShown()
                     viewModel.checkPermissionsAndSyncReminders()
                 }
             }

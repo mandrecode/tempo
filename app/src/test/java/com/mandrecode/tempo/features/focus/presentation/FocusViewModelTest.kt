@@ -23,15 +23,43 @@ import kotlin.time.Duration.Companion.days
 /** The day Focus shows: agenda, counts, streak, and opening items from it. */
 @OptIn(ExperimentalCoroutinesApi::class)
 class FocusViewModelTest : FocusViewModelHarness() {
+    /**
+     * The view model is created at startup, ahead of the tab (#438), so showing the tab — not
+     * creating the view model — is what recounts: work may have changed elsewhere in between.
+     */
     @Test
-    fun `opening the screen recounts the day`() =
+    fun `showing the tab recounts the day, creating the view model does not`() =
         runTest {
             stubDay()
 
-            createViewModel()
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+            coVerify(exactly = 0) { recordDailyActivity(any()) }
+
+            viewModel.onTabShown()
             advanceUntilIdle()
 
-            coVerify { recordDailyActivity(any()) }
+            coVerify(exactly = 1) { recordDailyActivity(clockToday()) }
+        }
+
+    @Test
+    fun `showing the tab after midnight moves Focus onto the new day`() =
+        runTest {
+            val previousDay = clockToday()
+            val currentDay = previousDay.plus(1, DateTimeUnit.DAY)
+            every { getFocusAgenda(previousDay) } returns MutableStateFlow(agendaOf())
+            every { getFocusAgenda(currentDay) } returns MutableStateFlow(agendaOf())
+            every { getFocusHistory(any(), any()) } returns flowOf(emptyList())
+            coEvery { getFocusStreak(any()) } returns 0
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            clockNow += 1.days
+            viewModel.onTabShown()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.today).isEqualTo(currentDay)
+            coVerify { recordDailyActivity(currentDay) }
         }
 
     @Test

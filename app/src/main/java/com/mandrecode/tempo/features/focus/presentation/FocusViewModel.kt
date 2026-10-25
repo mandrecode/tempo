@@ -68,8 +68,16 @@ class FocusViewModel
         init {
             observeSession()
             refreshDayIfStale()
-            // The screen being opened is itself a reason to recount: work may have been added or
-            // rescheduled from another tab since the last completion.
+        }
+
+        /**
+         * The Focus tab has come into view, or the app back to the front with it showing. The view
+         * model is created at startup, ahead of the tab (#438), so this — not creation — is when
+         * the tab catches up: onto a new day if one has started, and with a recount, since work
+         * may have been added or rescheduled from another tab since the last completion.
+         */
+        fun onTabShown() {
+            refreshDayIfStale()
             viewModelScope.launch { recordDailyActivity(today) }
         }
 
