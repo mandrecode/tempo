@@ -32,3 +32,4 @@ Two follow-ups from review (Copilot):
 - **No indicator in the outgoing state.** While the content fades in, the outgoing loading slot stays composed but empty once `isLoading` is false. Otherwise a load ending just before the 400 ms reveal could reveal the indicator mid-fade over the loaded content. Covered by `aLoadEndingJustBeforeTheRevealDelay_neverShowsTheIndicator`.
 
 The composable helpers (`HoldSplashWhileFirstLoad`, `isSplashCoveringFirstLoad`, `StartupContentGateHost`) live in `core/ui/components/StartupContentGateHost.kt`. The plain `StartupContentGate` class stays in `core/ui` and is unit-tested.
+- **Gate released with the splash.** When the 1.5 s cap runs out before the first content arrives, the splash condition also releases the gate. The load is then visible, so its content fades in over the loading state rather than snapping (Copilot).

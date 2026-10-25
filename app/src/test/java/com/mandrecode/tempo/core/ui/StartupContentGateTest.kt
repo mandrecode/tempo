@@ -30,4 +30,16 @@ class StartupContentGateTest {
 
         assertThat(gate.isHolding).isFalse()
     }
+
+    /** The splash's time cap ran out before the first content: the gate opens with it. */
+    @Test
+    fun `releasing while the first load is still running opens the gate for good`() {
+        val gate = StartupContentGate()
+        gate.report(isLoading = true)
+
+        gate.release()
+        gate.report(isLoading = true)
+
+        assertThat(gate.isHolding).isFalse()
+    }
 }

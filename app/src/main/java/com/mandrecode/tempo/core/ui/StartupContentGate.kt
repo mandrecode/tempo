@@ -21,6 +21,11 @@ class StartupContentGate {
     /** True while the first screen is still loading its first content. */
     val isHolding: Boolean get() = state == State.HOLDING
 
+    /** Opens the gate for good: the splash has gone, whether or not the first load finished. */
+    fun release() {
+        state = State.RELEASED
+    }
+
     fun report(isLoading: Boolean) {
         state =
             when {

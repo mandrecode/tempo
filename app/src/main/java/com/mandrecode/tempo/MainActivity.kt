@@ -103,7 +103,12 @@ class MainActivity :
                     mainViewModel.uiState.value is MainUiState.Loading ||
                     startupContentGate.isHolding
             val keep = stillStarting && SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
-            if (!keep) hasSplashHandedOver = true
+            if (!keep) {
+                hasSplashHandedOver = true
+                // Also when the cap ran out first: the splash is gone, so a load still running
+                // is on screen, and its content should fade in over it rather than snap.
+                startupContentGate.release()
+            }
             keep
         }
 
