@@ -333,7 +333,6 @@
     <string name="repeat">Repeat</string>
     <string name="repeat_on">Repeat on</string>
     <string name="all_days">All days</string>
-    <string name="everyday">Every day</string>
     <string name="weekdays">Weekdays</string>
     <string name="daily">Daily</string>
     <string name="weekly">Weekly</string>
@@ -537,8 +536,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add tasks from Focus, attach files to them</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. And any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap.</string>
+    <string name="whats_new_title">Add from Focus, attach files, pick days like an alarm</string>
+    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. And habits and chains pick their days the way an alarm does: tap the initials of the days you want.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

@@ -637,7 +637,7 @@ private fun TaskPeriodicitySection(
                             selectedDays = state.formState.repeatDays,
                             onDaysChange = actions.onSetRepeatDays,
                             modifier = Modifier.weight(1f),
-                            showAllDaysOption = false,
+                            nullMeansEveryDay = false,
                             enabled = !isPeriodicityReadOnly,
                             selectedContainerColor =
                                 MaterialTheme.colorScheme.tertiaryContainer,
