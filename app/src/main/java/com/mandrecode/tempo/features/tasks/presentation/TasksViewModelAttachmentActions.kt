@@ -1,9 +1,11 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import androidx.annotation.StringRes
 import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.features.tasks.domain.model.AttachmentImportResult
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
+import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -53,6 +55,7 @@ internal fun TasksViewModel.observeEditedTaskAttachments() {
 internal fun TasksViewModel.addAttachments(uris: List<String>) {
     if (uris.isEmpty()) return
     val editorSessionId = uiState.value.taskForm.editorSessionId
+    clearAttachmentErrors()
     viewModelScope.launch {
         val imported = mutableListOf<TaskAttachment>()
         var tooLarge = 0
@@ -67,12 +70,13 @@ internal fun TasksViewModel.addAttachments(uris: List<String>) {
 
         val form = uiState.value.taskForm
         val editingTask = form.editingTask
+        var attachFailed = false
         when {
             // The editor closed, or another one opened, while the files were copying.
             !form.isVisible || form.editorSessionId != editorSessionId ->
                 imported.forEach { discardQuietly(it) }
 
-            editingTask != null -> attachPendingAttachments(imported, editingTask.id)
+            editingTask != null -> attachFailed = !attachPendingAttachments(imported, editingTask.id)
 
             else ->
                 mutableUiState.update {
@@ -81,9 +85,42 @@ internal fun TasksViewModel.addAttachments(uris: List<String>) {
                 }
         }
 
-        when {
-            tooLarge > 0 -> showSnackbar(R.string.msg_attachment_too_large)
-            unreadable > 0 -> showSnackbar(R.string.msg_attachment_failed)
+        // Every kind of rejection is reported: a pick with an oversized file and an unreadable
+        // one names both, rather than the second going unmentioned.
+        val problems =
+            buildList {
+                if (tooLarge > 0) add(R.string.msg_attachment_too_large)
+                if (unreadable > 0 || attachFailed) add(R.string.msg_attachment_failed)
+            }
+        reportAttachmentProblems(editorSessionId, problems)
+    }
+}
+
+/**
+ * Shows [problems] inside the editor that asked, when it is still open; otherwise — it closed while
+ * files were copying — as snackbars, which by then are visible.
+ */
+private suspend fun TasksViewModel.reportAttachmentProblems(
+    editorSessionId: Long,
+    @StringRes problems: List<Int>,
+) {
+    if (problems.isEmpty()) return
+    val form = uiState.value.taskForm
+    if (form.isVisible && form.editorSessionId == editorSessionId) {
+        mutableUiState.update {
+            it.copy(taskForm = it.taskForm.copy(attachmentErrors = problems.toPersistentList()))
+        }
+    } else {
+        problems.forEach { showSnackbar(it) }
+    }
+}
+
+private fun TasksViewModel.clearAttachmentErrors() {
+    mutableUiState.update {
+        if (it.taskForm.attachmentErrors.isEmpty()) {
+            it
+        } else {
+            it.copy(taskForm = it.taskForm.copy(attachmentErrors = persistentListOf()))
         }
     }
 }
@@ -98,6 +135,8 @@ private suspend fun TasksViewModel.importAttachment(uri: String): AttachmentImpo
     }
 
 internal fun TasksViewModel.removeAttachment(attachment: TaskAttachment) {
+    val editorSessionId = uiState.value.taskForm.editorSessionId
+    clearAttachmentErrors()
     viewModelScope.launch {
         if (attachment.isSaved) {
             try {
@@ -105,7 +144,7 @@ internal fun TasksViewModel.removeAttachment(attachment: TaskAttachment) {
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                showSnackbar(R.string.msg_attachment_remove_failed)
+                reportAttachmentProblems(editorSessionId, listOf(R.string.msg_attachment_remove_failed))
             }
         } else {
             mutableUiState.update {
@@ -137,22 +176,26 @@ private suspend fun TasksViewModel.discardQuietly(attachment: TaskAttachment) {
 
 /**
  * Attaches files to a saved task: picked into a new task's form before it existed, or straight
- * into one being edited. A failed insert is reported, never thrown at the user.
+ * into one being edited. A failed insert is never thrown at the user; it returns `false` for the
+ * caller to report where the user is looking.
  */
 internal suspend fun TasksViewModel.attachPendingAttachments(
     pending: List<TaskAttachment>,
     taskId: Long,
-) {
-    if (pending.isEmpty()) return
-    try {
+): Boolean {
+    if (pending.isEmpty()) return true
+    return try {
         taskAttachmentRepository.attach(pending, taskId)
+        true
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
-        showSnackbar(R.string.msg_attachment_failed)
+        false
     }
 }
 
 internal fun TasksViewModel.onAttachmentOpenFailed() {
-    viewModelScope.launch { showSnackbar(R.string.msg_attachment_no_app) }
+    val editorSessionId = uiState.value.taskForm.editorSessionId
+    clearAttachmentErrors()
+    viewModelScope.launch { reportAttachmentProblems(editorSessionId, listOf(R.string.msg_attachment_no_app)) }
 }

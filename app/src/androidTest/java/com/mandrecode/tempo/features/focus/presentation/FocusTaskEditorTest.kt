@@ -77,6 +77,7 @@ class FocusTaskEditorTest {
             Dispatchers.Unconfined,
             mockk(relaxed = true),
             mockk(relaxed = true),
+            mockk(relaxed = true),
             kotlin.time.Clock.System,
         )
     }

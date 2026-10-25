@@ -80,6 +80,12 @@ object TasksContract {
          * a new task they are files already copied in and waiting for the task to be saved (#380).
          */
         val attachments: ImmutableList<TaskAttachment> = persistentListOf(),
+        /**
+         * What went wrong with the last attachment action, shown inside the editor: a snackbar
+         * would sit under the sheet's own window and could expire unseen. Every problem of a
+         * multi-file pick is listed. Cleared by the next attachment action.
+         */
+        val attachmentErrors: ImmutableList<Int> = persistentListOf(),
     )
 
     data class CategoryFormState(

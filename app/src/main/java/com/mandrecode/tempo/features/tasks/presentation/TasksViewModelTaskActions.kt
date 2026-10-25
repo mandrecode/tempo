@@ -167,7 +167,10 @@ internal fun TasksViewModel.addTask(
                 }
 
                 is CreateTaskUseCase.Result.Success -> {
-                    attachPendingAttachments(pendingAttachments, result.taskId)
+                    // The editor has closed by now, so a failure is a snackbar, not a line in it.
+                    if (!attachPendingAttachments(pendingAttachments, result.taskId)) {
+                        showSnackbar(R.string.msg_attachment_failed)
+                    }
                     val messageResId =
                         when {
                             result.scheduleResult is ScheduleResult.PermissionError -> {

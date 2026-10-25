@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,7 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -51,6 +54,7 @@ import com.mandrecode.tempo.infrastructure.attachments.attachmentContentUri
 @Composable
 internal fun TaskAttachmentsSection(
     attachments: List<TaskAttachment>,
+    @StringRes errors: List<Int>,
     onAddAttachments: (List<String>) -> Unit,
     onRemoveAttachment: (TaskAttachment) -> Unit,
     onAttachmentOpenFail: () -> Unit,
@@ -86,6 +90,15 @@ internal fun TaskAttachmentsSection(
                 label = stringResource(R.string.add_attachment),
                 onClick = { picker.launch(arrayOf("*/*")) },
             )
+            // Inside the sheet, where it is seen: a snackbar would sit under the sheet's window.
+            errors.forEach { error ->
+                Text(
+                    text = stringResource(error),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
         }
     }
 }
@@ -148,7 +161,7 @@ private fun TaskAttachment.Kind.iconRes(): Int =
 /** Hands the private copy to a viewer app with a one-off read grant; `false` if none can take it. */
 private fun Context.openAttachment(attachment: TaskAttachment): Boolean =
     try {
-        val uri = attachmentContentUri(this, attachment.storedName)
+        val uri = attachmentContentUri(this, attachment.storedName, attachment.displayName, attachment.mimeType)
         val intent =
             Intent(Intent.ACTION_VIEW)
                 .setDataAndType(uri, attachment.mimeType ?: "*/*")

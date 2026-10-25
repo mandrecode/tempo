@@ -116,6 +116,7 @@ internal fun TaskBottomSheetBody(
             Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
             TaskAttachmentsSection(
                 attachments = state.formState.attachments,
+                errors = state.formState.attachmentErrors,
                 onAddAttachments = attachmentActions.onAddAttachments,
                 onRemoveAttachment = attachmentActions.onRemoveAttachment,
                 onAttachmentOpenFail = attachmentActions.onAttachmentOpenFail,

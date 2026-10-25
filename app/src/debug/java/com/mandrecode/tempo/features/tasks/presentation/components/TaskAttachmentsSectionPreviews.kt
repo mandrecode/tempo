@@ -25,6 +25,7 @@ private fun TaskAttachmentsSectionPreview() {
         Surface {
             TaskAttachmentsSection(
                 attachments = previewAttachments,
+                errors = emptyList(),
                 onAddAttachments = {},
                 onRemoveAttachment = {},
                 onAttachmentOpenFail = {},
@@ -41,6 +42,7 @@ private fun TaskAttachmentsSectionEmptyPreview() {
         Surface {
             TaskAttachmentsSection(
                 attachments = emptyList(),
+                errors = emptyList(),
                 onAddAttachments = {},
                 onRemoveAttachment = {},
                 onAttachmentOpenFail = {},

@@ -109,7 +109,7 @@
 
         <!-- Hands one task attachment at a time to a viewer app (#380). -->
         <provider
-            android:name="androidx.core.content.FileProvider"
+            android:name=".infrastructure.attachments.AttachmentFileProvider"
             android:authorities="${applicationId}.attachments"
             android:exported="false"
             android:grantUriPermissions="true">

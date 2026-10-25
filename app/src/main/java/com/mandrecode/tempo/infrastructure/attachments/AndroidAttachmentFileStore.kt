@@ -120,13 +120,21 @@ internal fun attachmentDirectory(context: Context): File = File(context.filesDir
 internal fun attachmentAuthority(context: Context): String = "${context.packageName}.attachments"
 
 /**
- * A `content://` URI for one stored attachment, for handing to a viewer app with a read grant.
- * Throws [IllegalArgumentException] if the file is outside the provider's paths.
+ * A `content://` URI for one stored attachment, for handing to a viewer app with a read grant. It
+ * carries the attachment's own name and type, which [AttachmentFileProvider] reports in place of
+ * the stored file's. Throws [IllegalArgumentException] if the file is outside the provider's paths.
  */
 fun attachmentContentUri(
     context: Context,
     storedName: String,
+    displayName: String,
+    mimeType: String?,
 ): android.net.Uri {
     val file = File(attachmentDirectory(context), storedName)
-    return FileProvider.getUriForFile(context, attachmentAuthority(context), file)
+    return FileProvider
+        .getUriForFile(context, attachmentAuthority(context), file)
+        .buildUpon()
+        .appendQueryParameter(AttachmentFileProvider.PARAM_DISPLAY_NAME, displayName)
+        .apply { mimeType?.let { appendQueryParameter(AttachmentFileProvider.PARAM_MIME_TYPE, it) } }
+        .build()
 }

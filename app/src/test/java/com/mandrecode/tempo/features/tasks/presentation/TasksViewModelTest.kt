@@ -2130,10 +2130,8 @@ class TasksViewModelTest {
         }
 
     @Test
-    fun `a file too large to attach is reported and nothing is added`() =
+    fun `a file too large to attach is reported in the editor and nothing is added`() =
         runTest {
-            val effects = mutableListOf<TasksContract.UiEffect>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
             coEvery { taskAttachmentRepository.importFile(any()) } returns AttachmentImportResult.TooLarge
 
             viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
@@ -2142,7 +2140,41 @@ class TasksViewModelTest {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
-            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_too_large)
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_too_large)
+        }
+
+    /** A pick with an oversized file and an unreadable one names both problems. */
+    @Test
+    fun `every kind of rejected file in a pick is reported`() =
+        runTest {
+            coEvery { taskAttachmentRepository.importFile("content://huge") } returns AttachmentImportResult.TooLarge
+            coEvery { taskAttachmentRepository.importFile("content://gone") } returns AttachmentImportResult.Unreadable
+
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://huge", "content://gone")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_too_large, R.string.msg_attachment_failed)
+        }
+
+    @Test
+    fun `the next attachment action clears the last one's errors`() =
+        runTest {
+            coEvery { taskAttachmentRepository.importFile("content://huge") } returns AttachmentImportResult.TooLarge
+            coEvery { taskAttachmentRepository.importFile("content://ok") } returns
+                AttachmentImportResult.Imported(pickedAttachment())
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://huge")))
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://ok")))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors).isEmpty()
         }
 
     @Test
@@ -2208,8 +2240,6 @@ class TasksViewModelTest {
     @Test
     fun `a failed attach to a saved task is reported instead of thrown`() =
         runTest {
-            val effects = mutableListOf<TasksContract.UiEffect>()
-            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
             val picked = AttachmentImportResult.Imported(pickedAttachment())
             coEvery { taskAttachmentRepository.importFile(any()) } returns picked
             coEvery { taskAttachmentRepository.attach(any(), any()) } throws IllegalStateException("disk full")
@@ -2220,7 +2250,8 @@ class TasksViewModelTest {
             viewModel.onEvent(TasksContract.UiEvent.AddAttachments(listOf("content://picked/1")))
             advanceUntilIdle()
 
-            assertThat(effects.snackbarMessages()).contains(R.string.msg_attachment_failed)
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_failed)
         }
 
     @Test
@@ -2253,6 +2284,20 @@ class TasksViewModelTest {
             assertThat(viewModel.uiState.value.taskForm.attachments).isEmpty()
         }
 
+    @Test
+    fun `an attachment no app can open is reported in the open editor`() =
+        runTest {
+            viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog())
+            advanceUntilIdle()
+
+            viewModel.onEvent(TasksContract.UiEvent.AttachmentOpenFailed)
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.taskForm.attachmentErrors)
+                .containsExactly(R.string.msg_attachment_no_app)
+        }
+
+    /** With no editor open there is no sheet to cover a snackbar, so one is shown. */
     @Test
     fun `an attachment no app can open is reported`() =
         runTest {
