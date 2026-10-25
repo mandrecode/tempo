@@ -9,8 +9,8 @@
 - [x] 2.1 Run `openspec validate fix-393-restore-task-sheet-keyboard-baseline`
 - [x] 2.2 Run `./gradlew ktlintFormat`, unit tests, formatting checks, detekt, and debug assembly
 - [x] 2.3 Run screenshot validation and review any reported visual differences
-- [ ] 2.4 Install and smoke-test only the debug application on the connected Pixel 7 (device not
-  currently visible to Android tooling)
+- [x] 2.4 Install and smoke-test only the debug application on the connected Pixel 7 (validated on
+  the Pixel 7 alongside PROD as part of the #397 replacement)
 
 ## 3. Deliver Replacement
 
@@ -19,5 +19,7 @@
 
 ## 4. Finalize Change
 
-- [ ] 4.1 After the Pixel 7 smoke test passes, archive this OpenSpec change in the rollback PR and
-  rerun final verification against the archived state
+- [x] 4.1 After the Pixel 7 smoke test passes, archive this OpenSpec change in the rollback PR and
+  rerun final verification against the archived state (archived with `--skip-specs`;
+  superseded by `fix-397-task-editor-keyboard-back`, which rewrote the requirements this change
+  would have removed)

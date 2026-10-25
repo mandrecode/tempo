@@ -69,4 +69,7 @@ internal data class TaskBottomSheetBodyActions(
 internal data class TaskBottomSheetFocusConfig(
     val titleFocusRequester: FocusRequester,
     val descriptionFocusRequester: FocusRequester,
+    val focusState: TaskEditorFocusState,
+    val clearEditorFocus: () -> Unit,
+    val interceptsLegacyImeBack: Boolean = TASK_EDITOR_INTERCEPTS_LEGACY_IME_BACK,
 )

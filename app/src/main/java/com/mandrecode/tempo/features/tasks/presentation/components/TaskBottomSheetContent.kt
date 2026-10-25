@@ -121,6 +121,7 @@ internal fun TaskBottomSheetContent(
     var showPermissionCheck by remember { mutableStateOf(false) }
     val titleFocusRequester = remember { FocusRequester() }
     val descriptionFocusRequester = remember { FocusRequester() }
+    val editorFocusState = remember { TaskEditorFocusState() }
     var focusDescriptionTrigger by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(focusDescriptionTrigger) {
@@ -341,6 +342,7 @@ internal fun TaskBottomSheetContent(
         placement = placement,
         dismissRequestKey = dismissRequestKey,
     ) { onRequestDismiss ->
+        TaskEditorBackHandler(focusState = editorFocusState)
         val focusManager = LocalFocusManager.current
         Column(
             modifier =
@@ -427,6 +429,8 @@ internal fun TaskBottomSheetContent(
                     TaskBottomSheetFocusConfig(
                         titleFocusRequester = titleFocusRequester,
                         descriptionFocusRequester = descriptionFocusRequester,
+                        focusState = editorFocusState,
+                        clearEditorFocus = { focusManager.clearFocus() },
                     ),
             )
         }
