@@ -53,6 +53,7 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.RoutinesFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.animatedRailClearance
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
 import com.mandrecode.tempo.core.ui.util.rememberFrozenWhileHidden
@@ -128,7 +129,7 @@ fun RoutinesScreen(
     val isRailLayout = isFloatingNavigationRailLayout()
     val editorPlacement = rememberSheetPlacement()
     val isDockedEditor = editorPlacement == SheetPlacement.DockedPane
-    val railContentClearance = routinesRailClearance(isRailLayout, isDockedEditor)
+    val railContentClearance = animatedRailClearance(routinesRailClearance(isRailLayout, isDockedEditor))
     var editorDismissRequestKey by remember { mutableIntStateOf(0) }
     val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
     LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
@@ -233,7 +234,12 @@ fun RoutinesScreen(
                             bottom = DockedEditorPadding,
                         ),
             ) {
-                editorContent(frozenUiState, editorPlacement)
+                // Only while docked is where the editor belongs. When the window narrows past the
+                // breakpoint the pane still plays its exit, but the editor has to move to the sheet
+                // in the same frame, not be in both: a second copy would start empty and lose the draft.
+                if (isDockedEditor) {
+                    editorContent(frozenUiState, editorPlacement)
+                }
             }
         }
     }

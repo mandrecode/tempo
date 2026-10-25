@@ -24,8 +24,17 @@
             the chain in some setups when Hilt's @AndroidEntryPoint rewrites the
             generated superclass. Track removal once lint catches up.
         -->
+        <!--
+            configChanges: size, layout and orientation changes (rotation, folding, split screen,
+            desktop window resizing) are handled in place rather than by recreating the activity.
+            The UI is Compose throughout and lays itself out from the current window size, with
+            no orientation- or size-qualified resources to reload; staying alive keeps animations
+            running across the change, so the layout glides to its new shape (#163). Density,
+            locale and night-mode changes still recreate, as they should.
+        -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize"
             android:enableOnBackInvokedCallback="true"
             android:exported="true"
             android:launchMode="singleTask"
