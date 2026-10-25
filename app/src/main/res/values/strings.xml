@@ -315,6 +315,10 @@
     <string name="yesterday">Yesterday</string>
     <string name="today">Today</string>
     <string name="tomorrow">Tomorrow</string>
+    <!-- Routines day row, read by a screen reader: weekday and date, e.g. "Sunday 25" (#335) -->
+    <string name="day_filter_day_description">%1$s %2$d</string>
+    <!-- The same, led by Yesterday / Today / Tomorrow, e.g. "Today, Sunday 25" -->
+    <string name="day_filter_relative_day_description">%1$s, %2$s %3$d</string>
     <string name="natural_date_format">%1$s, %2$s</string>
     <string name="monday">Monday</string>
     <string name="tuesday">Tuesday</string>

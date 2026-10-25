@@ -166,7 +166,12 @@ private fun dayDescription(
             else -> null
         }
     val weekday = stringResource(date.dayOfWeek.fullNameRes())
-    return if (relative != null) "${stringResource(relative)}, $weekday ${date.day}" else "$weekday ${date.day}"
+    // Whole phrases with placeholders, so each language orders and punctuates them its own way.
+    return if (relative != null) {
+        stringResource(R.string.day_filter_relative_day_description, stringResource(relative), weekday, date.day)
+    } else {
+        stringResource(R.string.day_filter_day_description, weekday, date.day)
+    }
 }
 
 private fun DayOfWeek.shortNameRes(): Int =
