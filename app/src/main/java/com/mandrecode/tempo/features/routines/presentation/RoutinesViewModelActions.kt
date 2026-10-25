@@ -22,7 +22,6 @@ import com.mandrecode.tempo.features.routines.domain.util.HabitReminderDateUtil
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitFormState
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.HabitSheetTab
 import com.mandrecode.tempo.features.routines.presentation.RoutinesContract.PendingHabitChainData
-import com.mandrecode.tempo.util.CompletionHistoryUtil
 import com.mandrecode.tempo.util.findChainForHabit
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -812,38 +811,6 @@ internal fun RoutinesViewModel.toggleHabitCompletion(
             val selectedDate = mutableUiState.value.selectedDate
             toggleHabitCompletionUseCase(habitId, isCompleted, selectedDate)
 
-            if (isCompleted) {
-                val state = mutableUiState.value
-                val dateStr = selectedDate.toString()
-
-                val chainsToCollapse =
-                    state.habitChains
-                        .filter { habitId in it.habitIds && state.expandedChainIds.contains(it.id) }
-                        .filter { chain ->
-                            val chainHabits = state.habits.filter { it.id in chain.habitIds }
-                            chainHabits.isNotEmpty() &&
-                                chainHabits.all { habit ->
-                                    if (habit.id == habitId) {
-                                        true
-                                    } else {
-                                        CompletionHistoryUtil.isDateInHistory(
-                                            habit.completionHistory,
-                                            dateStr,
-                                        )
-                                    }
-                                }
-                        }
-
-                if (chainsToCollapse.isNotEmpty()) {
-                    mutableUiState.update { current ->
-                        val updatedIds =
-                            chainsToCollapse.fold(current.expandedChainIds) { acc, chain ->
-                                acc.remove(chain.id)
-                            }
-                        current.copy(expandedChainIds = updatedIds)
-                    }
-                }
-            }
             refreshEditingHabitStateIfNeeded(habitId)
         } catch (e: CancellationException) {
             throw e
@@ -915,19 +882,6 @@ private suspend fun RoutinesViewModel.refreshHabitChainForForm(chainId: Long): H
         logRecoverableFailure("Unable to refresh edited habit chain", e)
         null
     }
-
-internal fun RoutinesViewModel.toggleChainExpanded(chainId: Long) {
-    mutableUiState.update { currentState ->
-        val expandedIds = currentState.expandedChainIds
-        val newExpandedIds =
-            if (expandedIds.contains(chainId)) {
-                expandedIds.remove(chainId)
-            } else {
-                expandedIds.add(chainId)
-            }
-        currentState.copy(expandedChainIds = newExpandedIds)
-    }
-}
 
 internal fun RoutinesViewModel.openHabitFromNotificationInternal(habitId: Long) {
     viewModelScope.launch {

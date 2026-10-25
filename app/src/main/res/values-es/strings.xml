@@ -138,8 +138,6 @@
     <string name="habit_chain_complete_current">Completar hábito</string>
     <string name="habit_chain_all_done">¡Todos los hábitos completados! 🎉</string>
     <string name="habit_chain_done_count">%1$d/%2$d terminados</string>
-    <string name="expand_chain">Expandir cadena</string>
-    <string name="collapse_chain">Contraer cadena</string>
 
     <!-- HABIT SELECTION & REORDERING -->
     <string name="select_habits">Seleccionar hábitos</string>
@@ -155,6 +153,7 @@
     <string name="habit_chain_completed_title">¡%1$s completada!</string>
     <string name="habit_chain_progress_text">%1$d de %2$d hábitos completados</string>
     <string name="habit_chain_progress_count">%1$d/%2$d</string>
+    <string name="habit_chain_card_all_done">Todo hecho · %1$d/%1$d</string>
 
     <!-- VALIDATION & DELETION DIALOGS -->
     <string name="discard">Descartar</string>

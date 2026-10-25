@@ -65,9 +65,7 @@ class RoutineCardModifierTest {
                         ),
                     chainHabits = listOf(habit(1, "Stretch")),
                     selectedDate = selectedDate,
-                    isExpanded = false,
                     onEdit = {},
-                    onToggleExpansion = {},
                     modifier = Modifier.testTag(ROOT_TAG),
                 )
             }

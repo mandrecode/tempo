@@ -69,7 +69,6 @@ import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
-import com.mandrecode.tempo.core.ui.theme.subtaskTitle
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -83,6 +82,12 @@ import kotlin.time.Clock
 
 private const val HABIT_COLLAPSED_MAX_LINES = 1
 
+/**
+ * Habit rows are a little more compact than they used to be (#454): a 48dp checkbox with 12dp of
+ * vertical padding, about 72dp in all. A habit inside a chain is exactly the same row.
+ */
+internal val HabitCheckboxSize = 48.dp
+
 @Composable
 internal fun HabitItem(
     habit: Habit,
@@ -94,9 +99,9 @@ internal fun HabitItem(
     cardShape: Shape = RoundedCornerShape(24.dp),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     horizontalPadding: Dp = 16.dp,
-    verticalPadding: Dp = 16.dp,
+    verticalPadding: Dp = 12.dp,
+    checkboxSize: Dp = HabitCheckboxSize,
     canToggle: Boolean = true,
-    isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
     isSelected: Boolean = false,
     enableClick: Boolean = true,
@@ -113,16 +118,11 @@ internal fun HabitItem(
         isDescriptionOverflowing = false
     }
 
-    val descriptionMaxLines =
-        when {
-            isInsideChain -> 1
-            isDescriptionExpanded -> Int.MAX_VALUE
-            else -> HABIT_COLLAPSED_MAX_LINES
-        }
+    val descriptionMaxLines = if (isDescriptionExpanded) Int.MAX_VALUE else HABIT_COLLAPSED_MAX_LINES
 
-    // Snappier spring for radius morphing
+    // Snappier spring for radius morphing: a circle that squares off a little once done.
     val checkboxRadius by animateDpAsState(
-        targetValue = if (isCompleted) 16.dp else 28.dp,
+        targetValue = if (isCompleted) checkboxSize * 0.3f else checkboxSize / 2,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
@@ -185,12 +185,9 @@ internal fun HabitItem(
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Large animated checkbox. Sized to match the content Column's heightIn(min = 56.dp)
-        // below — intentionally larger than TaskItem's 48dp checkbox, which matches its own
-        // 48dp min title Box height. Habit rows are simpler (title + streak) so the checkbox
-        // carries more visual weight as the primary action; task rows are denser (metadata,
-        // subtasks) so a smaller touch target preserves compactness. Keep this in sync with the
-        // content Column's heightIn(min) below if either changes.
+        // Animated checkbox, sized to match the content Column's heightIn(min = checkboxSize)
+        // below. Smaller than TaskItem's 48dp checkbox on purpose (#454): a habit is a single
+        // quick tap, so its row stays compact; the whole row remains tappable for editing.
         val completionA11yLabel =
             stringResource(
                 if (isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
@@ -198,7 +195,7 @@ internal fun HabitItem(
         Box(
             modifier =
                 Modifier
-                    .size(56.dp)
+                    .size(checkboxSize)
                     .semantics {
                         role = Role.Checkbox
                         toggleableState = if (isCompleted) ToggleableState.On else ToggleableState.Off
@@ -218,7 +215,7 @@ internal fun HabitItem(
             Box(
                 modifier =
                     Modifier
-                        .size(56.dp)
+                        .size(checkboxSize)
                         .background(
                             color = checkboxBgColor,
                             shape = RoundedCornerShape(checkboxRadius),
@@ -243,7 +240,7 @@ internal fun HabitItem(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(checkboxSize / 2),
                     tint = iconTintColor,
                 )
             } else {
@@ -255,7 +252,7 @@ internal fun HabitItem(
                             contentDescription = null,
                             modifier =
                                 Modifier
-                                    .size(28.dp)
+                                    .size(checkboxSize / 2)
                                     .testTag("habitIcon"),
                             tint = iconTintColor,
                         )
@@ -274,34 +271,28 @@ internal fun HabitItem(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column(
             modifier =
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 56.dp),
+                    .heightIn(min = checkboxSize),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 text = habit.title,
                 style =
-                    if (isInsideChain) {
-                        MaterialTheme.typography.subtaskTitle.copy(
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                        )
-                    } else {
-                        MaterialTheme.typography.cardTitle.copy(
-                            textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
-                        )
-                    },
+                    MaterialTheme.typography.cardTitle.copy(
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough else null,
+                    ),
                 color = if (isCompleted) contentColor.copy(alpha = MutedContentAlpha.TITLE) else contentColor,
-                maxLines = if (isInsideChain) 1 else 2,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
             )
 
             if (sanitizedDescription.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 EnhancedDescriptionText(
                     text = sanitizedDescription,
                     style = MaterialTheme.typography.bodyMedium,
@@ -314,27 +305,25 @@ internal fun HabitItem(
                     maxLines = descriptionMaxLines,
                     overflow = TextOverflow.Ellipsis,
                     onTextLayout = { textLayoutResult ->
-                        if (!isInsideChain) {
-                            isDescriptionOverflowing =
-                                if (isDescriptionExpanded) {
-                                    textLayoutResult.lineCount > HABIT_COLLAPSED_MAX_LINES
-                                } else {
-                                    textLayoutResult.hasVisualOverflow
-                                }
-                        }
+                        isDescriptionOverflowing =
+                            if (isDescriptionExpanded) {
+                                textLayoutResult.lineCount > HABIT_COLLAPSED_MAX_LINES
+                            } else {
+                                textLayoutResult.hasVisualOverflow
+                            }
                     },
                 )
             }
         }
 
-        if (!isInsideChain && isDescriptionOverflowing) {
+        if (isDescriptionOverflowing) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.Top).padding(top = 4.dp),
+                modifier = Modifier.align(Alignment.Top),
             ) {
                 IconButton(
                     onClick = { isDescriptionExpanded = !isDescriptionExpanded },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(checkboxSize),
                 ) {
                     Icon(
                         painter =
@@ -389,6 +378,7 @@ fun HabitCard(
     // Toggling is only allowed for Yesterday and Today
     val canToggle = selectedDate == today || selectedDate == yesterday
 
+    // A compact habit row reads as a pill; it squares off a little once done.
     val cardCornerRadius by animateDpAsState(
         targetValue = if (isCompleted) 24.dp else 32.dp,
         animationSpec =
@@ -495,8 +485,6 @@ fun HabitCard(
                 color = resolvedHabitColor,
                 cardShape = cardShape,
                 contentColor = contentColor,
-                horizontalPadding = 16.dp,
-                verticalPadding = 16.dp,
                 canToggle = canToggle,
                 enableClick = false,
             )

@@ -123,8 +123,7 @@
     <string name="habit_chain_all_done">All habits completed! 🎉</string>
     <string name="habit_chain_done_count">%1$d/%2$d done</string>
     <string name="habit_chain_progress_count">%1$d/%2$d</string>
-    <string name="expand_chain">Expand chain</string>
-    <string name="collapse_chain">Collapse chain</string>
+    <string name="habit_chain_card_all_done">All done · %1$d/%1$d</string>
 
     <!-- HABIT SELECTION & REORDERING -->
     <string name="select_habits">Select habits</string>

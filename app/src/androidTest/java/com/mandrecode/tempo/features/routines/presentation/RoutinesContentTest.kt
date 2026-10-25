@@ -10,7 +10,6 @@ import com.mandrecode.tempo.core.ui.components.LOADING_INDICATOR_REVEAL_DELAY_MI
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
-import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -33,7 +32,6 @@ class RoutinesContentTest {
         habitChains: List<HabitChain> = emptyList(),
         selectedDate: LocalDate = testDate,
         isLoading: Boolean = false,
-        expandedChainIds: kotlinx.collections.immutable.PersistentSet<Long> = persistentSetOf(),
     ): RoutinesContract.UiState {
         val (scheduled, unscheduled) =
             computeTimelineItems(habits, habitChains, selectedDate)
@@ -44,7 +42,6 @@ class RoutinesContentTest {
             unscheduledTimelineItems = unscheduled,
             isLoading = isLoading,
             selectedDate = selectedDate,
-            expandedChainIds = expandedChainIds,
         )
     }
 
@@ -282,7 +279,6 @@ class RoutinesContentTest {
                 buildUiState(
                     habits = listOf(habit1, habit2),
                     habitChains = listOf(chain),
-                    expandedChainIds = persistentSetOf(10L),
                 ),
             )
 
@@ -317,7 +313,6 @@ class RoutinesContentTest {
             buildUiState(
                 habits = listOf(updatedHabit1, habit2),
                 habitChains = listOf(updatedChain),
-                expandedChainIds = persistentSetOf(10L),
             )
 
         composeTestRule.waitForIdle()
@@ -348,7 +343,6 @@ class RoutinesContentTest {
                 buildUiState(
                     habits = listOf(habit1, habit2),
                     habitChains = listOf(chain),
-                    expandedChainIds = persistentSetOf(10L),
                 ),
             )
 
@@ -372,7 +366,6 @@ class RoutinesContentTest {
             buildUiState(
                 habits = listOf(updatedHabit1, habit2),
                 habitChains = listOf(chain),
-                expandedChainIds = persistentSetOf(10L),
             )
 
         composeTestRule.waitForIdle()

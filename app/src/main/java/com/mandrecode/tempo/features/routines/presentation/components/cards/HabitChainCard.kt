@@ -1,17 +1,13 @@
 package com.mandrecode.tempo.features.routines.presentation.components.cards
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,11 +24,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -41,11 +37,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,7 +56,6 @@ import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
-import com.mandrecode.tempo.core.ui.theme.badgeCount
 import com.mandrecode.tempo.core.ui.theme.chainTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
@@ -78,9 +75,7 @@ fun HabitChainCard(
     habitChain: HabitChain,
     chainHabits: List<Habit>,
     selectedDate: LocalDate,
-    isExpanded: Boolean,
     onEdit: () -> Unit,
-    onToggleExpansion: () -> Unit,
     modifier: Modifier = Modifier,
     onAddHabit: (() -> Unit)? = null,
     onHabitToggle: ((Long, Boolean) -> Unit)? = null,
@@ -118,7 +113,7 @@ fun HabitChainCard(
         remember(habitChain.description) { sanitizeDescription(habitChain.description) }
 
     val cardCornerRadius by animateDpAsState(
-        targetValue = if (allCompleted) 24.dp else 32.dp,
+        targetValue = if (allCompleted) 20.dp else 28.dp,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioNoBouncy, // More stable for day transitions
@@ -172,17 +167,10 @@ fun HabitChainCard(
     val cardShape = RoundedCornerShape(cardCornerRadius)
     val selectionElevation = selectableCardElevation(isSelected)
 
-    val arrowRotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "arrow rotation",
-    )
-
-    val animatedBottomPadding by animateDpAsState(
-        targetValue = if (isExpanded) 0.dp else 16.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMedium),
-        label = "bottom_padding",
-    )
+    // Title, progress and icons share the chain colour until every habit is done, then the
+    // card's content colour.
+    val accentColor =
+        if (allCompleted) contentColor else resolvedChainColor ?: MaterialTheme.colorScheme.primary
 
     Row(
         // The caller's modifier reaches the root, which it never used to: the parameter was
@@ -238,7 +226,7 @@ fun HabitChainCard(
             elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
-                // Large faded background icon in the top right
+                // Faded chain icon behind the header, top right
                 habitChain.icon?.let { iconName ->
                     TempoIcon.fromName(iconName)?.let { habitIcon ->
                         Box(modifier = Modifier.matchParentSize()) {
@@ -248,21 +236,13 @@ fun HabitChainCard(
                                 modifier =
                                     Modifier
                                         .align(Alignment.TopEnd)
-                                        .size(180.dp)
-                                        .offset(x = 30.dp, y = 0.dp)
+                                        .size(120.dp)
+                                        .offset(x = 24.dp, y = (-16).dp)
                                         .graphicsLayer {
                                             alpha = 0.08f
                                             rotationZ = -25f
                                         },
-                                tint =
-                                    if (allCompleted) {
-                                        contentColor
-                                    } else {
-                                        (
-                                            resolvedChainColor
-                                                ?: MaterialTheme.colorScheme.primary
-                                        )
-                                    },
+                                tint = accentColor,
                             )
                         }
                     }
@@ -272,273 +252,56 @@ fun HabitChainCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(
-                                top = 12.dp,
-                                bottom = animatedBottomPadding,
-                            ),
+                            .padding(top = 14.dp),
                 ) {
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(start = 16.dp, end = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Left side: title, description, status bar
-                        Column(
-                            modifier = Modifier.weight(1f),
-                        ) {
-                            Text(
-                                text = habitChain.title,
-                                style =
-                                    MaterialTheme.typography.chainTitle,
-                                color =
-                                    if (allCompleted) {
-                                        contentColor
-                                    } else {
-                                        (
-                                            resolvedChainColor
-                                                ?: MaterialTheme.colorScheme.primary
-                                        )
-                                    },
-                                maxLines = if (isExpanded) Int.MAX_VALUE else 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier =
-                                    Modifier
-                                        .padding(top = 8.dp, end = 48.dp),
-                            )
+                    HabitChainHeader(
+                        title = habitChain.title,
+                        description = sanitizedChainDescription,
+                        accentColor = accentColor,
+                        contentColor = contentColor,
+                    )
 
-                            if (sanitizedChainDescription.isNotBlank()) {
-                                Spacer(modifier = Modifier.height(4.dp))
-                                EnhancedDescriptionText(
-                                    text = sanitizedChainDescription,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = contentColor.copy(alpha = 0.7f),
-                                    maxLines =
-                                        if (isExpanded) Int.MAX_VALUE else 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier =
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .padding(end = 48.dp),
-                                )
-                            }
-
-                            Spacer(modifier = Modifier.height(8.dp))
-
-                            Row(
-                                modifier =
-                                    Modifier
-                                        .padding(end = 48.dp)
-                                        .height(32.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Start,
-                            ) {
-                                if (!isFuture) {
-                                    LinearProgressIndicator(
-                                        progress = { animatedProgress },
-                                        modifier =
-                                            Modifier
-                                                .width(100.dp)
-                                                .height(10.dp)
-                                                .clip(CircleShape),
-                                        color =
-                                            if (allCompleted) {
-                                                contentColor
-                                            } else {
-                                                (
-                                                    resolvedChainColor
-                                                        ?: MaterialTheme.colorScheme.primary
-                                                )
-                                            },
-                                        trackColor =
-                                            (
-                                                if (allCompleted) {
-                                                    contentColor
-                                                } else {
-                                                    (
-                                                        resolvedChainColor
-                                                            ?: MaterialTheme.colorScheme.primary
-                                                    )
-                                                }
-                                            ).copy(alpha = 0.15f),
-                                    )
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Surface(
-                                        shape = RoundedCornerShape(50),
-                                        color =
-                                            if (allCompleted) {
-                                                contentColor.copy(alpha = 0.2f)
-                                            } else {
-                                                (
-                                                    resolvedChainColor
-                                                        ?: MaterialTheme.colorScheme.primary
-                                                ).copy(alpha = 0.12f)
-                                            },
-                                    ) {
-                                        Text(
-                                            text =
-                                                stringResource(
-                                                    R.string.habit_chain_progress_count,
-                                                    completedCount,
-                                                    totalCount,
-                                                ),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = contentColor,
-                                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                                        )
-                                    }
-                                } else {
-                                    val habitsWithResolvedIcons =
-                                        chainHabits.mapNotNull { habit ->
-                                            habit.icon?.let { TempoIcon.fromName(it) }
-                                        }
-
-                                    val totalHabits = chainHabits.size
-
-                                    val maxSlots = 4
-                                    val displayList: List<TempoIcon>
-                                    val badgeCount: Int
-
-                                    if (totalHabits <= maxSlots && habitsWithResolvedIcons.size == totalHabits) {
-                                        displayList = habitsWithResolvedIcons
-                                        badgeCount = 0
-                                    } else {
-                                        displayList = habitsWithResolvedIcons.take(maxSlots - 1)
-                                        badgeCount = totalHabits - displayList.size
-                                    }
-
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                                    ) {
-                                        displayList.forEach { habitIcon ->
-                                            Icon(
-                                                painter = painterResource(habitIcon.iconRes),
-                                                contentDescription = null,
-                                                modifier = Modifier.size(20.dp),
-                                                tint = contentColor.copy(alpha = 0.6f),
-                                            )
-                                        }
-
-                                        if (badgeCount > 0) {
-                                            Box(
-                                                modifier =
-                                                    Modifier
-                                                        .size(20.dp)
-                                                        .background(
-                                                            contentColor.copy(alpha = 0.1f),
-                                                            CircleShape,
-                                                        ),
-                                                contentAlignment = Alignment.Center,
-                                            ) {
-                                                Text(
-                                                    text = "+$badgeCount",
-                                                    style =
-                                                        MaterialTheme.typography.badgeCount,
-                                                    color = contentColor.copy(alpha = 0.8f),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-
-                        // Right side: expand arrow + add habit button
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.align(Alignment.Top),
-                        ) {
-                            Box(
-                                modifier = Modifier.size(48.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                IconButton(
-                                    onClick = onToggleExpansion,
-                                    modifier = Modifier.size(48.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.KeyboardArrowDown,
-                                        contentDescription =
-                                            if (isExpanded) {
-                                                stringResource(R.string.collapse_chain)
-                                            } else {
-                                                stringResource(R.string.expand_chain)
-                                            },
-                                        modifier =
-                                            Modifier
-                                                .size(24.dp)
-                                                .rotate(arrowRotation),
-                                        tint =
-                                            if (allCompleted) {
-                                                contentColor
-                                            } else {
-                                                (
-                                                    resolvedChainColor
-                                                        ?: MaterialTheme.colorScheme.primary
-                                                )
-                                            },
-                                    )
-                                }
-                            }
-
-                            if (onAddHabit != null) {
-                                IconButton(
-                                    onClick = onAddHabit,
-                                    modifier = Modifier.size(48.dp),
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.ic_add_row_below),
-                                        contentDescription = stringResource(R.string.add_habit),
-                                        modifier = Modifier.size(24.dp),
-                                        tint =
-                                            if (allCompleted) {
-                                                contentColor
-                                            } else {
-                                                (
-                                                    resolvedChainColor
-                                                        ?: MaterialTheme.colorScheme.primary
-                                                ).copy(alpha = 0.6f)
-                                            },
-                                    )
-                                }
-                            }
-                        }
+                    if (!isFuture && totalCount > 0) {
+                        ChainProgress(
+                            completedCount = completedCount,
+                            totalCount = totalCount,
+                            progress = { animatedProgress },
+                            allCompleted = allCompleted,
+                            accentColor = accentColor,
+                            contentColor = contentColor,
+                        )
                     }
 
-                    AnimatedVisibility(
-                        visible = chainHabits.isNotEmpty() && isExpanded,
-                        enter = expandVertically(spring(stiffness = Spring.StiffnessMedium)) + fadeIn(),
-                        exit = shrinkVertically(spring(stiffness = Spring.StiffnessMedium)) + fadeOut(),
-                    ) {
-                        Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                            chainHabits.forEach { habit ->
-                                key(habit.id) {
-                                    val habitIsCompleted =
-                                        CompletionHistoryUtil.isDateInHistory(habit.completionHistory, dateStr)
-                                    HabitItem(
-                                        habit = habit,
-                                        isCompleted = habitIsCompleted,
-                                        onToggle = {
-                                            onHabitToggle?.invoke(
-                                                habit.id,
-                                                !habitIsCompleted,
-                                            )
-                                        },
-                                        onClick = { onHabitClick?.invoke(habit.id) },
-                                        color = resolvedChainColor,
-                                        cardShape = cardShape,
-                                        contentColor = contentColor,
-                                        horizontalPadding = 16.dp,
-                                        canToggle = canToggle,
-                                        isInsideChain = true,
-                                        isContainerCompleted = allCompleted,
-                                        isSelected = habit.id == selectedHabitId,
-                                    )
-                                }
+                    // The chain's habits are always listed (#454): they are what you tick off,
+                    // so hiding them behind an expand arrow only added a tap. Adding one is the
+                    // list's last row, where the new habit will appear.
+                    Column(modifier = Modifier.padding(top = 4.dp, start = 4.dp, end = 4.dp)) {
+                        chainHabits.forEach { habit ->
+                            key(habit.id) {
+                                val habitIsCompleted =
+                                    CompletionHistoryUtil.isDateInHistory(habit.completionHistory, dateStr)
+                                HabitItem(
+                                    habit = habit,
+                                    isCompleted = habitIsCompleted,
+                                    onToggle = { onHabitToggle?.invoke(habit.id, !habitIsCompleted) },
+                                    onClick = { onHabitClick?.invoke(habit.id) },
+                                    color = resolvedChainColor,
+                                    // Same row as a standalone habit; only the colours come from
+                                    // the chain.
+                                    cardShape = RoundedCornerShape(24.dp),
+                                    contentColor = contentColor,
+                                    canToggle = canToggle,
+                                    isContainerCompleted = allCompleted,
+                                    isSelected = habit.id == selectedHabitId,
+                                )
                             }
+                        }
+
+                        if (onAddHabit != null) {
+                            AddHabitRow(
+                                onClick = onAddHabit,
+                                accentColor = accentColor,
+                            )
                         }
                     }
                 }
@@ -546,3 +309,150 @@ fun HabitChainCard(
         }
     }
 }
+
+/** Title and description; nothing else competes for the header's width. */
+@Composable
+private fun HabitChainHeader(
+    title: String,
+    description: String,
+    accentColor: Color,
+    contentColor: Color,
+) {
+    Column(modifier = Modifier.padding(horizontal = 16.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.chainTitle,
+            color = accentColor,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+
+        if (description.isNotBlank()) {
+            EnhancedDescriptionText(
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = contentColor.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+/**
+ * A short bar with the done/total count beside it; once every habit is done, a single
+ * "All done" chip instead, since a full bar next to 3/3 says the same thing twice.
+ */
+@Composable
+private fun ChainProgress(
+    completedCount: Int,
+    totalCount: Int,
+    progress: () -> Float,
+    allCompleted: Boolean,
+    accentColor: Color,
+    contentColor: Color,
+) {
+    Row(
+        modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (!allCompleted) {
+            LinearProgressIndicator(
+                progress = progress,
+                modifier =
+                    Modifier
+                        .width(ChainProgressBarWidth)
+                        .height(6.dp)
+                        .clip(CircleShape),
+                color = accentColor,
+                trackColor = accentColor.copy(alpha = 0.15f),
+                drawStopIndicator = {},
+            )
+        }
+
+        Surface(
+            shape = RoundedCornerShape(50),
+            // The accent is already the content colour once every habit is done.
+            color = accentColor.copy(alpha = if (allCompleted) 0.2f else 0.12f),
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (allCompleted) {
+                    Icon(
+                        imageVector = Icons.Filled.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp).padding(end = 2.dp),
+                        tint = contentColor,
+                    )
+                }
+                Text(
+                    text =
+                        if (allCompleted) {
+                            stringResource(R.string.habit_chain_card_all_done, totalCount)
+                        } else {
+                            stringResource(R.string.habit_chain_progress_count, completedCount, totalCount)
+                        },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = contentColor,
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The list's last row: a dashed circle where the checkbox would be, then "Add habit". Same size
+ * as a habit row, so the card ends with the same 12dp a standalone habit has under its checkbox.
+ */
+@Composable
+private fun AddHabitRow(
+    onClick: () -> Unit,
+    accentColor: Color,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(24.dp))
+                .clickable(onClick = onClick)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
+            modifier =
+                Modifier
+                    .size(HabitCheckboxSize)
+                    .drawBehind {
+                        drawCircle(
+                            color = accentColor.copy(alpha = 0.6f),
+                            radius = size.minDimension / 2 - 1.dp.toPx(),
+                            style =
+                                Stroke(
+                                    width = 1.5.dp.toPx(),
+                                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 4.dp.toPx())),
+                                ),
+                        )
+                    },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                tint = accentColor,
+            )
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(
+            text = stringResource(R.string.add_habit),
+            style = MaterialTheme.typography.bodyLarge,
+            color = accentColor,
+        )
+    }
+}
+
+private val ChainProgressBarWidth = 110.dp

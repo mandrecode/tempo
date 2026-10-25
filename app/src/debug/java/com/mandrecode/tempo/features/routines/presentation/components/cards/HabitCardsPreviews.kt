@@ -284,9 +284,7 @@ private fun HabitChainCardNoDescriptionPreview() {
                     ),
                 ),
             selectedDate = PREVIEW_DATE,
-            isExpanded = false,
             onEdit = {},
-            onToggleExpansion = {},
             onAddHabit = {},
             showTimeline = false,
         )
@@ -321,9 +319,7 @@ private fun HabitChainCardShortDescriptionPreview() {
                     ),
                 ),
             selectedDate = PREVIEW_DATE,
-            isExpanded = false,
             onEdit = {},
-            onToggleExpansion = {},
             showTimeline = false,
         )
     }
@@ -363,9 +359,7 @@ private fun HabitChainCardLongDescriptionPreview() {
                     ),
                 ),
             selectedDate = PREVIEW_DATE,
-            isExpanded = true,
             onEdit = {},
-            onToggleExpansion = {},
             showTimeline = false,
         )
     }
@@ -399,9 +393,7 @@ private fun HabitChainCardSingleStepPreview() {
                     ),
                 ),
             selectedDate = PREVIEW_DATE,
-            isExpanded = true,
             onEdit = {},
-            onToggleExpansion = {},
             showTimeline = false,
         )
     }
@@ -443,9 +435,7 @@ private fun HabitChainCardAllCompletedPreview() {
                     ),
                 ),
             selectedDate = PREVIEW_DATE,
-            isExpanded = true,
             onEdit = {},
-            onToggleExpansion = {},
             showTimeline = false,
         )
     }
