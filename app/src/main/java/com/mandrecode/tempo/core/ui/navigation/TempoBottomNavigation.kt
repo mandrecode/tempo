@@ -74,6 +74,7 @@ fun TempoBottomNavigation(
     focusSessionRepository: FocusSessionRepository,
     onNavigateToTopLevel: (NavKey) -> Unit,
     modifier: Modifier = Modifier,
+    onReselect: (NavKey) -> Unit = {},
     onRouteChange: (String) -> Unit = {},
     onOpenSession: () -> Unit = {},
     hasContextualActions: Boolean = false,
@@ -98,8 +99,14 @@ fun TempoBottomNavigation(
                 onOpenSession = onOpenSession,
             )
         }
+    // Tapping the tab you are already on goes to that tab's home state (Tasks: the default
+    // category, #452) rather than doing nothing.
     val onItemClick: (NavigationItem) -> Unit = { item ->
-        navigateTo(item, onNavigateToTopLevel, onRouteChange)
+        if (currentRoute == item.route) {
+            onReselect(item.route)
+        } else {
+            navigateTo(item, onNavigateToTopLevel, onRouteChange)
+        }
     }
 
     Surface(
@@ -159,7 +166,7 @@ private fun ExpandedRailPill(
                 ExpandedRailNavigationRow(
                     item = item,
                     selected = selected,
-                    onClick = { if (!selected) onItemClick(item) },
+                    onClick = { onItemClick(item) },
                 )
             }
         }
@@ -186,7 +193,7 @@ private fun CompactRailPill(
                 ToolbarNavigationButton(
                     item = item,
                     selected = selected,
-                    onClick = { if (!selected) onItemClick(item) },
+                    onClick = { onItemClick(item) },
                 )
             }
         }
@@ -213,7 +220,7 @@ private fun BottomBarPill(
                 ToolbarNavigationButton(
                     item = item,
                     selected = selected,
-                    onClick = { if (!selected) onItemClick(item) },
+                    onClick = { onItemClick(item) },
                 )
             }
         }
