@@ -348,6 +348,14 @@
     <string name="fri">Vie</string>
     <string name="sat">Sáb</string>
     <string name="sun">Dom</string>
+    <!-- La inicial de cada día en los botones de repetición: X para el miércoles, como es costumbre -->
+    <string name="mon_initial">L</string>
+    <string name="tue_initial">M</string>
+    <string name="wed_initial">X</string>
+    <string name="thu_initial">J</string>
+    <string name="fri_initial">V</string>
+    <string name="sat_initial">S</string>
+    <string name="sun_initial">D</string>
     <string name="repeat">Repetir</string>
     <string name="repeat_on">Repetir el</string>
     <string name="all_days">Todos los días</string>

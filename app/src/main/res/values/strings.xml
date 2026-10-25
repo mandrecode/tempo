@@ -330,6 +330,14 @@
     <string name="fri">Fri</string>
     <string name="sat">Sat</string>
     <string name="sun">Sun</string>
+    <!-- One-letter day initials for the repeat-day toggles: each language's own convention, not the short name's first letter -->
+    <string name="mon_initial">M</string>
+    <string name="tue_initial">T</string>
+    <string name="wed_initial">W</string>
+    <string name="thu_initial">T</string>
+    <string name="fri_initial">F</string>
+    <string name="sat_initial">S</string>
+    <string name="sun_initial">S</string>
     <string name="repeat">Repeat</string>
     <string name="repeat_on">Repeat on</string>
     <string name="all_days">All days</string>

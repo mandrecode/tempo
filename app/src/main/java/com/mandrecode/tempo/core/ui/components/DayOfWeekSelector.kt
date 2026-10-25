@@ -33,23 +33,27 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 
-/** One day of the week: its full name (for accessibility) and its short name (for the letter). */
+/**
+ * One day of the week: its full name (for accessibility) and its one-letter initial. The initial
+ * is its own string, not the short name's first letter: Spanish writes Wednesday (miércoles) as
+ * "X", which no abbreviation starts with.
+ */
 private data class WeekdayLabel(
     val day: DayOfWeek,
     @StringRes val nameRes: Int,
-    @StringRes val shortRes: Int,
+    @StringRes val initialRes: Int,
 )
 
 /** Monday-first. */
 private val WeekdayLabels =
     listOf(
-        WeekdayLabel(DayOfWeek.MONDAY, R.string.monday, R.string.mon),
-        WeekdayLabel(DayOfWeek.TUESDAY, R.string.tuesday, R.string.tue),
-        WeekdayLabel(DayOfWeek.WEDNESDAY, R.string.wednesday, R.string.wed),
-        WeekdayLabel(DayOfWeek.THURSDAY, R.string.thursday, R.string.thu),
-        WeekdayLabel(DayOfWeek.FRIDAY, R.string.friday, R.string.fri),
-        WeekdayLabel(DayOfWeek.SATURDAY, R.string.saturday, R.string.sat),
-        WeekdayLabel(DayOfWeek.SUNDAY, R.string.sunday, R.string.sun),
+        WeekdayLabel(DayOfWeek.MONDAY, R.string.monday, R.string.mon_initial),
+        WeekdayLabel(DayOfWeek.TUESDAY, R.string.tuesday, R.string.tue_initial),
+        WeekdayLabel(DayOfWeek.WEDNESDAY, R.string.wednesday, R.string.wed_initial),
+        WeekdayLabel(DayOfWeek.THURSDAY, R.string.thursday, R.string.thu_initial),
+        WeekdayLabel(DayOfWeek.FRIDAY, R.string.friday, R.string.fri_initial),
+        WeekdayLabel(DayOfWeek.SATURDAY, R.string.saturday, R.string.sat_initial),
+        WeekdayLabel(DayOfWeek.SUNDAY, R.string.sunday, R.string.sun_initial),
     )
 
 private val WeekdayButtonHeight = 48.dp
@@ -137,7 +141,7 @@ private fun WeekdayToggle(
     modifier: Modifier = Modifier,
 ) {
     val name = stringResource(label.nameRes)
-    val initial = stringResource(label.shortRes).take(1).uppercase()
+    val initial = stringResource(label.initialRes)
     ToggleButton(
         checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay),
         onCheckedChange = {
