@@ -5,7 +5,7 @@
 - [x] 1.1 Add `TaskAttachment` / `AttachmentImportResult`, `TaskAttachmentRepository`, `TaskAttachmentEntity`, `TaskAttachmentDao`, mapper, and `TaskAttachmentRepositoryImpl`; bind it in `RepositoryModule`.
 - [x] 1.2 Add `AttachmentFileStore` and `AndroidAttachmentFileStore` (copy in with a 25 MB cap, delete, list).
 - [x] 1.3 Room v11: entity, `MIGRATION_10_11`, schema `11.json`, DAO provider.
-- [x] 1.4 `PruneOrphanedTaskAttachmentsUseCase`, run from `TempoApp` after the database warm-up.
+- [x] 1.4 Drop orphaned rows in `TempoDatabase.OrphanedAttachmentRowsCallback` (`onOpen`); prune unreferenced files with `PruneOrphanedTaskAttachmentsUseCase`, run from `TempoApp` after the database warm-up. Covered by instrumented `OrphanedAttachmentRowsCallbackTest`.
 - [x] 1.5 Copy attachments to the next occurrence in `ToggleTaskCompletionUseCase` and `RollOverduePeriodicTaskUseCase`, for the parent and each cloned subtask.
 - [x] 1.7 Prune only files written before the process started, listing files before reading referenced names.
 - [x] 1.6 Clear `task_attachments` in backup replace import; exclude `files/attachments/` from Auto Backup and device transfer.

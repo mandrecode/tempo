@@ -4,11 +4,9 @@ import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepos
 import jakarta.inject.Inject
 
 /**
- * Clears attachments whose task is gone, and files nothing points to any more: those of a
- * deletion whose undo has expired, and those picked into a new task that was never saved.
- *
- * Run when the app starts, while no deletion can still be undone — the undo lives only as long
- * as the process that offered it.
+ * Clears attachment files nothing points to any more: those of a deletion whose Undo has expired
+ * (their rows were dropped when the database opened) and those picked into a new task that was
+ * never saved. Run once per app start, in the background.
  */
 class PruneOrphanedTaskAttachmentsUseCase
     @Inject

@@ -26,9 +26,6 @@ interface TaskAttachmentDao {
     @Query("SELECT DISTINCT storedName FROM task_attachments")
     suspend fun getAllStoredNames(): List<String>
 
-    @Query("DELETE FROM task_attachments WHERE taskId NOT IN (SELECT id FROM tasks)")
-    suspend fun deleteOrphanedRows()
-
     @Query("DELETE FROM task_attachments")
     suspend fun deleteAll()
 }

@@ -41,8 +41,9 @@ interface TaskAttachmentRepository {
     )
 
     /**
-     * Deletes rows whose task is gone and files no row points to. Only safe when no deletion can
-     * still be undone, which is why it runs when the app starts.
+     * Deletes files no row points to. Rows whose task is gone are dropped earlier, when the
+     * database opens, before any deletion in this run could be waiting on Undo; a file is only
+     * unreferenced once those rows are gone, so a pending Undo always keeps its files.
      *
      * Files written at or after [keepFilesFromEpochMillis] are left alone even when no row points
      * to them yet: the editor may be copying one in for a task about to be saved, and the sweep

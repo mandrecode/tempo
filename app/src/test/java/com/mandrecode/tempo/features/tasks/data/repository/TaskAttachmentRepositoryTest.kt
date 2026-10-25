@@ -120,15 +120,31 @@ class TaskAttachmentRepositoryTest {
         }
 
     @Test
-    fun `pruning drops rows without a task and files without a row`() =
+    fun `pruning deletes files without a row`() =
         runTest {
             fileStore.stored += listOf("kept" to 10L, "orphan" to 10L)
             coEvery { dao.getAllStoredNames() } returns listOf("kept")
 
             repository.pruneOrphans(keepFilesFromEpochMillis = 100L)
 
-            coVerify { dao.deleteOrphanedRows() }
             assertThat(fileStore.deleted).containsExactly("orphan")
+        }
+
+    /**
+     * Delete a task, prune, Undo: the deleted task's rows still point at its files, so the sweep
+     * keeps them and the restored task gets its attachments back.
+     */
+    @Test
+    fun `pruning never touches rows, so a deletion waiting on Undo keeps its files`() =
+        runTest {
+            fileStore.stored += listOf("of-deleted-task" to 10L)
+            coEvery { dao.getAllStoredNames() } returns listOf("of-deleted-task")
+
+            repository.pruneOrphans(keepFilesFromEpochMillis = 100L)
+
+            assertThat(fileStore.deleted).isEmpty()
+            coVerify(exactly = 0) { dao.deleteById(any()) }
+            coVerify(exactly = 0) { dao.deleteAll() }
         }
 
     /** A file the editor is copying in right now has no row yet, and must survive the sweep. */

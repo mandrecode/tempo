@@ -327,6 +327,7 @@ abstract class TempoDatabase : RoomDatabase() {
                                 ),
                             ).addMigrations(*MIGRATIONS)
                             .addCallback(inboxCallback(appContext))
+                            .addCallback(OrphanedAttachmentRowsCallback)
                             .fallbackToDestructiveMigration(false)
                             .build()
                     INSTANCE = instance
@@ -346,6 +347,21 @@ abstract class TempoDatabase : RoomDatabase() {
          * sees this file on its *next* launch, once it already exists.
          */
         @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        /**
+         * Drops attachment rows whose task no longer exists, every time the database opens.
+         *
+         * Task deletion keeps attachment rows so that Undo can bring them back (#380); once the
+         * process that offered the Undo is gone, nothing can. Doing it here rather than in a
+         * background sweep matters: Room runs onOpen before any query reaches the database, so no
+         * deletion made in this process — and no Undo window — can exist yet.
+         */
+        internal val OrphanedAttachmentRowsCallback =
+            object : RoomDatabase.Callback() {
+                override fun onOpen(db: SupportSQLiteDatabase) {
+                    db.execSQL("DELETE FROM task_attachments WHERE taskId NOT IN (SELECT id FROM tasks)")
+                }
+            }
+
         internal fun inboxCallback(context: Context) =
             object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {

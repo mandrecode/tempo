@@ -75,7 +75,9 @@ class TaskAttachmentRepositoryImpl
         }
 
         override suspend fun pruneOrphans(keepFilesFromEpochMillis: Long) {
-            dao.deleteOrphanedRows()
+            // Rows are not touched here: orphaned rows are dropped when the database opens
+            // (TempoDatabase.OrphanedAttachmentRowsCallback), before anything in this process could
+            // delete a task. Doing it now could take the rows of a deletion still waiting on Undo.
             // Files first, rows second: a file copied in after the listing is never a candidate,
             // and one attached after it is still seen as referenced by the row query that follows.
             val candidates = fileStore.listStoredNames(modifiedBeforeEpochMillis = keepFilesFromEpochMillis)
