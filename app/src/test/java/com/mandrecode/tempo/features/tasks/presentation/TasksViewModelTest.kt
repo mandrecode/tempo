@@ -2046,6 +2046,30 @@ class TasksViewModelTest {
             assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
         }
 
+    @Test
+    fun `clearing every reminder drops the pending announcement`() =
+        runTest {
+            val effects = mutableListOf<TasksContract.UiEffect>()
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
+            every { permissionChecker.hasNotificationPermissions() } returns false
+            every { permissionChecker.canScheduleExactAlarms() } returns true
+            coEvery { taskRepository.getTasksWithReminders() } returns
+                listOf(Task(id = 1L, title = "Pay rent", description = ""))
+            viewModel.checkPermissionsAndSyncReminders()
+            // The lookup finishes first, so clear-all has a pending announcement to drop.
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isTrue()
+
+            viewModel.onEvent(TasksContract.UiEvent.ConfirmClearAllReminders)
+            advanceUntilIdle()
+
+            every { permissionChecker.hasNotificationPermissions() } returns true
+            viewModel.checkPermissionsAndSyncReminders()
+            advanceUntilIdle()
+
+            assertThat(effects.snackbarMessages()).doesNotContain(R.string.msg_all_set_reminders_active)
+        }
+
     private fun List<TasksContract.UiEffect>.snackbarMessages(): List<Int> =
         filterIsInstance<TasksContract.UiEffect.ShowSnackbar>().mapNotNull { it.messageResId }
 }

@@ -992,6 +992,11 @@ class RoutinesViewModelTest {
             every { permissionChecker.canScheduleExactAlarms() } returns true
             coEvery { habitRepository.getHabitsWithReminders() } returns listOf(habit(1L))
             viewModel.checkPermissionsAndSyncReminders()
+            // Let the lookup finish, so there is a pending announcement for clear-all to drop —
+            // otherwise clear-all only cancels a lookup that never armed anything.
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.showPermissionRevokedDialog).isTrue()
+
             viewModel.onEvent(RoutinesContract.UiEvent.ConfirmClearAllHabitReminders)
             advanceUntilIdle()
 
