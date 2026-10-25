@@ -10,6 +10,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.TaskDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
@@ -20,7 +21,16 @@ class TaskRepositoryImpl
         private val taskDao: TaskDao,
         private val database: TempoDatabase,
     ) : TaskRepository {
-        override fun getAllTasks(): Flow<List<Task>> = taskDao.getAllTasks().map { it.toDomain() }
+        override fun getAllTasks(): Flow<List<Task>> =
+            combine(
+                taskDao.getAllTasks(),
+                database.taskAttachmentDao().observeTaskIdsWithAttachments(),
+            ) { entities, idsWithAttachments ->
+                val withAttachments = idsWithAttachments.toSet()
+                entities.toDomain().map { task ->
+                    if (task.id in withAttachments) task.copy(hasAttachments = true) else task
+                }
+            }
 
         override suspend fun getTaskById(id: Long): Task? = taskDao.getTaskById(id)?.toDomain()
 

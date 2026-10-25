@@ -11,6 +11,10 @@ interface TaskAttachmentDao {
     @Query("SELECT * FROM task_attachments WHERE taskId = :taskId ORDER BY id ASC")
     fun observeForTask(taskId: Long): Flow<List<TaskAttachmentEntity>>
 
+    /** The tasks that have at least one attachment, for the paperclip on their cards. */
+    @Query("SELECT DISTINCT taskId FROM task_attachments")
+    fun observeTaskIdsWithAttachments(): Flow<List<Long>>
+
     @Query("SELECT * FROM task_attachments WHERE taskId = :taskId ORDER BY id ASC")
     suspend fun getForTask(taskId: Long): List<TaskAttachmentEntity>
 

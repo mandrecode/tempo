@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -20,7 +21,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,14 +32,20 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.ExpressiveChip
+import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.infrastructure.attachments.attachmentContentUri
 
 /**
  * The task's attachments (#380): one row per file, which opens it in whatever app the device has
- * for its type, and a button that picks more — pictures, documents, anything the system picker
- * offers.
+ * for its type, and an "Attach file" pill that picks more — pictures, documents, anything the
+ * system picker offers.
+ *
+ * Laid out like the sheet's other rows: every item is [EDITOR_CONTROL_HEIGHT] tall and starts where
+ * the other rows' controls start, and the icon sits on the first item's line — beside the only file,
+ * or the first of several, as a chain's icon sits beside its first habit.
  */
 @Composable
 internal fun TaskAttachmentsSection(
@@ -59,12 +65,12 @@ internal fun TaskAttachmentsSection(
         iconPainter = painterResource(R.drawable.ic_attach_file),
         iconContentDescription = stringResource(R.string.attachments),
         verticalAlignment = Alignment.Top,
-        iconBoxModifier = Modifier.width(48.dp).heightIn(min = 48.dp).padding(top = 12.dp),
+        iconBoxModifier = Modifier.width(48.dp).height(EDITOR_CONTROL_HEIGHT),
         modifier = modifier,
     ) {
         Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.weight(1f).padding(start = 4.dp),
+            verticalArrangement = Arrangement.spacedBy(ATTACHMENT_ITEM_GAP),
         ) {
             attachments.forEach { attachment ->
                 TaskAttachmentRow(
@@ -75,15 +81,22 @@ internal fun TaskAttachmentsSection(
                     onRemove = { onRemoveAttachment(attachment) },
                 )
             }
-            TextButton(
+            ExpressiveChip(
+                label = stringResource(R.string.add_attachment),
+                isSelected = false,
+                isFirst = true,
+                isLast = true,
                 onClick = { picker.launch(arrayOf("*/*")) },
-                modifier = Modifier.heightIn(min = 48.dp),
-            ) {
-                Text(text = stringResource(R.string.add_attachment))
-            }
+                height = EDITOR_CONTROL_HEIGHT,
+                verticalInset = 0.dp,
+                horizontalArrangement = Arrangement.Start,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
+
+private val ATTACHMENT_ITEM_GAP = 8.dp
 
 @Composable
 internal fun TaskAttachmentRow(
@@ -100,7 +113,7 @@ internal fun TaskAttachmentRow(
         modifier =
             modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = EDITOR_CONTROL_HEIGHT)
                 .semantics { contentDescription = openLabel },
     ) {
         Row(

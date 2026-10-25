@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation.components.cards
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
@@ -42,8 +43,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -63,8 +62,6 @@ import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.containerColor
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
-import com.mandrecode.tempo.util.DateTimeFormatter
-import kotlinx.datetime.LocalDateTime
 
 /** A ceiling for the category badge, so a long name can never crowd the date out of the row. */
 private val CategoryBadgeMaxWidth = 140.dp
@@ -225,13 +222,7 @@ private fun SubtaskMetadataRow(subtask: Task) {
         }
 
         Box(modifier = Modifier.heightIn(min = 20.dp), contentAlignment = Alignment.CenterStart) {
-            val badgeState =
-                when {
-                    subtask.isCompleted && subtask.completedAt != null ->
-                        MetadataBadgeState.Completed(subtask.completedAt)
-                    subtask.reminderDate != null -> MetadataBadgeState.Reminder(subtask.reminderDate)
-                    else -> MetadataBadgeState.None
-                }
+            val badgeState = subtask.metadataBadgeState()
             AnimatedContent(
                 targetState = badgeState,
                 transitionSpec = {
@@ -344,12 +335,7 @@ internal fun MetadataRow(
     subtasks: List<Task>,
     category: Category? = null,
 ) {
-    val taskBadgeState =
-        when {
-            task.isCompleted && task.completedAt != null -> MetadataBadgeState.Completed(task.completedAt)
-            task.reminderDate != null -> MetadataBadgeState.Reminder(task.reminderDate)
-            else -> MetadataBadgeState.None
-        }
+    val taskBadgeState = task.metadataBadgeState()
 
     val completedCount = remember(subtasks) { subtasks.count { it.isCompleted } }
     val metadataItems =
@@ -382,12 +368,14 @@ internal fun MetadataRow(
             if (task.periodicity != null) {
                 add(
                     MetadataItem("periodicity") {
-                        Icon(
-                            painter = painterResource(R.drawable.ic_repeat),
-                            contentDescription = stringResource(R.string.periodicity_label),
-                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.size(16.dp),
-                        )
+                        MetadataIcon(R.drawable.ic_repeat, stringResource(R.string.periodicity_label))
+                    },
+                )
+            }
+            if (task.hasAttachments) {
+                add(
+                    MetadataItem("attachments") {
+                        MetadataIcon(R.drawable.ic_attach_file, stringResource(R.string.attachments))
                     },
                 )
             }
@@ -413,6 +401,20 @@ internal fun MetadataRow(
     MetadataOverflowRow(
         items = metadataItems,
         modifier = Modifier.padding(top = 4.dp),
+    )
+}
+
+/** A bare fact about the task — it repeats, it has files — told by its icon alone. */
+@Composable
+private fun MetadataIcon(
+    @DrawableRes iconRes: Int,
+    contentDescription: String,
+) {
+    Icon(
+        painter = painterResource(iconRes),
+        contentDescription = contentDescription,
+        tint = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.size(16.dp),
     )
 }
 
@@ -502,101 +504,6 @@ private fun CategoryBadge(category: Category) {
 }
 
 @Composable
-private fun TaskDateBadge(taskBadgeState: MetadataBadgeState) {
-    Box(modifier = Modifier.heightIn(min = 22.dp), contentAlignment = Alignment.CenterStart) {
-        AnimatedContent(
-            targetState = taskBadgeState,
-            transitionSpec = {
-                (
-                    fadeIn(animationSpec = tween(durationMillis = 180)) togetherWith
-                        fadeOut(animationSpec = tween(durationMillis = 120))
-                ).using(SizeTransform(clip = false))
-            },
-            label = "taskBadge",
-        ) { kind ->
-            when (kind) {
-                is MetadataBadgeState.Completed -> {
-                    CompletedDateBadgeContent(kind.completedAt)
-                }
-
-                is MetadataBadgeState.Reminder -> {
-                    ReminderDateBadgeContent(kind.reminderDate)
-                }
-
-                MetadataBadgeState.None -> Unit
-            }
-        }
-    }
-}
-
-@Composable
-private fun CompletedDateBadgeContent(completedAt: LocalDateTime) {
-    Badge(
-        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier.padding(
-                    horizontal = 6.dp,
-                    vertical = 2.dp,
-                ),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Check,
-                contentDescription = stringResource(R.string.completed),
-                modifier = Modifier.size(10.dp),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Text(
-                text = getSimpleFormattedDate(completedAt),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.metadataLabel,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag(TASK_METADATA_COMPLETED_DATE_TAG),
-            )
-        }
-    }
-}
-
-@Composable
-private fun ReminderDateBadgeContent(reminderDate: LocalDateTime) {
-    Badge(
-        containerColor =
-            MaterialTheme.colorScheme.tertiaryContainer.copy(
-                alpha = 0.6f,
-            ),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier.padding(
-                    horizontal = 6.dp,
-                    vertical = 2.dp,
-                ),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_reminder),
-                contentDescription = stringResource(R.string.reminder_label),
-                modifier = Modifier.size(10.dp),
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
-            )
-            Spacer(modifier = Modifier.width(3.dp))
-            Text(
-                text = getSimpleFormattedDate(reminderDate),
-                color = MaterialTheme.colorScheme.onTertiaryContainer,
-                style = MaterialTheme.typography.metadataLabel,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.testTag(TASK_METADATA_REMINDER_DATE_TAG),
-            )
-        }
-    }
-}
-
-@Composable
 private fun SubtaskCountBadge(
     completedCount: Int,
     totalCount: Int,
@@ -619,31 +526,6 @@ private fun SubtaskCountBadge(
                     vertical = 2.dp,
                 ),
             style = MaterialTheme.typography.metadataLabel,
-        )
-    }
-}
-
-private sealed interface MetadataBadgeState {
-    data object None : MetadataBadgeState
-
-    data class Completed(
-        val completedAt: LocalDateTime,
-    ) : MetadataBadgeState
-
-    data class Reminder(
-        val reminderDate: LocalDateTime,
-    ) : MetadataBadgeState
-}
-
-@Composable
-private fun getSimpleFormattedDate(dateTime: LocalDateTime): String {
-    val context = LocalContext.current
-    return remember(dateTime, context) {
-        DateTimeFormatter.format(
-            dateTime,
-            DateTimeFormatter.Format.Short,
-            context,
-            useNaturalDates = true,
         )
     }
 }

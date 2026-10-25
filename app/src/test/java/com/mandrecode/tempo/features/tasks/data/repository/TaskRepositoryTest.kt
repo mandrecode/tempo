@@ -11,10 +11,13 @@ import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import kotlinx.datetime.LocalDateTime
 import org.junit.After
@@ -43,6 +46,24 @@ class TaskRepositoryTest {
     fun tearDown() {
         unmockkStatic("androidx.room.RoomDatabaseKt")
     }
+
+    /** The card's paperclip (#380) comes from the attachments table, matched up as tasks load. */
+    @Test
+    fun `loaded tasks know whether they have attachments`() =
+        runTest {
+            every { taskDao.getAllTasks() } returns
+                flowOf(
+                    listOf(
+                        TaskEntity(id = 1L, title = "Lease", description = ""),
+                        TaskEntity(id = 2L, title = "Groceries", description = ""),
+                    ),
+                )
+            every { database.taskAttachmentDao().observeTaskIdsWithAttachments() } returns flowOf(listOf(1L))
+
+            val tasks = repository.getAllTasks().first()
+
+            assertThat(tasks.associate { it.id to it.hasAttachments }).containsExactly(1L, true, 2L, false)
+        }
 
     @Test
     fun `deleteTaskWithSnapshot captures the full task tree before deleting`() =
