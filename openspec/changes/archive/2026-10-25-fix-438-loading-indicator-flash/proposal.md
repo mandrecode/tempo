@@ -16,6 +16,8 @@ The first time each screen loads (Tasks, Routines, Focus, and the Focus plan she
   - A tab opened for the first time crossfades from its loading state to its content over 250 ms (`FirstLoadCrossfade`) instead of swapping on one frame.
   - The what's-new sheet waits until the splash has handed over. As a separate window it otherwise ended the splash over an undrawn screen, which showed as a black frame.
 
+- **Every tab, not just the first:** the three tabs' view models are created at startup, once the database is ready. They are held by the activity so each tab's data is already loaded when it is first opened, and every tab appears finished on its first frame.
+
 ### Non-goals
 
 - No change to how or when screens load their data, or to the error path.

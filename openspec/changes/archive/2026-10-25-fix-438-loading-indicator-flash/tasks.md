@@ -18,3 +18,8 @@
 - [x] 3.3 What's-new sheet waits for the splash to hand over.
 - [x] 3.4 Cold-start screenshot bursts on the Pixel 10 AVD, with and without a pending what's-new entry; `TasksContentTest`, `RoutinesContentTest`, `FocusContentTest`, `TasksScreenTest` and `MainActivityNavigationTest` pass.
 - [x] 3.5 Rendered-pixel tests in `TempoLoadingIndicatorTest` (Copilot): partial opacity mid-fade and full opacity after it, and full opacity in the very first frame under a `StartupContentGateHost` (a stand-in activity provided through `LocalActivity`). The latter fails when the splash branch is disabled.
+
+## 4. Every tab warm
+
+- [x] 4.1 `tabViewModel()` (activity-scoped) for the Tasks, Routines and Focus screens; `MainActivity` creates all three once the database is ready.
+- [x] 4.2 `MainActivityTabWarmupTest` (fails without the warm-up); tab-switch screenshot bursts on the AVD, before and after.

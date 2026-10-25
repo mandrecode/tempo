@@ -21,7 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -36,8 +38,12 @@ import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TempoNavHost
 import com.mandrecode.tempo.core.ui.navigation.route
+import com.mandrecode.tempo.core.ui.navigation.tabViewModel
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
+import com.mandrecode.tempo.features.focus.presentation.FocusViewModel
+import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
+import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
 import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
 import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
@@ -45,6 +51,8 @@ import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderRece
 import com.mandrecode.tempo.infrastructure.reminders.receivers.MarkAsCompletedReceiver
 import com.mandrecode.tempo.infrastructure.reminders.receivers.TaskReminderReceiver
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
@@ -111,6 +119,8 @@ class MainActivity :
             }
             keep
         }
+
+        warmTabsWhenDatabaseIsReady()
 
         // Establish edge-to-edge before first composition so the app draws behind the system bars
         // from the first frame. TempoTheme's SideEffect re-applies the theme-aware transparent
@@ -316,6 +326,23 @@ class MainActivity :
         removeExtra(HabitReminderReceiver.EXTRA_OPEN_ROUTINES)
         removeExtra(HabitReminderReceiver.EXTRA_SCHEDULED_DATE)
         removeExtra(QuickAddTaskWidget.EXTRA_OPEN_NEW_TASK_DIALOG)
+    }
+
+    /**
+     * Creates the three tabs' view models as soon as the database is ready, so every tab has its
+     * first data loaded before it is opened and appears finished on its first frame (#438). They
+     * are the same instances the tabs use (see [tabViewModel]); the one on screen is created here
+     * or by its screen, whichever comes first. Created on the main thread, as view models are,
+     * but only once the database exists: before that, creating one would block on its warm-up.
+     */
+    private fun warmTabsWhenDatabaseIsReady() {
+        lifecycleScope.launch {
+            databaseWarmupSignal.isReady.first { it }
+            val provider = ViewModelProvider(this@MainActivity)
+            provider[FocusViewModel::class.java]
+            provider[RoutinesViewModel::class.java]
+            provider[TasksViewModel::class.java]
+        }
     }
 
     private companion object {

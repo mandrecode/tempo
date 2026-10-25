@@ -17,15 +17,19 @@ import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.features.focus.presentation.FocusScreen
 import com.mandrecode.tempo.features.focus.presentation.FocusSessionRoute
+import com.mandrecode.tempo.features.focus.presentation.FocusViewModel
 import com.mandrecode.tempo.features.onboarding.presentation.OnboardingScreen
 import com.mandrecode.tempo.features.routines.presentation.RoutinesScreen
+import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
 import com.mandrecode.tempo.features.routines.presentation.components.VacationModeTitleBadge
 import com.mandrecode.tempo.features.settings.presentation.SettingsScreen
 import com.mandrecode.tempo.features.tasks.presentation.TasksScreen
+import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
 
 @Composable
 internal fun FocusDestination(navigator: TempoNavigator) {
     FocusScreen(
+        viewModel = tabViewModel<FocusViewModel>(),
         topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
                 title = stringResource(R.string.focus),
@@ -71,6 +75,7 @@ internal fun RoutinesDestination(
 ) {
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     RoutinesScreen(
+        viewModel = tabViewModel<RoutinesViewModel>(),
         isSingleTabMode = isSingleTabMode,
         topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
@@ -108,6 +113,7 @@ internal fun TasksDestination(
 ) {
     val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     TasksScreen(
+        viewModel = tabViewModel<TasksViewModel>(),
         isSingleTabMode = isSingleTabMode,
         topBar = {
             RouteTopBarOrStatusInset(
