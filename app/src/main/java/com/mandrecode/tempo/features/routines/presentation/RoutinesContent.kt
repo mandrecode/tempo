@@ -281,11 +281,9 @@ internal fun TimelineItemCard(
                     habitChain = habitChain,
                     chainHabits = chainHabits,
                     selectedDate = uiState.selectedDate,
-                    isExpanded = uiState.expandedChainIds.contains(habitChain.id),
                     isSelected = habitChain.id == selectedHabitChainId,
                     selectedHabitId = selectedHabitId,
                     onEdit = { onEvent(RoutinesContract.UiEvent.ShowHabitChainBottomSheet(habitChain)) },
-                    onToggleExpansion = { onEvent(RoutinesContract.UiEvent.ToggleChainExpanded(habitChain.id)) },
                     onAddHabit = {
                         onEvent(
                             RoutinesContract.UiEvent.ShowHabitBottomSheet(

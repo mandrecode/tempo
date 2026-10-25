@@ -394,18 +394,6 @@ class RoutinesViewModelTest {
             assertThat(viewModel.uiState.value.selectedDate).isEqualTo(date)
         }
 
-    // --- Chain Expand/Collapse ---
-
-    @Test
-    fun `toggleChainExpanded adds and removes chain ID`() =
-        runTest {
-            viewModel.onEvent(RoutinesContract.UiEvent.ToggleChainExpanded(1L))
-            assertThat(viewModel.uiState.value.expandedChainIds).contains(1L)
-
-            viewModel.onEvent(RoutinesContract.UiEvent.ToggleChainExpanded(1L))
-            assertThat(viewModel.uiState.value.expandedChainIds).doesNotContain(1L)
-        }
-
     // --- Create/Update Habit ---
 
     @Test

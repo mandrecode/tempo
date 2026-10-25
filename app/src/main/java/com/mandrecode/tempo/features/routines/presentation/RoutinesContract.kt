@@ -10,7 +10,6 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.PersistentSet
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -43,7 +42,6 @@ object RoutinesContract {
         val showPermissionRevokedDialog: Boolean = false,
         val habitsWithRemindersToBeCleared: ImmutableList<Habit> = persistentListOf(),
         val pendingHabitChainData: PendingHabitChainData? = null,
-        val expandedChainIds: PersistentSet<Long> = persistentSetOf(),
         val vacationPeriods: ImmutableList<VacationPeriod> = persistentListOf(),
         val isVacationModeActive: Boolean = false,
         val selectedDate: LocalDate =
@@ -184,10 +182,6 @@ object RoutinesContract {
         // Navigation / date
         data class SelectDate(
             val date: LocalDate,
-        ) : UiEvent
-
-        data class ToggleChainExpanded(
-            val chainId: Long,
         ) : UiEvent
 
         // Permissions

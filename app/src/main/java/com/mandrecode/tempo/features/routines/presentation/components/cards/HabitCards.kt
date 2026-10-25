@@ -83,6 +83,13 @@ import kotlin.time.Clock
 
 private const val HABIT_COLLAPSED_MAX_LINES = 1
 
+/**
+ * Habits are quick, recurring check-offs, so their rows are deliberately shorter than task rows
+ * (#454): a standalone habit is a 40dp checkbox, a habit inside a chain a 32dp one.
+ */
+internal val HabitCheckboxSize = 40.dp
+internal val ChainHabitCheckboxSize = 32.dp
+
 @Composable
 internal fun HabitItem(
     habit: Habit,
@@ -93,8 +100,9 @@ internal fun HabitItem(
     color: Color? = null,
     cardShape: Shape = RoundedCornerShape(24.dp),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    horizontalPadding: Dp = 16.dp,
-    verticalPadding: Dp = 16.dp,
+    horizontalPadding: Dp = 12.dp,
+    verticalPadding: Dp = 8.dp,
+    checkboxSize: Dp = HabitCheckboxSize,
     canToggle: Boolean = true,
     isInsideChain: Boolean = false,
     isContainerCompleted: Boolean = isCompleted,
@@ -120,9 +128,9 @@ internal fun HabitItem(
             else -> HABIT_COLLAPSED_MAX_LINES
         }
 
-    // Snappier spring for radius morphing
+    // Snappier spring for radius morphing: a circle that squares off a little once done.
     val checkboxRadius by animateDpAsState(
-        targetValue = if (isCompleted) 16.dp else 28.dp,
+        targetValue = if (isCompleted) checkboxSize * 0.3f else checkboxSize / 2,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioNoBouncy,
@@ -185,12 +193,9 @@ internal fun HabitItem(
                 .padding(horizontal = horizontalPadding, vertical = verticalPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Large animated checkbox. Sized to match the content Column's heightIn(min = 56.dp)
-        // below — intentionally larger than TaskItem's 48dp checkbox, which matches its own
-        // 48dp min title Box height. Habit rows are simpler (title + streak) so the checkbox
-        // carries more visual weight as the primary action; task rows are denser (metadata,
-        // subtasks) so a smaller touch target preserves compactness. Keep this in sync with the
-        // content Column's heightIn(min) below if either changes.
+        // Animated checkbox, sized to match the content Column's heightIn(min = checkboxSize)
+        // below. Smaller than TaskItem's 48dp checkbox on purpose (#454): a habit is a single
+        // quick tap, so its row stays compact; the whole row remains tappable for editing.
         val completionA11yLabel =
             stringResource(
                 if (isCompleted) R.string.mark_as_not_completed else R.string.mark_as_completed,
@@ -198,7 +203,7 @@ internal fun HabitItem(
         Box(
             modifier =
                 Modifier
-                    .size(56.dp)
+                    .size(checkboxSize)
                     .semantics {
                         role = Role.Checkbox
                         toggleableState = if (isCompleted) ToggleableState.On else ToggleableState.Off
@@ -218,7 +223,7 @@ internal fun HabitItem(
             Box(
                 modifier =
                     Modifier
-                        .size(56.dp)
+                        .size(checkboxSize)
                         .background(
                             color = checkboxBgColor,
                             shape = RoundedCornerShape(checkboxRadius),
@@ -243,7 +248,7 @@ internal fun HabitItem(
                 Icon(
                     imageVector = Icons.Filled.Check,
                     contentDescription = null,
-                    modifier = Modifier.size(28.dp),
+                    modifier = Modifier.size(checkboxSize / 2),
                     tint = iconTintColor,
                 )
             } else {
@@ -255,7 +260,7 @@ internal fun HabitItem(
                             contentDescription = null,
                             modifier =
                                 Modifier
-                                    .size(28.dp)
+                                    .size(checkboxSize / 2)
                                     .testTag("habitIcon"),
                             tint = iconTintColor,
                         )
@@ -274,13 +279,13 @@ internal fun HabitItem(
             }
         }
 
-        Spacer(modifier = Modifier.width(16.dp))
+        Spacer(modifier = Modifier.width(12.dp))
 
         Column(
             modifier =
                 Modifier
                     .weight(1f)
-                    .heightIn(min = 56.dp),
+                    .heightIn(min = checkboxSize),
             verticalArrangement = Arrangement.Center,
         ) {
             Text(
@@ -301,7 +306,7 @@ internal fun HabitItem(
             )
 
             if (sanitizedDescription.isNotBlank()) {
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 EnhancedDescriptionText(
                     text = sanitizedDescription,
                     style = MaterialTheme.typography.bodyMedium,
@@ -330,11 +335,11 @@ internal fun HabitItem(
         if (!isInsideChain && isDescriptionOverflowing) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.align(Alignment.Top).padding(top = 4.dp),
+                modifier = Modifier.align(Alignment.Top),
             ) {
                 IconButton(
                     onClick = { isDescriptionExpanded = !isDescriptionExpanded },
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(checkboxSize),
                 ) {
                     Icon(
                         painter =
@@ -389,8 +394,9 @@ fun HabitCard(
     // Toggling is only allowed for Yesterday and Today
     val canToggle = selectedDate == today || selectedDate == yesterday
 
+    // A compact habit row reads as a pill; it squares off a little once done.
     val cardCornerRadius by animateDpAsState(
-        targetValue = if (isCompleted) 24.dp else 32.dp,
+        targetValue = if (isCompleted) 18.dp else 28.dp,
         animationSpec =
             spring(
                 dampingRatio = Spring.DampingRatioNoBouncy, // More stable for day transitions
@@ -495,8 +501,6 @@ fun HabitCard(
                 color = resolvedHabitColor,
                 cardShape = cardShape,
                 contentColor = contentColor,
-                horizontalPadding = 16.dp,
-                verticalPadding = 16.dp,
                 canToggle = canToggle,
                 enableClick = false,
             )

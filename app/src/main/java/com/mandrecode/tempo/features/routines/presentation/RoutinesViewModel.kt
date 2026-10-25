@@ -131,7 +131,6 @@ class RoutinesViewModel
                 is RoutinesContract.UiEvent.SetRepeatDays -> setRepeatDays(event.days)
                 is RoutinesContract.UiEvent.ClearHabitErrors -> clearHabitErrors()
                 is RoutinesContract.UiEvent.SelectDate -> selectDate(event.date)
-                is RoutinesContract.UiEvent.ToggleChainExpanded -> toggleChainExpanded(event.chainId)
                 is RoutinesContract.UiEvent.DismissPermissionRequestDialog ->
                     dismissPermissionRequestDialog()
 
