@@ -40,13 +40,13 @@ import com.mandrecode.tempo.infrastructure.attachments.attachmentContentUri
 
 /**
  * The task's attachments (#380): one row per file, which opens it in whatever app the device has
- * for its type, and a button at the section's bottom end that picks more — pictures, documents,
- * anything the system picker offers.
+ * for its type, and a button below them that picks more — pictures, documents, anything the
+ * system picker offers.
  *
- * Laid out like the sheet's other rows: every item is [EDITOR_CONTROL_HEIGHT] tall and the files
- * start where the other rows' controls start, and the icon sits on the first item's line — beside
- * the only file, or the first of several, as a chain's icon sits beside its first habit, or beside
- * the button while there are none.
+ * Laid out like the sheet's other rows: every item is [EDITOR_CONTROL_HEIGHT] tall and starts where
+ * the other rows' controls start, and the icon sits on the first item's line — beside the only file,
+ * or the first of several, as a chain's icon sits beside its first habit, or beside the button while
+ * there are none.
  */
 @Composable
 internal fun TaskAttachmentsSection(
@@ -85,7 +85,6 @@ internal fun TaskAttachmentsSection(
             EditorAddButton(
                 label = stringResource(R.string.add_attachment),
                 onClick = { picker.launch(arrayOf("*/*")) },
-                modifier = Modifier.align(Alignment.End),
             )
         }
     }

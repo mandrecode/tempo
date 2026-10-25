@@ -40,6 +40,7 @@ import com.mandrecode.tempo.core.ui.components.DayOfWeekSelector
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.HabitCompletionCheckbox
 import com.mandrecode.tempo.core.ui.components.IconPicker
+import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
@@ -589,15 +590,14 @@ private fun HabitReminderSection(
                 border = null,
                 modifier =
                     Modifier
-                        .weight(1f)
-                        .height(56.dp)
-                        .padding(start = 4.dp),
+                        .padding(start = 4.dp)
+                        .height(EDITOR_CONTROL_HEIGHT),
             )
         } else {
-            Spacer(modifier = Modifier.weight(1f))
             EditorAddButton(
                 label = stringResource(R.string.add_reminder),
                 onClick = onSetReminderClick,
+                modifier = Modifier.padding(start = 4.dp),
             )
         }
     }

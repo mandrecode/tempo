@@ -20,9 +20,9 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 /**
- * An editor row's "add" action — a reminder, an attachment — as a button as wide as its label, set
- * at the row's end. It reads as something to do rather than a value already set, and leaves the row
- * to the values themselves once there are some.
+ * An editor row's "add" action — a reminder, an attachment — as a button as wide as its label,
+ * starting where the other rows' controls start and as tall as they are. It reads as something to
+ * do rather than a value already set.
  */
 @Composable
 internal fun EditorAddButton(

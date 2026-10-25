@@ -460,9 +460,8 @@ private fun TaskReminderAndPeriodicitySection(
                     border = null,
                     modifier =
                         Modifier
-                            .weight(1f)
-                            .height(EDITOR_CONTROL_HEIGHT)
-                            .padding(start = 4.dp),
+                            .padding(start = 4.dp)
+                            .height(EDITOR_CONTROL_HEIGHT),
                 )
             }
 
@@ -479,11 +478,11 @@ private fun TaskReminderAndPeriodicitySection(
                 iconPainter = painterResource(R.drawable.ic_reminder),
                 iconContentDescription = stringResource(R.string.reminder_label),
             ) {
-                Spacer(modifier = Modifier.weight(1f))
                 EditorAddButton(
                     label = stringResource(R.string.add_reminder),
                     onClick = actions.onSetReminderClicked,
                     enabled = state.task == null || !state.task.isCompleted,
+                    modifier = Modifier.padding(start = 4.dp),
                 )
             }
         }
