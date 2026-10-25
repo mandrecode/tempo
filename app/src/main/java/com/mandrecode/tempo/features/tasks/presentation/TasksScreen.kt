@@ -114,6 +114,7 @@ fun TasksScreen(
         val observer =
             LifecycleEventObserver { _, event ->
                 if (event == Lifecycle.Event.ON_START) {
+                    viewModel.onTabShown()
                     viewModel.checkPermissionsAndSyncReminders()
                 }
             }

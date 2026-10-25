@@ -1704,6 +1704,35 @@ class TasksViewModelTest {
                 ).inOrder()
         }
 
+    /** The tab is warmed up the evening before and first opened after midnight (#438). */
+    @Test
+    fun `showing the tab on a new day moves yesterday's tasks to Overdue without any data change`() =
+        runTest {
+            val today =
+                kotlinx.datetime.Clock.System.todayIn(
+                    kotlinx.datetime.TimeZone.currentSystemDefault(),
+                )
+            val task =
+                Task(
+                    id = 1,
+                    title = "Due today",
+                    description = "",
+                    reminderDate = LocalDateTime(today.year, today.monthNumber, today.dayOfMonth, 9, 0),
+                    categoryId = DEFAULT_INBOX_CATEGORY.id,
+                )
+            coEvery { taskRepository.getAllTasks() } returns flowOf(listOf(task))
+            coEvery { categoryRepository.getAllCategories() } returns flowOf(listOf(DEFAULT_INBOX_CATEGORY))
+            every { tasksScreenPreferencesRepository.getSortOption(any()) } returns SortOption.BY_DATE
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.ByDate(today))
+
+            viewModel.onTabShownOn(today = today.plus(1, kotlinx.datetime.DateTimeUnit.DAY))
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.activeTasks.keys).containsExactly(ActiveGroupKey.Overdue)
+        }
+
     @Test
     fun `activeTaskGroups groups tasks by priority when sorted by priority`() =
         runTest {

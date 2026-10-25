@@ -43,6 +43,7 @@ import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.minus
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 import kotlinx.datetime.todayIn
@@ -902,6 +903,21 @@ class RoutinesViewModelTest {
             viewModel.onTabShownOn(today = launchDay)
 
             assertThat(viewModel.uiState.value.selectedDate).isEqualTo(picked)
+        }
+
+    @Test
+    fun `showing the tab the day after a vacation ended clears the paused state`() =
+        runTest {
+            val launchDay = Clock.System.todayIn(TimeZone.currentSystemDefault())
+            every { vacationModeRepository.periods } returns
+                MutableStateFlow(listOf(VacationPeriod(launchDay.minus(DatePeriod(days = 3)), launchDay)))
+            viewModel = createViewModel()
+            advanceUntilIdle()
+            assertThat(viewModel.uiState.value.isVacationModeActive).isTrue()
+
+            viewModel.onTabShownOn(today = launchDay.plus(DatePeriod(days = 1)))
+
+            assertThat(viewModel.uiState.value.isVacationModeActive).isFalse()
         }
 
     // --- Permissions ---

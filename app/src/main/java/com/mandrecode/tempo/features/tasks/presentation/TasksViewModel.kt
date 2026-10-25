@@ -32,7 +32,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.todayIn
+import kotlin.time.Clock
 
 @HiltViewModel
 class TasksViewModel
@@ -87,6 +91,9 @@ class TasksViewModel
         internal var nextDeletionToken = 0L
         internal var nextEditorSessionId = 0L
 
+        /** The day the date groups are drawn for; see [onTabShownOn]. */
+        internal val currentDay = MutableStateFlow(systemToday())
+
         internal suspend fun showSnackbar(
             @StringRes messageResId: Int,
             formatArgs: List<Any> = emptyList(),
@@ -122,6 +129,13 @@ class TasksViewModel
         init {
             loadData()
         }
+
+        /** See [onTabShownOn]: the Tasks tab is in view, today being the system date. */
+        fun onTabShown() {
+            onTabShownOn(today = systemToday())
+        }
+
+        private fun systemToday(): LocalDate = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
         fun onEvent(event: TasksContract.UiEvent) {
             when (event) {

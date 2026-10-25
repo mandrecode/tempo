@@ -24,9 +24,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.todayIn
-import kotlin.time.Clock
+import kotlinx.datetime.LocalDate
 
 internal fun TasksViewModel.selectCategory(categoryId: Long) {
     val sortOption = tasksScreenPreferencesRepository.getSortOption(categoryId)
@@ -56,6 +54,16 @@ private fun <K, V> Map<K, List<V>>.toImmutableListMap(): ImmutableMap<K, Immutab
         .associate { (key, values) -> key to values.toPersistentList() }
         .toPersistentMap()
 
+/**
+ * The Tasks tab has come into view, or the app back to the front with it showing (#438). The tab
+ * is warmed up before it is first opened, so the day the date groups were drawn for may have ended
+ * since: a new [today] regroups the list even though no task changed, and yesterday's tasks move
+ * to Overdue.
+ */
+internal fun TasksViewModel.onTabShownOn(today: LocalDate) {
+    currentDay.value = today
+}
+
 internal fun TasksViewModel.loadData() {
     viewModelScope.launch {
         combine(
@@ -63,7 +71,8 @@ internal fun TasksViewModel.loadData() {
             categoryRepository.getAllCategories(),
             mutableUiState.map { it.selectedCategoryId }.distinctUntilChanged(),
             mutableUiState.map { it.sortOption }.distinctUntilChanged(),
-        ) { tasks, dbCategories, selectedCategoryId, sortOption ->
+            currentDay,
+        ) { tasks, dbCategories, selectedCategoryId, sortOption, today ->
             val allCategories = dbCategories.toPersistentList()
 
             val effectiveSelectedId =
@@ -92,8 +101,6 @@ internal fun TasksViewModel.loadData() {
 
             val parentTasks = filteredTasks.filter { it.parentTaskId == null }
             val (activeTasks, completedTasks) = parentTasks.partition { !it.isCompleted }
-
-            val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
 
             val activeTaskGroups: ImmutableMap<ActiveGroupKey, ImmutableList<Task>> =
                 when (sortOption) {

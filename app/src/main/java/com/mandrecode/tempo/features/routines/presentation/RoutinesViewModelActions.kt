@@ -957,9 +957,15 @@ internal fun RoutinesViewModel.openHabitChainFromNotificationInternal(
  * The Routines tab has come into view, or the app back to the front with it showing (#438). If a
  * new day has started since the timeline was last looked at, a timeline still on the old "today"
  * moves to the new one — checking a routine off would otherwise record it against yesterday. A day
- * the user picked themselves is left alone.
+ * the user picked themselves is left alone. Whether vacation mode is active is re-read for [today]
+ * as well.
  */
 internal fun RoutinesViewModel.onTabShownOn(today: LocalDate) {
+    // The paused badge is only recomputed when the periods change, so a vacation that ended (or
+    // began) overnight would otherwise keep showing yesterday's state.
+    mutableUiState.update {
+        it.copy(isVacationModeActive = VacationPeriod.activeOn(it.vacationPeriods, today) != null)
+    }
     if (today == lastSeenToday) return
     if (uiState.value.selectedDate == lastSeenToday) selectDate(today)
     lastSeenToday = today
