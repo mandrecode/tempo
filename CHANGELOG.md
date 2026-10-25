@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.16.0](https://github.com/mandrecode/tempo/compare/v1.15.0...v1.16.0) (2026-10-25)
+
+
+### Features
+
+* **#115:** pick repeat days with alarm-style weekday toggles ([#445](https://github.com/mandrecode/tempo/issues/445)) ([9913e71](https://github.com/mandrecode/tempo/commit/9913e7143d3e26004141629c23c15686e16c8a4c))
+* **#163:** use the official window width classes and glide between layouts ([#449](https://github.com/mandrecode/tempo/issues/449)) ([fdbb471](https://github.com/mandrecode/tempo/commit/fdbb471be6c9586ffdbd3bfe8b8c4dbf070b453a))
+* **#335:** show the Routines week as a connected button group ([#446](https://github.com/mandrecode/tempo/issues/446)) ([408d71c](https://github.com/mandrecode/tempo/commit/408d71cd5010c599aae6be7a19d12b09eab17a83))
+* **#336:** use connected button groups for the editors' selectors ([#447](https://github.com/mandrecode/tempo/issues/447)) ([1cee3a2](https://github.com/mandrecode/tempo/commit/1cee3a2be3550c0cac34ac9f64914ea4c9f98a4d))
+* **#380:** attach files to tasks ([#444](https://github.com/mandrecode/tempo/issues/444)) ([9dd36ac](https://github.com/mandrecode/tempo/commit/9dd36ac659aa2dbffc1035056e1918e5d7fad455))
+* **#434:** keep the add-task button on the Focus tab ([#443](https://github.com/mandrecode/tempo/issues/443)) ([9cc348a](https://github.com/mandrecode/tempo/commit/9cc348a3c09a5682e5dd704bdd283af52d582635))
+* **#440:** move the Focus tab to the centre of the navigation bar ([#448](https://github.com/mandrecode/tempo/issues/448)) ([6e1c34e](https://github.com/mandrecode/tempo/commit/6e1c34ea3ca373cab9fbe401efc1a31d356365a0))
+* **#452:** show the default category when the open Tasks tab is tapped ([#455](https://github.com/mandrecode/tempo/issues/455)) ([3a72c30](https://github.com/mandrecode/tempo/commit/3a72c3006855f204b937632b6f6f9a0e0f834602))
+* **#454:** compact habit rows and always-open habit chains ([#456](https://github.com/mandrecode/tempo/issues/456)) ([00c3c73](https://github.com/mandrecode/tempo/commit/00c3c73891aa31913be37b3399230cfb6891fdc4))
+
+
+### Bug Fixes
+
+* **#397:** route task sheet back from explicit editor focus ([#439](https://github.com/mandrecode/tempo/issues/439)) ([ae5d652](https://github.com/mandrecode/tempo/commit/ae5d65268236c6fcbc01537f3000df9b0623b387))
+* **#437:** only announce reminders are active again to the screen that asked ([#442](https://github.com/mandrecode/tempo/issues/442)) ([8abac03](https://github.com/mandrecode/tempo/commit/8abac0354c846d7c4be907894f109426d9d156ea))
+* **#438:** hold the loading indicator back so quick loads do not flash it ([#441](https://github.com/mandrecode/tempo/issues/441)) ([a924f14](https://github.com/mandrecode/tempo/commit/a924f14e0192ce03a69fb5f6f6c9efd3590e7208))
+
 ## [1.15.0](https://github.com/mandrecode/tempo/compare/v1.14.0...v1.15.0) (2026-10-24)
 
 
