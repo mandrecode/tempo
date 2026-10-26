@@ -19,6 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,14 +62,16 @@ internal fun SectionShortcutGroup(
     onReorderSections: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Each frame of the category switch shows its own category's sections, not the new ones twice.
     AnimatedContent(
-        targetState = categoryId,
+        targetState = categoryId to shortcuts,
+        contentKey = { (id, _) -> id },
         transitionSpec = {
             (slideInVertically { -it / 2 } + fadeIn()) togetherWith (slideOutVertically { -it / 2 } + fadeOut())
         },
         label = "sectionShortcuts",
         modifier = modifier,
-    ) { _ ->
+    ) { (_, shownShortcuts) ->
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(bottom = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -76,7 +79,7 @@ internal fun SectionShortcutGroup(
         ) {
             val listState = rememberLazyListState()
             LaunchedEffect(checkedIndex) { if (checkedIndex >= 0) listState.animateScrollToItem(checkedIndex) }
-            val checkedColor = categoryColor ?: androidx.compose.material3.MaterialTheme.colorScheme.primary
+            val checkedColor = categoryColor ?: MaterialTheme.colorScheme.primary
             val onChecked = if (checkedColor.luminance() > LIGHT_CATEGORY_LUMINANCE) Color.Black else Color.White
             LazyRow(
                 state = listState,
@@ -84,13 +87,13 @@ internal fun SectionShortcutGroup(
                 contentPadding = PaddingValues(0.dp),
                 modifier = Modifier.weight(1f, fill = false),
             ) {
-                itemsIndexed(shortcuts, key = { _, shortcut -> shortcut.sectionId ?: -1L }) { index, shortcut ->
+                itemsIndexed(shownShortcuts, key = { _, shortcut -> shortcut.sectionId ?: -1L }) { index, shortcut ->
                     ConnectedSelectorButton(
                         label = "${shortcut.label} · ${shortcut.count}",
                         checked = index == checkedIndex,
                         onClick = { onSelect(shortcut) },
                         index = index,
-                        count = shortcuts.size,
+                        count = shownShortcuts.size,
                         colors =
                             selectorButtonColors(
                                 checkedContainerColor = checkedColor,

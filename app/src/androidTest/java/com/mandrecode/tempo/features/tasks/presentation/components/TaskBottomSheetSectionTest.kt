@@ -2,6 +2,7 @@ package com.mandrecode.tempo.features.tasks.presentation.components
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOn
@@ -31,7 +32,9 @@ class TaskBottomSheetSectionTest {
     private fun setSheet(task: Task) {
         composeTestRule.setContent {
             // The ViewModel's role: the selection lives in the form state.
-            var formState by mutableStateOf(TasksContract.TaskFormState(editingTask = task, sectionId = task.sectionId))
+            var formState by remember {
+                mutableStateOf(TasksContract.TaskFormState(editingTask = task, sectionId = task.sectionId))
+            }
             TempoTheme {
                 TaskBottomSheet(
                     task = task,

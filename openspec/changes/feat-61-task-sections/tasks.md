@@ -56,8 +56,8 @@
 
 ## 10. Copy and announcement
 
-- [ ] 10.1 Add every new string to `values/strings.xml` and every `values-<locale>/strings.xml` ("Sección" in Spanish, reading naturally for "grupos"). Verify `./gradlew lintDebug` reports no Missing or Extra translations.
-- [ ] 10.2 Replace `WhatsNewRegistry.latest` with a `WhatsNewEntry` for sections (id `61`) and remove the previous entry's strings. Verify the What's New unit test.
+- [x] 10.1 Add every new string to `values/strings.xml` and every `values-<locale>/strings.xml` ("Sección" in Spanish, reading naturally for "grupos"). Verify `./gradlew lintDebug` reports no Missing or Extra translations.
+- [x] 10.2 Replace `WhatsNewRegistry.latest` with a `WhatsNewEntry` for sections (id `61`) and remove the previous entry's strings. Verify the What's New unit test.
 
 ## 11. Integration verification
 

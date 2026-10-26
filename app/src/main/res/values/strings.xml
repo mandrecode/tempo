@@ -571,8 +571,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add from Focus, attach files, and new day pickers</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. Habits and chains pick their days the way an alarm does, the whole week now fits at the top of Routines, and the editors\' choices (priority, repeat, category) are now grouped buttons. Focus now sits in the middle of the navigation bar. On tablets, foldables and desktop windows, the layout now glides to its new shape as the window changes size.</string>
+    <string name="whats_new_title">Sections inside your lists</string>
+    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Add the first one from the category\'s menu, then collapse, rename, reorder or delete sections from their header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>
