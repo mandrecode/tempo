@@ -43,6 +43,7 @@ import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
 import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import com.mandrecode.tempo.infrastructure.permissions.hasNotificationPermissions
 import kotlinx.datetime.LocalDate
@@ -79,6 +80,8 @@ internal fun TaskBottomSheetContent(
     placement: SheetPlacement? = null,
     dismissRequestKey: Int = 0,
     attachmentActions: TaskAttachmentActions? = null,
+    sectionsByCategory: Map<Long, List<TaskSection>> = emptyMap(),
+    onSelectSection: (Long?) -> Unit = {},
 ) {
     val haptic = LocalHapticFeedback.current
     val context = LocalContext.current
@@ -240,6 +243,7 @@ internal fun TaskBottomSheetContent(
                     periodicityInterval = it.periodicityInterval,
                     repeatDays = it.repeatDays,
                     monthDayOption = it.monthDayOption,
+                    sectionId = it.sectionId,
                 )
             }
         }
@@ -258,6 +262,7 @@ internal fun TaskBottomSheetContent(
             formState.repeatDays,
             formState.monthDayOption,
             formState.attachments,
+            formState.sectionId,
         ) {
             if (taskSnapshot == null) {
                 taskTitle.isNotBlank() ||
@@ -277,7 +282,8 @@ internal fun TaskBottomSheetContent(
                     formState.periodicity != taskSnapshot.periodicity ||
                     formState.periodicityInterval != taskSnapshot.periodicityInterval ||
                     formState.repeatDays != taskSnapshot.repeatDays ||
-                    formState.monthDayOption != taskSnapshot.monthDayOption
+                    formState.monthDayOption != taskSnapshot.monthDayOption ||
+                    formState.sectionId != taskSnapshot.sectionId
             }
         }
     val isEditingTask = task != null
@@ -304,6 +310,7 @@ internal fun TaskBottomSheetContent(
                 periodicityInterval = formState.periodicityInterval,
                 repeatDays = formState.repeatDays,
                 monthDayOption = formState.monthDayOption,
+                sectionId = formState.sectionId,
             )
         },
         onSnapshot = { snapshot ->
@@ -327,6 +334,7 @@ internal fun TaskBottomSheetContent(
                 periodicityInterval = formState.periodicityInterval,
                 repeatDays = formState.repeatDays,
                 monthDayOption = formState.monthDayOption,
+                sectionId = formState.sectionId,
             )
         if (autoSaveEnabled && currentSnapshot.title.isNotBlank()) {
             autosaveController.trySave(
@@ -371,6 +379,7 @@ internal fun TaskBottomSheetContent(
                         autoSaveEnabled = autoSaveEnabled,
                         isEditingTask = isEditingTask,
                         isPriorityReadOnly = isPriorityReadOnly,
+                        sections = sectionsByCategory[selectedCategoryId].orEmpty(),
                     ),
                 actions =
                     TaskBottomSheetBodyActions(
@@ -404,7 +413,11 @@ internal fun TaskBottomSheetContent(
                             isDescriptionDirty = descriptionState.value.text != initialDescription
                             onClearErrors()
                         },
-                        onSelectCategory = { selectedCategoryId = it },
+                        onSelectCategory = { categoryId ->
+                            // A section belongs to one category (#61): picking another clears it.
+                            if (categoryId != selectedCategoryId) onSelectSection(null)
+                            selectedCategoryId = categoryId
+                        },
                         onSetPriority = onSetPriority,
                         onClearPriority = onClearPriority,
                         onSetReminderClicked = onSetReminderClicked,
@@ -429,6 +442,7 @@ internal fun TaskBottomSheetContent(
                             }
                         },
                         attachmentActions = attachmentActions,
+                        onSelectSection = onSelectSection,
                     ),
                 focusConfig =
                     TaskBottomSheetFocusConfig(

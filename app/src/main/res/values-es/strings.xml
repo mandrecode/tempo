@@ -296,6 +296,7 @@
     <string name="section_state_expanded">Expandida</string>
     <string name="section_state_collapsed">Contraída</string>
     <string name="section_none">Sin sección</string>
+    <string name="section_label">Sección</string>
     <string name="section_reorder_done">Listo</string>
     <plurals name="section_overdue_count">
         <item quantity="one">%1$d vencida</item>

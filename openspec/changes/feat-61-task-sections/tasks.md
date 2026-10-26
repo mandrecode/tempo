@@ -41,7 +41,7 @@
 
 ## 7. Task editor Section row
 
-- [ ] 7.1 Add `sections`/`selectedSectionId` to `TaskBottomSheetModels` and render the Section row under Category (scrolling connected buttons, hidden for unsectioned categories and subtasks, reset on category change). Verify with UI tests for the three `editor-selector-groups` scenarios.
+- [x] 7.1 Add `sections`/`selectedSectionId` to `TaskBottomSheetModels` and render the Section row under Category (scrolling connected buttons, hidden for unsectioned categories and subtasks, reset on category change). Verify with UI tests for the three `editor-selector-groups` scenarios.
 
 ## 8. Cross-section drag (Manual sort)
 

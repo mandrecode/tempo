@@ -66,6 +66,7 @@ import com.mandrecode.tempo.core.ui.util.IncrementalLinkVisualTransformation
 import com.mandrecode.tempo.core.ui.util.color
 import com.mandrecode.tempo.core.ui.util.titleResId
 import com.mandrecode.tempo.features.tasks.domain.model.Category
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 
@@ -98,6 +99,8 @@ internal fun TaskBottomSheetBody(
             state = state,
             onSelectCategory = actions.onSelectCategory,
         )
+
+        TaskSectionSection(state = state, onSelectSection = actions.onSelectSection)
 
         Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
 
@@ -325,6 +328,49 @@ private fun TaskCategorySection(
                             modifier = Modifier.size(18.dp),
                         )
                     },
+                )
+            }
+        }
+    }
+}
+
+/**
+ * The Section options (#61): "No section" then the category's sections, as one connected
+ * single-choice group that scrolls when long. Only for a top-level task in a sectioned category.
+ */
+@Composable
+private fun TaskSectionSection(
+    state: TaskBottomSheetBodyState,
+    onSelectSection: (Long?) -> Unit,
+) {
+    val isSubtask = state.formState.parentTaskId != null || state.task?.parentTaskId != null
+    if (state.sections.isEmpty() || isSubtask) return
+
+    val options = listOf<TaskSection?>(null) + state.sections
+    val selectedIndex = options.indexOfFirst { it?.id == state.formState.sectionId }.coerceAtLeast(0)
+    val listState = rememberLazyListState()
+    LaunchedEffect(selectedIndex, options.size) { listState.animateScrollToItem(selectedIndex) }
+
+    Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+    EditorPropertyRow(
+        iconPainter = painterResource(R.drawable.ic_sort),
+        iconContentDescription = stringResource(R.string.section_label),
+    ) {
+        LazyRow(
+            state = listState,
+            contentPadding = PaddingValues(horizontal = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.weight(1f),
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            itemsIndexed(options) { index, section ->
+                ConnectedSelectorButton(
+                    label = section?.name ?: stringResource(R.string.section_none),
+                    checked = index == selectedIndex,
+                    index = index,
+                    count = options.size,
+                    onClick = { onSelectSection(section?.id) },
+                    modifier = Modifier.testTag("taskSectionChip_${section?.id ?: "none"}"),
                 )
             }
         }

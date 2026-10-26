@@ -388,6 +388,8 @@ internal fun TaskEditor(
 ) {
     TaskBottomSheet(
         categories = uiState.categories,
+        sectionsByCategory = uiState.sectionsByCategory,
+        onSelectSection = { onEvent(TasksContract.UiEvent.SetTaskSection(it)) },
         selectedCategoryIdFromFilter = uiState.taskEditorCategoryId(),
         formState = uiState.taskForm,
         onSetPriority = { onEvent(TasksContract.UiEvent.SetPriority(it)) },

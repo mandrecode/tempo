@@ -9,6 +9,7 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.datetime.LocalDateTime
 
@@ -33,6 +34,7 @@ internal data class TaskFormSnapshot(
     val periodicityInterval: Int,
     val repeatDays: Set<DayOfWeek>?,
     val monthDayOption: MonthDayOption?,
+    val sectionId: Long? = null,
 )
 
 internal data class TaskBottomSheetBodyState(
@@ -46,6 +48,8 @@ internal data class TaskBottomSheetBodyState(
     val autoSaveEnabled: Boolean,
     val isEditingTask: Boolean,
     val isPriorityReadOnly: Boolean,
+    /** The selected category's sections (#61); the Section row is hidden when there are none. */
+    val sections: List<TaskSection> = emptyList(),
 )
 
 internal data class TaskBottomSheetBodyActions(
@@ -66,6 +70,7 @@ internal data class TaskBottomSheetBodyActions(
     val onToggleCompletion: ((Task) -> Unit)?,
     val onConfirmClick: () -> Unit,
     val attachmentActions: TaskAttachmentActions? = null,
+    val onSelectSection: (Long?) -> Unit = {},
 )
 
 /** What the attachments section can ask for; the section is only shown when the host provides it. */
