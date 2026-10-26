@@ -1,5 +1,7 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.test.SemanticsNodeInteraction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -7,6 +9,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performTouchInput
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
@@ -163,5 +166,53 @@ class TasksSectionedContentTest {
         composeTestRule.onNodeWithText("Reorder sections").performClick()
 
         composeTestRule.onNodeWithText("Done").assertIsDisplayed()
+    }
+
+    @Test
+    fun manualSort_dragIntoAnEmptySection_movesTheTask() {
+        setContent()
+
+        dragOnto(composeTestRule.onNodeWithText("Buy litter"), composeTestRule.onNodeWithText("No tasks yet", substring = true))
+
+        assertThat(events).contains(TasksContract.UiEvent.MoveTaskToSection(taskId = 2, sectionId = garden.id, index = 0))
+    }
+
+    @Test
+    fun manualSort_dropOnCollapsedHeader_appendsToThatSection() {
+        setContent(collapsed = persistentSetOf(chores.id))
+
+        dragOnto(composeTestRule.onNodeWithText("Buy litter"), composeTestRule.onNodeWithText("Home chores"))
+
+        assertThat(events).contains(TasksContract.UiEvent.MoveTaskToSection(taskId = 2, sectionId = chores.id, index = 1))
+    }
+
+    @Test
+    fun manualSort_dragIntoTheUnsectionedArea_clearsTheSection() {
+        setContent()
+
+        dragOnto(composeTestRule.onNodeWithText("Buy litter"), composeTestRule.onNodeWithText("Pay the internet bill"))
+
+        val move = events.filterIsInstance<TasksContract.UiEvent.MoveTaskToSection>().single()
+        assertThat(move.taskId).isEqualTo(2)
+        assertThat(move.sectionId).isNull()
+    }
+
+    /** Long-presses [source] and drags its centre onto the centre of [target]. */
+    private fun dragOnto(
+        source: SemanticsNodeInteraction,
+        target: SemanticsNodeInteraction,
+    ) {
+        composeTestRule.waitForIdle()
+        val from = source.getUnclippedBoundsInRoot()
+        val to = target.getUnclippedBoundsInRoot()
+        val deltaY = with(composeTestRule.density) { ((to.top + to.bottom) / 2 - (from.top + from.bottom) / 2).toPx() }
+        source.performTouchInput {
+            down(center)
+            moveBy(Offset.Zero, delayMillis = viewConfiguration.longPressTimeoutMillis + 100)
+            moveBy(Offset(0f, deltaY / 2), delayMillis = 100)
+            moveBy(Offset(0f, deltaY / 2), delayMillis = 100)
+            up()
+        }
+        composeTestRule.waitForIdle()
     }
 }

@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
@@ -19,6 +19,8 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.AddS
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptySectionPlaceholder
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionHeader
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionNameField
+import com.mandrecode.tempo.features.tasks.presentation.model.DropEntry
+import com.mandrecode.tempo.features.tasks.presentation.model.SectionDropAction
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 
@@ -56,15 +58,25 @@ internal fun LazyListScope.sectionedTaskItems(
     useStickyHeaders: Boolean,
     editState: SectionEditState,
     onEvent: (TasksContract.UiEvent) -> Unit,
-    taskRow: @Composable LazyItemScope.(Task) -> Unit,
+    taskRow: @Composable LazyItemScope.(Task, gestures: Modifier?) -> Unit,
+    dragState: SectionDragState? = null,
 ) {
-    items(items = list.unsectioned, key = { task -> task.id }, contentType = { "task" }) { task -> taskRow(task) }
+    if (dragState?.draggedTaskId != null && list.unsectioned.isEmpty()) {
+        // While dragging, the unsectioned area needs somewhere to drop when it holds no task.
+        item(key = "section_empty_none", contentType = "section_empty") {
+            EmptySectionPlaceholder(
+                isDropTarget = dragState.isTargeting(DropEntry.Kind.Placeholder, null),
+                modifier = Modifier.dropEntry(dragState, "placeholder_none", DropEntry.Kind.Placeholder, null),
+            )
+        }
+    }
+    sectionTasks(list.unsectioned, sectionId = null, dragState, onEvent, taskRow)
 
     list.sections.forEach { sectionUi ->
         val section = sectionUi.section
         val isCollapsed = section.id in collapsedSectionIds
         val header: @Composable LazyItemScope.() -> Unit = {
-            SectionHeaderItem(sectionUi, isCollapsed, editState, onEvent, Modifier.animateItem())
+            SectionHeaderItem(sectionUi, isCollapsed, editState, onEvent, dragState, Modifier.animateItem())
         }
         if (useStickyHeaders) {
             stickyHeader(key = sectionHeaderKey(section.id), contentType = "section_header") { header() }
@@ -72,16 +84,25 @@ internal fun LazyListScope.sectionedTaskItems(
             item(key = sectionHeaderKey(section.id), contentType = "section_header") { header() }
         }
 
-        if (!isCollapsed) {
-            if (sectionUi.tasks.isEmpty()) {
-                item(key = "section_empty_${section.id}", contentType = "section_empty") {
-                    EmptySectionPlaceholder(modifier = Modifier.animateItem())
-                }
-            } else {
-                items(items = sectionUi.tasks, key = { task -> task.id }, contentType = { "task" }) { task ->
-                    taskRow(task)
-                }
+        if (!isCollapsed && sectionUi.tasks.isEmpty()) {
+            item(key = "section_empty_${section.id}", contentType = "section_empty") {
+                EmptySectionPlaceholder(
+                    isDropTarget = dragState?.isTargeting(DropEntry.Kind.Placeholder, section.id) == true,
+                    modifier =
+                        Modifier.animateItem().then(
+                            dragState?.let {
+                                Modifier.dropEntry(
+                                    state = it,
+                                    key = "placeholder_${section.id}",
+                                    kind = DropEntry.Kind.Placeholder,
+                                    sectionId = section.id,
+                                )
+                            } ?: Modifier,
+                        ),
+                )
             }
+        } else if (!isCollapsed) {
+            sectionTasks(sectionUi.tasks, section.id, dragState, onEvent, taskRow)
         }
 
         if ((editState.newSectionDraft as? NewSectionDraft.After)?.sectionId == section.id) {
@@ -98,6 +119,35 @@ internal fun LazyListScope.sectionedTaskItems(
                 modifier = Modifier.animateItem(),
             )
         }
+    }
+}
+
+/**
+ * One section's cards. With [dragState] (Manual sort) each card drags across sections; without it
+ * the row keeps the list's usual within-run reordering.
+ */
+private fun LazyListScope.sectionTasks(
+    tasks: List<Task>,
+    sectionId: Long?,
+    dragState: SectionDragState?,
+    onEvent: (TasksContract.UiEvent) -> Unit,
+    taskRow: @Composable LazyItemScope.(Task, gestures: Modifier?) -> Unit,
+) {
+    itemsIndexed(items = tasks, key = { _, task -> task.id }, contentType = { _, _ -> "task" }) { index, task ->
+        val gestures =
+            dragState?.let { state ->
+                Modifier.sectionDragGestures(state, task.id, sectionId, index) { action ->
+                    onEvent(
+                        when (action) {
+                            is SectionDropAction.Reorder ->
+                                TasksContract.UiEvent.ReorderTasks(action.fromIndex, action.toIndex, tasks)
+                            is SectionDropAction.Move ->
+                                TasksContract.UiEvent.MoveTaskToSection(task.id, action.sectionId, action.index)
+                        },
+                    )
+                }
+            }
+        taskRow(task, gestures)
     }
 }
 
@@ -132,6 +182,7 @@ private fun SectionHeaderItem(
     isCollapsed: Boolean,
     editState: SectionEditState,
     onEvent: (TasksContract.UiEvent) -> Unit,
+    dragState: SectionDragState?,
     modifier: Modifier = Modifier,
 ) {
     val section = sectionUi.section
@@ -157,7 +208,19 @@ private fun SectionHeaderItem(
             onReorderSections = { editState.isReorderSheetVisible = true },
             onAddSectionBelow = { editState.newSectionDraft = NewSectionDraft.After(section.id) },
             onDelete = { onEvent(TasksContract.UiEvent.DeleteSection(section)) },
-            modifier = modifier.padding(top = 8.dp),
+            isDropTarget = dragState?.isTargeting(DropEntry.Kind.Header, section.id) == true,
+            modifier =
+                modifier.padding(top = 8.dp).then(
+                    dragState?.let {
+                        Modifier.dropEntry(
+                            state = it,
+                            key = "header_${section.id}",
+                            kind = DropEntry.Kind.Header,
+                            sectionId = section.id,
+                            taskCount = sectionUi.tasks.size,
+                        )
+                    } ?: Modifier,
+                ),
         )
     }
 }

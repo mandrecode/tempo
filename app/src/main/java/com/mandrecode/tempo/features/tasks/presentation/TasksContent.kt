@@ -208,6 +208,7 @@ fun TasksContent(
                         EmptyStateContent()
                     } else {
                         val dragState = remember { TaskDragState() }
+                        val sectionDragState = remember(uiState.selectedCategoryId) { SectionDragState() }
 
                         LazyColumn(
                             state = listState,
@@ -225,7 +226,7 @@ fun TasksContent(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            val taskRow: @Composable LazyItemScope.(Task) -> Unit = { task ->
+                            val taskRow: @Composable LazyItemScope.(Task, Modifier?) -> Unit = { task, gestures ->
                                 val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
 
                                 TaskListItem(
@@ -238,7 +239,9 @@ fun TasksContent(
                                     modifier =
                                         Modifier
                                             .animateItem()
+                                            .then(gestures ?: Modifier)
                                             .taskReorderGestures(
+                                                enabled = gestures == null,
                                                 reorderableRun = uiState.reorderableRuns[task.id],
                                                 taskId = task.id,
                                                 dragState = dragState,
@@ -263,6 +266,9 @@ fun TasksContent(
                                     editState = sectionEditState,
                                     onEvent = onEvent,
                                     taskRow = taskRow,
+                                    // Moving between sections is setting the order by hand, so it is
+                                    // what Manual sort offers; other sorts keep their tied-run drag.
+                                    dragState = sectionDragState.takeIf { uiState.sortOption == SortOption.MANUAL },
                                 )
                             } else {
                                 val activeEntries =
@@ -290,7 +296,7 @@ fun TasksContent(
                                         key = { task -> task.id },
                                         contentType = { "task" },
                                     ) { task ->
-                                        taskRow(task)
+                                        taskRow(task, null)
                                     }
                                 }
                                 if (sectionEditState.newSectionDraft != null) {
@@ -482,8 +488,9 @@ private fun Modifier.taskReorderGestures(
     taskId: Long,
     dragState: TaskDragState,
     onReorder: (fromIndex: Int, toIndex: Int, tasks: List<Task>) -> Unit,
+    enabled: Boolean = true,
 ): Modifier {
-    if (reorderableRun == null) return this
+    if (reorderableRun == null || !enabled) return this
 
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current

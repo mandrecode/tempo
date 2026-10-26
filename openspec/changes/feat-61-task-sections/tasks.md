@@ -45,8 +45,8 @@
 
 ## 8. Cross-section drag (Manual sort)
 
-- [ ] 8.1 Implement `SectionDropRegistry` (bounds of headers, cards and placeholders) and drop-target resolution. Verify with unit tests on target resolution: between cards, collapsed header, empty placeholder, unsectioned area.
-- [ ] 8.2 Extend the task drag gesture to emit `MoveTaskToSection`, with a target highlight, only in Manual sort. Verify with a Content UI test dragging a card into another section and onto a collapsed header.
+- [x] 8.1 Implement `SectionDropRegistry` (bounds of headers, cards and placeholders) and drop-target resolution. Verify with unit tests on target resolution: between cards, collapsed header, empty placeholder, unsectioned area.
+- [x] 8.2 Extend the task drag gesture to emit `MoveTaskToSection`, with a target highlight, only in Manual sort. Verify with a Content UI test dragging a card into another section and onto a collapsed header.
 
 ## 9. Large and up: shortcut group and two columns
 
