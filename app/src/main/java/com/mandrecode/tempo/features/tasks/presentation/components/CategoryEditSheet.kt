@@ -20,6 +20,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -480,7 +482,8 @@ fun CategoryEditSheet(
 }
 
 /**
- * Turns sections on or off for the category (#61). Off by default; off hides the sections without
+ * Turns sections on or off for the category (#61), drawn as a settings option: a rounded card
+ * with an icon, title, explanation and switch. Off by default; off hides the sections without
  * deleting them, so turning it back on brings them back as they were.
  */
 @Composable
@@ -488,30 +491,45 @@ private fun CategorySectionsToggle(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
 ) {
-    val label = stringResource(R.string.category_sections_label)
-    Row(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange),
-        verticalAlignment = Alignment.CenterVertically,
+    val title = stringResource(R.string.category_sections_label)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
-        Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
-            Icon(
-                painter = painterResource(R.drawable.ic_list),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_list),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.category_sections_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            // The whole card is the control; the switch only shows its state.
+            Switch(checked = checked, onCheckedChange = null)
         }
-        Column(modifier = Modifier.weight(1f).padding(start = 12.dp)) {
-            Text(text = label, style = MaterialTheme.typography.titleMedium)
-            Text(
-                text = stringResource(R.string.category_sections_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        // The row is the control; the switch only shows its state.
-        Switch(checked = checked, onCheckedChange = null)
     }
 }

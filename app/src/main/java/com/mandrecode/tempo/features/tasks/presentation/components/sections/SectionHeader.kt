@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -37,7 +39,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,7 +70,9 @@ import com.mandrecode.tempo.core.ui.theme.sectionHeader
 private const val COLLAPSED_CHEVRON_ROTATION = 0f
 private const val EXPANDED_CHEVRON_ROTATION = 90f
 private const val EMPTY_PLACEHOLDER_ALPHA = 0.6f
+private const val DRAFT_CHEVRON_ALPHA = 0.4f
 private val SectionHeaderMinHeight = 48.dp
+private val SectionNameMaxWidth = 220.dp
 
 /** The leading slot, as wide as the trailing menu button, so both ends of a header sit alike. */
 private val SectionEdgeSlot = 48.dp
@@ -272,9 +275,13 @@ private fun SectionMenuItem(
 }
 
 /**
- * An in-place name field, used both to rename a section and to name a new one: a borderless input
- * on a card-coloured pill, its text where the header's name sits. Saves on the IME action or the
- * check button; [onDismiss] discards.
+ * An in-place name field, used both to rename a section and to name a new one. Drawn as the header
+ * it becomes — chevron slot, name in the header style, hairline — with cancel and save where the
+ * header keeps its add and menu buttons, so naming already looks like the result. Saves on the
+ * keyboard's Done or the check button; [onDismiss] discards.
+ *
+ * Plain [remember], not saveable: the list item for a new section keeps one key, and a saveable
+ * draft would come back pre-filled with the last name the next time a section is added.
  */
 @Composable
 internal fun SectionNameField(
@@ -283,46 +290,56 @@ internal fun SectionNameField(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var name by rememberSaveable { mutableStateOf(initialName) }
+    var name by remember(initialName) { mutableStateOf(initialName) }
     val focusRequester = remember { FocusRequester() }
     LaunchedEffect(Unit) { focusRequester.requestFocus() }
     val confirm = { if (name.isNotBlank()) onConfirm(name) else onDismiss() }
-    Surface(
-        modifier = modifier.fillMaxWidth().heightIn(min = 56.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.background,
+
+    Row(
+        modifier = modifier.fillMaxWidth().heightIn(min = SectionHeaderMinHeight),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Box(modifier = Modifier.size(SectionEdgeSlot), contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_edit),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            SectionNameInput(
-                name = name,
-                onNameChange = { name = it },
-                onDone = confirm,
-                modifier = Modifier.weight(1f).focusRequester(focusRequester),
+        Box(modifier = Modifier.size(SectionEdgeSlot), contentAlignment = Alignment.Center) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary.copy(alpha = DRAFT_CHEVRON_ALPHA),
+                modifier = Modifier.size(22.dp).rotate(EXPANDED_CHEVRON_ROTATION),
             )
-            IconButton(onClick = onDismiss) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_close),
-                    contentDescription = stringResource(R.string.cancel),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            IconButton(onClick = confirm) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_check),
-                    contentDescription = stringResource(R.string.section_save_name),
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
+        }
+        SectionNameInput(
+            name = name,
+            onNameChange = { name = it },
+            onDone = confirm,
+            // Sized to the name (or the placeholder), not a text field's minimum width, so the
+            // hairline follows the text exactly as it will in the header.
+            // Capped rather than weighted: the hairline alone takes the rest of the row, keeping
+            // cancel and save exactly where the header's add and menu buttons sit.
+            modifier =
+                Modifier
+                    .widthIn(max = SectionNameMaxWidth)
+                    .width(IntrinsicSize.Min)
+                    .focusRequester(focusRequester),
+        )
+        HorizontalDivider(
+            modifier = Modifier.weight(1f).padding(start = 12.dp),
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+        IconButton(onClick = onDismiss) {
+            Icon(
+                painter = painterResource(R.drawable.ic_close),
+                contentDescription = stringResource(R.string.cancel),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp),
+            )
+        }
+        IconButton(onClick = confirm) {
+            Icon(
+                painter = painterResource(R.drawable.ic_check),
+                contentDescription = stringResource(R.string.section_save_name),
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }
