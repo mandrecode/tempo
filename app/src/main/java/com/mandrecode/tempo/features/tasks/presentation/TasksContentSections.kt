@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -22,29 +20,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.Sect
 import com.mandrecode.tempo.features.tasks.presentation.model.DropEntry
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
-
-/** Where a section being named will go: last in the category, or right after a section. */
-internal sealed interface NewSectionDraft {
-    data object AtEnd : NewSectionDraft
-
-    data class After(
-        val sectionId: Long,
-    ) : NewSectionDraft
-}
-
-/** The Tasks list's transient section editing state (#61): what is being named or reordered. */
-@Stable
-internal class SectionEditState {
-    var renamingSectionId by mutableStateOf<Long?>(null)
-    var newSectionDraft by mutableStateOf<NewSectionDraft?>(null)
-    var isReorderSheetVisible by mutableStateOf(false)
-}
-
-internal const val SECTION_HEADER_KEY_PREFIX = "section_header_"
-private const val SECTION_EMPTY_KEY_PREFIX = "section_empty_"
-
-/** The lazy-list key of a section's header, also what the shortcut group scrolls to. */
-internal fun sectionHeaderKey(sectionId: Long): String = "$SECTION_HEADER_KEY_PREFIX$sectionId"
 
 /**
  * Emits a category's sectioned active list (#61): unsectioned tasks first, without a header, then
@@ -216,42 +191,4 @@ internal fun SectionHeaderItem(
                 ),
         )
     }
-}
-
-/** The section a one-column list item key belongs to, for the shortcut group's scroll spy. */
-internal fun listKeySection(
-    key: Any?,
-    list: SectionedTaskList,
-): SectionKey =
-    when {
-        key is Long && list.unsectioned.any { it.id == key } -> SectionKey.Of(null)
-        key is Long ->
-            list.sections.firstOrNull { ui -> ui.tasks.any { it.id == key } }?.let { SectionKey.Of(it.section.id) }
-                ?: SectionKey.Unknown
-        key is String && key.startsWith(SECTION_HEADER_KEY_PREFIX) ->
-            SectionKey.Of(key.removePrefix(SECTION_HEADER_KEY_PREFIX).toLongOrNull())
-        key is String && key.startsWith(SECTION_EMPTY_KEY_PREFIX) ->
-            SectionKey.Of(key.removePrefix(SECTION_EMPTY_KEY_PREFIX).toLongOrNull())
-        else -> SectionKey.Unknown
-    }
-
-/**
- * Where [sectionId]'s header sits in the one-column list, mirroring [sectionedTaskItems]'s order:
- * unsectioned tasks, then per section its header, its tasks or placeholder unless collapsed, and a
- * new-section field placed after it.
- */
-internal fun sectionHeaderListIndex(
-    list: SectionedTaskList,
-    collapsedSectionIds: Set<Long>,
-    newSectionDraft: NewSectionDraft?,
-    sectionId: Long,
-): Int {
-    var index = list.unsectioned.size
-    for (sectionUi in list.sections) {
-        val id = sectionUi.section.id
-        if (id == sectionId) return index
-        index += 1 + if (id in collapsedSectionIds) 0 else sectionUi.tasks.size.coerceAtLeast(1)
-        if ((newSectionDraft as? NewSectionDraft.After)?.sectionId == id) index++
-    }
-    return 0
 }

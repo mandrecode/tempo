@@ -19,7 +19,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.AddS
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptySectionPlaceholder
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionNameField
 import com.mandrecode.tempo.features.tasks.presentation.model.DropEntry
-import com.mandrecode.tempo.features.tasks.presentation.model.SectionDropAction
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
@@ -28,28 +27,6 @@ import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 internal val TwoColumnSectionsMinWidth: Dp = 900.dp
 
 private const val GRID_COLUMNS = 2
-internal const val GRID_UNSECTIONED_KEY = "grid_unsectioned"
-private const val GRID_SECTION_KEY_PREFIX = "grid_section_"
-
-internal fun gridSectionKey(sectionId: Long): String = "$GRID_SECTION_KEY_PREFIX$sectionId"
-
-/** The section a grid item key belongs to, or null for the unsectioned block; [Unknown] otherwise. */
-internal fun gridKeySection(key: Any?): SectionKey =
-    when {
-        key == GRID_UNSECTIONED_KEY -> SectionKey.Of(null)
-        key is String && key.startsWith(GRID_SECTION_KEY_PREFIX) ->
-            SectionKey.Of(key.removePrefix(GRID_SECTION_KEY_PREFIX).toLongOrNull())
-        else -> SectionKey.Unknown
-    }
-
-/** Which section a list or grid item belongs to, for the shortcut group's scroll spy. */
-internal sealed interface SectionKey {
-    data class Of(
-        val sectionId: Long?,
-    ) : SectionKey
-
-    data object Unknown : SectionKey
-}
 
 /**
  * A wide pane's sectioned list (#61): the unsectioned block across both columns, then each section
@@ -164,18 +141,6 @@ private fun SectionCards(
         }
     }
 }
-
-/** The event a drop turns into: a reorder inside the start section, a move anywhere else. */
-internal fun sectionDropEvent(
-    action: SectionDropAction,
-    task: Task,
-    sectionTasks: List<Task>,
-): TasksContract.UiEvent =
-    when (action) {
-        is SectionDropAction.Reorder ->
-            TasksContract.UiEvent.ReorderTasks(action.fromIndex, action.toIndex, sectionTasks)
-        is SectionDropAction.Move -> TasksContract.UiEvent.MoveTaskToSection(task.id, action.sectionId, action.index)
-    }
 
 /**
  * The Completed block as one piece, for the two-column grid: the same separator, groups and clear

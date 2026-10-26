@@ -61,10 +61,10 @@
 
 ## 11. Integration verification
 
-- [ ] 11.1 Run `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, `./gradlew :app:detekt` (baseline must not grow) and `./gradlew testDebugUnitTest`, and verify all pass.
-- [ ] 11.2 Run `./gradlew koverVerifyDebug` and verify the 80% line and 70% branch thresholds hold.
-- [ ] 11.3 Run `./gradlew connectedDebugAndroidTest` on the Pixel 10 AVD, then smoke-test the S&V scenario on the Pixel 7: create sections, move tasks, collapse, delete with undo, backup round-trip. Verify the issue's acceptance criteria.
-- [ ] 11.4 Run `openspec validate feat-61-task-sections --strict` and verify it passes.
+- [x] 11.1 Run `./gradlew ktlintFormat`, `./gradlew ktlintCheck`, `./gradlew :app:detekt` (baseline must not grow) and `./gradlew testDebugUnitTest`, and verify all pass.
+- [x] 11.2 Run `./gradlew koverVerifyDebug` and verify the 80% line and 70% branch thresholds hold.
+- [x] 11.3 Run `./gradlew connectedDebugAndroidTest` on the Pixel 10 AVD, then smoke-test the S&V scenario on the Pixel 7: create sections, move tasks, collapse, delete with undo, backup round-trip. Verify the issue's acceptance criteria.
+- [x] 11.4 Run `openspec validate feat-61-task-sections --strict` and verify it passes.
 
 ## Workflow follow-up
 
