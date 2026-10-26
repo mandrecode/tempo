@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -35,11 +33,8 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPadding
-import com.mandrecode.tempo.core.ui.adaptive.DockedEditorWidth
+import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPane
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
-import com.mandrecode.tempo.core.ui.adaptive.dockedEditorEnterTransition
-import com.mandrecode.tempo.core.ui.adaptive.dockedEditorExitTransition
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
@@ -50,6 +45,7 @@ import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartP
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
+import com.mandrecode.tempo.core.ui.navigation.animatedDockedContentBias
 import com.mandrecode.tempo.core.ui.navigation.animatedRailClearance
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
 import com.mandrecode.tempo.core.ui.navigation.isFloatingNavigationRailLayout
@@ -135,10 +131,13 @@ fun TasksScreen(
                 else -> FloatingRailContentStartPadding
             },
         )
+    val isEditorDocked = isDockedEditor && uiState.taskForm.isVisible
+    val contentBias = animatedDockedContentBias(isEditorDocked)
+    var contentBlockTop by remember { mutableStateOf(0.dp) }
     var editorDismissRequestKey by remember { mutableIntStateOf(0) }
     val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
     LaunchedEffect(isDockedEditor, uiState.taskForm.isVisible) {
-        currentOnDockedEditorVisibilityChange(isDockedEditor && uiState.taskForm.isVisible)
+        currentOnDockedEditorVisibilityChange(isEditorDocked)
     }
     val onAddTask =
         remember(viewModel) {
@@ -197,22 +196,32 @@ fun TasksScreen(
     val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.taskForm.isVisible)
 
     Box(modifier = modifier.fillMaxSize()) {
-        Row(modifier = Modifier.fillMaxSize()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    // Explicit fill, not left to the root Surface behind it: on rail/expanded
+                    // layouts adaptiveScreenContentLayout insets the Scaffold below to clear the
+                    // floating rail, and the docked editor pane leaves a gutter and margins around
+                    // its card, exposing this Row's own background in those gaps. It must match
+                    // the Scaffold's top-block color, not whatever the root happens to be (root is
+                    // deliberately colorScheme.surface — see MainActivity — to avoid a different
+                    // flash on the tab-switch crossfade). On the Row rather than each child so the
+                    // pane's fade-in doesn't blend its gutter up from the white root.
+                    .background(MaterialTheme.colorScheme.background),
+        ) {
             Box(
                 modifier =
                     Modifier
                         .weight(1f)
-                        .fillMaxHeight()
-                        // Explicit fill, not left to the root Surface behind it: on rail/expanded
-                        // layouts adaptiveScreenContentLayout insets the Scaffold below to clear
-                        // the floating rail, exposing this Box's own background in that gutter.
-                        // It must match the Scaffold's top-block color, not whatever the root
-                        // happens to be (root is deliberately colorScheme.surface — see
-                        // MainActivity — to avoid a different flash on the tab-switch crossfade).
-                        .background(MaterialTheme.colorScheme.background),
+                        .fillMaxHeight(),
             ) {
                 Scaffold(
-                    modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
+                    modifier =
+                        Modifier.adaptiveScreenContentLayout(
+                            railClearance = railContentClearance,
+                            horizontalBias = contentBias,
+                        ),
                     containerColor = MaterialTheme.colorScheme.background,
                     contentWindowInsets = WindowInsets(0),
                     topBar = topBar,
@@ -225,6 +234,7 @@ fun TasksScreen(
                             onEvent = onContentEvent,
                             onScrolledFromTopChange = { isListScrolledFromTop.value = it },
                             selectedTaskId = uiState.taskForm.editingTask?.id,
+                            onContentBlockTopChange = { contentBlockTop = it },
                         )
 
                         Box(
@@ -240,28 +250,12 @@ fun TasksScreen(
                     }
                 }
             }
-            AnimatedVisibility(
-                visible = isDockedEditor && uiState.taskForm.isVisible,
-                enter = dockedEditorEnterTransition(),
-                exit = dockedEditorExitTransition(),
-            ) {
-                Box(
-                    modifier =
-                        Modifier
-                            .width(DockedEditorWidth)
-                            .fillMaxHeight()
-                            .padding(
-                                end = DockedEditorPadding,
-                                top = DockedEditorPadding,
-                                bottom = DockedEditorPadding,
-                            ),
-                ) {
-                    // Only while docked is where the editor belongs. When the window narrows past the
-                    // breakpoint the pane still plays its exit, but the editor has to move to the sheet
-                    // in the same frame, not be in both: a second copy would start empty and lose the draft.
-                    if (isDockedEditor) {
-                        editorContent(frozenUiState, editorPlacement)
-                    }
+            DockedEditorPane(visible = isEditorDocked, contentBlockTop = contentBlockTop) {
+                // Only while docked is where the editor belongs. When the window narrows past the
+                // breakpoint the pane still plays its exit, but the editor has to move to the sheet
+                // in the same frame, not be in both: a second copy would start empty and lose the draft.
+                if (isDockedEditor) {
+                    editorContent(frozenUiState, editorPlacement)
                 }
             }
         }

@@ -20,6 +20,9 @@ internal const val PHONE_SPEC = "spec:width=411dp,height=891dp,dpi=160"
 internal const val FOLDABLE_SPEC = "spec:width=673dp,height=841dp,dpi=160"
 internal const val TABLET_SPEC = "spec:width=1280dp,height=800dp,dpi=160"
 
+/** The Extra-large width class (1600 dp): docked editors with spare room beside the readable column. */
+internal const val EXTRA_LARGE_SPEC = "spec:width=1600dp,height=1000dp,dpi=160"
+
 @Preview(name = "phone", device = PHONE_SPEC, showBackground = true)
 @Preview(
     name = "phone-dark",
@@ -44,7 +47,7 @@ internal const val TABLET_SPEC = "spec:width=1280dp,height=800dp,dpi=160"
 annotation class PreviewAdaptiveFormFactors
 
 /**
- * Just the docking width, light and dark.
+ * The docking widths — Large ([TABLET_SPEC]) and Extra-large ([EXTRA_LARGE_SPEC]) — light and dark.
  *
  * For composables that only *render* past the 1200dp breakpoint — anything routed through
  * `TempoModalSheet`, which is a `Dialog` below it, and layoutlib does not render dialog windows
@@ -57,6 +60,13 @@ annotation class PreviewAdaptiveFormFactors
 @Preview(
     name = "tablet-dark",
     device = TABLET_SPEC,
+    showBackground = true,
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+)
+@Preview(name = "extra-large", device = EXTRA_LARGE_SPEC, showBackground = true)
+@Preview(
+    name = "extra-large-dark",
+    device = EXTRA_LARGE_SPEC,
     showBackground = true,
     uiMode = Configuration.UI_MODE_NIGHT_YES,
 )

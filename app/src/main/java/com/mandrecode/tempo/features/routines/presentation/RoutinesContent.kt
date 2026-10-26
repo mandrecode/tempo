@@ -39,9 +39,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
@@ -84,7 +87,9 @@ fun RoutinesContent(
     showAddHabitButton: Boolean = true,
     selectedHabitId: Long? = null,
     selectedHabitChainId: Long? = null,
+    onContentBlockTopChange: (Dp) -> Unit = {},
 ) {
+    val density = LocalDensity.current
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
@@ -117,7 +122,15 @@ fun RoutinesContent(
             Column(
                 modifier = Modifier.fillMaxSize(),
             ) {
-                Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)) {
+                // The header's height is where the rounded content block starts, which a docked
+                // editor pane beside this content lines its own surface up with (DockedEditorPane).
+                Box(
+                    modifier =
+                        Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.background)
+                            .onSizeChanged { onContentBlockTopChange(with(density) { it.height.toDp() }) },
+                ) {
                     DayFilterRow(
                         selectedDate = uiState.selectedDate,
                         onSelectDate = { onEvent(RoutinesContract.UiEvent.SelectDate(it)) },
