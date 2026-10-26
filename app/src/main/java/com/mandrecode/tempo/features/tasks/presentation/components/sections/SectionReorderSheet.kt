@@ -1,0 +1,159 @@
+package com.mandrecode.tempo.features.tasks.presentation.components.sections
+
+import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.zIndex
+import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
+import com.mandrecode.tempo.core.ui.theme.sectionHeader
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
+import kotlinx.collections.immutable.ImmutableList
+import kotlin.math.roundToInt
+
+private val ReorderRowHeight = 56.dp
+private val ReorderRowSpacing = 6.dp
+private const val DRAGGED_ROW_ALPHA = 0.9f
+
+/**
+ * Reorders a category's sections (#61) on a surface of their own, so moving a whole section never
+ * means dragging it through a long list. Each row drags by its handle; dropping it reports the move.
+ */
+@Composable
+internal fun SectionReorderSheet(
+    sections: ImmutableList<TaskSection>,
+    onReorder: (fromIndex: Int, toIndex: Int, sections: List<TaskSection>) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    TempoModalBottomSheet(onDismissRequest = onDismiss, adaptivePlacement = true) { onRequestDismiss ->
+        Column(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = stringResource(R.string.section_reorder),
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = onRequestDismiss) { Text(stringResource(R.string.section_reorder_done)) }
+            }
+            ReorderableSectionRows(sections = sections, onReorder = onReorder)
+        }
+    }
+}
+
+@Composable
+private fun ReorderableSectionRows(
+    sections: ImmutableList<TaskSection>,
+    onReorder: (fromIndex: Int, toIndex: Int, sections: List<TaskSection>) -> Unit,
+) {
+    val haptic = LocalHapticFeedback.current
+    val stepPx = with(LocalDensity.current) { (ReorderRowHeight + ReorderRowSpacing).toPx() }
+    var draggedIndex by remember { mutableIntStateOf(-1) }
+    var dragOffset by remember { mutableFloatStateOf(0f) }
+
+    fun targetOf(from: Int) = (from + (dragOffset / stepPx).roundToInt()).coerceIn(0, sections.lastIndex)
+    val targetIndex = if (draggedIndex < 0) -1 else targetOf(draggedIndex)
+
+    Column(verticalArrangement = Arrangement.spacedBy(ReorderRowSpacing), modifier = Modifier.padding(top = 8.dp)) {
+        sections.forEachIndexed { index, section ->
+            val isDragged = index == draggedIndex
+            SectionReorderRow(
+                name = section.name,
+                isDragged = isDragged,
+                isTarget = index == targetIndex && !isDragged,
+                dragOffset = if (isDragged) dragOffset else 0f,
+                dragKey = sections,
+                handleDragGestures = {
+                    detectDragGestures(
+                        onDragStart = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            draggedIndex = index
+                            dragOffset = 0f
+                        },
+                        onDrag = { change, amount ->
+                            change.consume()
+                            dragOffset += amount.y
+                        },
+                        onDragEnd = {
+                            val from = draggedIndex
+                            if (from >= 0 && targetOf(from) != from) onReorder(from, targetOf(from), sections)
+                            draggedIndex = -1
+                            dragOffset = 0f
+                        },
+                        onDragCancel = {
+                            draggedIndex = -1
+                            dragOffset = 0f
+                        },
+                    )
+                },
+            )
+        }
+    }
+}
+
+@Composable
+private fun SectionReorderRow(
+    name: String,
+    isDragged: Boolean,
+    isTarget: Boolean,
+    dragOffset: Float,
+    dragKey: Any,
+    handleDragGestures: suspend PointerInputScope.() -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = if (isDragged) colors.surfaceContainerHighest else colors.surfaceContainer,
+        shadowElevation = if (isDragged) 6.dp else 0.dp,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(ReorderRowHeight)
+                .zIndex(if (isDragged) 1f else 0f)
+                .graphicsLayer {
+                    translationY = dragOffset
+                    alpha = if (isDragged) DRAGGED_ROW_ALPHA else 1f
+                },
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
+            Icon(
+                painter = painterResource(R.drawable.ic_drag_handle),
+                contentDescription = stringResource(R.string.section_reorder),
+                tint = colors.onSurfaceVariant,
+                modifier = Modifier.pointerInput(dragKey, block = handleDragGestures).size(48.dp).padding(12.dp),
+            )
+            Text(
+                text = name,
+                style = MaterialTheme.typography.sectionHeader,
+                color = if (isTarget) colors.primary else colors.onSurface,
+            )
+        }
+    }
+}

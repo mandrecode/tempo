@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -64,6 +65,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.CategoryChipRow
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptyStateContent
+import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionReorderSheet
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
@@ -71,6 +73,7 @@ import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -118,6 +121,10 @@ fun TasksContent(
     val activeTaskGroups = uiState.activeTasks
     val completedTaskGroups = uiState.completedTaskGroups
     val subtasksMap = uiState.subtasksMap
+    val sectionedList = uiState.sectionedList
+    // Naming, renaming and reordering sections (#61) are screen-local and end with the category.
+    val sectionEditState = remember(uiState.selectedCategoryId) { SectionEditState() }
+    val useStickySectionHeaders = isShortWindow()
 
     val hasCompletedTasks by remember(completedTaskGroups) {
         derivedStateOf {
@@ -175,6 +182,7 @@ fun TasksContent(
                             TasksContract.UiEvent.ReorderCategories(fromIndex, toIndex, categories),
                         )
                     },
+                    onAddSection = { sectionEditState.newSectionDraft = NewSectionDraft.AtEnd },
                 )
 
                 Box(
@@ -192,7 +200,11 @@ fun TasksContent(
                                 ),
                             ).background(MaterialTheme.colorScheme.surface),
                 ) {
-                    if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
+                    val hasNothingToList = !hasActiveTasks && completedTaskGroups.isEmpty()
+                    // A category with sections lists them even when empty, and naming the first
+                    // section needs the list too (#61).
+                    val hasSectionUi = sectionedList != null || sectionEditState.newSectionDraft != null
+                    if (hasNothingToList && !hasSectionUi) {
                         EmptyStateContent()
                     } else {
                         val dragState = remember { TaskDragState() }
@@ -213,57 +225,79 @@ fun TasksContent(
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                             modifier = Modifier.fillMaxSize(),
                         ) {
-                            val activeEntries =
-                                sortedActiveEntries(
-                                    groups = activeTaskGroups,
-                                    sortOption = uiState.sortOption,
-                                )
-                            val showActiveHeaders =
-                                uiState.sortOption == SortOption.BY_DATE ||
-                                    uiState.sortOption == SortOption.BY_PRIORITY
+                            val taskRow: @Composable LazyItemScope.(Task) -> Unit = { task ->
+                                val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
 
-                            activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
-                                if (showActiveHeaders) {
-                                    item(key = "active_header_${key.stableKey}") {
-                                        ActiveGroupHeader(
-                                            label = resolveActiveGroupLabel(key),
-                                            isFirst = groupIndex == 0,
-                                            modifier = Modifier.animateItem(),
-                                        )
+                                TaskListItem(
+                                    task = task,
+                                    subtasks = taskSubtasks,
+                                    isSubtasksExpanded =
+                                        task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
+                                    isSelected = task.id == selectedTaskId,
+                                    onEvent = onRowEvent,
+                                    modifier =
+                                        Modifier
+                                            .animateItem()
+                                            .taskReorderGestures(
+                                                reorderableRun = uiState.reorderableRuns[task.id],
+                                                taskId = task.id,
+                                                dragState = dragState,
+                                                onReorder = { from, to, runTasks ->
+                                                    onEvent(
+                                                        TasksContract.UiEvent.ReorderTasks(
+                                                            from,
+                                                            to,
+                                                            runTasks,
+                                                        ),
+                                                    )
+                                                },
+                                            ),
+                                )
+                            }
+
+                            if (sectionedList != null) {
+                                sectionedTaskItems(
+                                    list = sectionedList,
+                                    collapsedSectionIds = uiState.collapsedSectionIds,
+                                    useStickyHeaders = useStickySectionHeaders,
+                                    editState = sectionEditState,
+                                    onEvent = onEvent,
+                                    taskRow = taskRow,
+                                )
+                            } else {
+                                val activeEntries =
+                                    sortedActiveEntries(
+                                        groups = activeTaskGroups,
+                                        sortOption = uiState.sortOption,
+                                    )
+                                val showActiveHeaders =
+                                    uiState.sortOption == SortOption.BY_DATE ||
+                                        uiState.sortOption == SortOption.BY_PRIORITY
+
+                                activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
+                                    if (showActiveHeaders) {
+                                        item(key = "active_header_${key.stableKey}") {
+                                            ActiveGroupHeader(
+                                                label = resolveActiveGroupLabel(key),
+                                                isFirst = groupIndex == 0,
+                                                modifier = Modifier.animateItem(),
+                                            )
+                                        }
+                                    }
+
+                                    items(
+                                        items = tasksForGroup,
+                                        key = { task -> task.id },
+                                        contentType = { "task" },
+                                    ) { task ->
+                                        taskRow(task)
                                     }
                                 }
-
-                                items(
-                                    items = tasksForGroup,
-                                    key = { task -> task.id },
-                                    contentType = { "task" },
-                                ) { task ->
-                                    val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
-
-                                    TaskListItem(
-                                        task = task,
-                                        subtasks = taskSubtasks,
-                                        isSubtasksExpanded =
-                                            task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
-                                        isSelected = task.id == selectedTaskId,
-                                        onEvent = onRowEvent,
-                                        modifier =
-                                            Modifier
-                                                .animateItem()
-                                                .taskReorderGestures(
-                                                    reorderableRun = uiState.reorderableRuns[task.id],
-                                                    taskId = task.id,
-                                                    dragState = dragState,
-                                                    onReorder = { from, to, runTasks ->
-                                                        onEvent(
-                                                            TasksContract.UiEvent.ReorderTasks(
-                                                                from,
-                                                                to,
-                                                                runTasks,
-                                                            ),
-                                                        )
-                                                    },
-                                                ),
+                                if (sectionEditState.newSectionDraft != null) {
+                                    newSectionField(
+                                        afterSectionId = null,
+                                        editState = sectionEditState,
+                                        onEvent = onEvent,
                                     )
                                 }
                             }
@@ -341,11 +375,21 @@ fun TasksContent(
                 }
             }
         }
+
+        if (sectionEditState.isReorderSheetVisible && sectionedList != null) {
+            SectionReorderSheet(
+                sections = sectionedList.sections.map { it.section }.toPersistentList(),
+                onReorder = { from, to, sections ->
+                    onEvent(TasksContract.UiEvent.ReorderSections(from, to, sections))
+                },
+                onDismiss = { sectionEditState.isReorderSheetVisible = false },
+            )
+        }
     }
 }
 
 @Composable
-private fun TaskListItem(
+internal fun TaskListItem(
     task: Task,
     subtasks: ImmutableList<Task>,
     isSubtasksExpanded: Boolean,

@@ -282,8 +282,11 @@ object TasksContract {
         data object OnPermissionsGranted : UiEvent
 
         // Sections (#61)
+
+        /** Adds a section, last in the category or right after [afterSectionId]. */
         data class AddSection(
             val name: String,
+            val afterSectionId: Long? = null,
         ) : UiEvent
 
         data class RenameSection(

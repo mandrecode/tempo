@@ -265,6 +265,24 @@
     <string name="msg_section_name_too_long">Section name is too long</string>
     <string name="msg_section_deleted_prefix">Section</string>
     <string name="msg_section_deleted_suffix">\u0020deleted. Its tasks moved to No section</string>
+    <string name="section_add">Add section</string>
+    <string name="section_name_label">Section name</string>
+    <string name="section_save_name">Save section name</string>
+    <string name="section_add_task_cd">Add task to %1$s</string>
+    <string name="section_options_cd">%1$s section options</string>
+    <string name="section_rename">Rename</string>
+    <string name="section_reorder">Reorder sections</string>
+    <string name="section_add_below">Add section below</string>
+    <string name="section_delete">Delete section</string>
+    <string name="section_empty_placeholder">No tasks yet — add one or drag it here</string>
+    <string name="section_state_expanded">Expanded</string>
+    <string name="section_state_collapsed">Collapsed</string>
+    <string name="section_none">No section</string>
+    <string name="section_reorder_done">Done</string>
+    <plurals name="section_overdue_count">
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
     <string name="msg_category_delete_failed">Failed to delete category: %1$s</string>
     <string name="msg_cannot_delete_last_category">Cannot delete the last category</string>
     <string name="msg_cannot_delete_inbox">The Inbox category cannot be deleted</string>

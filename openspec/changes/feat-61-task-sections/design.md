@@ -75,7 +75,7 @@ The existing `taskReorderGestures` estimates positions from a fixed item height,
 - *Rename:* an in-place `TextField` in the header that confirms on IME Done or the check button and discards on back or focus loss.
 - *Reorder:* a `TempoModalBottomSheet` (adaptive placement) with a drag-reorderable list.
 - *Delete:* immediate deletion with a snackbar carrying Undo, following the pending-deletion pattern already used for tasks.
-- *Add:* an "Add section" text button at the end of the active list at every width, "Add section below" in the header menu, and the shortcut group's Add button on Large and up.
+- *Add:* the first section is added from the selected category chip's menu ("Add section"), so a category without sections shows nothing new in its list. Once a category has sections, an "Add section" text button follows them at every width, the header menu offers "Add section below", and the shortcut group has an Add button on Large and up. All of them name the section in place, with the same field rename uses.
 
 ### Backup
 `BackupFileDto.taskSections: List<TaskSectionBackupDto> = emptyList()` and `TaskBackupDto.sectionId: Long? = null` stay under schema version 1, per the DTO's evolution rules.

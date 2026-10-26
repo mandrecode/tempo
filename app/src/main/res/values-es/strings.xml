@@ -283,6 +283,24 @@
     <string name="msg_section_name_too_long">El nombre de la sección es demasiado largo</string>
     <string name="msg_section_deleted_prefix">Sección</string>
     <string name="msg_section_deleted_suffix">\u0020eliminada. Sus tareas pasaron a Sin sección</string>
+    <string name="section_add">Añadir sección</string>
+    <string name="section_name_label">Nombre de la sección</string>
+    <string name="section_save_name">Guardar nombre de la sección</string>
+    <string name="section_add_task_cd">Añadir tarea a %1$s</string>
+    <string name="section_options_cd">Opciones de la sección %1$s</string>
+    <string name="section_rename">Renombrar</string>
+    <string name="section_reorder">Reordenar secciones</string>
+    <string name="section_add_below">Añadir sección debajo</string>
+    <string name="section_delete">Eliminar sección</string>
+    <string name="section_empty_placeholder">Aún no hay tareas: añade una o arrástrala aquí</string>
+    <string name="section_state_expanded">Expandida</string>
+    <string name="section_state_collapsed">Contraída</string>
+    <string name="section_none">Sin sección</string>
+    <string name="section_reorder_done">Listo</string>
+    <plurals name="section_overdue_count">
+        <item quantity="one">%1$d vencida</item>
+        <item quantity="other">%1$d vencidas</item>
+    </plurals>
     <string name="msg_category_delete_failed">Error al eliminar categoría: %1$s</string>
     <string name="msg_cannot_delete_last_category">No se puede eliminar la última categoría</string>
     <string name="msg_cannot_delete_inbox">La categoría Bandeja de entrada no se puede eliminar</string>

@@ -34,10 +34,10 @@
 
 ## 6. Tasks list UI: headers and management
 
-- [ ] 6.1 Build the `SectionHeader` composable (expanded, collapsed with overdue badge, accessible labels, 48 dp targets), the empty-section placeholder and the end-of-list "Add section" button, with `@Preview`s in `src/debug/`. Verify the previews render in light and dark.
-- [ ] 6.2 Render the sectioned list in `TasksContent` (unsectioned, sections, Completed block unchanged), with collapse animation and `stickyHeader` when the window height is under 480 dp. Verify with Content UI tests for order, collapse, empty placeholder and no-section parity.
-- [ ] 6.3 Add the section menu, in-place rename and the reorder sheet (`TempoModalBottomSheet`, adaptive placement). Verify with Content UI tests for rename confirm/dismiss and reorder.
-- [ ] 6.4 Make the header's add action open the editor with category and section preselected. Verify with a UI test.
+- [x] 6.1 Build the `SectionHeader` composable (expanded, collapsed with overdue badge, accessible labels, 48 dp targets), the empty-section placeholder and the end-of-list "Add section" button, with `@Preview`s in `src/debug/`. Verify the previews render in light and dark.
+- [x] 6.2 Render the sectioned list in `TasksContent` (unsectioned, sections, Completed block unchanged), with collapse animation and `stickyHeader` when the window height is under 480 dp. Verify with Content UI tests for order, collapse, empty placeholder and no-section parity.
+- [x] 6.3 Add the section menu, in-place rename and the reorder sheet (`TempoModalBottomSheet`, adaptive placement). Verify with Content UI tests for rename confirm/dismiss and reorder.
+- [x] 6.4 Make the header's add action open the editor with category and section preselected. Verify with a UI test.
 
 ## 7. Task editor Section row
 

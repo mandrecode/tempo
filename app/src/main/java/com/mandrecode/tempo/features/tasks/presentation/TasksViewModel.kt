@@ -228,7 +228,7 @@ class TasksViewModel
                         event.toIndex,
                         event.subtasks,
                     )
-                is TasksContract.UiEvent.AddSection -> addSection(event.name)
+                is TasksContract.UiEvent.AddSection -> addSection(event.name, event.afterSectionId)
                 is TasksContract.UiEvent.RenameSection -> renameSection(event.sectionId, event.name)
                 is TasksContract.UiEvent.ReorderSections ->
                     reorderSections(event.fromIndex, event.toIndex, event.sections)

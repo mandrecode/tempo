@@ -12,11 +12,21 @@ import kotlinx.coroutines.launch
 // Section actions for the Tasks screen (#61). Every write goes through a use case; the list
 // itself refreshes from the sections flow in [loadData].
 
-internal fun TasksViewModel.addSection(name: String) {
+internal fun TasksViewModel.addSection(
+    name: String,
+    afterSectionId: Long? = null,
+) {
     val categoryId = mutableUiState.value.selectedCategoryId
     launchSectionAction {
-        when (sectionUseCases.create(categoryId, name)) {
-            is CreateTaskSectionUseCase.Result.Success -> Unit
+        when (val result = sectionUseCases.create(categoryId, name)) {
+            is CreateTaskSectionUseCase.Result.Success ->
+                // A new section is created last; "Add section below" then moves it under its neighbour.
+                if (afterSectionId != null) {
+                    val sections = sectionUseCases.repository.getSectionsByCategory(categoryId)
+                    val from = sections.indexOfFirst { it.id == result.sectionId }
+                    val to = sections.indexOfFirst { it.id == afterSectionId } + 1
+                    sectionUseCases.reorder(from, to, sections)
+                }
             CreateTaskSectionUseCase.Result.EmptyName -> showSnackbar(R.string.msg_section_name_empty)
             CreateTaskSectionUseCase.Result.TooLong -> showSnackbar(R.string.msg_section_name_too_long)
         }

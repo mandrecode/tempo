@@ -6,10 +6,17 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.preview.PreviewFormFactors
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
+import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
+import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
+import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
+import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.persistentMapOf
+import kotlinx.collections.immutable.persistentSetOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
 import kotlinx.datetime.LocalDate
@@ -467,6 +474,50 @@ private fun TasksContentPreviewFormFactors() {
                     isLoading = false,
                     sortOption = SortOption.BY_DATE,
                     activeTasks = activeTaskGroups.toActivePreviewMap(),
+                ),
+            onEvent = {},
+        )
+    }
+}
+
+/** The motivating case for sections (#61): one shared list, structured inside. */
+@PreviewFormFactors
+@Composable
+private fun TasksContentSectionedPreviewFormFactors() {
+    val sv = Category(id = 3, name = "S&V", icon = "home", isDefault = true)
+    val cat = TaskSection(id = 10, categoryId = 3, name = "Cat", sortOrder = 0)
+    val chores = TaskSection(id = 11, categoryId = 3, name = "Home chores", sortOrder = 1)
+    val shopping = TaskSection(id = 12, categoryId = 3, name = "Shopping", sortOrder = 2)
+    val garden = TaskSection(id = 13, categoryId = 3, name = "Garden", sortOrder = 3)
+
+    fun task(
+        id: Long,
+        title: String,
+        sectionId: Long?,
+    ) = Task(id = id, title = title, description = "", categoryId = sv.id, sectionId = sectionId)
+
+    val list =
+        SectionedTaskList(
+            unsectioned = persistentListOf(task(1, "Pay the internet bill", null)),
+            sections =
+                persistentListOf(
+                    SectionUi(cat, persistentListOf(task(2, "Buy litter", cat.id), task(3, "Book vet check-up", cat.id)), 0),
+                    SectionUi(chores, persistentListOf(task(4, "Run the dishwasher", chores.id)), 1),
+                    SectionUi(shopping, persistentListOf(task(5, "Oat milk", shopping.id)), 0),
+                    SectionUi(garden, persistentListOf(), 0),
+                ),
+        )
+
+    TempoTheme {
+        TasksContent(
+            uiState =
+                TasksContract.UiState(
+                    isLoading = false,
+                    categories = persistentListOf(sv),
+                    selectedCategoryId = sv.id,
+                    sectionedList = list,
+                    activeTasks = persistentMapOf(ActiveGroupKey.Flat to persistentListOf(task(1, "Pay the internet bill", null))),
+                    collapsedSectionIds = persistentSetOf(chores.id),
                 ),
             onEvent = {},
         )
