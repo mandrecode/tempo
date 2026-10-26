@@ -364,8 +364,11 @@ class MigrationTest {
     }
 
     @Test
-    fun migrate11To12_addsTaskSectionsAndLeavesTasksUnsectioned() {
+    fun migrate11To12_addsTaskSectionsAndLeavesEverythingUnsectioned() {
         helper.createDatabase(DB_NAME, 11).use { db ->
+            db.execSQL(
+                "INSERT INTO categories (id, name, color, icon, isDefault, sortOrder) VALUES (-1, 'Inbox', NULL, 'inbox', 1, -1)",
+            )
             db.execSQL(
                 """
                 INSERT INTO tasks (id, title, description, isCompleted, categoryId, priority,
@@ -385,6 +388,10 @@ class MigrationTest {
                 db.query("SELECT sectionId FROM tasks WHERE id = 1").use { cursor ->
                     assertThat(cursor.moveToFirst()).isTrue()
                     assertThat(cursor.isNull(0)).isTrue()
+                }
+                db.query("SELECT sectionsEnabled FROM categories WHERE id = -1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.getInt(0)).isEqualTo(0)
                 }
                 db.execSQL("INSERT INTO task_sections (categoryId, name, sortOrder) VALUES (-1, 'Cat', 0)")
                 db.query("SELECT name FROM task_sections WHERE categoryId = -1").use { cursor ->

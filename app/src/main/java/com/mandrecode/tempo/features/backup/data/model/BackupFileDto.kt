@@ -102,6 +102,8 @@ data class CategoryBackupDto(
     val icon: String? = null,
     val isDefault: Boolean = false,
     val sortOrder: Int = 0,
+    /** Whether the category uses sections (#61); absent (off) in files written before them. */
+    val sectionsEnabled: Boolean = false,
 )
 
 @Serializable

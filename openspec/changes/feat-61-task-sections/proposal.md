@@ -7,7 +7,7 @@ Timing: a section is a new entity, so it needs a sync-safe identity and a place 
 ## What Changes
 
 - **A `TaskSection` entity** (`id`, `categoryId`, `name`, `sortOrder`), owned by exactly one category. A section is a divider. It has no due date, priority, reminder, recurrence, icon, colour, default flag or sharing identity of its own.
-- **Tasks gain an optional `sectionId`.** Tasks with no section keep working exactly as today and render above every section. A category with no sections looks and behaves exactly as it does today.
+- **Tasks gain an optional `sectionId`.** Tasks with no section keep working exactly as today and render above every section. Sections are opt-in per category from its edit sheet (off by default), and a category with them off looks and behaves exactly as it does today.
 - **Section headers in the Tasks list** at every width: collapsible, with a task count, an overdue badge while collapsed, a quick "add task here" action and a section menu (Rename in place, Reorder sections, Add section below, Delete). An empty section stays visible with a drop placeholder. The header stays pinned at the top while scrolling on short windows.
 - **Sections are the outer grouping under every sort.** The date and priority group headers are not shown inside a section, but tasks inside a section still follow the chosen sort. Completed tasks stay in the single existing "Completed" block at the bottom.
 - **Moving tasks:** drag a task into another section in Manual sort. Pick a section in the task editor's new **Section** button group under Category, at any sort and width. Moving a task to another category clears its section.

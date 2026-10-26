@@ -198,6 +198,8 @@ fun TasksScreen(
     // exiting pane from recomposing into a blank "new task" form mid-animation.
     val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.taskForm.isVisible)
 
+    val hasSections = !uiState.sectionedList?.sections.isNullOrEmpty()
+    val useSectionedWidth = hasSections && !(isDockedEditor && uiState.taskForm.isVisible)
     Box(modifier = modifier.fillMaxSize()) {
         Row(modifier = Modifier.fillMaxSize()) {
             Box(
@@ -220,7 +222,7 @@ fun TasksScreen(
                             // A sectioned category may use the width for two columns, unless an
                             // editor is docked beside it (#61).
                             maxContentWidth =
-                                if (uiState.sectionedList != null && !(isDockedEditor && uiState.taskForm.isVisible)) {
+                                if (useSectionedWidth) {
                                     SectionedContentMaxWidth
                                 } else {
                                     ReadableContentMaxWidth
@@ -319,7 +321,7 @@ fun TasksScreen(
                 nameError = uiState.categoryForm.nameError,
                 onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideCategoryDialog) },
                 onClearError = { viewModel.onEvent(TasksContract.UiEvent.ClearCategoryError) },
-                onSave = { name, color, icon, isDefault ->
+                onSave = { name, color, icon, isDefault, sectionsEnabled ->
                     if (editingCategory != null) {
                         viewModel.onEvent(
                             TasksContract.UiEvent.UpdateCategory(
@@ -328,6 +330,7 @@ fun TasksScreen(
                                     color = color,
                                     icon = icon,
                                     isDefault = isDefault,
+                                    sectionsEnabled = sectionsEnabled,
                                 ),
                             ),
                         )
@@ -337,6 +340,7 @@ fun TasksScreen(
                                 name = name,
                                 color = color,
                                 icon = icon,
+                                sectionsEnabled = sectionsEnabled,
                             ),
                         )
                     }
@@ -401,7 +405,7 @@ internal fun TaskEditor(
 ) {
     TaskBottomSheet(
         categories = uiState.categories,
-        sectionsByCategory = uiState.sectionsByCategory,
+        sectionsByCategory = uiState.enabledSectionsByCategory(),
         onSelectSection = { onEvent(TasksContract.UiEvent.SetTaskSection(it)) },
         selectedCategoryIdFromFilter = uiState.taskEditorCategoryId(),
         formState = uiState.taskForm,
@@ -463,3 +467,7 @@ private fun TasksContract.UiState.taskEditorCategoryId(): Long =
         taskForm.parentTask != null -> taskForm.parentTask.categoryId
         else -> selectedCategoryId
     }
+
+/** Only categories with sections on offer the editor's choice; a hidden section is kept as it is. */
+private fun TasksContract.UiState.enabledSectionsByCategory() =
+    sectionsByCategory.filterKeys { id -> categories.any { it.id == id && it.sectionsEnabled } }

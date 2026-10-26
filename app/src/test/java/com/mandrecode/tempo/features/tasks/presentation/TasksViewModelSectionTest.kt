@@ -51,7 +51,7 @@ class TasksViewModelSectionTest {
     private val tasks = MutableStateFlow<List<Task>>(emptyList())
     private val sections = MutableStateFlow<List<TaskSection>>(emptyList())
 
-    private val sv = Category(id = 3L, name = "S&V", isDefault = true)
+    private val sv = Category(id = 3L, name = "S&V", isDefault = true, sectionsEnabled = true)
     private val work = Category(id = 4L, name = "Work")
     private val cat = TaskSection(id = 10L, categoryId = 3L, name = "Cat", sortOrder = 0)
     private val shopping = TaskSection(id = 11L, categoryId = 3L, name = "Shopping", sortOrder = 1)
@@ -125,6 +125,7 @@ class TasksViewModelSectionTest {
     @Test
     fun `a category without sections keeps the existing list`() =
         runTest {
+            every { categoryRepository.getAllCategories() } returns flowOf(listOf(sv.copy(sectionsEnabled = false)))
             tasks.value = listOf(task(1))
             val viewModel = createViewModel()
             advanceUntilIdle()
@@ -332,5 +333,36 @@ class TasksViewModelSectionTest {
             advanceUntilIdle()
 
             assertThat(created.captured.sectionId).isNull()
+        }
+
+    @Test
+    fun `a category with sections turned off hides them and keeps the existing list`() =
+        runTest {
+            every { categoryRepository.getAllCategories() } returns flowOf(listOf(sv.copy(sectionsEnabled = false)))
+            sections.value = listOf(cat)
+            tasks.value = listOf(task(1), task(2, sectionId = cat.id))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.sectionedList).isNull()
+            assertThat(
+                viewModel.uiState.value.activeTasks.values
+                    .flatten()
+                    .map { it.id },
+            ).containsExactly(1L, 2L)
+            // Hidden, not removed: the section is still there for when sections come back on.
+            assertThat(viewModel.uiState.value.sectionsByCategory[sv.id]).containsExactly(cat)
+        }
+
+    @Test
+    fun `a category with sections on but none yet lists its tasks unsectioned`() =
+        runTest {
+            tasks.value = listOf(task(1))
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            val list = viewModel.uiState.value.sectionedList!!
+            assertThat(list.unsectioned.map { it.id }).containsExactly(1L)
+            assertThat(list.sections).isEmpty()
         }
 }

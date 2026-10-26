@@ -19,7 +19,7 @@ private fun CategoryEditSheetNewPreview() {
             categories = emptyList(),
             nameError = null,
             onDismiss = {},
-            onSave = { _, _, _, _ -> },
+            onSave = { _, _, _, _, _ -> },
             onDelete = null,
             onClearError = {},
         )
@@ -53,7 +53,7 @@ private fun CategoryEditSheetEditPreview() {
             categories = listOf(category),
             nameError = null,
             onDismiss = {},
-            onSave = { _, _, _, _ -> },
+            onSave = { _, _, _, _, _ -> },
             onDelete = {},
             onClearError = {},
         )
@@ -78,7 +78,7 @@ private fun CategoryEditSheetDefaultCategoryPreview() {
             categories = listOf(category),
             nameError = null,
             onDismiss = {},
-            onSave = { _, _, _, _ -> },
+            onSave = { _, _, _, _, _ -> },
             onDelete = {},
             onClearError = {},
         )
@@ -102,7 +102,7 @@ private fun CategoryEditSheetErrorPreview() {
             categories = listOf(category),
             nameError = R.string.error_category_name_too_long,
             onDismiss = {},
-            onSave = { _, _, _, _ -> },
+            onSave = { _, _, _, _, _ -> },
             onDelete = {},
             onClearError = {},
         )

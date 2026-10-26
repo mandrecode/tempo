@@ -11,6 +11,7 @@ fun CategoryEntity.toDomain(): Category =
         icon = icon,
         isDefault = isDefault,
         sortOrder = sortOrder,
+        sectionsEnabled = sectionsEnabled,
     )
 
 fun Category.toEntity(): CategoryEntity =
@@ -21,6 +22,7 @@ fun Category.toEntity(): CategoryEntity =
         icon = icon,
         isDefault = isDefault,
         sortOrder = sortOrder,
+        sectionsEnabled = sectionsEnabled,
     )
 
 fun List<CategoryEntity>.toDomain(): List<Category> = map { it.toDomain() }

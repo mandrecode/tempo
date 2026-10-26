@@ -213,7 +213,12 @@ internal fun TasksViewModel.loadData() {
             // Sections replace the sort's group headers (#61), so reorderable runs are cut per
             // section instead of per sort group.
             val sectionedList =
-                buildSectionedList(activeTasks, sectionsByCategory[effectiveSelectedId].orEmpty(), today)
+                buildSectionedList(
+                    activeTasks = activeTasks,
+                    sections = sectionsByCategory[effectiveSelectedId].orEmpty(),
+                    today = today,
+                    sectionsEnabled = allCategories.any { it.id == effectiveSelectedId && it.sectionsEnabled },
+                )
             val reorderGroups =
                 sectionedList?.let { list -> listOf(list.unsectioned) + list.sections.map { it.tasks } }
                     ?: activeTaskGroups.values

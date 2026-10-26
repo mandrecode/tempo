@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 12,
-    "identityHash": "9f989876f68da7484fbf5d78708604c1",
+    "identityHash": "691316eb08e463723d25271a1d0638e0",
     "entities": [
       {
         "tableName": "tasks",
@@ -134,7 +134,7 @@
       },
       {
         "tableName": "categories",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` TEXT, `icon` TEXT, `isDefault` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `color` TEXT, `icon` TEXT, `isDefault` INTEGER NOT NULL, `sortOrder` INTEGER NOT NULL, `sectionsEnabled` INTEGER NOT NULL DEFAULT 0)",
         "fields": [
           {
             "fieldPath": "id",
@@ -169,6 +169,13 @@
             "columnName": "sortOrder",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "sectionsEnabled",
+            "columnName": "sectionsEnabled",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
           }
         ],
         "primaryKey": {
@@ -533,7 +540,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9f989876f68da7484fbf5d78708604c1')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '691316eb08e463723d25271a1d0638e0')"
     ]
   }
 }

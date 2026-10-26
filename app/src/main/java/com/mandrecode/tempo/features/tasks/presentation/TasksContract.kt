@@ -129,6 +129,7 @@ object TasksContract {
             val name: String,
             val color: String? = null,
             val icon: String? = null,
+            val sectionsEnabled: Boolean = false,
         ) : UiEvent
 
         data class UpdateCategory(

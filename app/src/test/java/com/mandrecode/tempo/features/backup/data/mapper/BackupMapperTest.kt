@@ -26,6 +26,9 @@ import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class BackupMapperTest {
+    private val workCategory =
+        Category(id = 1, name = "Work", color = "red", icon = "star", sortOrder = 2, sectionsEnabled = true)
+
     @Test
     fun `domain to dto to domain round trip preserves every field`() {
         val data = fullyPopulatedBackupData()
@@ -40,7 +43,7 @@ class BackupMapperTest {
 
     private fun fullyPopulatedBackupData(): BackupData =
         BackupData(
-            categories = listOf(Category(id = 1, name = "Work", color = "red", icon = "star", sortOrder = 2)),
+            categories = listOf(workCategory),
             tasks =
                 listOf(
                     Task(

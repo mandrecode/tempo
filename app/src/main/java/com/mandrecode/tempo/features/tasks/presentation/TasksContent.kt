@@ -170,7 +170,7 @@ fun TasksContent(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
         // A wide pane spreads a sectioned category over two columns (#61).
-        val isTwoColumn = sectionedList != null && maxWidth >= TwoColumnSectionsMinWidth
+        val isTwoColumn = !sectionedList?.sections.isNullOrEmpty() && maxWidth >= TwoColumnSectionsMinWidth
         // The card the one-column list and the two-column grid share; [gestures] carries the
         // cross-section drag, otherwise the tied-run reorder applies.
         val taskCard: @Composable (Task, Modifier?, Modifier) -> Unit = { task, gestures, base ->
@@ -220,10 +220,9 @@ fun TasksContent(
                             TasksContract.UiEvent.ReorderCategories(fromIndex, toIndex, categories),
                         )
                     },
-                    onAddSection = { sectionEditState.newSectionDraft = NewSectionDraft.AtEnd },
                 )
 
-                if (showSectionShortcuts && sectionedList != null) {
+                if (showSectionShortcuts && sectionedList != null && sectionedList.sections.isNotEmpty()) {
                     TasksSectionShortcuts(
                         list = sectionedList,
                         category = uiState.categories.firstOrNull { it.id == uiState.selectedCategoryId },
@@ -251,10 +250,9 @@ fun TasksContent(
                             ).background(MaterialTheme.colorScheme.surface),
                 ) {
                     val hasNothingToList = !hasActiveTasks && completedTaskGroups.isEmpty()
-                    // A category with sections lists them even when empty, and naming the first
-                    // section needs the list too (#61).
-                    val hasSectionUi = sectionedList != null || sectionEditState.newSectionDraft != null
-                    if (hasNothingToList && !hasSectionUi) {
+                    // A category with sections on lists them, or the button to add one, even when
+                    // it has no tasks (#61).
+                    if (hasNothingToList && sectionedList == null) {
                         EmptyStateContent()
                     } else {
                         if (isTwoColumn && sectionedList != null) {
@@ -335,13 +333,6 @@ fun TasksContent(
                                         ) { task ->
                                             taskRow(task, null)
                                         }
-                                    }
-                                    if (sectionEditState.newSectionDraft != null) {
-                                        newSectionField(
-                                            afterSectionId = null,
-                                            editState = sectionEditState,
-                                            onEvent = onEvent,
-                                        )
                                     }
                                 }
 

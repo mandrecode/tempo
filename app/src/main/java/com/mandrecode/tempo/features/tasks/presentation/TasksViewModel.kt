@@ -167,7 +167,8 @@ class TasksViewModel
                 is TasksContract.UiEvent.ShowDefaultCategory -> showDefaultCategory()
                 is TasksContract.UiEvent.ShowCategoryDialog -> showCategoryDialog(event.category)
                 is TasksContract.UiEvent.HideCategoryDialog -> hideCategoryDialog()
-                is TasksContract.UiEvent.AddCategory -> addCategory(event.name, event.color, event.icon)
+                is TasksContract.UiEvent.AddCategory ->
+                    addCategory(event.name, event.color, event.icon, event.sectionsEnabled)
                 is TasksContract.UiEvent.UpdateCategory -> updateCategory(event.category)
                 is TasksContract.UiEvent.RequestDeleteCategory -> requestDeleteCategory(event.category)
                 is TasksContract.UiEvent.CancelDeleteCategory -> cancelDeleteCategory()

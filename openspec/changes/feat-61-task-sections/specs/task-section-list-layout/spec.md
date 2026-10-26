@@ -6,12 +6,23 @@ Defines how sections appear in the Tasks list at every window width class: secti
 
 ## ADDED Requirements
 
-### Requirement: A category without sections looks as it does today
-When the selected category has no sections, the Tasks list SHALL render exactly as it did before sections existed, at every width class. No section header, shortcut group or section placeholder SHALL appear.
+### Requirement: A category with sections off looks as it does today
+When the selected category has sections turned off, the Tasks list SHALL render exactly as it did before sections existed, at every width class, even if the category holds hidden sections. No section header, shortcut group, placeholder or add-section action SHALL appear.
 
-#### Scenario: No sections
-- **WHEN** the user selects a category that has no sections, sorted by date
+#### Scenario: Sections off
+- **WHEN** the user selects a category with sections off, sorted by date
 - **THEN** the list shows the existing date group headers and no section UI
+
+#### Scenario: Sections on, none yet
+- **WHEN** the user selects a category with sections on and no section yet
+- **THEN** its tasks are listed unsectioned, followed by an "Add section" action
+
+### Requirement: Empty sections stay quiet
+An empty section's placeholder SHALL be a soft tint without an outline, and SHALL be highlighted only while a dragged task is over it.
+
+#### Scenario: Idle and while dragging
+- **WHEN** the "Garden" section is empty and the user drags a task over its placeholder
+- **THEN** the placeholder is a borderless tint until the task is over it, when it is highlighted
 
 ### Requirement: Unsectioned tasks come first, then sections in order
 In a category with sections, active unsectioned tasks SHALL be listed first, without a header. Each section SHALL follow in its order, introduced by its header.

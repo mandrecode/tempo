@@ -35,10 +35,11 @@ internal fun TasksViewModel.addCategory(
     name: String,
     color: String?,
     icon: String?,
+    sectionsEnabled: Boolean = false,
 ) {
     viewModelScope.launch {
         try {
-            when (val result = createCategoryUseCase(name, color, icon)) {
+            when (val result = createCategoryUseCase(name, color, icon, sectionsEnabled)) {
                 is CreateCategoryUseCase.Result.EmptyName -> {
                     mutableUiState.update { it.copy(categoryForm = it.categoryForm.copy(nameError = R.string.msg_category_name_empty)) }
                 }

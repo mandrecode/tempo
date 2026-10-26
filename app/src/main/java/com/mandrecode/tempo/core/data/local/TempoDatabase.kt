@@ -290,8 +290,9 @@ abstract class TempoDatabase : RoomDatabase() {
             }
 
         /**
-         * Adds task sections (#61): the `task_sections` table and a nullable `tasks.sectionId`.
-         * Purely additive — every existing task reads as unsectioned, so no backfill is needed.
+         * Adds task sections (#61): the `task_sections` table, a nullable `tasks.sectionId` and the
+         * per-category `sectionsEnabled` switch. Purely additive — every existing task reads as
+         * unsectioned and every category has sections off, so no backfill is needed.
          */
         val MIGRATION_11_12 =
             object : Migration(11, 12) {
@@ -310,6 +311,7 @@ abstract class TempoDatabase : RoomDatabase() {
                         "CREATE INDEX IF NOT EXISTS `index_task_sections_categoryId` ON `task_sections` (`categoryId`)",
                     )
                     db.execSQL("ALTER TABLE tasks ADD COLUMN sectionId INTEGER DEFAULT NULL")
+                    db.execSQL("ALTER TABLE categories ADD COLUMN sectionsEnabled INTEGER NOT NULL DEFAULT 0")
                     db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_sectionId` ON `tasks` (`sectionId`)")
                 }
             }

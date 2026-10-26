@@ -66,6 +66,14 @@
 - [x] 11.3 Run `./gradlew connectedDebugAndroidTest` on the Pixel 10 AVD, then smoke-test the S&V scenario on the Pixel 7: create sections, move tasks, collapse, delete with undo, backup round-trip. Verify the issue's acceptance criteria.
 - [x] 11.4 Run `openspec validate feat-61-task-sections --strict` and verify it passes.
 
+## 12. Design refinements
+
+- [x] 12.1 Calm the empty-section placeholder (borderless soft tint, highlighted only as a drop target) and verify in the screenshot references.
+- [x] 12.2 Draw the section menu exactly like the category chip menu (16 dp corners, 20 dp drawable icons, haptics, no divider) and verify on device.
+- [x] 12.3 Restyle the section name input as a borderless field on a card-coloured pill aligned with header names, and verify the rename/add UI tests.
+- [x] 12.4 Make header edges symmetric (48 dp chevron slot mirroring the menu button, 12 dp hairline gaps) and verify in the screenshot references.
+- [x] 12.5 Add the per-category Sections toggle (column with SQL default, model, backup field, edit sheet switch, list/editor gating; drop the chip-menu entry) and verify with ViewModel, migration, seed, sheet and backup tests.
+
 ## Workflow follow-up
 
 - Open the PR (`feat(#61): task sections within categories`, `Closes #61`) only once the user gives the go.

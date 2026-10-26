@@ -31,8 +31,6 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -86,7 +84,6 @@ fun CategoryChipRow(
     onRequestDeleteCategory: (Category) -> Unit,
     onReorderCategories: (fromIndex: Int, toIndex: Int, categories: List<Category>) -> Unit,
     modifier: Modifier = Modifier,
-    onAddSection: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val density = LocalDensity.current
@@ -144,7 +141,6 @@ fun CategoryChipRow(
                 onSelectCategory = { onSelectCategory(category.id) },
                 onEdit = { onShowCategoryDialog(category) },
                 onRequestDelete = { onRequestDeleteCategory(category) },
-                onAddSection = onAddSection,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -221,7 +217,6 @@ private fun CategoryItem(
     onSelectCategory: () -> Unit,
     onEdit: () -> Unit,
     onRequestDelete: () -> Unit,
-    onAddSection: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isDropdownExpanded by remember { mutableStateOf(false) }
@@ -368,22 +363,6 @@ private fun CategoryItem(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             onEdit()
-                            isDropdownExpanded = false
-                        },
-                    )
-                    // Sections live inside the category (#61), so the first one is added from here:
-                    // a category without sections shows nothing new in its list.
-                    DropdownMenuItem(
-                        text = { Text(stringResource(R.string.section_add)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        },
-                        onClick = {
-                            onAddSection()
                             isDropdownExpanded = false
                         },
                     )

@@ -386,7 +386,8 @@ private fun memberTitles(
         .mapNotNull { habitTitles[it.habitId] }
 }
 
-private fun Category.contentKey() = copy(id = 0, sortOrder = 0, isDefault = false)
+// Whether sections are on is a view preference, like the sort order, not content to conflict on.
+private fun Category.contentKey() = copy(id = 0, sortOrder = 0, isDefault = false, sectionsEnabled = false)
 
 // nextInstanceId values are database ids and meaningless across devices, but
 // *having* a next-occurrence link is content: a linked archived task must not

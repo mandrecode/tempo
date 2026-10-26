@@ -88,6 +88,7 @@ private fun Category.toDto(): CategoryBackupDto =
         icon = icon,
         isDefault = isDefault,
         sortOrder = sortOrder,
+        sectionsEnabled = sectionsEnabled,
     )
 
 private fun CategoryBackupDto.toDomain(): Category =
@@ -98,6 +99,7 @@ private fun CategoryBackupDto.toDomain(): Category =
         icon = icon,
         isDefault = isDefault,
         sortOrder = sortOrder,
+        sectionsEnabled = sectionsEnabled,
     )
 
 private fun Task.toDto(): TaskBackupDto =

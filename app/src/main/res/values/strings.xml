@@ -279,6 +279,8 @@
     <string name="section_state_collapsed">Collapsed</string>
     <string name="section_none">No section</string>
     <string name="section_label">Section</string>
+    <string name="category_sections_label">Sections</string>
+    <string name="category_sections_description">Split this list into sections, like Cat or Shopping</string>
     <string name="section_reorder_done">Done</string>
     <plurals name="section_overdue_count">
         <item quantity="one">%1$d overdue</item>
@@ -572,7 +574,7 @@
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
     <string name="whats_new_title">Sections inside your lists</string>
-    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Add the first one from the category\'s menu, then collapse, rename, reorder or delete sections from their header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns.</string>
+    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

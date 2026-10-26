@@ -28,15 +28,17 @@ data class SectionedTaskList(
 
 /**
  * Splits [activeTasks] (top-level, already sorted) by section. Returns null when the category has
- * no sections, so the list keeps today's grouping exactly. A task pointing at a section that is
- * not one of [sections] reads as unsectioned rather than disappearing.
+ * sections turned off, so the list keeps today's grouping exactly — whatever sections it holds stay
+ * hidden, not deleted. A task pointing at a section that is not one of [sections] reads as
+ * unsectioned rather than disappearing.
  */
 internal fun buildSectionedList(
     activeTasks: List<Task>,
     sections: List<TaskSection>,
     today: LocalDate,
+    sectionsEnabled: Boolean,
 ): SectionedTaskList? {
-    if (sections.isEmpty()) return null
+    if (!sectionsEnabled) return null
     val sectionIds = sections.mapTo(mutableSetOf()) { it.id }
     val bySection = activeTasks.groupBy { task -> task.sectionId?.takeIf { it in sectionIds } }
     return SectionedTaskList(
