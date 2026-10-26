@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.core.ui.navigation
 
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
@@ -50,6 +51,21 @@ internal fun animatedRailClearance(target: Dp): Dp =
         targetValue = target,
         animationSpec = floatingControlsMotionSpec(),
         label = "railClearance",
+    ).value
+
+/**
+ * Horizontal bias for [adaptiveScreenContentLayout]: centred normally, and leaning to the end while
+ * an editor is docked beside the content. Centring would leave a gap to the pane that depends on the
+ * window width (none at 1280 dp, tens of dp at 1600 dp); leaning against it keeps the gutter the
+ * pane itself reserves. Animated on the floating controls' spring, like the rail clearance, so the
+ * content glides aside with the pane rather than jumping.
+ */
+@Composable
+internal fun animatedDockedContentBias(isEditorDocked: Boolean): Float =
+    animateFloatAsState(
+        targetValue = if (isEditorDocked) 1f else 0f,
+        animationSpec = floatingControlsMotionSpec(),
+        label = "dockedContentBias",
     ).value
 
 /**

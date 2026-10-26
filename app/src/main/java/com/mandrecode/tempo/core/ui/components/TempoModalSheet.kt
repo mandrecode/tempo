@@ -33,6 +33,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -74,6 +75,12 @@ import androidx.compose.foundation.layout.Box as LayoutBox
 internal const val DISMISS_THRESHOLD_FRACTION = 0.3f
 private const val SHEET_SCRIM_ALPHA = 0.32f
 private val SHEET_SHADOW_ELEVATION = 1.dp
+
+/**
+ * Rounded at the top only, with the same 28 dp radius as the screens' content block beside it,
+ * which also runs to the bottom edge.
+ */
+private val DockedSheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 private val SHEET_HANDLE_TOUCH_TARGET_SIZE = 48.dp
 private val SHEET_HANDLE_CONTENT_INSET = 24.dp
 private val SHEET_HANDLE_EDGE_PADDING = 8.dp
@@ -177,11 +184,12 @@ internal fun TempoDockedSheet(
     )
 
     // statusBarsPadding sits on this outer Box, not the Surface below, so the card's rounded
-    // shape and color start at the same height as the main list's content block instead of
-    // painting behind the status bar — the two panes would otherwise look vertically staggered
-    // side by side. color matches colorScheme.surface (not surfaceContainerHigh, unlike the
-    // modal bottom sheet) so the docked pane reads as a continuation of that same content plane
-    // rather than an elevated overlay floating beside it.
+    // shape and color never paint behind the status bar; DockedEditorPane adds the header height
+    // on top of that so the card starts exactly where the main list's content block does. The
+    // surface also mirrors that block in every other way — colorScheme.surface (not
+    // surfaceContainerHigh, unlike the modal bottom sheet), only the top corners rounded, running
+    // to the bottom edge and casting no shadow — so the docked pane reads as a continuation of the
+    // same content plane rather than an elevated overlay floating beside it.
     Box(modifier = modifier.fillMaxSize().statusBarsPadding()) {
         Surface(
             modifier =
@@ -193,10 +201,9 @@ internal fun TempoDockedSheet(
                             true
                         }
                     },
-            shape = MaterialTheme.shapes.extraLarge,
+            shape = DockedSheetShape,
             color = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            shadowElevation = SHEET_SHADOW_ELEVATION,
         ) {
             Column(
                 modifier =
