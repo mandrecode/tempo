@@ -18,9 +18,9 @@
 
 ## 3. Backup
 
-- [ ] 3.1 Add `BackupFileDto.taskSections` and `TaskBackupDto.sectionId` (defaults, schema v1), plus mapper and export. Verify with an export unit test that includes sections.
-- [ ] 3.2 Replace import: clear and insert sections after categories. Merge import: build `sectionIdMap` and remap or null each task's `sectionId`. Verify with backup round-trip, older-file fixture and merge tests.
-- [ ] 3.3 Document sections in `docs/BACKUP_FORMAT.md`, including older-app behaviour. Verify the documented fields match the DTO.
+- [x] 3.1 Add `BackupFileDto.taskSections` and `TaskBackupDto.sectionId` (defaults, schema v1), plus mapper and export. Verify with an export unit test that includes sections.
+- [x] 3.2 Replace import: clear and insert sections after categories. Merge import: build `sectionIdMap` and remap or null each task's `sectionId`. Verify with backup round-trip, older-file fixture and merge tests.
+- [x] 3.3 Document sections in `docs/BACKUP_FORMAT.md`, including older-app behaviour. Verify the documented fields match the DTO.
 
 ## 4. Collapse preference
 

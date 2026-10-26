@@ -8,12 +8,14 @@ import com.mandrecode.tempo.core.data.entity.HabitChainEntity
 import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.entity.HabitEntity
 import com.mandrecode.tempo.core.data.entity.TaskEntity
+import com.mandrecode.tempo.core.data.entity.TaskSectionEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.dao.TaskSectionDao
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
@@ -48,6 +50,7 @@ class BackupRepositoryImplTest {
     private lateinit var habitDao: HabitDao
     private lateinit var habitChainDao: HabitChainDao
     private lateinit var memberDao: HabitChainMemberDao
+    private lateinit var sectionDao: TaskSectionDao
     private lateinit var database: TempoDatabase
     private lateinit var context: Context
     private lateinit var settingsDataSource: BackupSettingsDataSource
@@ -61,6 +64,8 @@ class BackupRepositoryImplTest {
         habitDao = mockk(relaxed = true)
         habitChainDao = mockk(relaxed = true)
         memberDao = mockk(relaxed = true)
+        sectionDao = mockk(relaxed = true)
+        coEvery { sectionDao.getAllSectionsSync() } returns emptyList()
         context = mockk(relaxed = true)
         every { context.getString(any()) } returns "Inbox"
         settingsDataSource = mockk(relaxed = true)
@@ -71,6 +76,7 @@ class BackupRepositoryImplTest {
         every { database.habitDao() } returns habitDao
         every { database.habitChainDao() } returns habitChainDao
         every { database.habitChainMemberDao() } returns memberDao
+        every { database.taskSectionDao() } returns sectionDao
         mockkStatic("androidx.room.RoomDatabaseKt")
         @Suppress("UNCHECKED_CAST")
         coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
@@ -198,6 +204,7 @@ class BackupRepositoryImplTest {
             coVerify(exactly = 0) { categoryDao.insertCategory(any()) }
             coVerify(exactly = 0) { habitDao.insertHabit(any()) }
             coVerify(exactly = 0) { habitChainDao.insertHabitChain(any()) }
+            coVerify(exactly = 0) { sectionDao.insertSection(any()) }
         }
 
     @Test
@@ -228,6 +235,8 @@ class BackupRepositoryImplTest {
             assertThat(insertedHabits).containsExactlyElementsIn(localHabits())
             assertThat(insertedChains).containsExactlyElementsIn(localChains())
             assertThat(insertedMembers.single()).containsExactlyElementsIn(localMembers())
+            coVerify { sectionDao.deleteAll() }
+            coVerify { sectionDao.insertSection(localSections().single()) }
         }
 
     @Test
@@ -256,6 +265,9 @@ class BackupRepositoryImplTest {
             assertThat(report.repeatDays).containsExactly(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY)
             val sub = insertedTasks.first { it.title == "Sub" }
             assertThat(sub.parentTaskId).isEqualTo(1L)
+            // Written before sections existed (#61): everything lands unsectioned.
+            assertThat(insertedTasks.map { it.sectionId }).containsExactly(null, null)
+            coVerify(exactly = 0) { sectionDao.insertSection(any()) }
         }
 
     @Test
@@ -452,12 +464,61 @@ class BackupRepositoryImplTest {
             assertThat(outcome.summary.categories.imported).isEqualTo(1)
         }
 
+    @Test
+    fun `merge remaps sections and unsections tasks whose section did not come across`() =
+        runTest {
+            val insertedTasks = mutableListOf<TaskEntity>()
+            val insertedSections = mutableListOf<TaskSectionEntity>()
+            var nextId = 100L
+            coEvery { categoryDao.insertCategory(any()) } returns 10L
+            coEvery { sectionDao.insertSection(capture(insertedSections)) } returns 50L
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } answers { nextId++ }
+            val json =
+                """
+                {"schemaVersion":1,
+                 "categories":[{"id":1,"name":"S&V"}],
+                 "taskSections":[{"id":5,"categoryId":1,"name":"Cat","sortOrder":0}],
+                 "tasks":[
+                   {"id":1,"title":"Buy litter","categoryId":1,"sectionId":5},
+                   {"id":2,"title":"Stray","categoryId":1,"sectionId":99}
+                 ]}
+                """.trimIndent()
+
+            repository.importFromJson(encryptedJsonOf(json), ImportMode.MERGE, testPassphrase)
+
+            assertThat(insertedSections.single())
+                .isEqualTo(TaskSectionEntity(categoryId = 10L, name = "Cat", sortOrder = 0))
+            assertThat(insertedTasks.first { it.title == "Buy litter" }.sectionId).isEqualTo(50L)
+            assertThat(insertedTasks.first { it.title == "Stray" }.sectionId).isNull()
+        }
+
+    @Test
+    fun `merge into an existing category reuses its same-named section`() =
+        runTest {
+            stubLocalData()
+            val insertedTasks = mutableListOf<TaskEntity>()
+            coEvery { taskDao.insertTask(capture(insertedTasks)) } returns 100L
+            val json =
+                """
+                {"schemaVersion":1,
+                 "categories":[{"id":7,"name":"Work","color":"red"}],
+                 "taskSections":[{"id":3,"categoryId":7,"name":"Q3"}],
+                 "tasks":[{"id":1,"title":"Budget","categoryId":7,"sectionId":3}]}
+                """.trimIndent()
+
+            repository.importFromJson(encryptedJsonOf(json), ImportMode.MERGE, testPassphrase)
+
+            coVerify(exactly = 0) { sectionDao.insertSection(any()) }
+            assertThat(insertedTasks.single().sectionId).isEqualTo(4L)
+        }
+
     private fun stubLocalData() {
         coEvery { categoryDao.getAllCategoriesSync() } returns localCategories()
         coEvery { taskDao.getAllTasksSync() } returns localTasks()
         coEvery { habitDao.getAllHabitsSync() } returns localHabits()
         coEvery { habitChainDao.getAllHabitChainsSync() } returns localChains()
         coEvery { memberDao.getAllMembersSync() } returns localMembers()
+        coEvery { sectionDao.getAllSectionsSync() } returns localSections()
     }
 
     private fun localCategories() =
@@ -465,6 +526,8 @@ class BackupRepositoryImplTest {
             CategoryEntity(id = -1, name = "Inbox", icon = "inbox", isDefault = true, sortOrder = -1),
             CategoryEntity(id = 1, name = "Work", color = "red"),
         )
+
+    private fun localSections() = listOf(TaskSectionEntity(id = 4, categoryId = 1, name = "Q3", sortOrder = 0))
 
     private fun localTasks() =
         listOf(
@@ -477,6 +540,7 @@ class BackupRepositoryImplTest {
                 reminderDate = LocalDateTime(2026, 8, 1, 9, 0),
                 periodicity = Periodicity.WEEKLY,
                 repeatDays = setOf(DayOfWeek.MONDAY, DayOfWeek.WEDNESDAY),
+                sectionId = 4,
             ),
         )
 

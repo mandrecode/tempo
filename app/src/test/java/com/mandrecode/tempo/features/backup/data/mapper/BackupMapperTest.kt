@@ -19,6 +19,7 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertThrows
@@ -58,8 +59,10 @@ class BackupMapperTest {
                         sortOrder = 3,
                         completedAt = LocalDateTime(2026, 7, 1, 12, 30),
                         nextInstanceId = 11,
+                        sectionId = 4,
                     ),
                 ),
+            sections = listOf(TaskSection(id = 4, categoryId = 1, name = "Q3", sortOrder = 1)),
             habits =
                 listOf(
                     Habit(

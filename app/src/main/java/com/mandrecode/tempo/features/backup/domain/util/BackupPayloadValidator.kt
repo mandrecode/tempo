@@ -14,7 +14,10 @@ class BackupPayloadValidator
     @Inject
     constructor() {
         sealed interface Result {
-            /** Payload is consistent. [sanitized] has dangling nextInstanceId references nulled. */
+            /**
+             * Payload is consistent. [sanitized] has dangling nextInstanceId and section references
+             * nulled, and sections of unknown categories dropped.
+             */
             data class Valid(
                 val sanitized: BackupData,
             ) : Result
@@ -33,15 +36,26 @@ class BackupPayloadValidator
             if (issues.isNotEmpty()) return Result.Invalid(issues)
 
             val taskIds = data.tasks.mapTo(mutableSetOf()) { it.id }
+            val categoryIds = data.categories.mapTo(mutableSetOf()) { it.id }
+            // Sections are structure, not content: one pointing nowhere is dropped, and a task
+            // pointing at a section of another category (or none) is simply unsectioned (#61).
+            val sanitizedSections =
+                data.sections
+                    .filter { it.categoryId in categoryIds }
+                    .distinctBy { it.id }
+            val sectionCategory = sanitizedSections.associate { it.id to it.categoryId }
             val sanitizedTasks =
                 data.tasks.map { task ->
+                    var sanitized = task
                     if (task.nextInstanceId != null && task.nextInstanceId !in taskIds) {
-                        task.copy(nextInstanceId = null)
-                    } else {
-                        task
+                        sanitized = sanitized.copy(nextInstanceId = null)
                     }
+                    if (task.sectionId != null && sectionCategory[task.sectionId] != task.categoryId) {
+                        sanitized = sanitized.copy(sectionId = null)
+                    }
+                    sanitized
                 }
-            return Result.Valid(data.copy(tasks = sanitizedTasks))
+            return Result.Valid(data.copy(tasks = sanitizedTasks, sections = sanitizedSections))
         }
 
         private fun duplicateIdIssues(data: BackupData): List<ValidationIssue> =

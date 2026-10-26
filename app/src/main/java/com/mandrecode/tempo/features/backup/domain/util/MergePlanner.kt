@@ -11,6 +11,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import jakarta.inject.Inject
 
 /**
@@ -36,6 +37,7 @@ class MergePlanner
             val tasks = planTasks(incoming, local, categories, conflicts)
             val habits = planHabits(incoming, local, conflicts)
             val chains = planChains(incoming, local, conflicts)
+            val sections = planSections(incoming, local, categories)
             val memberships =
                 incoming.chainMemberships.filter { it.chainId in chains.insertedIds }
             return MergePlan(
@@ -48,6 +50,8 @@ class MergePlanner
                 chainsToInsert = chains.toInsert,
                 chainIdMap = chains.idMap,
                 membershipsToInsert = memberships,
+                sectionsToInsert = sections.first,
+                sectionIdMap = sections.second,
                 summary =
                     ImportSummary(
                         categories = categories.counts,
@@ -109,6 +113,38 @@ class MergePlanner
                 }
             }
             return plan
+        }
+
+        /**
+         * Sections (#61) carry no content to conflict on: one matching a same-named section of
+         * its resolved local category is reused, anything else is appended to that category.
+         * Sections of conflicted categories still resolve to the local category, like tasks do.
+         */
+        private fun planSections(
+            incoming: BackupData,
+            local: BackupData,
+            categories: EntityPlan<Category>,
+        ): Pair<List<TaskSection>, Map<Long, Long>> {
+            val toInsert = mutableListOf<TaskSection>()
+            val idMap = mutableMapOf<Long, Long>()
+            val localByCategory = local.sections.groupBy { it.categoryId }
+            val nextSortOrder =
+                localByCategory.mapValues { (_, sections) -> sections.maxOf { it.sortOrder } + 1 }.toMutableMap()
+            incoming.sections.sortedBy { it.sortOrder }.forEach { section ->
+                val localCategoryId = categories.idMap[section.categoryId]
+                val match =
+                    localCategoryId?.let { id -> localByCategory[id]?.firstOrNull { it.name == section.name } }
+                when {
+                    match != null -> idMap[section.id] = match.id
+                    localCategoryId != null -> {
+                        val sortOrder = nextSortOrder[localCategoryId] ?: 0
+                        nextSortOrder[localCategoryId] = sortOrder + 1
+                        toInsert += section.copy(sortOrder = sortOrder)
+                    }
+                    section.categoryId in categories.insertedIds -> toInsert += section
+                }
+            }
+            return toInsert to idMap
         }
 
         private fun planTasks(
@@ -362,6 +398,8 @@ private fun Task.contentKey() =
         nextInstanceId = if (nextInstanceId == null) null else 0,
         categoryId = 0,
         parentTaskId = null,
+        // Section ids are database ids too, and sections are structure rather than content.
+        sectionId = null,
     )
 
 private fun Habit.contentKey() = copy(id = 0)

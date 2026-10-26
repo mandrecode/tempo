@@ -11,8 +11,8 @@ import jakarta.inject.Inject
 class DeleteTaskSectionUseCase
     @Inject
     constructor(
-        private val sectionRepository: TaskSectionRepository,
+        private val repository: TaskSectionRepository,
     ) {
         /** The snapshot undo needs, or null when the section was already gone. */
-        suspend operator fun invoke(sectionId: Long): SectionDeletionSnapshot? = sectionRepository.deleteSectionWithSnapshot(sectionId)
+        suspend operator fun invoke(sectionId: Long): SectionDeletionSnapshot? = repository.deleteSectionWithSnapshot(sectionId)
     }

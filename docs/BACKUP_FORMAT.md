@@ -47,6 +47,7 @@ the KDF/cipher logic lives in `infrastructure/security/BackupEncryptionService.k
 | `appVersion` | string | `versionName` of the app that produced the export (provenance only). |
 | `exportedAt` | string | ISO-8601 local date-time of the export (provenance only). |
 | `categories` | array | See [Category](#category). |
+| `taskSections` | array | See [Task section](#task-section). Absent in files written before sections existed. |
 | `tasks` | array | See [Task](#task). |
 | `habits` | array | See [Habit](#habit). |
 | `habitChains` | array | See [Habit chain](#habit-chain). |
@@ -79,7 +80,15 @@ The seeded Inbox category exports with `id = -1` and `isDefault = true`.
 (must reference a category in the file), `priority?`, `reminderDate?`, `periodicity?`,
 `periodicityInterval` (default `1`), `repeatDays?`, `monthDayOption?`, `parentTaskId?`
 (must reference a task in the file), `sortOrder` (default `0`), `completedAt?`,
-`nextInstanceId?` (dangling references are nulled on import, not fatal).
+`nextInstanceId?` (dangling references are nulled on import, not fatal), `sectionId?` (the
+task's [section](#task-section); a reference to a missing section, or to a section of another
+category, is nulled on import — the task lands unsectioned).
+
+### Task section
+
+`id`, `categoryId`, `name`, `sortOrder` (default `0`). A divider inside one category (#61).
+A section whose `categoryId` is not in the file is dropped on import, not fatal. Collapse state
+is device-local UI state and is never exported.
 
 ### Habit
 
@@ -123,7 +132,10 @@ so a hand-edited file cannot install a contradictory pause history.
 - **Replace** restores the file exactly (original ids preserved; Inbox re-seeded if the file
   carries no default category). **Merge** adds records, skipping exact duplicates and
   reporting conflicts by natural key (category name; task title within category/parent;
-  habit/chain title).
+  habit/chain title). Sections never conflict: an incoming section reuses a same-named section
+  of its resolved local category, otherwise it is appended to that category.
+- **Older apps** reading a file that carries sections drop `taskSections` and `sectionId` as
+  unknown fields, so every task imports unsectioned.
 
 ## Evolution rules
 

@@ -8,6 +8,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import kotlinx.datetime.LocalDateTime
 import org.junit.Test
 
@@ -123,6 +124,33 @@ class BackupPayloadValidatorTest {
                 ValidationIssueKind.UNKNOWN_CHAIN_REFERENCE,
                 ValidationIssueKind.UNKNOWN_HABIT_REFERENCE,
             )
+    }
+
+    /** #61: a section is structure, so a broken reference is cleaned up rather than fatal. */
+    @Test
+    fun `sections of unknown categories are dropped and stray task sections are cleared`() {
+        val data =
+            backupData(
+                categories = listOf(category(id = 1), category(id = 2)),
+                tasks =
+                    listOf(
+                        task(id = 10, categoryId = 1).copy(sectionId = 5),
+                        task(id = 11, categoryId = 2).copy(sectionId = 5),
+                        task(id = 12, categoryId = 1).copy(sectionId = 6),
+                    ),
+            ).copy(
+                sections =
+                    listOf(
+                        TaskSection(id = 5, categoryId = 1, name = "Cat"),
+                        TaskSection(id = 6, categoryId = 99, name = "Orphan"),
+                    ),
+            )
+
+        val result = validator.validate(data) as BackupPayloadValidator.Result.Valid
+
+        assertThat(result.sanitized.sections.map { it.id }).containsExactly(5L)
+        assertThat(result.sanitized.tasks.associate { it.id to it.sectionId })
+            .containsExactly(10L, 5L, 11L, null, 12L, null)
     }
 
     private fun backupData(

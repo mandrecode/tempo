@@ -141,6 +141,7 @@ class BackupRepositoryImpl
         private suspend fun readAll(): BackupData =
             BackupData(
                 categories = database.categoryDao().getAllCategoriesSync().toDomain(),
+                sections = database.taskSectionDao().getAllSectionsSync().map { it.toDomain() },
                 tasks = database.taskDao().getAllTasksSync().toDomain(),
                 habits = database.habitDao().getAllHabitsSync().toDomain(),
                 habitChains = database.habitChainDao().getAllHabitChainsSync().map { it.toDomainChain() },
@@ -175,9 +176,11 @@ class BackupRepositoryImpl
                 // reuses its id. The files themselves go at the next start (pruneOrphans).
                 database.taskAttachmentDao().deleteAll()
                 database.categoryDao().deleteAllCategories()
+                database.taskSectionDao().deleteAll()
 
                 data.categories.forEach { database.categoryDao().insertCategory(it.toEntity()) }
                 val seededInboxCount = ensureDefaultCategory(data.categories)
+                data.sections.forEach { database.taskSectionDao().insertSection(it.toEntity()) }
                 data.tasks.forEach { database.taskDao().insertTask(it.toEntity()) }
                 data.habits.forEach { database.habitDao().insertHabit(it.toEntity()) }
                 data.habitChains.forEach { database.habitChainDao().insertHabitChain(it.toEntity()) }
@@ -239,7 +242,14 @@ class BackupRepositoryImpl
                     categoryIds[category.id] =
                         database.categoryDao().insertCategory(category.copy(id = 0).toEntity())
                 }
-                val taskIds = insertMergedTasks(plan, categoryIds)
+                val sectionIds = plan.sectionIdMap.toMutableMap()
+                plan.sectionsToInsert.forEach { section ->
+                    sectionIds[section.id] =
+                        database.taskSectionDao().insertSection(
+                            section.copy(id = 0, categoryId = categoryIds.getValue(section.categoryId)).toEntity(),
+                        )
+                }
+                val taskIds = insertMergedTasks(plan, categoryIds, sectionIds)
                 val habitIds = plan.habitIdMap.toMutableMap()
                 plan.habitsToInsert.forEach { habit ->
                     habitIds[habit.id] = database.habitDao().insertHabit(habit.copy(id = 0).toEntity())
@@ -265,6 +275,7 @@ class BackupRepositoryImpl
         private suspend fun insertMergedTasks(
             plan: MergePlan,
             categoryIds: Map<Long, Long>,
+            sectionIds: Map<Long, Long>,
         ): Map<Long, Long> {
             val taskIds = plan.taskIdMap.toMutableMap()
             plan.tasksToInsert.forEach { task ->
@@ -276,6 +287,8 @@ class BackupRepositoryImpl
                                 categoryId = categoryIds.getValue(task.categoryId),
                                 parentTaskId = task.parentTaskId?.let(taskIds::getValue),
                                 nextInstanceId = null,
+                                // A task whose section did not come across lands unsectioned.
+                                sectionId = task.sectionId?.let(sectionIds::get),
                             ).toEntity(),
                     )
             }

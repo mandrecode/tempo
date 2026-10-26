@@ -12,6 +12,7 @@ import com.mandrecode.tempo.features.backup.data.model.DailyFocusActivityBackupD
 import com.mandrecode.tempo.features.backup.data.model.HabitBackupDto
 import com.mandrecode.tempo.features.backup.data.model.HabitChainBackupDto
 import com.mandrecode.tempo.features.backup.data.model.TaskBackupDto
+import com.mandrecode.tempo.features.backup.data.model.TaskSectionBackupDto
 import com.mandrecode.tempo.features.backup.domain.model.BackupData
 import com.mandrecode.tempo.features.backup.domain.model.ChainMembership
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -19,6 +20,7 @@ import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.routines.domain.model.HabitType
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 
@@ -38,6 +40,7 @@ fun BackupData.toDto(
         appVersion = appVersion,
         exportedAt = exportedAt.toString(),
         categories = categories.map { it.toDto() },
+        taskSections = sections.map { TaskSectionBackupDto(it.id, it.categoryId, it.name, it.sortOrder) },
         tasks = tasks.map { it.toDto() },
         habits = habits.map { it.toDto() },
         habitChains = habitChains.map { it.toDto() },
@@ -57,6 +60,7 @@ fun BackupData.toDto(
 fun BackupFileDto.toDomain(): BackupData =
     BackupData(
         categories = categories.map { it.toDomain() },
+        sections = taskSections.map { TaskSection(it.id, it.categoryId, it.name, it.sortOrder) },
         tasks = tasks.map { it.toDomain() },
         habits = habits.map { it.toDomain() },
         habitChains = habitChains.map { it.toDomain() },
@@ -113,6 +117,7 @@ private fun Task.toDto(): TaskBackupDto =
         sortOrder = sortOrder,
         completedAt = completedAt?.toString(),
         nextInstanceId = nextInstanceId,
+        sectionId = sectionId,
     )
 
 private fun TaskBackupDto.toDomain(): Task =
@@ -132,6 +137,7 @@ private fun TaskBackupDto.toDomain(): Task =
         sortOrder = sortOrder,
         completedAt = completedAt?.let { LocalDateTime.parse(it) },
         nextInstanceId = nextInstanceId,
+        sectionId = sectionId,
     )
 
 private fun Habit.toDto(): HabitBackupDto =
