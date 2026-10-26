@@ -50,9 +50,9 @@
 
 ## 9. Large and up: shortcut group and two columns
 
-- [ ] 9.1 Build `SectionShortcutGroup` (connected buttons, category-coloured checked state, counts, separate Add and Reorder buttons, `AnimatedContent` per category), shown from Large up. Verify with a UI test for tap-to-scroll and a scroll-spy ViewModel/Content test.
-- [ ] 9.2 Add the two-column `LazyVerticalStaggeredGrid` layout for panes ≥ 900 dp (full-line unsectioned and Completed blocks, whole sections per lane), falling back to one column when the editor docks. Verify with a UI test that toggles the docked editor.
-- [ ] 9.3 Add `@PreviewTest` screenshot previews for a sectioned category on phone, foldable, tablet and desktop (light and dark), run `./gradlew updateDebugScreenshotTest`, review the diff report, and commit the references. Verify `./gradlew validateDebugScreenshotTest` passes and existing references are unchanged.
+- [x] 9.1 Build `SectionShortcutGroup` (connected buttons, category-coloured checked state, counts, separate Add and Reorder buttons, `AnimatedContent` per category), shown from Large up. Verify with a UI test for tap-to-scroll and a scroll-spy ViewModel/Content test.
+- [x] 9.2 Add the two-column `LazyVerticalStaggeredGrid` layout for panes ≥ 900 dp (full-line unsectioned and Completed blocks, whole sections per lane), falling back to one column when the editor docks. Verify with a UI test that toggles the docked editor.
+- [x] 9.3 Add `@PreviewTest` screenshot previews for a sectioned category on phone, foldable, tablet and desktop (light and dark), run `./gradlew updateDebugScreenshotTest`, review the diff report, and commit the references. Verify `./gradlew validateDebugScreenshotTest` passes and existing references are unchanged.
 
 ## 10. Copy and announcement
 

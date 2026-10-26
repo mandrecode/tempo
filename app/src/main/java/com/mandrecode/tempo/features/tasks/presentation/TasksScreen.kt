@@ -48,6 +48,8 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
+import com.mandrecode.tempo.core.ui.navigation.ReadableContentMaxWidth
+import com.mandrecode.tempo.core.ui.navigation.SectionedContentMaxWidth
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.animatedRailClearance
@@ -212,7 +214,18 @@ fun TasksScreen(
                         .background(MaterialTheme.colorScheme.background),
             ) {
                 Scaffold(
-                    modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
+                    modifier =
+                        Modifier.adaptiveScreenContentLayout(
+                            railClearance = railContentClearance,
+                            // A sectioned category may use the width for two columns, unless an
+                            // editor is docked beside it (#61).
+                            maxContentWidth =
+                                if (uiState.sectionedList != null && !(isDockedEditor && uiState.taskForm.isVisible)) {
+                                    SectionedContentMaxWidth
+                                } else {
+                                    ReadableContentMaxWidth
+                                },
+                        ),
                     containerColor = MaterialTheme.colorScheme.background,
                     contentWindowInsets = WindowInsets(0),
                     topBar = topBar,

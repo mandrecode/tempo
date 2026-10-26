@@ -20,7 +20,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.Empt
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionHeader
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionNameField
 import com.mandrecode.tempo.features.tasks.presentation.model.DropEntry
-import com.mandrecode.tempo.features.tasks.presentation.model.SectionDropAction
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 
@@ -42,6 +41,7 @@ internal class SectionEditState {
 }
 
 internal const val SECTION_HEADER_KEY_PREFIX = "section_header_"
+private const val SECTION_EMPTY_KEY_PREFIX = "section_empty_"
 
 /** The lazy-list key of a section's header, also what the shortcut group scrolls to. */
 internal fun sectionHeaderKey(sectionId: Long): String = "$SECTION_HEADER_KEY_PREFIX$sectionId"
@@ -85,7 +85,7 @@ internal fun LazyListScope.sectionedTaskItems(
         }
 
         if (!isCollapsed && sectionUi.tasks.isEmpty()) {
-            item(key = "section_empty_${section.id}", contentType = "section_empty") {
+            item(key = "$SECTION_EMPTY_KEY_PREFIX${section.id}", contentType = "section_empty") {
                 EmptySectionPlaceholder(
                     isDropTarget = dragState?.isTargeting(DropEntry.Kind.Placeholder, section.id) == true,
                     modifier =
@@ -137,14 +137,7 @@ private fun LazyListScope.sectionTasks(
         val gestures =
             dragState?.let { state ->
                 Modifier.sectionDragGestures(state, task.id, sectionId, index) { action ->
-                    onEvent(
-                        when (action) {
-                            is SectionDropAction.Reorder ->
-                                TasksContract.UiEvent.ReorderTasks(action.fromIndex, action.toIndex, tasks)
-                            is SectionDropAction.Move ->
-                                TasksContract.UiEvent.MoveTaskToSection(task.id, action.sectionId, action.index)
-                        },
-                    )
+                    onEvent(sectionDropEvent(action, task, tasks))
                 }
             }
         taskRow(task, gestures)
@@ -177,7 +170,7 @@ internal fun isShortWindow(): Boolean =
 
 /** A section's header, or the field that renames it in place. */
 @Composable
-private fun SectionHeaderItem(
+internal fun SectionHeaderItem(
     sectionUi: SectionUi,
     isCollapsed: Boolean,
     editState: SectionEditState,
@@ -223,4 +216,42 @@ private fun SectionHeaderItem(
                 ),
         )
     }
+}
+
+/** The section a one-column list item key belongs to, for the shortcut group's scroll spy. */
+internal fun listKeySection(
+    key: Any?,
+    list: SectionedTaskList,
+): SectionKey =
+    when {
+        key is Long && list.unsectioned.any { it.id == key } -> SectionKey.Of(null)
+        key is Long ->
+            list.sections.firstOrNull { ui -> ui.tasks.any { it.id == key } }?.let { SectionKey.Of(it.section.id) }
+                ?: SectionKey.Unknown
+        key is String && key.startsWith(SECTION_HEADER_KEY_PREFIX) ->
+            SectionKey.Of(key.removePrefix(SECTION_HEADER_KEY_PREFIX).toLongOrNull())
+        key is String && key.startsWith(SECTION_EMPTY_KEY_PREFIX) ->
+            SectionKey.Of(key.removePrefix(SECTION_EMPTY_KEY_PREFIX).toLongOrNull())
+        else -> SectionKey.Unknown
+    }
+
+/**
+ * Where [sectionId]'s header sits in the one-column list, mirroring [sectionedTaskItems]'s order:
+ * unsectioned tasks, then per section its header, its tasks or placeholder unless collapsed, and a
+ * new-section field placed after it.
+ */
+internal fun sectionHeaderListIndex(
+    list: SectionedTaskList,
+    collapsedSectionIds: Set<Long>,
+    newSectionDraft: NewSectionDraft?,
+    sectionId: Long,
+): Int {
+    var index = list.unsectioned.size
+    for (sectionUi in list.sections) {
+        val id = sectionUi.section.id
+        if (id == sectionId) return index
+        index += 1 + if (id in collapsedSectionIds) 0 else sectionUi.tasks.size.coerceAtLeast(1)
+        if ((newSectionDraft as? NewSectionDraft.After)?.sectionId == id) index++
+    }
+    return 0
 }
