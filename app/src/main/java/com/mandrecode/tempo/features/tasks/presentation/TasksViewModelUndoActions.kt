@@ -19,24 +19,30 @@ internal fun TasksViewModel.undoDeletion(token: Long) {
     val pending = pendingDeletionSnapshots[token] ?: return
     viewModelScope.launch {
         try {
-            val result =
+            val hasSchedulingFailure =
                 when (pending) {
-                    is PendingTaskDeletion.Tasks -> restoreDeletedTasksUseCase(pending.snapshot)
+                    is PendingTaskDeletion.Tasks -> restoreDeletedTasksUseCase(pending.snapshot).hasSchedulingFailure
                     is PendingTaskDeletion.Category -> {
-                        restoreDeletedCategoryUseCase(pending.snapshot).also {
-                            val categoryId = pending.selectedCategoryIdBeforeDeletion
-                            val categoryIsValid =
-                                categoryId == pending.snapshot.category.id ||
-                                    mutableUiState.value.categories.any { it.id == categoryId }
-                            if (categoryIsValid) {
-                                selectCategory(categoryId)
-                            }
-                        }
+                        restoreDeletedCategoryUseCase(pending.snapshot)
+                            .also {
+                                val categoryId = pending.selectedCategoryIdBeforeDeletion
+                                val categoryIsValid =
+                                    categoryId == pending.snapshot.category.id ||
+                                        mutableUiState.value.categories.any { it.id == categoryId }
+                                if (categoryIsValid) {
+                                    selectCategory(categoryId)
+                                }
+                            }.hasSchedulingFailure
+                    }
+                    // Sections carry no reminders, so there is nothing to reschedule (#61).
+                    is PendingTaskDeletion.Section -> {
+                        restoreDeletedSection(pending)
+                        false
                     }
                 }
             pendingDeletionSnapshots.remove(token)
             showSnackbar(
-                if (result.hasSchedulingFailure) {
+                if (hasSchedulingFailure) {
                     R.string.msg_undo_restored_reminder_warning
                 } else {
                     R.string.msg_undo_success

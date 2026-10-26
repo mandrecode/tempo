@@ -260,6 +260,11 @@
     <string name="msg_category_update_failed">Failed to update category: %1$s</string>
     <string name="msg_category_deleted_success_prefix">Category</string>
     <string name="msg_category_deleted_success_suffix">\u0020and all its tasks deleted successfully</string>
+    <!-- Task sections (#61) -->
+    <string name="msg_section_name_empty">Section name can\'t be empty</string>
+    <string name="msg_section_name_too_long">Section name is too long</string>
+    <string name="msg_section_deleted_prefix">Section</string>
+    <string name="msg_section_deleted_suffix">\u0020deleted. Its tasks moved to No section</string>
     <string name="msg_category_delete_failed">Failed to delete category: %1$s</string>
     <string name="msg_cannot_delete_last_category">Cannot delete the last category</string>
     <string name="msg_cannot_delete_inbox">The Inbox category cannot be deleted</string>

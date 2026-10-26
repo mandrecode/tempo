@@ -5,12 +5,15 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.toUserFacingMessage
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
+import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import com.mandrecode.tempo.features.tasks.presentation.model.TaskSortCriteria
 import com.mandrecode.tempo.features.tasks.presentation.model.buildReorderableRuns
+import com.mandrecode.tempo.features.tasks.presentation.model.buildSectionedList
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentMapOf
@@ -61,6 +64,8 @@ private data class CalculatedData(
     val subtasksMap: ImmutableMap<Long, ImmutableList<Task>>,
     val reorderableRuns: ImmutableMap<Long, ReorderableRun>,
     val effectiveSelectedId: Long,
+    val sectionedList: SectionedTaskList?,
+    val sectionsByCategory: ImmutableMap<Long, ImmutableList<TaskSection>>,
 )
 
 private fun <K, V> Map<K, List<V>>.toImmutableListMap(): ImmutableMap<K, ImmutableList<V>> =
@@ -71,14 +76,14 @@ private fun <K, V> Map<K, List<V>>.toImmutableListMap(): ImmutableMap<K, Immutab
 internal fun TasksViewModel.loadData() {
     viewModelScope.launch {
         combine(
-            taskRepository.getAllTasks(),
+            combine(taskRepository.getAllTasks(), sectionUseCases.repository.getAllSections(), ::Pair),
             categoryRepository.getAllCategories(),
             mutableUiState.map { it.selectedCategoryId }.distinctUntilChanged(),
             mutableUiState.map { it.sortOption }.distinctUntilChanged(),
             // Only a trigger: the day itself is read from the clock below, which may also have
             // moved backward (a time-zone or clock correction).
             currentDay,
-        ) { tasks, dbCategories, selectedCategoryId, sortOption, _ ->
+        ) { (tasks, allSections), dbCategories, selectedCategoryId, sortOption, _ ->
             val allCategories = dbCategories.toPersistentList()
 
             val effectiveSelectedId =
@@ -204,6 +209,15 @@ internal fun TasksViewModel.loadData() {
                         )
                     }.toImmutableListMap()
 
+            val sectionsByCategory = allSections.groupBy { it.categoryId }.toImmutableListMap()
+            // Sections replace the sort's group headers (#61), so reorderable runs are cut per
+            // section instead of per sort group.
+            val sectionedList =
+                buildSectionedList(activeTasks, sectionsByCategory[effectiveSelectedId].orEmpty(), today)
+            val reorderGroups =
+                sectionedList?.let { list -> listOf(list.unsectioned) + list.sections.map { it.tasks } }
+                    ?: activeTaskGroups.values
+
             CalculatedData(
                 tasks.toPersistentList(),
                 allCategories,
@@ -211,8 +225,10 @@ internal fun TasksViewModel.loadData() {
                 activeTaskGroups,
                 completedTaskGroups,
                 subtasksMap,
-                buildReorderableRuns(activeTaskGroups.values, sortOption),
+                buildReorderableRuns(reorderGroups, sortOption),
                 effectiveSelectedId,
+                sectionedList,
+                sectionsByCategory,
             )
         }.flowOn(defaultDispatcher)
             .catch { exception ->
@@ -245,6 +261,8 @@ internal fun TasksViewModel.loadData() {
                         completedTaskGroups = data.completedTaskGroups,
                         subtasksMap = data.subtasksMap,
                         reorderableRuns = data.reorderableRuns,
+                        sectionedList = data.sectionedList,
+                        sectionsByCategory = data.sectionsByCategory,
                         selectedCategoryId = data.effectiveSelectedId,
                         sortOption = sortOption,
                         isLoading = false,

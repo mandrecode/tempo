@@ -31,4 +31,13 @@ interface TasksScreenPreferencesRepository {
 
     /** Persists the selected category ID. */
     fun setSelectedCategoryId(categoryId: Long)
+
+    /** Ids of the task sections (#61) the user collapsed. Device-local; never backed up. */
+    fun getCollapsedSectionIds(): Set<Long>
+
+    /** Remembers whether [sectionId] is collapsed; expanding (or deleting) it drops the id. */
+    fun setSectionCollapsed(
+        sectionId: Long,
+        collapsed: Boolean,
+    )
 }

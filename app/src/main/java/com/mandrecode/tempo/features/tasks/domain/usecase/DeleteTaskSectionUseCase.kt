@@ -14,5 +14,5 @@ class DeleteTaskSectionUseCase
         private val repository: TaskSectionRepository,
     ) {
         /** The snapshot undo needs, or null when the section was already gone. */
-        suspend operator fun invoke(sectionId: Long): SectionDeletionSnapshot? = repository.deleteSectionWithSnapshot(sectionId)
+        suspend operator fun invoke(id: Long): SectionDeletionSnapshot? = repository.deleteSectionWithSnapshot(id)
     }

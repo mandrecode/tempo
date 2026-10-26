@@ -48,11 +48,28 @@ class TasksScreenPreferencesRepositoryImpl
             prefs.edit { putLong(KEY_SELECTED_CATEGORY_ID, categoryId) }
         }
 
+        override fun getCollapsedSectionIds(): Set<Long> =
+            prefs
+                .getStringSet(KEY_COLLAPSED_SECTION_IDS, emptySet())
+                .orEmpty()
+                .mapNotNullTo(mutableSetOf()) { it.toLongOrNull() }
+
+        override fun setSectionCollapsed(
+            sectionId: Long,
+            collapsed: Boolean,
+        ) {
+            val ids = getCollapsedSectionIds().map(Long::toString).toMutableSet()
+            val changed = if (collapsed) ids.add(sectionId.toString()) else ids.remove(sectionId.toString())
+            // A fresh set every time: SharedPreferences must not be handed back the instance it returned.
+            if (changed) prefs.edit { putStringSet(KEY_COLLAPSED_SECTION_IDS, ids.toSet()) }
+        }
+
         companion object {
             private const val PREFS_NAME = "tasks_screen_prefs"
             private const val KEY_SHOW_COMPLETED_TASKS = "show_completed_tasks"
             private const val KEY_SORT_OPTION_PREFIX = "sort_option_"
             private const val KEY_SELECTED_CATEGORY_ID = "selected_category_id"
+            private const val KEY_COLLAPSED_SECTION_IDS = "collapsed_section_ids"
 
             private fun sortOptionKey(categoryId: Long): String = "$KEY_SORT_OPTION_PREFIX$categoryId"
         }

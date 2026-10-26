@@ -24,13 +24,13 @@
 
 ## 4. Collapse preference
 
-- [ ] 4.1 Add a collapsed-section-ids set to `TasksScreenPreferencesRepository`/`Impl`, with prune on delete and re-add on undo. Verify with a unit test using the fake prefs and with the ViewModel test surviving recreation.
+- [x] 4.1 Add a collapsed-section-ids set to `TasksScreenPreferencesRepository`/`Impl`, with prune on delete and re-add on undo. Verify with a unit test using the fake prefs and with the ViewModel test surviving recreation.
 
 ## 5. Tasks ViewModel: sectioned grouping
 
-- [ ] 5.1 Add `SectionUi`/`SectionedTaskList` to `TasksContract`, and the events: create, rename, reorder, delete, undo, toggle collapse, move task, add-task-in-section. Use `kotlinx.collections.immutable`. Verify the contract compiles and `detekt` passes.
-- [ ] 5.2 In `TasksViewModelDataLoading`, build the sectioned list when the category has sections: unsectioned first, each section sorted by the active sort without group headers, counts, overdue counts, reorderable runs per section, and orphan section ids treated as unsectioned. Keep the existing path untouched otherwise. Verify with ViewModel tests per sort option, plus an existing-behaviour regression test for a category without sections.
-- [ ] 5.3 Wire the section events to their use cases, including the snackbar-with-undo effect for delete. Verify with ViewModel tests using Turbine on `uiEffect`.
+- [x] 5.1 Add `SectionUi`/`SectionedTaskList` to `TasksContract`, and the events: create, rename, reorder, delete, undo, toggle collapse, move task, add-task-in-section. Use `kotlinx.collections.immutable`. Verify the contract compiles and `detekt` passes.
+- [x] 5.2 In `TasksViewModelDataLoading`, build the sectioned list when the category has sections: unsectioned first, each section sorted by the active sort without group headers, counts, overdue counts, reorderable runs per section, and orphan section ids treated as unsectioned. Keep the existing path untouched otherwise. Verify with ViewModel tests per sort option, plus an existing-behaviour regression test for a category without sections.
+- [x] 5.3 Wire the section events to their use cases, including the snackbar-with-undo effect for delete. Verify with ViewModel tests using Turbine on `uiEffect`.
 
 ## 6. Tasks list UI: headers and management
 

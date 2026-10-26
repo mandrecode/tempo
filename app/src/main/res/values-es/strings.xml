@@ -278,6 +278,11 @@
     <string name="msg_category_update_failed">Error al actualizar categoría: %1$s</string>
     <string name="msg_category_deleted_success_prefix">Categoría</string>
     <string name="msg_category_deleted_success_suffix">\u0020y todas sus tareas eliminadas con éxito</string>
+    <!-- Task sections (#61) -->
+    <string name="msg_section_name_empty">El nombre de la sección no puede estar vacío</string>
+    <string name="msg_section_name_too_long">El nombre de la sección es demasiado largo</string>
+    <string name="msg_section_deleted_prefix">Sección</string>
+    <string name="msg_section_deleted_suffix">\u0020eliminada. Sus tareas pasaron a Sin sección</string>
     <string name="msg_category_delete_failed">Error al eliminar categoría: %1$s</string>
     <string name="msg_cannot_delete_last_category">No se puede eliminar la última categoría</string>
     <string name="msg_cannot_delete_inbox">La categoría Bandeja de entrada no se puede eliminar</string>
