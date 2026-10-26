@@ -37,6 +37,9 @@ class TaskEditorBackHandlerTest {
     private var sheetProgressEvents = 0
     private var sheetDismissals = 0
 
+    // Driven explicitly: whether a test device shows a soft keyboard for a focused field varies.
+    private var isKeyboardVisible by mutableStateOf(true)
+
     private fun renderEditor(interceptsLegacyImeBack: Boolean = false) {
         composeTestRule.setContent {
             PredictiveBackHandler { progress ->
@@ -44,7 +47,7 @@ class TaskEditorBackHandlerTest {
                 sheetDismissals++
             }
             val focusState = remember { TaskEditorFocusState() }
-            TaskEditorBackHandler(focusState = focusState)
+            TaskEditorBackHandler(focusState = focusState, isKeyboardVisible = isKeyboardVisible)
             val focusManager = LocalFocusManager.current
             val focusConfig =
                 remember {
@@ -163,6 +166,58 @@ class TaskEditorBackHandlerTest {
 
         pressBack()
         assertEquals(1, sheetDismissals)
+    }
+
+    @Test
+    fun givenFocusedField_whenKeyboardAlreadyClosed_thenFirstBackReachesSheet() {
+        renderEditor()
+        val description = composeTestRule.onNodeWithTag(DESCRIPTION_TAG)
+        description.performClick()
+
+        isKeyboardVisible = false
+        pressBack()
+
+        description.assertIsFocused()
+        assertEquals(1, sheetDismissals)
+    }
+
+    @Test
+    fun givenRoutedGesture_whenKeyboardClosesMidGesture_thenGestureStillClearsFocusOnly() {
+        renderEditor()
+        val description = composeTestRule.onNodeWithTag(DESCRIPTION_TAG)
+        description.performClick()
+        composeTestRule.waitForIdle()
+
+        val dispatcher = composeTestRule.activity.onBackPressedDispatcher
+        composeTestRule.runOnUiThread {
+            dispatcher.dispatchOnBackStarted(backEvent(0f))
+            dispatcher.dispatchOnBackProgressed(backEvent(0.5f))
+        }
+        composeTestRule.waitForIdle()
+        isKeyboardVisible = false
+        composeTestRule.waitForIdle()
+        composeTestRule.runOnUiThread { dispatcher.onBackPressed() }
+        composeTestRule.waitForIdle()
+
+        description.assertIsNotFocused()
+        assertEquals(0, sheetProgressEvents)
+        assertEquals(0, sheetDismissals)
+    }
+
+    @Test
+    fun givenLegacyImeBack_whenKeyboardAlreadyClosed_thenBackKeyIsNotIntercepted() {
+        renderEditor(interceptsLegacyImeBack = true)
+        val title = composeTestRule.onNodeWithTag(TITLE_TAG)
+        title.performClick()
+        isKeyboardVisible = false
+        composeTestRule.waitForIdle()
+
+        val view = composeTestRule.activity.window.decorView
+        composeTestRule.runOnUiThread {
+            val consumed = view.dispatchKeyEventPreIme(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
+            assertEquals(false, consumed)
+        }
+        title.assertIsFocused()
     }
 
     /**
