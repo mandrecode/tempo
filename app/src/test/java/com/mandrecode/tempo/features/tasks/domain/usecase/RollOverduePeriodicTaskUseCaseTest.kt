@@ -274,6 +274,25 @@ class RollOverduePeriodicTaskUseCaseTest {
             assertThat(insertedSlot.captured.reminderDate).isGreaterThan(now)
         }
 
+    @Test
+    fun `given overdue periodic task in a section when invoked then next instance keeps the section`() =
+        runTest {
+            val now = LocalDateTime(2026, 4, 25, 10, 0)
+            val overdueTask = overdueTask().copy(sectionId = 8L)
+            val insertedSlot = slot<Task>()
+            val scheduledSlot = slot<Task>()
+            coEvery { taskRepository.getTaskById(1L) } returns overdueTask
+            coEvery { taskRepository.getSubtasksSync(1L) } returns emptyList()
+            coEvery { taskRepository.insertTask(capture(insertedSlot)) } returns 10L
+            coEvery { taskReminderScheduler.schedule(capture(scheduledSlot)) } answers {
+                ScheduleResult.Success(scheduledSlot.captured.reminderDate!!)
+            }
+
+            useCase(overdueTask, now)
+
+            assertThat(insertedSlot.captured.sectionId).isEqualTo(8L)
+        }
+
     private fun overdueTask(
         reminderDate: LocalDateTime = LocalDateTime(2026, 4, 24, 9, 0),
         nextInstanceId: Long? = null,

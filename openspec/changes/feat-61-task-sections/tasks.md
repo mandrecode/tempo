@@ -2,19 +2,19 @@
 
 ## 1. Data layer and migration
 
-- [ ] 1.1 Add `TaskSectionEntity` (`id`, `categoryId`, `name`, `sortOrder`, index on `categoryId`) and `TaskSectionDao` (observe by category, insert, update, delete, rewrite sort orders, delete by category, get all). Register both in `TempoDatabase` and verify with DAO instrumented tests.
-- [ ] 1.2 Add nullable `sectionId` plus an index to `TaskEntity`/`Task` and their mappers. Verify the mapper unit tests round-trip `sectionId`.
-- [ ] 1.3 Write `MIGRATION_11_12` (create `task_sections`, add `tasks.sectionId`, create indexes) and bump the DB version. Run `./gradlew kspDebugKotlin` and commit `app/schemas/`. Verify with a migration test from v11 data where every task reads as unsectioned.
-- [ ] 1.4 In `TaskRepositoryImpl`, clear `sectionId` whenever an update changes `categoryId`. Verify with a repository test covering editor, widget and bulk update paths.
+- [x] 1.1 Add `TaskSectionEntity` (`id`, `categoryId`, `name`, `sortOrder`, index on `categoryId`) and `TaskSectionDao` (observe by category, insert, update, delete, rewrite sort orders, delete by category, get all). Register both in `TempoDatabase` and verify with DAO instrumented tests.
+- [x] 1.2 Add nullable `sectionId` plus an index to `TaskEntity`/`Task` and their mappers. Verify the mapper unit tests round-trip `sectionId`.
+- [x] 1.3 Write `MIGRATION_11_12` (create `task_sections`, add `tasks.sectionId`, create indexes) and bump the DB version. Run `./gradlew kspDebugKotlin` and commit `app/schemas/`. Verify with a migration test from v11 data where every task reads as unsectioned.
+- [x] 1.4 In `TaskRepositoryImpl`, clear `sectionId` whenever an update changes `categoryId`. Verify with a repository test covering editor, widget and bulk update paths.
 
 ## 2. Domain: sections and their lifecycle
 
-- [ ] 2.1 Add the `TaskSection` model, the `TaskSectionRepository` interface and implementation, and bind it in `core/di/RepositoryModule.kt`. Verify the build and a Hilt graph test.
-- [ ] 2.2 Implement `CreateTaskSectionUseCase` and `RenameTaskSectionUseCase` (trimmed, non-blank, appended last) and `ReorderTaskSectionsUseCase` (rewrites 0..n-1). Verify with unit tests for blank rejection, append position and idempotent reorder.
-- [ ] 2.3 Implement `DeleteTaskSectionUseCase` returning a `SectionDeletionSnapshot`, and `RestoreDeletedTaskSectionUseCase` (single transactions; only restore tasks still in the same category). Verify with unit tests, including a task moved category before undo.
-- [ ] 2.4 Implement `MoveTaskToSectionUseCase(taskId, sectionId?, index)`: reject a section from another category, and rewrite the target section's `sortOrder`. Verify with unit tests for append, insert-at-index and move to unsectioned.
-- [ ] 2.5 Extend `CategoryDeletionSnapshot` and `deleteCategoryWithSnapshot`/`restoreDeletedCategory` with sections. Verify with a unit test that delete-plus-undo restores sections and memberships.
-- [ ] 2.6 Pin the recurrence and completion invariants: the spawned next instance keeps `sectionId`, the rollback restores it, and complete/uncomplete leave it unchanged. Verify with tests in `ToggleTaskCompletionUseCaseTest` and `RollOverduePeriodicTaskUseCaseTest`.
+- [x] 2.1 Add the `TaskSection` model, the `TaskSectionRepository` interface and implementation, and bind it in `core/di/RepositoryModule.kt`. Verify the build and a Hilt graph test.
+- [x] 2.2 Implement `CreateTaskSectionUseCase` and `RenameTaskSectionUseCase` (trimmed, non-blank, appended last) and `ReorderTaskSectionsUseCase` (rewrites 0..n-1). Verify with unit tests for blank rejection, append position and idempotent reorder.
+- [x] 2.3 Implement `DeleteTaskSectionUseCase` returning a `SectionDeletionSnapshot`, and `RestoreDeletedTaskSectionUseCase` (single transactions; only restore tasks still in the same category). Verify with unit tests, including a task moved category before undo.
+- [x] 2.4 Implement `MoveTaskToSectionUseCase(taskId, sectionId?, index)`: reject a section from another category, and rewrite the target section's `sortOrder`. Verify with unit tests for append, insert-at-index and move to unsectioned.
+- [x] 2.5 Extend `CategoryDeletionSnapshot` and `deleteCategoryWithSnapshot`/`restoreDeletedCategory` with sections. Verify with a unit test that delete-plus-undo restores sections and memberships.
+- [x] 2.6 Pin the recurrence and completion invariants: the spawned next instance keeps `sectionId`, the rollback restores it, and complete/uncomplete leave it unchanged. Verify with tests in `ToggleTaskCompletionUseCaseTest` and `RollOverduePeriodicTaskUseCaseTest`.
 
 ## 3. Backup
 

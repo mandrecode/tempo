@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.features.tasks.data.repository
 
 import androidx.room.withTransaction
+import com.mandrecode.tempo.core.data.entity.TaskEntity
 import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
@@ -51,15 +52,18 @@ class TaskRepositoryImpl
         override suspend fun insertTasks(tasks: List<Task>): List<Long> = taskDao.insertTasks(tasks.toEntity())
 
         override suspend fun updateTask(task: Task) {
-            val entity = task.toEntity()
-            val oldTask = taskDao.getTaskById(entity.id)
+            val oldTask = taskDao.getTaskById(task.id)
+            val entity = task.toEntity().clearingSectionOnCategoryChange(oldTask)
             if (oldTask != null && oldTask.categoryId != entity.categoryId) {
                 taskDao.updateSubtasksCategory(entity.id, entity.categoryId)
             }
             taskDao.updateTask(entity)
         }
 
-        override suspend fun updateTasks(tasks: List<Task>) = taskDao.updateTasks(tasks.toEntity())
+        override suspend fun updateTasks(tasks: List<Task>) =
+            taskDao.updateTasks(
+                tasks.map { task -> task.toEntity().clearingSectionOnCategoryChange(taskDao.getTaskById(task.id)) },
+            )
 
         override suspend fun deleteTask(task: Task) {
             taskDao.deleteTaskTrees(listOf(task.id))
@@ -162,3 +166,10 @@ class TaskRepositoryImpl
 
         override suspend fun <R> runInTransaction(block: suspend () -> R): R = database.withTransaction { block() }
     }
+
+/**
+ * A section belongs to one category (#61), so it cannot follow a task out of it. Enforced here,
+ * at the single write point, rather than by every caller that can move a task.
+ */
+private fun TaskEntity.clearingSectionOnCategoryChange(stored: TaskEntity?): TaskEntity =
+    if (stored != null && stored.categoryId != categoryId && sectionId != null) copy(sectionId = null) else this

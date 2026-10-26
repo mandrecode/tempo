@@ -89,6 +89,7 @@ class TaskMapperTest {
                 isCompleted = true,
                 priority = Priority.LOW,
                 periodicity = Periodicity.MONTHLY,
+                sectionId = 7L,
             )
 
         val result = original.toEntity().toDomain()

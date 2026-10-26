@@ -182,4 +182,54 @@ class TaskRepositoryTest {
 
             coVerify { taskDao.deleteCompletedTaskTreesAtOrBefore(cutoff.toString()) }
         }
+
+    @Test
+    fun `updateTask clears the section when the category changes`() =
+        runTest {
+            coEvery { taskDao.getTaskById(5L) } returns
+                TaskEntity(id = 5L, title = "Buy litter", description = "", categoryId = 1L, sectionId = 9L)
+
+            repository.updateTask(
+                Task(id = 5L, title = "Buy litter", description = "", categoryId = 2L, sectionId = 9L),
+            )
+
+            coVerify { taskDao.updateTask(match { it.categoryId == 2L && it.sectionId == null }) }
+        }
+
+    @Test
+    fun `updateTask keeps the section within the same category`() =
+        runTest {
+            coEvery { taskDao.getTaskById(5L) } returns
+                TaskEntity(id = 5L, title = "Buy litter", description = "", categoryId = 1L, sectionId = null)
+
+            repository.updateTask(
+                Task(id = 5L, title = "Buy litter", description = "", categoryId = 1L, sectionId = 9L),
+            )
+
+            coVerify { taskDao.updateTask(match { it.sectionId == 9L }) }
+        }
+
+    @Test
+    fun `updateTasks clears the section of each task that changes category`() =
+        runTest {
+            coEvery { taskDao.getTaskById(5L) } returns
+                TaskEntity(id = 5L, title = "A", description = "", categoryId = 1L, sectionId = 9L)
+            coEvery { taskDao.getTaskById(6L) } returns
+                TaskEntity(id = 6L, title = "B", description = "", categoryId = 1L, sectionId = 9L)
+
+            repository.updateTasks(
+                listOf(
+                    Task(id = 5L, title = "A", description = "", categoryId = 2L, sectionId = 9L),
+                    Task(id = 6L, title = "B", description = "", categoryId = 1L, sectionId = 9L),
+                ),
+            )
+
+            coVerify {
+                taskDao.updateTasks(
+                    match { tasks ->
+                        tasks.first { it.id == 5L }.sectionId == null && tasks.first { it.id == 6L }.sectionId == 9L
+                    },
+                )
+            }
+        }
 }
