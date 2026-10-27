@@ -48,9 +48,6 @@ class OnboardingViewModel
                 is OnboardingContract.UiEvent.UseTempoColorsToggled ->
                     themePreferencesRepository.setUseTempoColors(event.useTempoColors)
 
-                is OnboardingContract.UiEvent.GlassEffectsToggled ->
-                    themePreferencesRepository.setGlassEffects(event.enabled)
-
                 is OnboardingContract.UiEvent.ThemeModeSelected ->
                     themePreferencesRepository.setThemeMode(event.mode)
 
@@ -68,11 +65,6 @@ class OnboardingViewModel
             viewModelScope.launch {
                 themePreferencesRepository.getUseTempoColors().collect { useTempoColors ->
                     mutableUiState.update { it.copy(useTempoColors = useTempoColors) }
-                }
-            }
-            viewModelScope.launch {
-                themePreferencesRepository.getGlassEffects().collect { enabled ->
-                    mutableUiState.update { it.copy(glassEffects = enabled) }
                 }
             }
             viewModelScope.launch {

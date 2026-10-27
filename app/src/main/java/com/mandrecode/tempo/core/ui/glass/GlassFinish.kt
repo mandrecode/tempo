@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.core.ui.glass
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.ui.Modifier
@@ -23,37 +22,26 @@ import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 
 /**
  * A component's glass edge, for its `border`: none. On the two-tone page content components are set
- * apart by their own colours; only the floating chrome keeps an edge (drawn by [glass]). Kept as a
- * border slot so that, with glass off, [glassRimOr] can hand back each component's own outline.
+ * apart by their own colours; only the floating chrome keeps an edge (drawn by [glass]).
  */
 @Composable
 @ReadOnlyComposable
 fun glassRim(): BorderStroke = LocalTempoGlass.current.componentRim
 
-/**
- * [glassRim] while glass is on; [solid], the component's own pre-glass border, while it is off.
- */
-@Composable
-@ReadOnlyComposable
-fun glassRimOr(solid: BorderStroke?): BorderStroke? {
-    val glass = LocalTempoGlass.current
-    return if (glass.enabled) glass.componentRim else solid
-}
-
-/** A surface's fill: its own pre-glass colour [solid], with the glass's touch of translucency. */
+/** A surface's fill: its own colour [solid], with the glass's touch of translucency. */
 @Composable
 @ReadOnlyComposable
 fun glassCardColor(solid: Color): Color = solid.copy(alpha = solid.alpha * LocalTempoGlass.current.cardAlpha)
 
-/** A secondary (outlined) button's fill: frosted glass while glass is on, clear while off. */
+/** A secondary (outlined) button's fill: the cards' frost. */
 @Composable
 @ReadOnlyComposable
-fun glassButtonContainer(): Color = LocalTempoGlass.current.let { if (it.enabled) it.cardFrost else Color.Transparent }
+fun glassButtonContainer(): Color = LocalTempoGlass.current.cardFrost
 
-/** A secondary (outlined) button's edge: the glass rim while glass is on, [solid] while off. */
+/** A secondary (outlined) button's edge: the glass rim. */
 @Composable
-fun glassButtonBorder(solid: BorderStroke = ButtonDefaults.outlinedButtonBorder(enabled = true)): BorderStroke =
-    LocalTempoGlass.current.let { if (it.enabled) it.componentRim else solid }
+@ReadOnlyComposable
+fun glassButtonBorder(): BorderStroke = LocalTempoGlass.current.componentRim
 
 /**
  * The glass finish's sheen: a faint light across the upper half of [shape], laid over the

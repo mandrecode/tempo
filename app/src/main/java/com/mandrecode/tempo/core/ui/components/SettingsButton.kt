@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -25,8 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.glass.glassCardColor
-import com.mandrecode.tempo.core.ui.glass.glassRimOr
-import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
+import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 @Composable
@@ -66,10 +64,10 @@ fun SettingsButton(
                     .size(40.dp)
                     // The frosted material of the cards it sits above, not the chrome's: up here there is
                     // no backdrop to blur, and the chrome's fallback read as an opaque white disc.
-                    // Pressed or selected it is a clean, solid colour. With glass off, as before glass.
+                    // Pressed or selected it is a clean, solid colour.
                     .clip(shape)
                     .background(colors.container)
-                    .border(settingsButtonBorder(active = selected || isPressed), shape),
+                    .border(glassRim(), shape),
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
@@ -111,17 +109,3 @@ private fun settingsButtonColors(
     )
     return SettingsButtonColors(container = container, content = content)
 }
-
-/** The glass rim at rest and nothing once active; with glass off, the primary outline it had. */
-@Composable
-private fun settingsButtonBorder(active: Boolean): BorderStroke {
-    val primary = MaterialTheme.colorScheme.primary
-    val solid = BorderStroke(1.dp, if (active) primary else primary.copy(alpha = SETTINGS_BORDER_REST_ALPHA))
-    return if (active && LocalTempoGlass.current.enabled) {
-        BorderStroke(0.dp, Color.Transparent)
-    } else {
-        glassRimOr(solid) ?: solid
-    }
-}
-
-private const val SETTINGS_BORDER_REST_ALPHA = 0.48f

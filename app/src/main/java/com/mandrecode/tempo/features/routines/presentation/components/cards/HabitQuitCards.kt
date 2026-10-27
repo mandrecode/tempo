@@ -81,7 +81,7 @@ fun QuitHabitCard(
                 containerColor = containerColor,
                 contentColor = contentColor,
             ),
-        elevation = glassCardElevation(isSelected),
+        elevation = glassCardElevation(),
     ) {
         HabitItem(
             habit = habit,

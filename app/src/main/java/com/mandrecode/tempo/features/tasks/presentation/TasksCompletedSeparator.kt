@@ -31,9 +31,8 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.glass.glassCardColor
-import com.mandrecode.tempo.core.ui.glass.glassRimOr
+import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.glass.glassSheen
-import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import kotlinx.datetime.minus
@@ -98,14 +97,12 @@ private fun CompletedToggle(
     rotation: Float,
     onToggle: () -> Unit,
 ) {
-    // Frosted like the cards it opens onto with glass on; the tonal pill it was without.
-    val glassOn = LocalTempoGlass.current.enabled
-    val colorScheme = MaterialTheme.colorScheme
+    // Frosted like the cards it opens onto.
     Surface(
         color = glassCardColor(MaterialTheme.colorScheme.secondaryContainer),
         shape = CompletedToggleShape,
-        border = glassRimOr(null),
-        tonalElevation = if (glassOn) 0.dp else 3.dp,
+        border = glassRim(),
+        tonalElevation = 0.dp,
         modifier =
             Modifier
                 .padding(end = 12.dp)
@@ -120,7 +117,7 @@ private fun CompletedToggle(
             Text(
                 text = stringResource(R.string.completed_tasks),
                 style = MaterialTheme.typography.sectionHeader,
-                color = if (glassOn) colorScheme.onSurface else colorScheme.onSecondaryContainer,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Spacer(modifier = Modifier.size(8.dp))
             Icon(
@@ -130,7 +127,7 @@ private fun CompletedToggle(
                     Modifier
                         .size(20.dp)
                         .rotate(rotation),
-                tint = if (glassOn) colorScheme.onSurfaceVariant else colorScheme.onSecondaryContainer,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }

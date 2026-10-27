@@ -228,7 +228,7 @@ fun HabitChainCard(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = glassCardElevation(isSelected),
+            elevation = glassCardElevation(),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Faded chain icon behind the header, top right

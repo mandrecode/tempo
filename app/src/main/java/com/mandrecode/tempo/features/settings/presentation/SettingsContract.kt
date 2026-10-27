@@ -32,7 +32,6 @@ object SettingsContract {
                 ThemeMode.SYSTEM,
             ),
         val useTempoColors: Boolean = false,
-        val glassEffects: Boolean = true,
         val appVersion: String = "",
         val enabledTabs: ImmutableSet<TempoTab> = TempoTab.entries.toPersistentSet(),
         val defaultTab: TempoTab = TempoTab.DEFAULT,
@@ -101,10 +100,6 @@ object SettingsContract {
         ) : UiEvent
 
         data class TempoColorsToggled(
-            val enabled: Boolean,
-        ) : UiEvent
-
-        data class GlassEffectsToggled(
             val enabled: Boolean,
         ) : UiEvent
 

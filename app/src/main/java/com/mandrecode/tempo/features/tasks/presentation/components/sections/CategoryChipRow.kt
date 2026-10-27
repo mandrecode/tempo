@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -60,7 +59,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassRimOr
+import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
@@ -289,7 +288,7 @@ private fun CategoryItem(
         shape = chipShape,
         color = containerColor,
         // Before glass (and with it off): a quiet outline on the unselected chips.
-        border = glassRimOr(if (isSelected) null else categoryChipOutline()),
+        border = glassRim(),
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -490,7 +489,7 @@ private fun NewCategoryButton(onClick: () -> Unit) {
                 ).glassSheen(addShape),
         shape = addShape,
         color = containerColor,
-        border = glassRimOr(if (isPressed) null else categoryChipOutline()),
+        border = glassRim(),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(
@@ -502,7 +501,3 @@ private fun NewCategoryButton(onClick: () -> Unit) {
         }
     }
 }
-
-/** The quiet outline an unselected chip wore before glass, and wears with it off. */
-@Composable
-private fun categoryChipOutline() = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.3f))

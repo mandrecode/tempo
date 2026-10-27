@@ -42,7 +42,6 @@ import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleShort
 import com.mandrecode.tempo.features.settings.presentation.ColorSchemeSection
-import com.mandrecode.tempo.features.settings.presentation.GlassEffectsSection
 import com.mandrecode.tempo.features.settings.presentation.ThemeSection
 
 @Composable
@@ -275,8 +274,6 @@ private fun AppearancePage(
         body = {
             ThemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
             ColorSchemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
-            // Flipping it restyles this very page, so the choice is made looking at its result.
-            GlassEffectsSection(uiState = settingsUiState, onEvent = onSettingsEvent)
         },
     )
 }

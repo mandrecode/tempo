@@ -25,7 +25,6 @@ class ThemePreferencesRepositoryImpl
 
         private val _themeMode = MutableStateFlow(getCurrentThemeMode())
         private val _useTempoColors = MutableStateFlow(getCurrentUseTempoColors())
-        private val _glassEffects = MutableStateFlow(prefs.getBoolean(KEY_GLASS_EFFECTS, true))
 
         /**
          * Gets the current theme mode as a Flow.
@@ -55,13 +54,6 @@ class ThemePreferencesRepositoryImpl
             _useTempoColors.value = enabled
         }
 
-        override fun getGlassEffects(): Flow<Boolean> = _glassEffects.asStateFlow()
-
-        override fun setGlassEffects(enabled: Boolean) {
-            prefs.edit { putBoolean(KEY_GLASS_EFFECTS, enabled) }
-            _glassEffects.value = enabled
-        }
-
         private fun getCurrentThemeMode(): ThemeMode {
             val modeName = prefs.getString(KEY_THEME_MODE, ThemeMode.SYSTEM.name)
             return try {
@@ -77,6 +69,5 @@ class ThemePreferencesRepositoryImpl
             private const val PREFS_NAME = "theme_prefs"
             private const val KEY_THEME_MODE = "theme_mode"
             private const val KEY_USE_TEMPO_COLORS = "use_tempo_colors"
-            private const val KEY_GLASS_EFFECTS = "glass_effects"
         }
     }

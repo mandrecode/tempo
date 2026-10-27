@@ -1,8 +1,5 @@
 package com.mandrecode.tempo.core.ui.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
@@ -18,28 +15,19 @@ import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 private const val SELECTED_TINT_ALPHA = 0.3f
 
 /**
- * A card's elevation. With glass on: none, in every state, since a shadow under a translucent fill
- * shows through it as a grey cast and a pressed or selected card already says so with its colour.
- * With glass off: as before glass, a selected card (its editor open beside the list) lifts.
+ * A card's elevation: none, in every state, since a shadow under a translucent fill shows through
+ * it as a grey cast, and a pressed or selected card already says so with its colour.
  */
 @Composable
-fun glassCardElevation(isSelected: Boolean = false): CardElevation {
-    val lift by animateDpAsState(
-        targetValue = if (isSelected && !LocalTempoGlass.current.enabled) SELECTED_CARD_LIFT else 0.dp,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
-        label = "selectableCardElevation",
-    )
-    return CardDefaults.cardElevation(
-        defaultElevation = lift,
-        pressedElevation = lift,
-        focusedElevation = lift,
-        hoveredElevation = lift,
-        draggedElevation = lift,
+fun glassCardElevation(): CardElevation =
+    CardDefaults.cardElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 0.dp,
+        focusedElevation = 0.dp,
+        hoveredElevation = 0.dp,
+        draggedElevation = 0.dp,
         disabledElevation = 0.dp,
     )
-}
-
-private val SELECTED_CARD_LIFT = 6.dp
 
 /** The frost a plain glass card is filled with: the theme's `TempoGlass.cardFrost`. */
 @Composable

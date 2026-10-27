@@ -7,7 +7,6 @@ internal fun OnboardingContract.UiState.toSettingsUiState(): SettingsContract.Ui
         selectedThemeMode = selectedThemeMode,
         availableThemeModes = availableThemeModes,
         useTempoColors = useTempoColors,
-        glassEffects = glassEffects,
         enabledTabs = enabledTabs,
         defaultTab = defaultTab,
     )
@@ -16,7 +15,6 @@ internal fun SettingsContract.UiEvent.toOnboardingEvent(): OnboardingContract.Ui
     when (this) {
         is SettingsContract.UiEvent.ThemeModeSelected -> OnboardingContract.UiEvent.ThemeModeSelected(mode)
         is SettingsContract.UiEvent.TempoColorsToggled -> OnboardingContract.UiEvent.UseTempoColorsToggled(enabled)
-        is SettingsContract.UiEvent.GlassEffectsToggled -> OnboardingContract.UiEvent.GlassEffectsToggled(enabled)
         is SettingsContract.UiEvent.TabToggled -> OnboardingContract.UiEvent.TabToggled(tab, enabled)
         is SettingsContract.UiEvent.DefaultTabSelected -> OnboardingContract.UiEvent.DefaultTabSelected(defaultTab)
 

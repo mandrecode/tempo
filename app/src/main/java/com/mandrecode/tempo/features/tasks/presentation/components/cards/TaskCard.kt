@@ -76,7 +76,6 @@ import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.glass.glassSheen
-import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -199,8 +198,8 @@ fun TaskItem(
 
     val frost = cardFrostColor()
     val baseCardColor =
-        // A completed card recedes into the frost; solid (glass off) it keeps its colour, as before.
-        if (task.isCompleted && LocalTempoGlass.current.enabled) {
+        // A completed card recedes into the frost.
+        if (task.isCompleted) {
             frost.copy(alpha = frost.alpha * COMPLETED_FROST_FRACTION)
         } else {
             frost
@@ -276,7 +275,7 @@ fun TaskItem(
         shape = cardShape,
         border = glassRim(),
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = glassCardElevation(isSelected),
+        elevation = glassCardElevation(),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

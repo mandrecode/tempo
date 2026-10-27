@@ -66,7 +66,6 @@ fun SettingsContent(
     ) {
         ThemeSection(uiState = uiState, onEvent = onEvent)
         ColorSchemeSection(uiState = uiState, onEvent = onEvent)
-        GlassEffectsSection(uiState = uiState, onEvent = onEvent)
         RemindersSection(uiState = uiState, onEvent = onEvent)
         VacationModeSection(uiState = uiState, onEvent = onEvent)
         CompletedTaskRetentionSection(uiState = uiState, onEvent = onEvent)

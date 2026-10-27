@@ -121,8 +121,6 @@ fun TempoTheme(
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
     useTempoColors: Boolean = false,
-    // The glass look (frost, blur, glows); off gives plain, solid Material surfaces.
-    glassEffects: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val baseColorScheme =
@@ -166,12 +164,11 @@ fun TempoTheme(
     }
 
     val glass =
-        remember(colorScheme, darkTheme, glassEffects) {
+        remember(colorScheme, darkTheme) {
             tempoGlass(
                 colorScheme = colorScheme,
                 darkTheme = darkTheme,
                 blurEnabled = supportsGlassBlur(view),
-                glassEffects = glassEffects,
             )
         }
 

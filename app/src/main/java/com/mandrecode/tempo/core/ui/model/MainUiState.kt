@@ -11,7 +11,6 @@ sealed interface MainUiState {
         val themeMode: ThemeMode,
         val useTempoColors: Boolean,
         val defaultTab: TempoTab,
-        val glassEffects: Boolean = true,
         val enabledTabs: Set<TempoTab>,
         val isOnboardingCompleted: Boolean,
         val whatsNewVersionName: String,

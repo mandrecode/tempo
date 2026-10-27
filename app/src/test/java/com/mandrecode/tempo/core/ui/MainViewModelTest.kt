@@ -51,7 +51,6 @@ class MainViewModelTest {
 
         every { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         every { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
-        every { themePreferencesRepository.getGlassEffects() } returns flowOf(false)
         every { navigationPreferencesRepository.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
         every { navigationPreferencesRepository.enabledTabs() } returns flowOf(TempoTab.entries.toSet())
         every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
@@ -86,7 +85,6 @@ class MainViewModelTest {
                 val success = awaitItem() as MainUiState.Success
                 assertThat(success.themeMode).isEqualTo(ThemeMode.SYSTEM)
                 assertThat(success.useTempoColors).isFalse()
-                assertThat(success.glassEffects).isFalse()
                 assertThat(success.defaultTab).isEqualTo(TempoTab.ROUTINES)
                 assertThat(success.enabledTabs).containsExactlyElementsIn(TempoTab.entries)
                 assertThat(success.isOnboardingCompleted).isFalse()

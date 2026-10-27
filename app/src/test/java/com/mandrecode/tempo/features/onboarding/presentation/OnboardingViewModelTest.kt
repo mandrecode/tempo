@@ -45,7 +45,6 @@ class OnboardingViewModelTest {
         defaultTab = MutableStateFlow(TempoTab.ROUTINES)
 
         every { themePreferencesRepository.getUseTempoColors() } returns useTempoColors
-        every { themePreferencesRepository.getGlassEffects() } returns MutableStateFlow(true)
         every { themePreferencesRepository.getThemeMode() } returns themeMode
         every { navigationPreferencesRepository.enabledTabs() } returns enabledTabs
         every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
@@ -64,15 +63,6 @@ class OnboardingViewModelTest {
         viewModel.onEvent(OnboardingContract.UiEvent.UseTempoColorsToggled(false))
 
         verify { themePreferencesRepository.setUseTempoColors(false) }
-    }
-
-    @Test
-    fun givenAppearancePage_whenGlassEffectsToggled_thenSettingsRepositoryIsUpdated() {
-        val viewModel = createViewModel()
-
-        viewModel.onEvent(OnboardingContract.UiEvent.GlassEffectsToggled(false))
-
-        verify { themePreferencesRepository.setGlassEffects(false) }
     }
 
     @Test

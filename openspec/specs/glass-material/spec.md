@@ -6,7 +6,7 @@ Define Tempo's glass material: an ambient backdrop, translucent panels, blurred 
 ## Requirements
 
 ### Requirement: Pages keep the two-tone layout, with one gradient
-Each top-level page (Tasks, Routines, Focus, Settings, Onboarding) SHALL paint, once at its root, an opaque backdrop: the scheme's `background` with one smooth gradient of the brand (primary) tone behind the header, fading out before the content. Layers inside the page SHALL be transparent over it. The content block and the docked editor pane SHALL be solid `surface`, with a faint, smooth wash of the secondary tone down from their top edge. Cards and other surfaces SHALL keep their own pre-glass colours, opaque, so content keeps the same contrast as with glass off.
+Each top-level page (Tasks, Routines, Focus, Settings, Onboarding) SHALL paint, once at its root, an opaque backdrop: the scheme's `background` with one smooth gradient of the brand (primary) tone behind the header, fading out before the content. Layers inside the page SHALL be transparent over it. The content block and the docked editor pane SHALL be solid `surface`, with a faint, smooth wash of the secondary tone down from their top edge. Cards and other surfaces SHALL keep their own colours, opaque, so the list keeps its contrast.
 
 #### Scenario: Dynamic colour
 - **WHEN** dynamic colour is on and the wallpaper changes the scheme
@@ -17,7 +17,7 @@ Each top-level page (Tasks, Routines, Focus, Settings, Onboarding) SHALL paint, 
 - **THEN** the crossfade shows no flash of the root surface between the two backdrops
 
 ### Requirement: Components wear the glass finish
-Content components (cards, chips, toggle buttons, secondary buttons, neutral pills and rows, sheets and the content panel) SHALL be flat surfaces in their own colours with no outline, top light, sheen or shadow: the two-tone page sets them apart. The floating chrome (the bar, its buttons and the snackbar) SHALL not be outlined either: it stands out by a tone of its own. The rim SHALL follow a component's animated shape (a toggle rounding out when checked, a chip squaring under the finger). Solid colour fills (selected chips and toggles, filled and tonal buttons, coloured cards, pills and notices) SHALL stay clean, without the rim or sheen. Outlined buttons SHALL keep their outline. The snackbar SHALL be chrome glass like the floating bar.
+Content components (cards, chips, toggle buttons, secondary buttons, neutral pills and rows, sheets and the content panel) SHALL be flat surfaces in their own colours with no outline, top light, sheen or shadow: the two-tone page sets them apart. The floating chrome (the bar, its buttons and the snackbar) SHALL not be outlined either: it stands out by a tone of its own. The rim SHALL follow a component's animated shape (a toggle rounding out when checked, a chip squaring under the finger). Solid colour fills (selected chips and toggles, filled and tonal buttons, coloured cards, pills and notices) SHALL stay clean, without the rim or sheen. Secondary buttons SHALL be filled with the cards' frost rather than outlined. The snackbar SHALL be chrome glass like the floating bar.
 
 #### Scenario: Task card on a panel
 - **WHEN** a task card sits on the Tasks content block
@@ -73,16 +73,16 @@ Modal sheets and alert dialogs SHALL blur the app behind them, easing the blur i
 - **WHEN** a sheet opens and nothing behind it moves
 - **THEN** the app behind is blurred as the sheet arrives, without waiting for a scroll
 
-### Requirement: Glass can be turned off
-A "Frosted glass" switch SHALL follow the colour scheme in Settings, and the same switch SHALL be offered on onboarding's appearance page. It SHALL be on by default. Off, the app SHALL look as it did before glass: no blur, no translucency and no page glows, with every component back to its own colour, outline and elevation (a selected card lifts, secondary buttons and chips are outlined). The change SHALL apply immediately, so onboarding shows the result on the page where it is chosen.
+### Requirement: Glass is the only look
+The glass material SHALL be the app's one look, with no setting to turn it off, so every component is designed and checked once. Where blur is unavailable the material SHALL degrade as below rather than switch to a second design.
 
-#### Scenario: Turning glass off during onboarding
-- **WHEN** the user turns the switch off on the appearance page
-- **THEN** that page redraws with solid surfaces and no glows, and the choice is kept after onboarding
+#### Scenario: Settings and onboarding
+- **WHEN** the user opens Settings or onboarding's appearance page
+- **THEN** there is no switch for the glass look
 
 ### Requirement: Glass degrades to an opaque material
 Where backdrop blur is unavailable (below API 31, on low-RAM devices, in previews, or for chrome with no recorded backdrop), chrome SHALL use a denser, unblurred fill, and modals SHALL keep an opaque surface and the full scrim. Every surface SHALL remain legible in both themes.
 
 #### Scenario: Android 11 device
 - **WHEN** the app runs on API 30
-- **THEN** the floating bar is a near-opaque surface with its rim, and sheets look as they did before glass
+- **THEN** the floating bar is a near-opaque surface, and sheets are opaque over the full scrim

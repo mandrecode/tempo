@@ -17,19 +17,18 @@ import androidx.compose.ui.unit.dp
  * The page keeps the app's two-tone layout, with glass on top of it:
  * - **Ambient** — the top tone: the scheme's background with one smooth brand gradient behind the
  *   header, fading out before the content.
- * - **Panel** — the content block below: solid surface, as with glass off, with a faint, smooth
+ * - **Panel** — the content block below: solid surface, with a faint, smooth
  *   wash of the secondary tone down from its top edge.
  * - **Chrome** — the floating bar, rail and modal sheets: real backdrop blur where the platform can
  *   do it, a denser tint where it cannot, and a flat hairline rim.
  * - **Finish** — the components on those (cards, buttons, chips): their own pre-glass colours,
- *   opaque, so the list reads exactly as it does with glass off. Nothing is outlined, lit or shadowed.
+ *   opaque, so the list keeps its contrast. Nothing is outlined, lit or shadowed.
  *
- * With the glass setting off, everything is drawn as it was before glass.
+ * Below API 31, on low-RAM devices and in previews nothing blurs: chrome falls back to its denser
+ * tint and modals to an opaque surface with the full scrim.
  */
 @Immutable
 data class TempoGlass(
-    /** The glass setting: false draws every component as it was before glass, solid and lifted. */
-    val enabled: Boolean,
     /** Whether chrome samples and blurs what is behind it. False below API 31, in previews and on low-RAM devices. */
     val blurEnabled: Boolean,
     val blurRadius: Dp,
@@ -96,7 +95,7 @@ internal val GlassWindowBlurRadius = 56.dp
 internal val GlassRimWidth = 1.dp
 
 /**
- * Cards keep all of their own colour, as with glass off: the list's contrast (cards on the panel)
+ * Cards keep all of their own colour: the list's contrast (cards on the panel)
  * matters more than seeing through them. The glass lives in the floating chrome and the sheets.
  */
 private const val GLASS_CARD_ALPHA = 1f
@@ -105,13 +104,9 @@ internal fun tempoGlass(
     colorScheme: ColorScheme,
     darkTheme: Boolean,
     blurEnabled: Boolean,
-    glassEffects: Boolean = true,
 ): TempoGlass =
-    if (!glassEffects) {
-        solidTempoGlass(colorScheme)
-    } else if (darkTheme) {
+    if (darkTheme) {
         TempoGlass(
-            enabled = true,
             blurEnabled = blurEnabled,
             blurRadius = GlassBlurRadius,
             windowBlurRadius = GlassWindowBlurRadius,
@@ -136,7 +131,6 @@ internal fun tempoGlass(
         )
     } else {
         TempoGlass(
-            enabled = true,
             blurEnabled = blurEnabled,
             blurRadius = GlassBlurRadius,
             windowBlurRadius = GlassWindowBlurRadius,
@@ -161,42 +155,6 @@ internal fun tempoGlass(
             componentSheen = Color.Transparent,
         )
     }
-
-/**
- * The material with the glass setting off: the app as it was before glass. Nothing blurs,
- * everything is opaque, the page is its flat background with no glows, and components take back
- * their own colours, outlines and elevation (see `glassCardColor`, `glassButtonBorder`,
- * `glassRimOr` and `glassCardElevation`).
- */
-private fun solidTempoGlass(colorScheme: ColorScheme): TempoGlass {
-    val chrome = colorScheme.surfaceContainer
-    return TempoGlass(
-        enabled = false,
-        blurEnabled = false,
-        blurRadius = GlassBlurRadius,
-        windowBlurRadius = GlassWindowBlurRadius,
-        chromeTint = chrome,
-        chromeFallbackTint = chrome,
-        tintedAlpha = 1f,
-        tintedFallbackAlpha = 1f,
-        rimTop = Color.Transparent,
-        rimBottom = Color.Transparent,
-        rimWidth = GlassRimWidth,
-        sheen = Color.Transparent,
-        panelAlpha = 1f,
-        panelWash = Color.Transparent,
-        cardAlpha = 1f,
-        // What task and habit cards were filled with before glass; other surfaces pass their own
-        // pre-glass colour to `glassCardColor`.
-        cardFrost = colorScheme.background,
-        panelRimTop = Color.Transparent,
-        sheetAlpha = 1f,
-        blurredScrimFraction = 1f,
-        ambient = TempoAmbient(base = colorScheme.background, topGlow = Color.Transparent),
-        componentRim = NoRim,
-        componentSheen = Color.Transparent,
-    )
-}
 
 /** The header gradient: a little more chroma in the light, where a pale container would vanish. */
 private fun tempoAmbient(

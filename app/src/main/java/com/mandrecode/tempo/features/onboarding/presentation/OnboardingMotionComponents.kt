@@ -2,7 +2,6 @@ package com.mandrecode.tempo.features.onboarding.presentation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -173,7 +172,7 @@ private fun OutlinedOnboardingButton(
                 containerColor = glassButtonContainer(),
                 contentColor = colors.content,
             ),
-        border = glassButtonBorder(BorderStroke(1.dp, colors.border)),
+        border = glassButtonBorder(),
         modifier = modifier,
     ) {
         Text(label)

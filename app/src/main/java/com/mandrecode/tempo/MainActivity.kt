@@ -170,7 +170,6 @@ class MainActivity :
                                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                             },
                         useTempoColors = state.useTempoColors,
-                        glassEffects = state.glassEffects,
                     ) {
                         // colorScheme.surface, not .background: Tasks/Routines' NavDisplay
                         // crossfade layers both scenes' alpha over this Surface, so whatever

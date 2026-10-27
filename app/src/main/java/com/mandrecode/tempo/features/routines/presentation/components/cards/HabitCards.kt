@@ -480,7 +480,7 @@ fun HabitCard(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = glassCardElevation(isSelected),
+            elevation = glassCardElevation(),
         ) {
             HabitItem(
                 habit = habit,

@@ -3,7 +3,6 @@ package com.mandrecode.tempo.core.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -30,7 +29,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.mandrecode.tempo.core.ui.glass.glassRimOr
+import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.filterChipSelected
 
@@ -160,7 +159,7 @@ fun ExpressiveChip(
                 if (isSelected) {
                     null
                 } else {
-                    glassRimOr(BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)))
+                    glassRim()
                 },
         ) {
             Row(

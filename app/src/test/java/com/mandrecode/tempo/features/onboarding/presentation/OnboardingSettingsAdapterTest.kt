@@ -15,7 +15,6 @@ class OnboardingSettingsAdapterTest {
                 .UiState(
                     selectedThemeMode = ThemeMode.DARK,
                     useTempoColors = false,
-                    glassEffects = false,
                     enabledTabs = persistentSetOf(TempoTab.FOCUS, TempoTab.ROUTINES),
                     defaultTab = TempoTab.ROUTINES,
                 ).toSettingsUiState()
@@ -27,7 +26,6 @@ class OnboardingSettingsAdapterTest {
 
         assertThat(routinesState.selectedThemeMode).isEqualTo(ThemeMode.DARK)
         assertThat(routinesState.useTempoColors).isFalse()
-        assertThat(routinesState.glassEffects).isFalse()
         assertThat(routinesState.enabledTabs).containsExactly(TempoTab.FOCUS, TempoTab.ROUTINES)
         assertThat(routinesState.defaultTab).isEqualTo(TempoTab.ROUTINES)
         assertThat(tasksState.defaultTab).isEqualTo(TempoTab.TASKS)
@@ -39,8 +37,6 @@ class OnboardingSettingsAdapterTest {
             .isEqualTo(OnboardingContract.UiEvent.ThemeModeSelected(ThemeMode.LIGHT))
         assertThat(SettingsContract.UiEvent.TempoColorsToggled(true).toOnboardingEvent())
             .isEqualTo(OnboardingContract.UiEvent.UseTempoColorsToggled(true))
-        assertThat(SettingsContract.UiEvent.GlassEffectsToggled(false).toOnboardingEvent())
-            .isEqualTo(OnboardingContract.UiEvent.GlassEffectsToggled(false))
         assertThat(SettingsContract.UiEvent.TabToggled(TempoTab.ROUTINES, false).toOnboardingEvent())
             .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
         assertThat(SettingsContract.UiEvent.TabToggled(TempoTab.TASKS, false).toOnboardingEvent())
