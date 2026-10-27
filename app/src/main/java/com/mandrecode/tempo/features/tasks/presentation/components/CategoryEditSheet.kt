@@ -501,7 +501,9 @@ private fun CategorySectionsToggle(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(28.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        // The sheet is surfaceContainerHigh, so the plain container tone barely separates from it;
+        // Settings can use it because its cards sit on the page background.
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHighest),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Row(
