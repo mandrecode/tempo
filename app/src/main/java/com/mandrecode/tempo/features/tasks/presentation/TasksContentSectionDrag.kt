@@ -54,11 +54,12 @@ internal class SectionDragState {
         private set
     private var fromSectionId: Long? = null
     private var fromIndex = 0
-    private var startCenterY = 0f
+    private var startCenterY by mutableFloatStateOf(0f)
 
     // The finger's travel, and how far the list scrolled under it since the drag began. The card
     // follows both; the drop target follows only the finger, since entries report current bounds.
-    private var dragTotal = 0f
+    // State, so [target] recomputes as the finger moves.
+    private var dragTotal by mutableFloatStateOf(0f)
     private var scrolled = 0f
     private var viewport: Rect? = null
 
