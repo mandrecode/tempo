@@ -573,8 +573,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Sections inside your lists</string>
-    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns.</string>
+    <string name="whats_new_title">Sections inside your lists, and connected groups</string>
+    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns. Your tasks and settings now sit together in connected groups, and the tab you are on shows its name.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

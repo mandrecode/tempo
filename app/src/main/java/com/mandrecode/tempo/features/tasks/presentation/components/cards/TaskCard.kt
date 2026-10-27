@@ -70,6 +70,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.CardGroupPosition
 import com.mandrecode.tempo.core.ui.components.selectableCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
@@ -180,6 +181,8 @@ fun TaskItem(
      * question of every row has no business offering a second.
      */
     showAddSubtaskAction: Boolean = true,
+    /** Where this card sits in a connected run of cards; its corners follow. */
+    groupPosition: CardGroupPosition = CardGroupPosition.SINGLE,
 ) {
     val haptic = LocalHapticFeedback.current
     var isDescriptionOverflowing by remember { mutableStateOf(false) }
@@ -249,7 +252,7 @@ fun TaskItem(
         label = "checkbox_scale",
     )
 
-    val cardShape = RoundedCornerShape(cardCornerRadius)
+    val cardShape = groupPosition.shape(cardCornerRadius)
     val selectionElevation = selectableCardElevation(isSelected)
 
     Card(

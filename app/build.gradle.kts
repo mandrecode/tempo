@@ -39,6 +39,8 @@ kover {
                     "com.mandrecode.tempo.features.*.presentation.*Components*",
                     "com.mandrecode.tempo.features.settings.presentation.CompletedTaskRetentionSection*",
                     "com.mandrecode.tempo.features.settings.presentation.RemindersSection*",
+                    "com.mandrecode.tempo.features.settings.presentation.FocusSection*",
+                    "com.mandrecode.tempo.features.settings.presentation.VacationModeSection*",
                     "com.mandrecode.tempo.features.settings.presentation.BackupSection*",
                     "com.mandrecode.tempo.features.settings.presentation.ImportModeDialog*",
                     "com.mandrecode.tempo.features.*.presentation.*ExternalActions*",

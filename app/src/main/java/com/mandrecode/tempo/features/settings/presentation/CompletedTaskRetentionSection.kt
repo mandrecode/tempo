@@ -1,16 +1,12 @@
 package com.mandrecode.tempo.features.settings.presentation
 
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,7 +33,7 @@ internal fun CompletedTaskRetentionSection(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     SettingsSection(title = stringResource(R.string.settings_completed_tasks)) {
-        Column {
+        item {
             SettingsSwitchItem(
                 icon = R.drawable.ic_remove_done,
                 title = stringResource(R.string.settings_auto_remove_completed_tasks),
@@ -46,21 +42,14 @@ internal fun CompletedTaskRetentionSection(
                     onEvent(SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled(it))
                 },
             )
-            AnimatedVisibility(
-                visible = uiState.autoRemoveCompletedTasksEnabled,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                Column {
-                    SettingsItemDivider()
-                    RetentionDaysStepper(
-                        days = uiState.completedTaskRetentionDays,
-                        onDaysChange = {
-                            onEvent(SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged(it))
-                        },
-                    )
-                }
-            }
+        }
+        item(visible = uiState.autoRemoveCompletedTasksEnabled) {
+            RetentionDaysStepper(
+                days = uiState.completedTaskRetentionDays,
+                onDaysChange = {
+                    onEvent(SettingsContract.UiEvent.CompletedTaskRetentionDaysChanged(it))
+                },
+            )
         }
     }
 }

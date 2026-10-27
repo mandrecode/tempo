@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.AddSectionButton
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptySectionPlaceholder
@@ -123,7 +124,8 @@ private fun SectionCards(
     onEvent: (TasksContract.UiEvent) -> Unit,
     taskCard: @Composable (Task, gestures: Modifier?) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+    // The section's cards as one connected run.
+    Column(verticalArrangement = Arrangement.spacedBy(ConnectedCardGap), modifier = Modifier.fillMaxWidth()) {
         if (tasks.isEmpty() && dragState != null) {
             EmptySectionPlaceholder(
                 isDropTarget = dragState.isTargeting(DropEntry.Kind.Placeholder, sectionId),
@@ -165,7 +167,8 @@ internal fun CompletedBlock(
         if (uiState.showCompletedTasks) {
             entries.forEachIndexed { index, (key, tasks) ->
                 if (index > 0 && showDivider) CompletedGroupHeader(label = resolveGroupLabel(key))
-                tasks.forEach { taskCard(it) }
+                // Each completed group as one connected run.
+                Column(verticalArrangement = Arrangement.spacedBy(ConnectedCardGap)) { tasks.forEach { taskCard(it) } }
             }
             ClearCompletedFooter(onClick = { onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) })
         }
