@@ -212,10 +212,11 @@ class TaskRepositoryTest {
     @Test
     fun `updateTasks clears the section of each task that changes category`() =
         runTest {
-            coEvery { taskDao.getTaskById(5L) } returns
-                TaskEntity(id = 5L, title = "A", description = "", categoryId = 1L, sectionId = 9L)
-            coEvery { taskDao.getTaskById(6L) } returns
-                TaskEntity(id = 6L, title = "B", description = "", categoryId = 1L, sectionId = 9L)
+            coEvery { taskDao.getTasksByIds(listOf(5L, 6L)) } returns
+                listOf(
+                    TaskEntity(id = 5L, title = "A", description = "", categoryId = 1L, sectionId = 9L),
+                    TaskEntity(id = 6L, title = "B", description = "", categoryId = 1L, sectionId = 9L),
+                )
 
             repository.updateTasks(
                 listOf(

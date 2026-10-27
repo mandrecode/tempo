@@ -6,7 +6,7 @@ Defines what a task section is: a named divider inside one category that structu
 ## Requirements
 
 ### Requirement: Sections are turned on per category
-Each category SHALL have a Sections option in its edit sheet, off by default for new and existing categories. Turning it off SHALL move every task of the category to no section and show them as one list; the sections themselves SHALL remain, empty, for when it is turned back on.
+Each category SHALL have a Sections option in its edit sheet, off by default for new and existing categories. Turning it off SHALL show every task of the category as one list without changing which section each task belongs to; the sections and their tasks SHALL be back exactly as they were when it is turned back on.
 
 #### Scenario: Turn on
 - **WHEN** the user turns Sections on for "S&V" and saves
@@ -14,7 +14,7 @@ Each category SHALL have a Sections option in its edit sheet, off by default for
 
 #### Scenario: Turn off and back on
 - **WHEN** the user turns Sections off for "S&V", which has sections "Cat" and "Shopping" holding tasks, then turns it back on
-- **THEN** while off all its tasks show as one unsectioned list, and once on again "Cat" and "Shopping" are back, empty, with every task unsectioned
+- **THEN** while off all its tasks show as one unsectioned list, and once on again "Cat" and "Shopping" are back holding the same tasks
 
 ### Requirement: A section belongs to exactly one category
 A section SHALL have a name and a position, and SHALL belong to exactly one category. It SHALL NOT have a due date, priority, reminder, recurrence, completion state, icon, colour, default flag or sharing identity. Sections SHALL NOT contain other sections.

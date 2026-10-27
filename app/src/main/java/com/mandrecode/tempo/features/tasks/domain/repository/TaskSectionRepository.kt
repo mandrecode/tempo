@@ -28,9 +28,6 @@ interface TaskSectionRepository {
     /** Unsections the section's tasks and deletes it, in one transaction; null when it is gone. */
     suspend fun deleteSectionWithSnapshot(id: Long): SectionDeletionSnapshot?
 
-    /** Moves every task of [categoryId] to no section; the sections themselves stay, empty. */
-    suspend fun unsectionCategory(categoryId: Long)
-
     /** Re-inserts the section and re-adds the snapshot tasks still in its category. */
     suspend fun restoreDeletedSection(snapshot: SectionDeletionSnapshot)
 

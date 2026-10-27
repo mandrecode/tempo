@@ -61,9 +61,12 @@ class TaskRepositoryImpl
         }
 
         override suspend fun updateTasks(tasks: List<Task>) =
-            taskDao.updateTasks(
-                tasks.map { task -> task.toEntity().clearingSectionOnCategoryChange(taskDao.getTaskById(task.id)) },
-            )
+            database.withTransaction {
+                val stored = taskDao.getTasksByIds(tasks.map { it.id }).associateBy { it.id }
+                taskDao.updateTasks(
+                    tasks.map { task -> task.toEntity().clearingSectionOnCategoryChange(stored[task.id]) },
+                )
+            }
 
         override suspend fun deleteTask(task: Task) {
             taskDao.deleteTaskTrees(listOf(task.id))
