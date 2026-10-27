@@ -4,9 +4,8 @@ import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SelectableDates
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,6 +14,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import kotlinx.coroutines.flow.drop
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -53,10 +53,22 @@ fun TempoDatePickerDialog(
             }
     }
 
+    val colorScheme = MaterialTheme.colorScheme
+    // The selected day is the primary container, like every other selected state in the app; the
+    // stock picker fills it with the bright primary.
+    val pickerColors =
+        DatePickerDefaults.colors(
+            selectedDayContainerColor = colorScheme.primaryContainer,
+            selectedDayContentColor = colorScheme.onPrimaryContainer,
+            selectedYearContainerColor = colorScheme.primaryContainer,
+            selectedYearContentColor = colorScheme.onPrimaryContainer,
+        )
+
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(
+            DialogConfirmButton(
+                label = stringResource(R.string.ok),
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         // Convert UTC millis back to LocalDate
@@ -67,19 +79,17 @@ fun TempoDatePickerDialog(
                                 .date
 
                         onConfirm(selectedDate)
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     }
                 },
-            ) {
-                Text(stringResource(R.string.ok))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            DialogCancelButton(label = stringResource(R.string.cancel), onClick = onDismiss)
         },
+        colors = pickerColors,
     ) {
-        DatePicker(state = datePickerState)
+        // Blurs the app behind the picker and lightens the dim, like the app's alert dialogs.
+        DialogWindowGlass()
+        DatePicker(state = datePickerState, colors = pickerColors)
     }
 }

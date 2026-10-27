@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.TempoMessageDialog
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.features.backup.domain.model.BackupEntityKind
 import com.mandrecode.tempo.features.backup.domain.model.ConflictReason
@@ -187,6 +188,7 @@ private fun BackupProgressDialog() {
         onDismissRequest = {},
         properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false),
         title = {
+            DialogWindowGlass()
             Text(
                 text = stringResource(R.string.backup_in_progress),
                 style = MaterialTheme.typography.dialogTitle,

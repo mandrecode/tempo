@@ -2,8 +2,6 @@ package com.mandrecode.tempo.core.ui.components
 
 import android.text.format.DateFormat
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberTimePickerState
@@ -16,6 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import kotlinx.coroutines.flow.drop
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,21 +52,17 @@ fun TempoTimePickerDialog(
         onDismissRequest = onDismiss,
         title = {},
         confirmButton = {
-            TextButton(
-                onClick = {
-                    onConfirm(timePickerState.hour, timePickerState.minute)
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                },
-            ) {
-                Text(stringResource(R.string.ok))
-            }
+            DialogConfirmButton(
+                label = stringResource(R.string.ok),
+                onClick = { onConfirm(timePickerState.hour, timePickerState.minute) },
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.cancel))
-            }
+            DialogCancelButton(label = stringResource(R.string.cancel), onClick = onDismiss)
         },
     ) {
+        // Blurs the app behind the picker and lightens the dim, like the app's alert dialogs.
+        DialogWindowGlass()
         TimePicker(state = timePickerState)
     }
 }
