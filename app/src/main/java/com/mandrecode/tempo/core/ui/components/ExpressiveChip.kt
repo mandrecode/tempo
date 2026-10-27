@@ -66,8 +66,8 @@ fun ExpressiveChip(
      * those.
      */
     selectedCornerRadius: Dp = 20.dp,
-    selectedContainerColor: Color = MaterialTheme.colorScheme.primary,
-    selectedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    selectedContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    selectedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
     unselectedContainerColor: Color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
     unselectedContentColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Center,

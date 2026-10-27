@@ -151,8 +151,10 @@ class MainActivity :
                 }
 
                 is MainUiState.Success -> {
-                    val startDestination =
-                        rememberStartDestination(state, navigationPreferencesRepository.getLastRoute())
+                    // Read once: the start destination is fixed for the session, so there is no need to
+                    // hit SharedPreferences on every recomposition.
+                    val lastRoute = remember { navigationPreferencesRepository.getLastRoute() }
+                    val startDestination = rememberStartDestination(state, lastRoute)
 
                     TempoTheme(
                         darkTheme =

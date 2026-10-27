@@ -73,7 +73,7 @@ private val ContentBlockShape =
  * `RoutinesContentTest.showsAddHabitFab` under `src/androidTest`, and by previews). In the real
  * app, [RoutinesScreen] always passes `false` here because the shared `PersistentFloatingBar`
  * (`core/ui/navigation/Navigation.kt`) already renders a single add action for both tasks and
- * routines at every window tier, including single-tab mode — the two tabs' add affordance is
+ * routines at every window tier — the two tabs' add affordance is
  * already unified there, not a live inconsistency.
  */
 @Composable

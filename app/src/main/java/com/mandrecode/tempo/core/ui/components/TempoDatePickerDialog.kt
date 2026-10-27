@@ -72,6 +72,8 @@ fun TempoDatePickerDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = stringResource(R.string.ok),
+                // Nothing to confirm until a date is picked, so OK says so instead of doing nothing.
+                enabled = datePickerState.selectedDateMillis != null,
                 modifier = Modifier.padding(end = DatePickerButtonsEndInset, bottom = DatePickerButtonsBottomInset),
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
