@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.17.0](https://github.com/mandrecode/tempo/compare/v1.16.2...v1.17.0) (2026-10-27)
+
+
+### Features
+
+* **#61:** task sections within categories ([#464](https://github.com/mandrecode/tempo/issues/464)) ([9852587](https://github.com/mandrecode/tempo/commit/98525870797d7a7e9ff49398959c75d659c12a21))
+* connected card groups, Android-sized settings rows and a labelled selected tab ([#466](https://github.com/mandrecode/tempo/issues/466)) ([d6cc1a5](https://github.com/mandrecode/tempo/commit/d6cc1a5bc2a852a9bef8d0d42e679fb0e6a59c48))
+
 ## [1.16.2](https://github.com/mandrecode/tempo/compare/v1.16.1...v1.16.2) (2026-10-27)
 
 
