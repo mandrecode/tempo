@@ -318,7 +318,7 @@ internal fun SectionNameField(
             modifier =
                 Modifier
                     .widthIn(max = SectionNameMaxWidth)
-                    .width(IntrinsicSize.Min)
+                    .width(IntrinsicSize.Max)
                     .focusRequester(focusRequester),
         )
         HorizontalDivider(
@@ -370,6 +370,8 @@ private fun SectionNameInput(
                         text = label,
                         style = MaterialTheme.typography.sectionHeader,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
                     )
                 }
                 innerTextField()
