@@ -189,7 +189,6 @@ fun HabitChainCard(
         if (showTimeline) {
             TimelineTime(
                 timeLabel = timeLabel,
-                color = resolvedChainColor,
                 firstRowTop = ChainTitleTopPadding,
                 firstRowHeight = ChainTitleLineHeight,
             )
