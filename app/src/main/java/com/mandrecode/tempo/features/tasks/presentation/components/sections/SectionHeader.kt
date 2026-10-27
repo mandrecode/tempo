@@ -109,9 +109,9 @@ internal fun SectionHeader(
                 .fillMaxWidth()
                 .heightIn(min = SectionHeaderMinHeight)
                 .clip(headerShape)
-                .background(
-                    if (isDropTarget) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
-                ),
+                // Clear over the panel, so the header sits in the page like the list's other headers;
+                // tinted only while a dragged task would land in it.
+                .background(if (isDropTarget) MaterialTheme.colorScheme.primaryContainer else Color.Transparent),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SectionTitle(name, taskCount, isCollapsed, onToggleCollapse, headerShape)
