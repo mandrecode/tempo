@@ -41,7 +41,6 @@ import kotlin.math.roundToInt
 
 private val ReorderRowHeight = 56.dp
 private val ReorderRowSpacing = 6.dp
-private const val DRAGGED_ROW_ALPHA = 0.9f
 
 /**
  * Reorders a category's sections (#61) on a surface of their own, so moving a whole section never
@@ -137,10 +136,9 @@ private fun SectionReorderRow(
                 .fillMaxWidth()
                 .height(ReorderRowHeight)
                 .zIndex(if (isDragged) 1f else 0f)
-                .graphicsLayer {
-                    translationY = dragOffset
-                    alpha = if (isDragged) DRAGGED_ROW_ALPHA else 1f
-                },
+                // Opaque while lifted: a translucent row lets its own shadow show through its
+                // rounded edges as artifacts. Elevation and the stronger tint mark it instead.
+                .graphicsLayer { translationY = dragOffset },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = 12.dp)) {
             Icon(
