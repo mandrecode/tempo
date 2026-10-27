@@ -183,21 +183,9 @@ fun HabitChainCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            Column(
-                modifier = Modifier.width(64.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
-                if (timeLabel != null) {
-                    Text(
-                        text = timeLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                }
-            }
+            TimelineTime(timeLabel)
 
-            TimelineRail(color = resolvedChainColor, extendBelow = timelineExtension)
+            TimelineRail(extendBelow = timelineExtension)
 
             Spacer(modifier = Modifier.width(16.dp))
         }

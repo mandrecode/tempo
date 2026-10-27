@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -73,6 +74,7 @@ import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
+import com.mandrecode.tempo.core.ui.theme.timelineTime
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -359,16 +361,41 @@ internal fun HabitItem(
 }
 
 /**
- * The timeline's vertical line beside a card. [extendBelow] carries it across the gap to the next
- * card, so the line runs unbroken down the day instead of stopping at each card's edge.
+ * The time a scheduled card sits at, in the column beside the card. It stays with the card's first
+ * line, its title, however tall the card grows: a chain's time belongs to the whole chain, not to
+ * whichever habit happens to sit in its middle.
+ */
+@Composable
+internal fun RowScope.TimelineTime(timeLabel: String?) {
+    Box(
+        modifier =
+            Modifier
+                .width(TimelineTimeColumnWidth)
+                .fillMaxHeight()
+                .padding(top = TimelineTimeTopPadding, end = 12.dp),
+        contentAlignment = Alignment.TopEnd,
+    ) {
+        if (timeLabel != null) {
+            Text(
+                text = timeLabel,
+                style = MaterialTheme.typography.timelineTime,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/**
+ * The timeline's vertical line beside a card, one colour for every card so it reads as a single
+ * line down the day rather than a stripe per habit. [extendBelow] carries it across the gap to the
+ * next card.
  */
 @Composable
 internal fun TimelineRail(
-    color: Color?,
     extendBelow: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val lineColor = color?.copy(alpha = 0.3f) ?: MaterialTheme.colorScheme.outlineVariant
+    val lineColor = MaterialTheme.colorScheme.outlineVariant
     Box(
         modifier =
             modifier
@@ -379,6 +406,9 @@ internal fun TimelineRail(
                 },
     )
 }
+
+private val TimelineTimeColumnWidth = 64.dp
+private val TimelineTimeTopPadding = 16.dp
 
 @Composable
 fun HabitCard(
@@ -460,21 +490,9 @@ fun HabitCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            Column(
-                modifier = Modifier.width(64.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
-                if (timeLabel != null) {
-                    Text(
-                        text = timeLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                }
-            }
+            TimelineTime(timeLabel)
 
-            TimelineRail(color = resolvedHabitColor, extendBelow = timelineExtension)
+            TimelineRail(extendBelow = timelineExtension)
 
             Spacer(modifier = Modifier.width(16.dp))
         }
