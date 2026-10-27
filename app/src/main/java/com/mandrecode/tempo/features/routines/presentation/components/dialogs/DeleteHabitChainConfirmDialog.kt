@@ -18,6 +18,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
@@ -38,6 +39,7 @@ fun DeleteHabitChainConfirmDialog(
     AlertDialog(
         onDismissRequest = onCancel,
         title = {
+            DialogWindowGlass()
             Text(
                 text = stringResource(R.string.delete_habit_chain_title),
                 style = MaterialTheme.typography.dialogTitle,
