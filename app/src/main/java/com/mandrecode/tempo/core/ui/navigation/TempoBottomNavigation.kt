@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -302,6 +303,7 @@ private fun ToolbarNavigationButton(
                     text = title,
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     // The icon already says the name to TalkBack; reading it twice would be noise.
                     modifier =
                         Modifier
@@ -335,8 +337,8 @@ private data class NavigationItemColors(
     val content: Color,
 )
 
-/** Centres the 24dp icon in the 48dp item, and keeps that inset when the label opens beside it. */
-private val NavigationItemIconInset = 12.dp
+/** Centres the 24dp icon in the item, and keeps that inset when the label opens beside it. */
+private val NavigationItemIconInset = (FloatingToolbarItemSize - 24.dp) / 2
 private val NavigationLabelGap = 8.dp
 private val NavigationLabelTrailing = 4.dp
 private val NavigationLabelSpring =

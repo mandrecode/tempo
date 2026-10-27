@@ -22,7 +22,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.Sect
 import com.mandrecode.tempo.features.tasks.presentation.model.DropEntry
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionUi
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
-import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 
 /** The list pane width from which a sectioned category flows into two columns (#61). */
 internal val TwoColumnSectionsMinWidth: Dp = 900.dp
@@ -155,7 +154,7 @@ internal fun CompletedBlock(
     taskCard: @Composable (Task) -> Unit,
 ) {
     if (uiState.completedTaskGroups.isEmpty()) return
-    val showDivider = uiState.sortOption != SortOption.MANUAL
+    val showDivider = uiState.sortOption.hasCompletedGroupHeaders
     val entries = sortedCompletedEntries(groups = uiState.completedTaskGroups, sortOption = uiState.sortOption)
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
         CompletedTasksSeparator(
@@ -165,9 +164,15 @@ internal fun CompletedBlock(
             firstGroupLabel = if (showDivider) resolveGroupLabel(entries.firstOrNull()?.key) else null,
         )
         if (uiState.showCompletedTasks) {
-            entries.forEachIndexed { index, (key, tasks) ->
+            // Each headed completed group is a connected run; without headers they are one run.
+            val runs =
+                if (showDivider) {
+                    entries.map { it.key to it.value }
+                } else {
+                    listOf(entries.firstOrNull()?.key to entries.flatMap { it.value })
+                }
+            runs.forEachIndexed { index, (key, tasks) ->
                 if (index > 0 && showDivider) CompletedGroupHeader(label = resolveGroupLabel(key))
-                // Each completed group as one connected run.
                 Column(verticalArrangement = Arrangement.spacedBy(ConnectedCardGap)) { tasks.forEach { taskCard(it) } }
             }
             ClearCompletedFooter(onClick = { onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) })

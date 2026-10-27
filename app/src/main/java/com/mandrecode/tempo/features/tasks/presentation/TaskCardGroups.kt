@@ -6,9 +6,10 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.components.CardGroupPosition
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
+import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 
 /**
- * Each task's place in its connected run of cards , by id: one run per group when the
+ * Each task's place in its connected run of cards, by id: one run per group when the
  * groups are headed ([separateRuns]), or the whole list as a single run when they are not, since
  * nothing would then mark where one group's cards stop and the next one's start.
  */
@@ -23,6 +24,14 @@ internal fun cardGroupPositions(
         }
     }
 }
+
+/** Whether the active groups are told apart by a header, and so form runs of their own. */
+internal val SortOption.hasActiveGroupHeaders: Boolean
+    get() = this == SortOption.BY_DATE || this == SortOption.BY_PRIORITY
+
+/** Whether the completed groups are told apart by a header, and so form runs of their own. */
+internal val SortOption.hasCompletedGroupHeaders: Boolean
+    get() = this != SortOption.MANUAL
 
 /**
  * Every listed task's place in its connected run: in a sectioned category the unsectioned tasks and

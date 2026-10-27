@@ -186,15 +186,16 @@ fun TasksContent(
         // cross-section drag, otherwise the tied-run reorder applies.
         // Each card's place in its connected run: per section, per header group, or the whole list.
         val groupPositions =
-            listCardGroupPositions(
-                sectioned = sectionedList,
-                activeRuns = sortedActiveEntries(activeTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
-                separateActiveRuns =
-                    uiState.sortOption == SortOption.BY_DATE || uiState.sortOption == SortOption.BY_PRIORITY,
-                completedRuns =
-                    sortedCompletedEntries(completedTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
-                separateCompletedRuns = uiState.sortOption != SortOption.MANUAL,
-            )
+            remember(sectionedList, activeTaskGroups, completedTaskGroups, uiState.sortOption) {
+                listCardGroupPositions(
+                    sectioned = sectionedList,
+                    activeRuns = sortedActiveEntries(activeTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
+                    separateActiveRuns = uiState.sortOption.hasActiveGroupHeaders,
+                    completedRuns =
+                        sortedCompletedEntries(completedTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
+                    separateCompletedRuns = uiState.sortOption.hasCompletedGroupHeaders,
+                )
+            }
         val taskCard: @Composable (Task, Modifier?, Modifier) -> Unit = { task, gestures, base ->
             val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
             TaskListItem(
@@ -356,9 +357,7 @@ fun TasksContent(
                                             groups = activeTaskGroups,
                                             sortOption = uiState.sortOption,
                                         )
-                                    val showActiveHeaders =
-                                        uiState.sortOption == SortOption.BY_DATE ||
-                                            uiState.sortOption == SortOption.BY_PRIORITY
+                                    val showActiveHeaders = uiState.sortOption.hasActiveGroupHeaders
 
                                     activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
                                         if (showActiveHeaders) {
@@ -386,8 +385,7 @@ fun TasksContent(
 
                                 if (hasCompletedTasks) {
                                     val sortOption = uiState.sortOption
-                                    val showDivider =
-                                        sortOption != SortOption.MANUAL
+                                    val showDivider = sortOption.hasCompletedGroupHeaders
                                     val completedEntries =
                                         sortedCompletedEntries(
                                             groups = completedTaskGroups,

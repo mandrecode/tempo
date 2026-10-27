@@ -57,7 +57,6 @@ internal fun SettingsSection(
     content: SettingsGroupScope.() -> Unit,
 ) {
     val items = SettingsGroupScope().apply(content).items
-    val visibleCount = items.count { it.visible }
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -68,22 +67,33 @@ internal fun SettingsSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Column(modifier = Modifier.fillMaxWidth()) {
-            var visibleIndex = 0
-            items.forEachIndexed { index, item ->
+            settingsGroupPositions(items.map { it.visible }).forEachIndexed { index, position ->
                 key(index) {
-                    val position =
-                        if (item.visible) CardGroupPosition.of(visibleIndex++, visibleCount) else null
                     SettingsGroupPiece(
-                        visible = item.visible,
+                        visible = items[index].visible,
                         position = position,
                         // The seam belongs to the piece below it, so it folds away with that piece.
-                        hasSeamAbove = index > 0,
-                        content = item.content,
+                        // It only exists when a visible piece stands above; the first one has none.
+                        hasSeamAbove =
+                            position != null &&
+                                position != CardGroupPosition.SINGLE &&
+                                position != CardGroupPosition.FIRST,
+                        content = items[index].content,
                     )
                 }
             }
         }
     }
+}
+
+/**
+ * Each item's place in the group, null while it is hidden. Hidden items don't count: the visible
+ * ones form the run, so the group re-rounds to its new ends.
+ */
+internal fun settingsGroupPositions(visible: List<Boolean>): List<CardGroupPosition?> {
+    val visibleCount = visible.count { it }
+    var visibleIndex = 0
+    return visible.map { if (it) CardGroupPosition.of(visibleIndex++, visibleCount) else null }
 }
 
 /** Collects a [SettingsSection]'s items. */
@@ -114,7 +124,7 @@ private fun SettingsGroupPiece(
     // A piece on its way out keeps the shape it had, rather than snapping square as it shrinks.
     var shownPosition by remember { mutableStateOf(position ?: CardGroupPosition.SINGLE) }
     if (position != null) shownPosition = position
-    val shape = shownPosition.shape(SettingsCardRadius)
+    val shape = shownPosition.animatedShape(SettingsCardRadius)
     AnimatedVisibility(
         visible = visible,
         enter = fadeIn() + expandVertically(),

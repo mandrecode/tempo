@@ -252,7 +252,7 @@ fun TaskItem(
         label = "checkbox_scale",
     )
 
-    val cardShape = groupPosition.shape(cardCornerRadius)
+    val cardShape = groupPosition.animatedShape(cardCornerRadius)
     val selectionElevation = selectableCardElevation(isSelected)
 
     Card(

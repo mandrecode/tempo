@@ -63,4 +63,12 @@ class CardGroupPositionTest {
         assertThat(CardGroupPosition.MIDDLE.shape(32.dp)).isEqualTo(RoundedCornerShape(ConnectedCardInnerRadius))
         assertThat(CardGroupPosition.SINGLE.shape(32.dp)).isEqualTo(RoundedCornerShape(32.dp))
     }
+
+    @Test
+    fun givenAPosition_whenReadingRadii_thenJoinsAreTight() {
+        assertThat(CardGroupPosition.FIRST.topRadius(32.dp)).isEqualTo(32.dp)
+        assertThat(CardGroupPosition.FIRST.bottomRadius(32.dp)).isEqualTo(ConnectedCardInnerRadius)
+        assertThat(CardGroupPosition.MIDDLE.topRadius(32.dp)).isEqualTo(ConnectedCardInnerRadius)
+        assertThat(CardGroupPosition.LAST.bottomRadius(32.dp)).isEqualTo(32.dp)
+    }
 }
