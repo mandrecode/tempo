@@ -3,7 +3,6 @@ package com.mandrecode.tempo.core.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.ui.model.MainUiState
@@ -24,7 +23,6 @@ class MainViewModel
     @Inject
     constructor(
         private val savedStateHandle: SavedStateHandle,
-        navigationPreferencesRepository: NavigationPreferencesRepository,
         themePreferencesRepository: ThemePreferencesRepository,
         onboardingPreferencesRepository: OnboardingPreferencesRepository,
     ) : ViewModel() {
@@ -35,14 +33,10 @@ class MainViewModel
             combine(
                 themePreferencesRepository.getThemeMode(),
                 themePreferencesRepository.getUseTempoColors(),
-                navigationPreferencesRepository.getDefaultTab(),
-                navigationPreferencesRepository.enabledTabs(),
-            ) { themeMode, useTempoColors, defaultTab, enabledTabs ->
+            ) { themeMode, useTempoColors ->
                 MainUiState.Success(
                     themeMode = themeMode,
                     useTempoColors = useTempoColors,
-                    defaultTab = defaultTab,
-                    enabledTabs = enabledTabs,
                     isOnboardingCompleted = false,
                 )
             }

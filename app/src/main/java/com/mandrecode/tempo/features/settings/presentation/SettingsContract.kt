@@ -2,7 +2,6 @@ package com.mandrecode.tempo.features.settings.presentation
 
 import android.net.Uri
 import androidx.annotation.StringRes
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.features.backup.domain.model.ImportConflict
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
@@ -10,9 +9,7 @@ import com.mandrecode.tempo.features.backup.domain.model.ValidationIssue
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
 import kotlinx.collections.immutable.ImmutableList
-import kotlinx.collections.immutable.ImmutableSet
 import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalTime
 
@@ -33,8 +30,6 @@ object SettingsContract {
             ),
         val useTempoColors: Boolean = false,
         val appVersion: String = "",
-        val enabledTabs: ImmutableSet<TempoTab> = TempoTab.entries.toPersistentSet(),
-        val defaultTab: TempoTab = TempoTab.DEFAULT,
         val autoRemoveCompletedTasksEnabled: Boolean = false,
         val completedTaskRetentionDays: Int = CompletedTaskRetentionPreferences.DEFAULT_RETENTION_DAYS,
         val missedReminderCatchUpEnabled: Boolean = MissedReminderPreferences.DEFAULT_ENABLED,
@@ -101,15 +96,6 @@ object SettingsContract {
 
         data class TempoColorsToggled(
             val enabled: Boolean,
-        ) : UiEvent
-
-        data class TabToggled(
-            val tab: TempoTab,
-            val enabled: Boolean,
-        ) : UiEvent
-
-        data class DefaultTabSelected(
-            val defaultTab: TempoTab,
         ) : UiEvent
 
         data class AutoRemoveCompletedTasksToggled(

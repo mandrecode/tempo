@@ -463,9 +463,7 @@
     <string name="settings_color_scheme">Esquema de color</string>
     <string name="settings_color_scheme_dynamic">Dinámico</string>
     <string name="settings_color_scheme_tempo">Tempo</string>
-    <string name="tabs_and_navigation">Pestañas y navegación</string>
     <string name="tab_warning">Al menos una pestaña principal (Rutinas o Tareas) debe permanecer activa para que la aplicación funcione correctamente.</string>
-    <string name="default_tab">Pestaña predeterminada</string>
     <string name="settings_notifications">Notificaciones</string>
     <string name="settings_notifications_subtitle">Ajustes de notificaciones</string>
     <string name="settings_notifications_description">Gestionar permisos y alertas</string>
@@ -573,8 +571,6 @@
     <string name="onboarding_reminders_concept_description">Añade recordatorios solo cuando el momento sea importante. Tempo explicará el acceso a notificaciones cuando sea necesario.</string>
     <string name="onboarding_appearance_title">Haz que Tempo sea tuyo</string>
     <string name="onboarding_appearance_description">Empieza con la paleta característica de Tempo o adapta la app al fondo en dispositivos compatibles.</string>
-    <string name="onboarding_setup_title">Prepara tu primera sesión</string>
-    <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>

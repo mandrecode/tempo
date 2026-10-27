@@ -37,7 +37,6 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
@@ -142,7 +141,6 @@ private fun TempoNavigator.openSession() {
 
 @Composable
 fun TempoNavHost(
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
     modifier: Modifier = Modifier,
     routinesNavigationTrigger: Long = 0L,
@@ -173,7 +171,6 @@ fun TempoNavHost(
     val activeEntries =
         rememberActiveEntries(
             navigator = navigator,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             pendingNotificationAction = taskEditorRequests.inApp ?: pendingNotificationAction,
             onConsumePendingNotificationAction = {
                 taskEditorRequests.consume(onConsumePendingNotificationAction)
@@ -198,7 +195,6 @@ fun TempoNavHost(
             modifier = insetPaddingModifier,
             currentRoute = navigator.currentRoute,
             topLevelRoute = navigator.topLevelRoute,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
             onOpenSession = navigator::openSession,
             focusState = focusFloatingBarState,
@@ -331,7 +327,6 @@ private fun TempoNavDisplay(
 @Composable
 private fun rememberActiveEntries(
     navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onFocusFloatingBarStateChange: (FocusFloatingBarState) -> Unit,
@@ -348,7 +343,6 @@ private fun rememberActiveEntries(
     val entries =
         rememberNavEntryProvider(
             navigator,
-            navigationPreferencesRepository,
             pendingNotificationAction,
             onConsumePendingNotificationAction,
             onFocusFloatingBarStateChange,
@@ -383,7 +377,6 @@ private fun rememberActiveEntries(
 @Composable
 private fun rememberNavEntryProvider(
     navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onFocusFloatingBarStateChange: (FocusFloatingBarState) -> Unit,
@@ -400,7 +393,6 @@ private fun rememberNavEntryProvider(
     entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
         RoutinesDestination(
             navigator = navigator,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             pendingNotificationAction = pendingNotificationAction,
             onConsumePendingNotificationAction = onConsumePendingNotificationAction,
             onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
@@ -409,7 +401,6 @@ private fun rememberNavEntryProvider(
     entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
         TasksDestination(
             navigator = navigator,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             pendingNotificationAction = pendingNotificationAction,
             onConsumePendingNotificationAction = onConsumePendingNotificationAction,
             onFloatingBarStateChange = onTasksFloatingBarStateChange,

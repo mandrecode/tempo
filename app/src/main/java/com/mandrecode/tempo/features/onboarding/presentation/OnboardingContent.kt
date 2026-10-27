@@ -140,8 +140,6 @@ private fun OnboardingPage(
                 OnboardingContract.Page.ROUTINES -> RoutinesAndRemindersPage(layout = layout)
                 OnboardingContract.Page.APPEARANCE ->
                     AppearancePage(uiState = uiState, layout = layout, onEvent = onEvent)
-                OnboardingContract.Page.SETUP ->
-                    OnboardingSetupPage(uiState = uiState, layout = layout, onEvent = onEvent)
                 else -> OnboardingWelcomePage(layout = layout)
             }
         }

@@ -2,10 +2,8 @@ package com.mandrecode.tempo.features.onboarding.presentation
 
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import io.mockk.every
 import io.mockk.mockk
@@ -26,28 +24,20 @@ import org.junit.Test
 class OnboardingViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
-    private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
     private lateinit var useTempoColors: MutableStateFlow<Boolean>
     private lateinit var themeMode: MutableStateFlow<ThemeMode>
-    private lateinit var enabledTabs: MutableStateFlow<Set<TempoTab>>
-    private lateinit var defaultTab: MutableStateFlow<TempoTab>
 
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         themePreferencesRepository = mockk(relaxed = true)
-        navigationPreferencesRepository = mockk(relaxed = true)
         onboardingPreferencesRepository = mockk(relaxed = true)
         useTempoColors = MutableStateFlow(false)
         themeMode = MutableStateFlow(ThemeMode.SYSTEM)
-        enabledTabs = MutableStateFlow(TempoTab.entries.toSet())
-        defaultTab = MutableStateFlow(TempoTab.ROUTINES)
 
         every { themePreferencesRepository.getUseTempoColors() } returns useTempoColors
         every { themePreferencesRepository.getThemeMode() } returns themeMode
-        every { navigationPreferencesRepository.enabledTabs() } returns enabledTabs
-        every { navigationPreferencesRepository.getDefaultTab() } returns defaultTab
         every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
     }
 
@@ -101,134 +91,8 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun givenOnlyRoutinesEnabled_whenRoutinesDisabled_thenInvariantPreventsWrite() =
+    fun givenOnboarding_whenSkipped_thenCompletionAndExitAreEmitted() =
         runTest {
-            enabledTabs.value = setOf(TempoTab.ROUTINES)
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-
-            verify(exactly = 0) { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-        }
-
-    @Test
-    fun givenRoutinesAreDefault_whenRoutinesDisabled_thenDefaultMovesToFirstEnabledTab() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-            verify { navigationPreferencesRepository.setDefaultTab(TempoTab.FOCUS) }
-        }
-
-    @Test
-    fun givenRoutinesDefault_whenDisabledPreferenceEmitsBeforeDefaultUpdate_thenUiUsesFirstEnabledTab() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            enabledTabs.value = enabledTabs.value - TempoTab.ROUTINES
-            advanceUntilIdle()
-
-            assertThat(viewModel.uiState.value.enabledTabs).doesNotContain(TempoTab.ROUTINES)
-            assertThat(viewModel.uiState.value.defaultTab).isEqualTo(TempoTab.FOCUS)
-        }
-
-    @Test
-    fun givenOnlyTasksEnabled_whenTasksDisabled_thenInvariantPreventsWrite() =
-        runTest {
-            enabledTabs.value = setOf(TempoTab.TASKS)
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-
-            verify(exactly = 0) { navigationPreferencesRepository.setTabEnabled(TempoTab.TASKS, false) }
-        }
-
-    @Test
-    fun givenTasksAreDefault_whenTasksDisabled_thenDefaultMovesToFirstEnabledTab() =
-        runTest {
-            defaultTab.value = TempoTab.TASKS
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.TASKS, false) }
-            verify { navigationPreferencesRepository.setDefaultTab(TempoTab.FOCUS) }
-        }
-
-    @Test
-    fun givenAllTabsEnabled_whenDisablingEveryTabInTurn_thenTheLastOneRemainsEnabled() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.FOCUS, false))
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-
-            assertThat(viewModel.uiState.value.enabledTabs).containsExactly(TempoTab.TASKS)
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.FOCUS, false) }
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-            verify(exactly = 0) { navigationPreferencesRepository.setTabEnabled(TempoTab.TASKS, false) }
-        }
-
-    @Test
-    fun givenAllTabsEnabled_whenDisablingInReverseOrder_thenTheLastOneRemainsEnabled() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-            viewModel.onEvent(OnboardingContract.UiEvent.TabToggled(TempoTab.FOCUS, false))
-
-            assertThat(viewModel.uiState.value.enabledTabs).containsExactly(TempoTab.FOCUS)
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.TASKS, false) }
-            verify { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-            verify(exactly = 0) { navigationPreferencesRepository.setTabEnabled(TempoTab.FOCUS, false) }
-        }
-
-    @Test
-    fun givenEnabledTabs_whenSelectedAsDefault_thenBothSelectionsArePersisted() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(
-                OnboardingContract.UiEvent.DefaultTabSelected(TempoTab.ROUTINES),
-            )
-            viewModel.onEvent(
-                OnboardingContract.UiEvent.DefaultTabSelected(TempoTab.TASKS),
-            )
-
-            verify { navigationPreferencesRepository.setDefaultTab(TempoTab.ROUTINES) }
-            verify { navigationPreferencesRepository.setDefaultTab(TempoTab.TASKS) }
-        }
-
-    @Test
-    fun givenDisabledTasksTab_whenSelectedAsDefault_thenSelectionIsIgnored() =
-        runTest {
-            enabledTabs.value = enabledTabs.value - TempoTab.TASKS
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(
-                OnboardingContract.UiEvent.DefaultTabSelected(TempoTab.TASKS),
-            )
-
-            verify(exactly = 0) { navigationPreferencesRepository.setDefaultTab(TempoTab.TASKS) }
-        }
-
-    @Test
-    fun givenTasksDefault_whenSkipped_thenCompletionAndTasksExitAreEmitted() =
-        runTest {
-            defaultTab.value = TempoTab.TASKS
             val viewModel = createViewModel()
             advanceUntilIdle()
 
@@ -237,52 +101,15 @@ class OnboardingViewModelTest {
                 advanceUntilIdle()
 
                 assertThat(awaitItem())
-                    .isEqualTo(OnboardingContract.UiEffect.Exit(TempoTab.TASKS))
+                    .isEqualTo(OnboardingContract.UiEffect.Exit)
                 cancelAndIgnoreRemainingEvents()
             }
             verify { onboardingPreferencesRepository.setCompleted() }
         }
 
-    @Test
-    fun givenCorruptedStateWithNoEnabledTabs_whenFinished_thenDefaultTabFallbackIsEmitted() =
-        runTest {
-            enabledTabs.value = emptySet()
-            defaultTab.value = TempoTab.TASKS
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.uiEffect.test {
-                viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
-                advanceUntilIdle()
-
-                assertThat(awaitItem())
-                    .isEqualTo(OnboardingContract.UiEffect.Exit(TempoTab.DEFAULT))
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
-    fun givenDisabledStoredDefault_whenFinished_thenEnabledTabFallbackIsEmitted() =
-        runTest {
-            enabledTabs.value = setOf(TempoTab.FOCUS, TempoTab.TASKS)
-            defaultTab.value = TempoTab.ROUTINES
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.uiEffect.test {
-                viewModel.onEvent(OnboardingContract.UiEvent.FinishClicked)
-                advanceUntilIdle()
-
-                assertThat(awaitItem())
-                    .isEqualTo(OnboardingContract.UiEffect.Exit(TempoTab.FOCUS))
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
     private fun createViewModel(): OnboardingViewModel =
         OnboardingViewModel(
             themePreferencesRepository = themePreferencesRepository,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             onboardingPreferencesRepository = onboardingPreferencesRepository,
         )
 }

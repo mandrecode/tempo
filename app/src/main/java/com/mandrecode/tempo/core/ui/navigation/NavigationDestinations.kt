@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.components.TempoTopBar
 import com.mandrecode.tempo.core.ui.theme.spacing
@@ -72,15 +72,12 @@ internal fun FocusSessionDestination(
 @Composable
 internal fun RoutinesDestination(
     navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
 ) {
-    val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     RoutinesScreen(
         viewModel = tabViewModel<RoutinesViewModel>(),
-        isSingleTabMode = isSingleTabMode,
         topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
                 sectionTitle = stringResource(R.string.routines),
@@ -110,15 +107,12 @@ internal fun RoutinesDestination(
 @Composable
 internal fun TasksDestination(
     navigator: TempoNavigator,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     pendingNotificationAction: PendingNotificationAction?,
     onConsumePendingNotificationAction: () -> Unit,
     onFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
 ) {
-    val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     TasksScreen(
         viewModel = tabViewModel<TasksViewModel>(),
-        isSingleTabMode = isSingleTabMode,
         topBar = {
             RouteTopBarOrStatusInset(
                 sectionTitle = stringResource(R.string.tasks),
@@ -198,11 +192,11 @@ internal fun OnboardingDestination(
     isReplay: Boolean,
 ) {
     OnboardingScreen(
-        onExit = { defaultTab ->
+        onExit = {
             if (isReplay) {
                 navigator.pop()
             } else {
-                navigator.completeOnboarding(defaultTab.route)
+                navigator.completeOnboarding(TempoTab.DEFAULT.route)
             }
         },
     )

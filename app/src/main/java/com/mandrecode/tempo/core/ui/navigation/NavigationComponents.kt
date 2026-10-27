@@ -31,9 +31,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
@@ -75,18 +72,6 @@ fun Modifier.adaptiveScreenContentLayout(
         .fillMaxWidth()
         .wrapContentWidth(BiasAlignment.Horizontal(horizontalBias))
         .widthIn(max = maxContentWidth)
-
-/**
- * True when there is nothing to navigate between, so the navigation pill is replaced by the active
- * tab's solo action.
- */
-@Composable
-internal fun rememberIsSingleTabMode(navigationPreferencesRepository: NavigationPreferencesRepository): Boolean {
-    val enabledTabs by navigationPreferencesRepository
-        .enabledTabs()
-        .collectAsStateWithLifecycle(initialValue = TempoTab.entries.toSet())
-    return enabledTabs.size <= 1
-}
 
 @Composable
 fun TempoBottomRail(

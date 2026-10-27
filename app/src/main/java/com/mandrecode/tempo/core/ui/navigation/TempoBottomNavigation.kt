@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.adaptive.currentWindowWidthDp
 import com.mandrecode.tempo.core.ui.glass.glass
@@ -86,7 +85,6 @@ private val FloatingToolbarShape = RoundedCornerShape(36.dp)
 @Composable
 fun TempoBottomNavigation(
     currentRoute: NavKey,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
     onNavigateToTopLevel: (NavKey) -> Unit,
     modifier: Modifier = Modifier,
@@ -95,12 +93,9 @@ fun TempoBottomNavigation(
     onOpenSession: () -> Unit = {},
     hasContextualActions: Boolean = false,
 ) {
-    val enabledTabs by navigationPreferencesRepository
-        .enabledTabs()
-        .collectAsStateWithLifecycle(initialValue = TempoTab.entries.toSet())
     val activeSession by focusSessionRepository.activeSession.collectAsStateWithLifecycle()
 
-    val visibleNavigationItems = navigationItems.filter { it.tab in enabledTabs }
+    val visibleNavigationItems = navigationItems
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
 

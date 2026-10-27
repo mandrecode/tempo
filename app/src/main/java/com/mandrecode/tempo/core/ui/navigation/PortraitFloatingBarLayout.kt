@@ -24,7 +24,6 @@ internal fun PersistentPortraitFloatingBar(
     focusState: FocusFloatingBarState,
     routinesState: RoutinesFloatingBarState,
     tasksState: TasksFloatingBarState,
-    isSingleTabMode: Boolean,
 ) {
     val addAction = rememberAddAction(topLevelRoute, focusState, routinesState, tasksState)
     // The button that is leaving has to keep drawing itself. The action goes null the instant the
@@ -32,17 +31,6 @@ internal fun PersistentPortraitFloatingBar(
     // the button blinked out and the gap closed after it. Holding the last one lets the exit
     // animate the button itself, which is what arriving on Focus was missing and leaving it had.
     val exitingAddAction = rememberLastNonNull(addAction)
-    // Single tab and no add action leaves nothing to draw — don't float an empty surface.
-    if (isSingleTabMode && addAction == null) return
-    if (isSingleTabMode && addAction != null) {
-        PersistentSingleTabPortraitFloatingBar(
-            isTasksRoute = isTasksRoute,
-            addAction = addAction,
-            tasksState = tasksState,
-        )
-        return
-    }
-
     // The pill and its auxiliary buttons are one group, centred as a whole: when a button joins or
     // leaves, the group re-centres and everything slides together rather than some parts holding
     // still while others move. The buttons collapse to zero width when hidden, so the centring is

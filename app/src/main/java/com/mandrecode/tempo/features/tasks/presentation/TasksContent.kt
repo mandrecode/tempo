@@ -25,7 +25,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -33,9 +32,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -79,7 +76,6 @@ import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.minus
@@ -111,22 +107,12 @@ fun TasksContent(
     uiState: TasksContract.UiState,
     onEvent: (TasksContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
-    onScrolledFromTopChange: (Boolean) -> Unit = {},
     selectedTaskId: Long? = null,
     onContentBlockTopChange: (Dp) -> Unit = {},
 ) {
     val density = LocalDensity.current
     val listState = rememberLazyListState()
-    val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
-
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
-        }.distinctUntilChanged().collect { isScrolledFromTop ->
-            currentOnScrolledFromTopChange(isScrolledFromTop)
-        }
-    }
 
     val activeTaskGroups = uiState.activeTasks
     val completedTaskGroups = uiState.completedTaskGroups

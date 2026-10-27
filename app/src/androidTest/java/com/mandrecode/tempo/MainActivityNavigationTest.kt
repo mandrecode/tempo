@@ -20,9 +20,9 @@ import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
+import com.mandrecode.tempo.core.ui.navigation.FocusRoute
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.RoutinesRoute
 import com.mandrecode.tempo.core.ui.navigation.SettingsRoute
@@ -37,23 +37,31 @@ class MainActivityNavigationTest {
     val composeTestRule = createComposeRule()
 
     @Test
-    fun givenActiveGraph_whenDefaultTabChanges_thenStartDestinationRemainsStable() {
-        var state by mutableStateOf(successState())
+    fun givenActiveGraph_whenLastRouteChanges_thenStartDestinationRemainsStable() {
+        var lastRoute by mutableStateOf<String?>("routines")
         var destination: NavKey? = null
         composeTestRule.setContent {
-            destination = rememberStartDestination(state)
+            destination = rememberStartDestination(successState(), lastRoute)
         }
         composeTestRule.runOnIdle {
             assertThat(destination).isEqualTo(RoutinesRoute)
-            state =
-                state.copy(
-                    defaultTab = TempoTab.TASKS,
-                    enabledTabs = setOf(TempoTab.TASKS),
-                )
+            lastRoute = "tasks"
         }
 
         composeTestRule.runOnIdle {
             assertThat(destination).isEqualTo(RoutinesRoute)
+        }
+    }
+
+    @Test
+    fun givenNoLastRoute_whenStarting_thenFocusIsTheStartDestination() {
+        var destination: NavKey? = null
+        composeTestRule.setContent {
+            destination = rememberStartDestination(successState(), null)
+        }
+
+        composeTestRule.runOnIdle {
+            assertThat(destination).isEqualTo(FocusRoute)
         }
     }
 
@@ -124,8 +132,6 @@ class MainActivityNavigationTest {
         MainUiState.Success(
             themeMode = ThemeMode.SYSTEM,
             useTempoColors = true,
-            defaultTab = TempoTab.ROUTINES,
-            enabledTabs = TempoTab.entries.toSet(),
             isOnboardingCompleted = true,
         )
 
