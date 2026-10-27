@@ -71,6 +71,7 @@ private const val COLLAPSED_CHEVRON_ROTATION = 0f
 private const val EXPANDED_CHEVRON_ROTATION = 90f
 private const val EMPTY_PLACEHOLDER_ALPHA = 0.6f
 private const val DRAFT_CHEVRON_ALPHA = 0.4f
+private const val PLACEHOLDER_ALPHA = 0.45f
 private val SectionHeaderMinHeight = 48.dp
 private val SectionNameMaxWidth = 220.dp
 
@@ -369,7 +370,8 @@ private fun SectionNameInput(
                     Text(
                         text = label,
                         style = MaterialTheme.typography.sectionHeader,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        // The section colour, greyed: it previews the name without competing with it.
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = PLACEHOLDER_ALPHA),
                         maxLines = 1,
                         softWrap = false,
                     )
