@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
+import com.mandrecode.tempo.core.ui.editor.EDITOR_SET_ITEM_CORNER_RADIUS
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
@@ -113,8 +114,7 @@ internal fun TaskAttachmentRow(
     modifier: Modifier = Modifier,
 ) {
     val openLabel = stringResource(R.string.open_attachment, attachment.displayName)
-    // The same 24dp pill as the reminder chip and the Add buttons.
-    val rowShape = RoundedCornerShape(24.dp)
+    val rowShape = RoundedCornerShape(EDITOR_SET_ITEM_CORNER_RADIUS)
     Surface(
         onClick = onOpen,
         shape = rowShape,

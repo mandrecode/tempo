@@ -10,6 +10,13 @@ internal val EDITOR_PROPERTY_ROW_GAP = 20.dp
 internal val EDITOR_CONTROL_HEIGHT = 48.dp
 
 /**
+ * The corner radius of an item that has been set — a reminder chip, an attached file. Squarer than
+ * the 24dp pill of the Add button it replaces: in this app a smaller radius says "it's marked", as
+ * on a completed card or a selected chip.
+ */
+internal val EDITOR_SET_ITEM_CORNER_RADIUS = 16.dp
+
+/**
  * The empty space a borderless text field keeps below its text. A gap after one is shortened by
  * this, so the space between its text and the next row's control matches the gap between controls.
  */

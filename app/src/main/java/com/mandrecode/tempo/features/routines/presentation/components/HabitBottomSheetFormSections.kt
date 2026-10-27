@@ -41,6 +41,7 @@ import com.mandrecode.tempo.core.ui.components.IconPicker
 import com.mandrecode.tempo.core.ui.components.SelectorButtonGroup
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EDITOR_PROPERTY_ROW_GAP
+import com.mandrecode.tempo.core.ui.editor.EDITOR_SET_ITEM_CORNER_RADIUS
 import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
@@ -554,7 +555,7 @@ private fun HabitReminderSection(
         if (formattedReminder != null) {
             val chipShape =
                 androidx.compose.foundation.shape
-                    .RoundedCornerShape(24.dp)
+                    .RoundedCornerShape(EDITOR_SET_ITEM_CORNER_RADIUS)
             InputChip(
                 selected = true,
                 onClick = onSetReminderClick,
