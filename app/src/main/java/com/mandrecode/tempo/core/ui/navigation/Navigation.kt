@@ -125,24 +125,6 @@ private class TaskEditorRequests {
 }
 
 /**
- * Onboarding (including a Settings-triggered replay) fully replaces the nav display content, so
- * callers hosting overlays above [TempoNavHost] (e.g. a "what's new" sheet) need this signal to
- * avoid showing on top of it. A replay is pushed onto whichever back stack is currently active
- * (e.g. settingsBackStack) without changing navigator.section, so this keys off the resolved
- * current route rather than the section alone.
- */
-@Composable
-private fun OnboardingActiveEffect(
-    navigator: TempoNavigator,
-    onOnboardingActiveChange: (Boolean) -> Unit,
-) {
-    val currentOnOnboardingActiveChange by rememberUpdatedState(onOnboardingActiveChange)
-    LaunchedEffect(navigator.currentRoute) {
-        currentOnOnboardingActiveChange(navigator.currentRoute is OnboardingRoute)
-    }
-}
-
-/**
  * windowInsetsPadding, not a plain padding(startInset, endInset): it also marks this horizontal
  * inset as consumed for descendants, so NavDisplay/Scaffold don't apply the same safe-drawing inset
  * a second time internally (a plain padding() modifier doesn't consume anything, which doubled this
@@ -169,7 +151,6 @@ fun TempoNavHost(
     onConsumePendingNotificationAction: () -> Unit = {},
     startDestination: NavKey = RoutinesRoute,
     onRouteChange: (String) -> Unit = {},
-    onOnboardingActiveChange: (Boolean) -> Unit = {},
 ) {
     val navigator = rememberTempoNavigator(startDestination)
     val taskEditorRequests = remember { TaskEditorRequests() }
@@ -180,8 +161,6 @@ fun TempoNavHost(
     var focusFloatingBarState by remember { mutableStateOf(FocusFloatingBarState()) }
     var routinesFloatingBarState by remember { mutableStateOf(RoutinesFloatingBarState()) }
     var tasksFloatingBarState by remember { mutableStateOf(TasksFloatingBarState()) }
-
-    OnboardingActiveEffect(navigator, onOnboardingActiveChange)
 
     NotificationNavigationEffects(
         navigator = navigator,

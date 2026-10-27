@@ -36,8 +36,7 @@ and Spanish — are in [`distribution/screenshots/`](distribution/screenshots/RE
 - **Backup & restore** — versioned export/import with conflict reporting and merge modes.
 - **Encrypted at rest** — local database (SQLCipher, Android Keystore-protected key) and
   backup exports (user passphrase) are both encrypted.
-- **Onboarding & what's new** — a first-run setup flow with notification-permission
-  education, and a one-off sheet announcing the latest feature after an update.
+- **Onboarding** — a first-run setup flow with notification-permission education.
 - **Adaptive** — one layout across phone, foldable, tablet, desktop and Android XR, with a
   floating navigation bar that becomes a rail on wider windows.
 - **Theming** — Material 3 / Material You dynamic color and a configurable theme setting.
@@ -65,7 +64,7 @@ app/                     # The single runtime module
   src/main/java/com/mandrecode/tempo/
     core/                # Shared data, domain, di, ui
     features/            # tasks, routines, focus, settings, backup,
-                         #   onboarding, whatsnew, widget (domain / data / presentation)
+                         #   onboarding, widget (domain / data / presentation)
     infrastructure/      # notifications, reminders, focus sessions, live activity,
                          #   backup, security, permissions
     util/

@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
@@ -46,7 +45,6 @@ import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionReposit
 import com.mandrecode.tempo.features.focus.presentation.FocusViewModel
 import com.mandrecode.tempo.features.routines.presentation.RoutinesViewModel
 import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
-import com.mandrecode.tempo.features.whatsnew.presentation.components.WhatsNewBottomSheet
 import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.infrastructure.reminders.ReminderRefreshScheduler
 import com.mandrecode.tempo.infrastructure.reminders.receivers.HabitReminderReceiver
@@ -80,11 +78,6 @@ class MainActivity :
 
     override val startupContentGate = StartupContentGate()
 
-    // Set once the splash has given way to the app. The what's-new sheet waits for it: the sheet
-    // is a window of its own, and showing it while the splash is held ends the splash over a
-    // screen that has not drawn yet, which shows as a black frame.
-    private var hasSplashHandedOver by mutableStateOf(false)
-
     // Triggers for navigation
     private val routinesNavigationTrigger = mutableLongStateOf(0L)
     private val tasksNavigationTrigger = mutableLongStateOf(0L)
@@ -115,7 +108,6 @@ class MainActivity :
                     startupContentGate.isHolding
             val keep = stillStarting && SystemClock.elapsedRealtime() - splashStartElapsedMs < MAX_SPLASH_HOLD_MS
             if (!keep) {
-                hasSplashHandedOver = true
                 // Also when the cap ran out first: the splash is gone, so a load still running
                 // is on screen, and its content should fade in over it rather than snap.
                 startupContentGate.release()
@@ -160,7 +152,6 @@ class MainActivity :
 
                 is MainUiState.Success -> {
                     val startDestination = rememberStartDestination(state)
-                    var isOnboardingSectionActive by remember { mutableStateOf(false) }
 
                     TempoTheme(
                         darkTheme =
@@ -197,17 +188,7 @@ class MainActivity :
                                     onRouteChange = { routeName ->
                                         navigationPreferencesRepository.saveLastRoute(routeName)
                                     },
-                                    onOnboardingActiveChange = { isOnboardingSectionActive = it },
                                 )
-
-                                val whatsNewEntry = state.whatsNewEntry
-                                if (whatsNewEntry != null && !isOnboardingSectionActive && hasSplashHandedOver) {
-                                    WhatsNewBottomSheet(
-                                        entry = whatsNewEntry,
-                                        versionName = state.whatsNewVersionName,
-                                        onDismissRequest = mainViewModel::onWhatsNewDismissed,
-                                    )
-                                }
                             }
                         }
                     }
