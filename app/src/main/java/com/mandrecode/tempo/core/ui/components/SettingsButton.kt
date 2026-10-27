@@ -23,7 +23,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassCardColor
 import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
@@ -62,8 +61,8 @@ fun SettingsButton(
             modifier =
                 Modifier
                     .size(40.dp)
-                    // The frosted material of the cards it sits above, not the chrome's: up here there is
-                    // no backdrop to blur, and the chrome's fallback read as an opaque white disc.
+                    // A light tint like the add-category chip's, not the chrome's: up here there is no
+                    // backdrop to blur, and a solid fill reads as a heavy disc on the header gradient.
                     // Pressed or selected it is a clean, solid colour.
                     .clip(shape)
                     .background(colors.container)
@@ -94,7 +93,8 @@ private fun settingsButtonColors(
             when {
                 isPressed -> colorScheme.primaryContainer
                 selected -> colorScheme.secondaryContainer
-                else -> glassCardColor(colorScheme.surfaceContainer)
+                // The add-category chip's fill, so the header gradient shows through it.
+                else -> colorScheme.surfaceVariant.copy(alpha = REST_CONTAINER_ALPHA)
             },
         label = "settingsButtonContainerColor",
     )
@@ -109,3 +109,5 @@ private fun settingsButtonColors(
     )
     return SettingsButtonColors(container = container, content = content)
 }
+
+private const val REST_CONTAINER_ALPHA = 0.5f

@@ -48,7 +48,7 @@ On phones, the Tasks, Routines and Focus headers SHALL show "Tempo" rather than 
 - **THEN** the header reads "Tempo" and only the bottom bar says "Tasks"
 
 ### Requirement: Floating chrome is blurred glass
-The floating navigation pill, the add and sort controls, the snackbar and the expanded rail's settings button SHALL stand out from the content panel in a tone of their own, with no outline, and SHALL blur the content beneath them, with its colour saturated back up, and draw their fill over it. The top bar's settings button, which has no content beneath it, SHALL use the cards' frosted material instead. Role-coloured controls (add, an active sort, a selected settings button) SHALL keep their role colour as tinted glass. The blur SHALL follow the content as it changes (scrolling, switching tabs). It SHALL not cause frames to be drawn while the app is otherwise idle.
+The floating navigation pill, the add and sort controls, the snackbar and the expanded rail's settings button SHALL stand out from the content panel in a tone of their own, with no outline, and SHALL blur the content beneath them, with its colour saturated back up, and draw their fill over it. The top bar's settings button, which has no content beneath it, SHALL instead use the add-category chip's light, translucent tint, so the header gradient shows through it. Role-coloured controls (add, an active sort, a selected settings button) SHALL keep their role colour as tinted glass. The blur SHALL follow the content as it changes (scrolling, switching tabs). It SHALL not cause frames to be drawn while the app is otherwise idle.
 
 #### Scenario: List scrolls under the bar
 - **WHEN** a task list scrolls beneath the floating bar on API 31+
