@@ -127,7 +127,6 @@ class MainActivityNavigationTest {
             defaultTab = TempoTab.ROUTINES,
             enabledTabs = TempoTab.entries.toSet(),
             isOnboardingCompleted = true,
-            whatsNewVersionName = "1.4.0",
         )
 
     private companion object {

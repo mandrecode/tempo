@@ -6,11 +6,8 @@ import androidx.lifecycle.viewModelScope
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.core.data.preferences.WhatsNewPreferencesRepository
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
-import com.mandrecode.tempo.features.whatsnew.presentation.WhatsNewRegistry
-import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -30,13 +27,9 @@ class MainViewModel
         navigationPreferencesRepository: NavigationPreferencesRepository,
         themePreferencesRepository: ThemePreferencesRepository,
         onboardingPreferencesRepository: OnboardingPreferencesRepository,
-        private val whatsNewPreferencesRepository: WhatsNewPreferencesRepository,
-        private val appVersionProvider: AppVersionProvider,
     ) : ViewModel() {
         private val _pendingNotificationAction = MutableStateFlow(readPendingNotificationAction())
         val pendingNotificationAction: StateFlow<PendingNotificationAction?> = _pendingNotificationAction.asStateFlow()
-
-        private val appVersionName = appVersionProvider.getVersionInfo().versionName
 
         private val mainPreferences =
             combine(
@@ -51,7 +44,6 @@ class MainViewModel
                     defaultTab = defaultTab,
                     enabledTabs = enabledTabs,
                     isOnboardingCompleted = false,
-                    whatsNewVersionName = appVersionName,
                 )
             }
 
@@ -59,25 +51,13 @@ class MainViewModel
             combine(
                 mainPreferences,
                 onboardingPreferencesRepository.isCompleted,
-                whatsNewPreferencesRepository.lastSeenEntryId,
-            ) { state, isOnboardingCompleted, lastSeenEntryId ->
-                val latestWhatsNewEntry = WhatsNewRegistry.latest
-                state.copy(
-                    isOnboardingCompleted = isOnboardingCompleted,
-                    whatsNewEntry =
-                        latestWhatsNewEntry.takeIf {
-                            isOnboardingCompleted && it.id != lastSeenEntryId
-                        },
-                )
+            ) { state, isOnboardingCompleted ->
+                state.copy(isOnboardingCompleted = isOnboardingCompleted)
             }.stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = MainUiState.Loading,
             )
-
-        fun onWhatsNewDismissed() {
-            whatsNewPreferencesRepository.setLastSeenEntryId(WhatsNewRegistry.latest.id)
-        }
 
         fun setPendingNotificationAction(action: PendingNotificationAction) {
             when (action) {
