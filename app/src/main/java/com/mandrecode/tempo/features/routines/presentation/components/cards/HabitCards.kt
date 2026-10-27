@@ -70,12 +70,14 @@ import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
+import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.theme.timelineTime
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
+import com.mandrecode.tempo.core.ui.util.readableOn
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.util.CompletionHistoryUtil
@@ -364,8 +366,8 @@ internal fun HabitItem(
  * The time a scheduled card sits at, in the column beside the card, centred on the card's first
  * row. A habit card is a single row, so that is its middle; a chain card is tall, so its time stays
  * with the chain's title ([firstRowHeight] below [firstRowTop]) rather than floating beside
- * whichever habit sits in its middle. Tinted with the card's colour, which ties it to the card
- * while the line stays one neutral colour.
+ * whichever habit sits in its middle. Tinted with the card's colour, kept readable on the panel,
+ * which ties it to the card while the line stays one neutral colour.
  */
 @Composable
 internal fun RowScope.TimelineTime(
@@ -376,6 +378,11 @@ internal fun RowScope.TimelineTime(
     firstRowHeight: Dp? = null,
 ) {
     val sizing = if (firstRowHeight != null) Modifier.height(firstRowHeight) else Modifier.fillMaxHeight()
+    // The panel the time sits on: the page surface under the panel's own wash. A habit colour can be a
+    // pastel, so it is nudged toward the text colour until it reads on that panel.
+    val colors = MaterialTheme.colorScheme
+    val panel = LocalTempoGlass.current.panelWash.compositeOver(colors.surface)
+    val labelColor = color?.readableOn(panel, toward = colors.onSurface) ?: colors.onSurfaceVariant
     Box(
         modifier =
             modifier
@@ -389,7 +396,7 @@ internal fun RowScope.TimelineTime(
             Text(
                 text = timeLabel,
                 style = MaterialTheme.typography.timelineTime,
-                color = color ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                color = labelColor,
             )
         }
     }
