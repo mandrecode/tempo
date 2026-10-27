@@ -296,4 +296,4 @@ private fun saturatedBlur(radius: Float): RenderEffect {
         .asComposeRenderEffect()
 }
 
-private const val FROST_SATURATION = 1.4f
+private const val FROST_SATURATION = 1.2f

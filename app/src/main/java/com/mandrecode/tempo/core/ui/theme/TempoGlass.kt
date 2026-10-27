@@ -33,9 +33,10 @@ data class TempoGlass(
     val blurEnabled: Boolean,
     val blurRadius: Dp,
     /**
-     * The blur over the app while a modal is open: far heavier than the chrome's, so the app dissolves
-     * into a wash of its colours. A lighter one left the list readable as smudges, which slid about
-     * under the form whenever the sheet moved (the keyboard opening, a title wrapping).
+     * The blur over the app while a modal is open: heavier than the chrome's, so the app dissolves
+     * into a wash of its colours, yet near the system's own blur behind the app list. The sheet is
+     * nearly opaque, so it mostly shows around the sheet; much lighter and the list's cards and text
+     * start to read again.
      */
     val windowBlurRadius: Dp,
     /** Neutral chrome fill when the backdrop is blurred behind it. */
@@ -91,7 +92,7 @@ data class TempoAmbient(
 )
 
 internal val GlassBlurRadius = 28.dp
-internal val GlassWindowBlurRadius = 56.dp
+internal val GlassWindowBlurRadius = 40.dp
 internal val GlassRimWidth = 1.dp
 
 /**
