@@ -1,7 +1,5 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -21,12 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -44,7 +39,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -68,14 +62,9 @@ import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
-import com.mandrecode.tempo.core.ui.glass.glassCardColor
 import com.mandrecode.tempo.core.ui.glass.glassPanel
-import com.mandrecode.tempo.core.ui.glass.glassRimOr
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
-import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.groupLabel
-import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.core.ui.util.rememberViewportHold
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
@@ -408,6 +397,7 @@ fun TasksContent(
                                             showDivider = showDivider,
                                             firstGroupLabel = firstGroupLabel,
                                             isFirstVisibleItem = !hasActiveTasks,
+                                            followsSectionControls = sectionedList != null,
                                             modifier =
                                                 Modifier
                                                     .animateItem()
@@ -623,81 +613,6 @@ private fun Modifier.taskReorderGestures(
             )
         }
 }
-
-@Composable
-internal fun CompletedTasksSeparator(
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-    showDivider: Boolean = true,
-    firstGroupLabel: String? = null,
-    // Whether this separator is the first *visible* content in the list, which is a question about
-    // whether there are any active tasks above it rather than about its index.
-    isFirstVisibleItem: Boolean = false,
-) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "rotation",
-    )
-
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(top = if (isFirstVisibleItem) 0.dp else 28.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        // Frosted like the cards it opens onto with glass on; the tonal pill it was without.
-        val glassOn = LocalTempoGlass.current.enabled
-        val colorScheme = MaterialTheme.colorScheme
-        Surface(
-            color = glassCardColor(MaterialTheme.colorScheme.secondaryContainer),
-            shape = CompletedToggleShape,
-            border = glassRimOr(null),
-            tonalElevation = if (glassOn) 0.dp else 3.dp,
-            modifier =
-                Modifier
-                    .padding(end = if (showDivider) 12.dp else 0.dp)
-                    .clip(CompletedToggleShape)
-                    .glassSheen(CompletedToggleShape)
-                    .clickable { onToggle() },
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.completed_tasks),
-                    style = MaterialTheme.typography.sectionHeader,
-                    color = if (glassOn) colorScheme.onSurface else colorScheme.onSecondaryContainer,
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .rotate(rotation),
-                    tint = if (glassOn) colorScheme.onSurfaceVariant else colorScheme.onSecondaryContainer,
-                )
-            }
-        }
-        if (showDivider) {
-            WavyDivider(modifier = Modifier.weight(1f))
-            if (isExpanded && firstGroupLabel != null) {
-                Text(
-                    text = firstGroupLabel,
-                    style = MaterialTheme.typography.groupLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 12.dp, end = 8.dp),
-                )
-            }
-        }
-    }
-}
-
-private val CompletedToggleShape = RoundedCornerShape(16.dp)
 
 @Composable
 internal fun ClearCompletedFooter(
