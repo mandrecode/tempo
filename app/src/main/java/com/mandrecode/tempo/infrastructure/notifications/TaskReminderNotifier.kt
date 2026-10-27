@@ -90,7 +90,7 @@ class TaskReminderNotifier
                     .setAutoCancel(true)
                     .setContentIntent(pendingIntent)
                     .addAction(
-                        R.drawable.ic_check,
+                        R.drawable.ic_check_circle,
                         context.getString(R.string.mark_as_completed),
                         markAsCompletePendingIntent,
                     ).addAction(

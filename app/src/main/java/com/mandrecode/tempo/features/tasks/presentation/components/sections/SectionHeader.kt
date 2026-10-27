@@ -339,9 +339,9 @@ internal fun SectionNameField(
         }
         IconButton(onClick = confirm) {
             // The plain rounded check, from the same Material Symbols family and at the same size
-            // as the cancel mark beside it (ic_check is the circled one, for notifications).
+            // as the cancel mark beside it.
             Icon(
-                painter = painterResource(R.drawable.ic_done),
+                painter = painterResource(R.drawable.ic_check),
                 contentDescription = stringResource(R.string.section_save_name),
                 tint = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),

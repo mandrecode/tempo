@@ -75,12 +75,12 @@ private const val SECONDS_PER_HOUR = 60 * 60
 /**
  * The tick that means done on every Focus surface the app draws itself.
  *
- * The bare check the task and habit cards already tick work off with — not `ic_check`, which draws
- * its own ring. Focus was the only place in the app where finishing something looked different
+ * The bare check the task and habit cards already tick work off with — not `ic_check_circle`, which
+ * draws its own ring. Focus was the only place in the app where finishing something looked different
  * depending on which surface you finished it from.
  *
  * Not the notifications: an action icon there has to be a real drawable, so the session's
- * notification keeps `ic_check` — and it sits among other notification actions rather than among
+ * notification keeps `ic_check_circle` — and it sits among other notification actions rather than among
  * these.
  */
 @Composable

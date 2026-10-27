@@ -122,7 +122,7 @@ class AndroidFocusSessionScheduler
         ) {
             if (!session.isBreak) {
                 builder.addAction(
-                    R.drawable.ic_check,
+                    R.drawable.ic_check_circle,
                     context.getString(R.string.focus_session_mark_done),
                     FocusSessionActionReceiver.pendingIntent(
                         context,
