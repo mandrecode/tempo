@@ -5,7 +5,6 @@ import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
 import com.mandrecode.tempo.core.domain.model.Priority
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.backup.data.model.SettingsBackupDto
@@ -104,8 +103,6 @@ class BackupMapperTest {
         BackupSettings(
             themeMode = ThemeMode.DARK,
             useTempoColors = true,
-            enabledTabs = setOf(TempoTab.FOCUS, TempoTab.ROUTINES),
-            defaultTab = TempoTab.ROUTINES,
             autoRemoveCompletedTasks = true,
             completedTaskRetentionDays = 90,
             vacationPeriods =
@@ -147,7 +144,6 @@ class BackupMapperTest {
         val dto =
             SettingsBackupDto(
                 themeMode = "SYSTEM",
-                defaultTab = "ROUTINES",
             )
 
         assertThat(dto.toDomain().vacationPeriods).isEmpty()
@@ -158,7 +154,6 @@ class BackupMapperTest {
         val dto =
             SettingsBackupDto(
                 themeMode = "SYSTEM",
-                defaultTab = "ROUTINES",
                 vacationPeriods =
                     listOf(
                         // Overlapping with the next one, unsorted, plus an inverted and an

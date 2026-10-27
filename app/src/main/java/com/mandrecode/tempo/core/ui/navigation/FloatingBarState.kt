@@ -8,13 +8,11 @@ data class FocusFloatingBarState(
 
 data class RoutinesFloatingBarState(
     val visible: Boolean = true,
-    val compactSoloAction: Boolean = false,
     val onAddHabit: () -> Unit = {},
 )
 
 data class TasksFloatingBarState(
     val visible: Boolean = true,
-    val compactSoloAction: Boolean = false,
     val sortOption: SortOption = SortOption.MANUAL,
     val sortMenuExpanded: Boolean = false,
     val onAddTask: () -> Unit = {},

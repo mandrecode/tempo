@@ -108,12 +108,11 @@ is device-local UI state and is never exported.
 ### Settings
 
 App configuration snapshot: `themeMode` (`LIGHT | DARK | SYSTEM`), `useTempoColors`,
-`routinesTabEnabled`, `tasksTabEnabled`, `defaultTab` (`ROUTINES | TASKS`),
 `autoRemoveCompletedTasks`, `completedTaskRetentionDays`, `vacationPeriods` (default `[]`).
 Applied **only by Replace imports** (a full restore); Merge never changes local
-configuration. On apply, app invariants are re-established: at least one tab stays enabled,
-the default tab must be an enabled tab, and retention days snap to the nearest supported
-value.
+configuration. On apply, retention days snap to the nearest supported value. Files written
+by older versions may still carry `routinesTabEnabled`, `tasksTabEnabled`, `enabledTabs` and
+`defaultTab`; they are ignored on import and no longer written.
 
 `vacationPeriods` is an array of vacation-mode pauses, each `{ "start": "2026-03-01",
 "end": "2026-03-08" }` with ISO-8601 **local dates** (not date-times); `end` is absent or

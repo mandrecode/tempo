@@ -3,10 +3,8 @@ package com.mandrecode.tempo.core.ui
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.OnboardingPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -28,7 +26,6 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainViewModelTest {
-    private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
     private lateinit var onboardingPreferencesRepository: OnboardingPreferencesRepository
     private val testDispatcher = StandardTestDispatcher()
@@ -36,14 +33,11 @@ class MainViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        navigationPreferencesRepository = mockk()
         themePreferencesRepository = mockk()
         onboardingPreferencesRepository = mockk()
 
         every { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         every { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
-        every { navigationPreferencesRepository.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
-        every { navigationPreferencesRepository.enabledTabs() } returns flowOf(TempoTab.entries.toSet())
         every { onboardingPreferencesRepository.isCompleted } returns MutableStateFlow(false)
     }
 
@@ -70,8 +64,6 @@ class MainViewModelTest {
                 val success = awaitItem() as MainUiState.Success
                 assertThat(success.themeMode).isEqualTo(ThemeMode.SYSTEM)
                 assertThat(success.useTempoColors).isFalse()
-                assertThat(success.defaultTab).isEqualTo(TempoTab.ROUTINES)
-                assertThat(success.enabledTabs).containsExactlyElementsIn(TempoTab.entries)
                 assertThat(success.isOnboardingCompleted).isFalse()
                 cancelAndIgnoreRemainingEvents()
             }
@@ -99,21 +91,6 @@ class MainViewModelTest {
             viewModel.uiState.test {
                 assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
                 assertThat((awaitItem() as MainUiState.Success).isOnboardingCompleted).isTrue()
-                cancelAndIgnoreRemainingEvents()
-            }
-        }
-
-    @Test
-    fun `emits Success with disabled tabs`() =
-        runTest {
-            every { navigationPreferencesRepository.enabledTabs() } returns flowOf(setOf(TempoTab.FOCUS))
-
-            val viewModel = createViewModel()
-
-            viewModel.uiState.test {
-                assertThat(awaitItem()).isEqualTo(MainUiState.Loading)
-                val success = awaitItem() as MainUiState.Success
-                assertThat(success.enabledTabs).containsExactly(TempoTab.FOCUS)
                 cancelAndIgnoreRemainingEvents()
             }
         }
@@ -260,7 +237,6 @@ class MainViewModelTest {
     private fun createViewModel(savedStateHandle: SavedStateHandle = SavedStateHandle()): MainViewModel =
         MainViewModel(
             savedStateHandle = savedStateHandle,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             themePreferencesRepository = themePreferencesRepository,
             onboardingPreferencesRepository = onboardingPreferencesRepository,
         )

@@ -7,12 +7,11 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 
 @Composable
 fun OnboardingScreen(
-    onExit: (TempoTab) -> Unit,
+    onExit: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: OnboardingViewModel = viewModel(),
 ) {
@@ -24,7 +23,7 @@ fun OnboardingScreen(
     LaunchedEffect(viewModel) {
         viewModel.uiEffect.collect { effect ->
             when (effect) {
-                is OnboardingContract.UiEffect.Exit -> currentOnExit(effect.defaultTab)
+                is OnboardingContract.UiEffect.Exit -> currentOnExit()
             }
         }
     }

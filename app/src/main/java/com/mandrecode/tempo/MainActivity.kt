@@ -27,8 +27,8 @@ import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.local.security.DatabaseWarmupSignal
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
+import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
-import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.StartupContentGate
 import com.mandrecode.tempo.core.ui.components.StartupContentGateHost
@@ -151,7 +151,8 @@ class MainActivity :
                 }
 
                 is MainUiState.Success -> {
-                    val startDestination = rememberStartDestination(state)
+                    val startDestination =
+                        rememberStartDestination(state, navigationPreferencesRepository.getLastRoute())
 
                     TempoTheme(
                         darkTheme =
@@ -175,7 +176,6 @@ class MainActivity :
                             // Blurs everything here while a sheet or dialog is open over it.
                             BackdropBlurHost(modifier = Modifier.fillMaxSize()) {
                                 TempoNavHost(
-                                    navigationPreferencesRepository = navigationPreferencesRepository,
                                     focusSessionRepository = focusSessionRepository,
                                     routinesNavigationTrigger = routinesNavigationTrigger.longValue,
                                     tasksNavigationTrigger = tasksNavigationTrigger.longValue,
@@ -351,11 +351,15 @@ class MainActivity :
 }
 
 @Composable
-internal fun rememberStartDestination(state: MainUiState.Success): NavKey =
+internal fun rememberStartDestination(
+    state: MainUiState.Success,
+    lastRoute: String?,
+): NavKey =
     remember {
         if (!state.isOnboardingCompleted) {
             OnboardingRoute()
         } else {
-            TabPreferencesPolicy.resolveDefaultTab(state.defaultTab, state.enabledTabs).route
+            // Reopens on the tab the user left, Focus (the home surface) on a first launch.
+            (TempoTab.fromPreferenceValue(lastRoute) ?: TempoTab.DEFAULT).route
         }
     }

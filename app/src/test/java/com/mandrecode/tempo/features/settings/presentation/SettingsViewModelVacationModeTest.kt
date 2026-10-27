@@ -3,10 +3,8 @@ package com.mandrecode.tempo.features.settings.presentation
 import android.content.Context
 import android.content.SharedPreferences
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.VacationModePreferencesImpl
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
@@ -163,11 +161,6 @@ class SettingsViewModelVacationModeTest {
                 coEvery { getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
                 coEvery { getUseTempoColors() } returns flowOf(false)
             }
-        val navigationPreferences =
-            mockk<NavigationPreferencesRepository>(relaxed = true) {
-                coEvery { enabledTabs() } returns flowOf(TempoTab.entries.toSet())
-                coEvery { getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
-            }
         val retentionPreferences =
             mockk<CompletedTaskRetentionPreferences>(relaxed = true) {
                 every { isEnabled } returns MutableStateFlow(false)
@@ -180,7 +173,6 @@ class SettingsViewModelVacationModeTest {
             }
         return SettingsViewModel(
             themePreferences,
-            navigationPreferences,
             mockk<AppVersionProvider> { every { getVersionInfo() } returns AppVersionInfo("1.0", 1) },
             retentionPreferences,
             mockk<ConfigureCompletedTaskRetentionUseCase>(relaxed = true),

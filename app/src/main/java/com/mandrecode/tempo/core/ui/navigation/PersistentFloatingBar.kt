@@ -9,17 +9,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -38,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -47,7 +42,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
@@ -65,7 +59,6 @@ internal fun <T> floatingControlsMotionSpec() =
 internal fun PersistentFloatingBar(
     currentRoute: NavKey,
     topLevelRoute: NavKey,
-    navigationPreferencesRepository: NavigationPreferencesRepository,
     focusSessionRepository: FocusSessionRepository,
     onOpenSession: () -> Unit,
     focusState: FocusFloatingBarState,
@@ -77,7 +70,6 @@ internal fun PersistentFloatingBar(
     modifier: Modifier = Modifier,
 ) {
     val isRailLayout = isFloatingNavigationRailLayout()
-    val isSingleTabMode = rememberIsSingleTabMode(navigationPreferencesRepository)
     val isTasksRoute = topLevelRoute == TasksRoute
     val isRailSettingsDestination = currentRoute == SettingsRoute && isRailLayout
     // The session sheet sits over whichever tab you opened it from, the same way the task and habit
@@ -98,7 +90,6 @@ internal fun PersistentFloatingBar(
     val navigationContent: @Composable () -> Unit = {
         TempoBottomNavigation(
             currentRoute = barRoute,
-            navigationPreferencesRepository = navigationPreferencesRepository,
             focusSessionRepository = focusSessionRepository,
             onNavigateToTopLevel = onNavigateToTopLevel,
             onReselect = { route -> if (route == TasksRoute) tasksState.onReselect() },
@@ -138,7 +129,6 @@ internal fun PersistentFloatingBar(
                 focusState = focusState,
                 routinesState = routinesState,
                 tasksState = tasksState,
-                isSingleTabMode = isSingleTabMode,
             )
         }
     }
@@ -322,54 +312,6 @@ private fun SettingsRailButton(
 }
 
 @Composable
-internal fun PersistentSingleTabPortraitFloatingBar(
-    isTasksRoute: Boolean,
-    addAction: AddAction,
-    tasksState: TasksFloatingBarState,
-) {
-    BoxWithConstraints(
-        modifier =
-            Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 10.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        val layout =
-            rememberSingleTabFloatingBarLayout(
-                maxWidth = maxWidth,
-                isTasksRoute = isTasksRoute,
-                compact = addAction.compact,
-            )
-
-        TempoSoloActionButton(
-            iconRes = R.drawable.ic_add,
-            label = addAction.label,
-            expanded = !addAction.compact,
-            onClick = addAction.onClick,
-            modifier =
-                Modifier
-                    .offset(x = layout.addOffset)
-                    .onSizeChanged { size ->
-                        if (!addAction.compact) {
-                            layout.onExpandedAddButtonMeasured(size.width)
-                        }
-                    },
-        )
-
-        Box(
-            modifier = Modifier.offset(x = layout.actionOffset),
-            contentAlignment = Alignment.Center,
-        ) {
-            TaskActionButtons(
-                tasksState = tasksState,
-                showActions = isTasksRoute,
-            )
-        }
-    }
-}
-
-@Composable
 internal fun AddActionButton(addAction: AddAction) {
     TempoBottomRailActionButton(
         iconRes = R.drawable.ic_add,
@@ -404,21 +346,18 @@ internal fun rememberAddAction(
         FocusRoute ->
             AddAction(
                 label = stringResource(R.string.add_task),
-                compact = false,
                 onClick = focusState.onAddTask,
             )
 
         TasksRoute ->
             AddAction(
                 label = stringResource(R.string.add_task),
-                compact = tasksState.compactSoloAction,
                 onClick = tasksState.onAddTask,
             )
 
         RoutinesRoute ->
             AddAction(
                 label = stringResource(R.string.add_habit),
-                compact = routinesState.compactSoloAction,
                 onClick = routinesState.onAddHabit,
             )
 
@@ -427,6 +366,5 @@ internal fun rememberAddAction(
 
 internal data class AddAction(
     val label: String,
-    val compact: Boolean,
     val onClick: () -> Unit,
 )

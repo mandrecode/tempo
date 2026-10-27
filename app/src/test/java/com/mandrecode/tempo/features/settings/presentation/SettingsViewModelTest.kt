@@ -5,9 +5,7 @@ import android.net.Uri
 import android.util.Log
 import app.cash.turbine.test
 import com.google.common.truth.Truth.assertThat
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
 import com.mandrecode.tempo.features.backup.domain.model.ImportMode
@@ -57,7 +55,6 @@ class SettingsViewModelTest {
         }
     private lateinit var viewModel: SettingsViewModel
     private lateinit var themePreferencesRepository: ThemePreferencesRepository
-    private lateinit var navigationPreferencesRepository: NavigationPreferencesRepository
     private lateinit var appVersionProvider: AppVersionProvider
     private lateinit var completedTaskRetentionPreferences: CompletedTaskRetentionPreferences
     private lateinit var configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase
@@ -77,7 +74,6 @@ class SettingsViewModelTest {
         mockkStatic(Log::class)
         every { Log.e(any(), any(), any()) } returns 0
         themePreferencesRepository = mockk(relaxed = true)
-        navigationPreferencesRepository = mockk(relaxed = true)
         appVersionProvider =
             mockk {
                 every { getVersionInfo() } returns AppVersionInfo("1.0", 1)
@@ -98,8 +94,6 @@ class SettingsViewModelTest {
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
-        coEvery { navigationPreferencesRepository.enabledTabs() } returns flowOf(TempoTab.entries.toSet())
-        coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
         every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(false)
         every { completedTaskRetentionPreferences.retentionDays } returns MutableStateFlow(30)
         every { missedReminderPreferences.isEnabled } returns MutableStateFlow(true)
@@ -120,8 +114,6 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.selectedThemeMode).isEqualTo(ThemeMode.SYSTEM)
-            assertThat(viewModel.uiState.value.enabledTabs).containsExactlyElementsIn(TempoTab.entries)
-            assertThat(viewModel.uiState.value.defaultTab).isEqualTo(TempoTab.ROUTINES)
         }
 
     @Test
@@ -150,68 +142,6 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertThat(viewModel.uiState.value.useTempoColors).isTrue()
-        }
-
-    @Test
-    fun `tabToggled while another tab remains enabled calls repository`() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-            coVerify { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-        }
-
-    @Test
-    fun `tabToggled on the last enabled tab does not call repository`() =
-        runTest {
-            coEvery { navigationPreferencesRepository.enabledTabs() } returns flowOf(setOf(TempoTab.ROUTINES))
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(SettingsContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-            coVerify(exactly = 0) { navigationPreferencesRepository.setTabEnabled(TempoTab.ROUTINES, false) }
-        }
-
-    @Test
-    fun `disabling the default tab moves the default to the first enabled tab`() =
-        runTest {
-            coEvery {
-                navigationPreferencesRepository.enabledTabs()
-            } returns flowOf(setOf(TempoTab.ROUTINES, TempoTab.TASKS))
-            coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
-
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(SettingsContract.UiEvent.TabToggled(TempoTab.ROUTINES, false))
-            coVerify { navigationPreferencesRepository.setDefaultTab(TempoTab.TASKS) }
-        }
-
-    @Test
-    fun `disabling a non-default tab leaves the default alone`() =
-        runTest {
-            val viewModel = createViewModel()
-            advanceUntilIdle()
-
-            viewModel.onEvent(SettingsContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-            coVerify(exactly = 0) { navigationPreferencesRepository.setDefaultTab(any()) }
-        }
-
-    @Test
-    fun `defaultTabSelected routines when enabled calls repository`() =
-        runTest {
-            advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.DefaultTabSelected(TempoTab.ROUTINES))
-            coVerify { navigationPreferencesRepository.setDefaultTab(TempoTab.ROUTINES) }
-        }
-
-    @Test
-    fun `defaultTabSelected tasks when enabled calls repository`() =
-        runTest {
-            advanceUntilIdle()
-            viewModel.onEvent(SettingsContract.UiEvent.DefaultTabSelected(TempoTab.TASKS))
-            coVerify { navigationPreferencesRepository.setDefaultTab(TempoTab.TASKS) }
         }
 
     @Test
@@ -748,7 +678,6 @@ class SettingsViewModelTest {
     private fun createViewModel(): SettingsViewModel =
         SettingsViewModel(
             themePreferencesRepository,
-            navigationPreferencesRepository,
             appVersionProvider,
             completedTaskRetentionPreferences,
             configureCompletedTaskRetention,

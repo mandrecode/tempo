@@ -5,12 +5,9 @@ import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.data.preferences.ThemePreferencesRepository
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.domain.repository.VacationModeRepository
-import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.CompletedTaskRetentionPreferences
 import com.mandrecode.tempo.features.tasks.domain.repository.MissedReminderPreferences
@@ -20,7 +17,6 @@ import com.mandrecode.tempo.features.widget.presentation.QuickAddTaskWidget
 import com.mandrecode.tempo.util.AppVersionProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +51,6 @@ class SettingsViewModel
     @Inject
     constructor(
         private val themePreferencesRepository: ThemePreferencesRepository,
-        private val navigationPreferencesRepository: NavigationPreferencesRepository,
         private val appVersionProvider: AppVersionProvider,
         private val completedTaskRetentionPreferences: CompletedTaskRetentionPreferences,
         private val configureCompletedTaskRetention: ConfigureCompletedTaskRetentionUseCase,
@@ -83,7 +78,6 @@ class SettingsViewModel
             observeThemeMode()
             observeTempoColors()
             loadVersionInfo()
-            observeTabPreferences()
             observeFocusPreferences()
             observePreferenceStores()
         }
@@ -124,24 +118,6 @@ class SettingsViewModel
             }
         }
 
-        private fun observeTabPreferences() {
-            viewModelScope.launch {
-                combine(
-                    navigationPreferencesRepository.enabledTabs(),
-                    navigationPreferencesRepository.getDefaultTab(),
-                ) { enabledTabs, defaultTab ->
-                    enabledTabs to defaultTab
-                }.collect { (enabledTabs, defaultTab) ->
-                    _uiState.update {
-                        it.copy(
-                            enabledTabs = enabledTabs.toPersistentSet(),
-                            defaultTab = TabPreferencesPolicy.resolveDefaultTab(defaultTab, enabledTabs),
-                        )
-                    }
-                }
-            }
-        }
-
         fun onEvent(event: SettingsContract.UiEvent) {
             when (event) {
                 is SettingsContract.UiEvent.ThemeModeSelected -> {
@@ -159,14 +135,6 @@ class SettingsViewModel
 
                 is SettingsContract.UiEvent.FocusBreakLengthChanged -> {
                     focusSessionRepository.setBreakLengthMinutes(event.minutes)
-                }
-
-                is SettingsContract.UiEvent.TabToggled -> {
-                    handleTabToggle(event.tab, event.enabled)
-                }
-
-                is SettingsContract.UiEvent.DefaultTabSelected -> {
-                    handleDefaultTabSelection(event.defaultTab)
                 }
 
                 is SettingsContract.UiEvent.AutoRemoveCompletedTasksToggled -> {
@@ -285,30 +253,5 @@ class SettingsViewModel
                     completedTaskRetentionDays = CompletedTaskRetentionPreferences.normalizeRetentionDays(days),
                 )
             }
-        }
-
-        /**
-         * Both invariants — at least one tab enabled, and the default tab always being an enabled
-         * one — live in [TabPreferencesPolicy] so Settings and Onboarding cannot drift apart.
-         */
-        private fun handleTabToggle(
-            tab: TempoTab,
-            enabled: Boolean,
-        ) {
-            val currentState = _uiState.value
-            if (!enabled && !TabPreferencesPolicy.canDisable(currentState.enabledTabs, tab)) return
-
-            navigationPreferencesRepository.setTabEnabled(tab, enabled)
-
-            val resolvedTabs = TabPreferencesPolicy.withTabEnabled(currentState.enabledTabs, tab, enabled)
-            val resolvedDefault = TabPreferencesPolicy.resolveDefaultTab(currentState.defaultTab, resolvedTabs)
-            if (resolvedDefault != currentState.defaultTab) {
-                navigationPreferencesRepository.setDefaultTab(resolvedDefault)
-            }
-        }
-
-        private fun handleDefaultTabSelection(defaultTab: TempoTab) {
-            if (defaultTab !in _uiState.value.enabledTabs) return
-            navigationPreferencesRepository.setDefaultTab(defaultTab)
         }
     }

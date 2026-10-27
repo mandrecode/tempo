@@ -13,8 +13,6 @@ import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithTag
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -22,7 +20,6 @@ import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.platform.app.InstrumentationRegistry
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import org.junit.Rule
 import org.junit.Test
@@ -133,43 +130,16 @@ class OnboardingContentTest {
     }
 
     @Test
-    fun givenSetupPage_whenTasksSwitchClicked_thenToggleEventIsEmitted() {
+    fun givenAppearancePage_whenForwardClicked_thenNextEventIsEmitted() {
         var emittedEvent: OnboardingContract.UiEvent? = null
         setContent(
-            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
-            onEvent = { emittedEvent = it },
-        )
-
-        val tasksLabel =
-            InstrumentationRegistry.getInstrumentation().targetContext.getString(R.string.tasks)
-        composeTestRule.onNodeWithContentDescription(tasksLabel).performClick()
-
-        assertThat(emittedEvent)
-            .isEqualTo(OnboardingContract.UiEvent.TabToggled(TempoTab.TASKS, false))
-    }
-
-    @Test
-    fun givenSetupPage_whenForwardClicked_thenNextEventIsEmitted() {
-        var emittedEvent: OnboardingContract.UiEvent? = null
-        setContent(
-            OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP),
+            OnboardingContract.UiState(currentPage = OnboardingContract.Page.APPEARANCE),
             onEvent = { emittedEvent = it },
         )
 
         composeTestRule.onNodeWithTag(OnboardingTestTags.FORWARD).performClick()
 
         assertThat(emittedEvent).isEqualTo(OnboardingContract.UiEvent.NextClicked)
-    }
-
-    @Test
-    fun givenSetupPage_whenRendered_thenCompletedTaskRetentionIsNotShown() {
-        setContent(OnboardingContract.UiState(currentPage = OnboardingContract.Page.SETUP))
-
-        val autoRemoveLabel =
-            InstrumentationRegistry.getInstrumentation().targetContext.getString(
-                R.string.settings_auto_remove_completed_tasks,
-            )
-        composeTestRule.onAllNodesWithText(autoRemoveLabel).assertCountEquals(0)
     }
 
     @Test

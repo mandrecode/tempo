@@ -93,7 +93,7 @@ drag to reorder, open/dismiss every editor and dialog — not just static screen
 
 ### Settings
 - [ ] Section cards (28dp radius, `surfaceContainer`), item paddings, divider indents uniform
-- [ ] Chip selectors (theme, color scheme, default tab) share height/padding/icon sizing
+- [ ] Chip selectors (theme, color scheme) share height/padding/icon sizing
 - [ ] Top bar behavior per tier: collapsing large title (compact), fixed title (rail), status
       inset only (expanded) — no jumps when navigating in/out
 - [ ] External-link items (notifications, language) show the same trailing affordance

@@ -91,7 +91,6 @@ class PortraitFloatingBarMotionTest {
                     focusState = FocusFloatingBarState(),
                     routinesState = RoutinesFloatingBarState(),
                     tasksState = TasksFloatingBarState(),
-                    isSingleTabMode = false,
                 )
             }
         }

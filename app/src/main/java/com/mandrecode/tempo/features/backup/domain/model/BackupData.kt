@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.backup.domain.model
 
 import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -35,8 +34,6 @@ data class BackupData(
 data class BackupSettings(
     val themeMode: ThemeMode,
     val useTempoColors: Boolean,
-    val enabledTabs: Set<TempoTab>,
-    val defaultTab: TempoTab,
     val autoRemoveCompletedTasks: Boolean,
     val completedTaskRetentionDays: Int,
     val vacationPeriods: List<VacationPeriod> = emptyList(),

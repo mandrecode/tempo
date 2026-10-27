@@ -1,24 +1,24 @@
 # tab-order Specification
 
 ## Purpose
-Defines the order of the app's top-level tabs and which tab takes over when the default is disabled.
+Defines the order of the app's top-level tabs and which tab the app opens on.
 
 ## Requirements
 
 ### Requirement: Focus is the centre tab
-The top-level tabs SHALL be ordered Routines, Focus, Tasks in the navigation bar, the navigation rails, the Settings tab toggles and the onboarding tab choices. When some tabs are disabled, the remaining ones SHALL keep this relative order.
+The top-level tabs SHALL be ordered Routines, Focus, Tasks in the navigation bar and the navigation rails. All three tabs SHALL always be shown; there is no setting to hide one.
 
-#### Scenario: All tabs enabled
-- **WHEN** all three tabs are enabled
-- **THEN** the navigation bar shows Routines, Focus, Tasks, with Focus in the middle
+#### Scenario: Navigation bar order
+- **WHEN** the navigation bar is shown
+- **THEN** it shows Routines, Focus, Tasks, with Focus in the middle
 
-### Requirement: Default-tab fallback prefers home
-When the stored default tab is disabled, the app SHALL open on Focus if it is enabled, and otherwise on the first enabled tab in display order.
+### Requirement: The app reopens on the last-used tab
+After onboarding, the app SHALL open on the tab the user last navigated to, and on Focus when there is none.
 
-#### Scenario: Tasks default disabled
-- **WHEN** Tasks is the default tab and the user disables it, leaving Routines and Focus
-- **THEN** Focus becomes the default tab
+#### Scenario: First launch after onboarding
+- **WHEN** no tab has been visited yet
+- **THEN** the app opens on Focus
 
-#### Scenario: Focus disabled too
-- **WHEN** the default is Focus and only Routines and Tasks are enabled
-- **THEN** Routines becomes the default tab
+#### Scenario: Reopening
+- **WHEN** the user last visited Tasks
+- **THEN** the app opens on Tasks

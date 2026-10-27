@@ -63,7 +63,6 @@ import com.mandrecode.tempo.features.routines.presentation.components.dialogs.Em
 @Composable
 fun RoutinesScreen(
     modifier: Modifier = Modifier,
-    isSingleTabMode: Boolean = false,
     viewModel: RoutinesViewModel = viewModel(),
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
@@ -76,7 +75,6 @@ fun RoutinesScreen(
     HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
     val snackbarHostState = remember { SnackbarHostState() }
     val context = LocalContext.current
-    val isListScrolledFromTop = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.checkPermissionsAndSyncReminders()
@@ -134,7 +132,6 @@ fun RoutinesScreen(
     LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
         currentOnDockedEditorVisibilityChange(isEditorDocked)
     }
-    val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onContentEvent: (RoutinesContract.UiEvent) -> Unit = { event ->
         handleRoutinesContentEvent(
             event = event,
@@ -153,7 +150,6 @@ fun RoutinesScreen(
         onFloatingBarStateChange(
             RoutinesFloatingBarState(
                 visible = showAddHabitRailButton,
-                compactSoloAction = compactSoloAction,
                 onAddHabit = onShowHabitBottomSheet,
             ),
         )
@@ -213,7 +209,6 @@ fun RoutinesScreen(
                     RoutinesContent(
                         uiState = uiState,
                         onEvent = onContentEvent,
-                        onScrolledFromTopChange = { isListScrolledFromTop.value = it },
                         showAddHabitButton = !showAddHabitRailButton,
                         selectedHabitId = uiState.habitForm.editingHabit?.id,
                         selectedHabitChainId = uiState.habitForm.editingHabitChain?.id,

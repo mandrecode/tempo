@@ -459,9 +459,7 @@
     <string name="settings_color_scheme">Color Scheme</string>
     <string name="settings_color_scheme_dynamic">Dynamic</string>
     <string name="settings_color_scheme_tempo">Tempo</string>
-    <string name="tabs_and_navigation">Tabs &amp; Navigation</string>
     <string name="tab_warning">At least one main tab (Routines or Tasks) must remain active for the app to function properly.</string>
-    <string name="default_tab">Default Tab</string>
     <string name="settings_notifications">Notifications</string>
     <string name="settings_notifications_subtitle">Notification Settings</string>
     <string name="settings_notifications_description">Manage permissions and alerts</string>
@@ -569,8 +567,6 @@
     <string name="onboarding_reminders_concept_description">Add reminders only when timing helps. Tempo explains notification access when it is needed.</string>
     <string name="onboarding_appearance_title">Make Tempo feel like yours</string>
     <string name="onboarding_appearance_description">Start with Tempo’s signature palette or match supported devices to your wallpaper.</string>
-    <string name="onboarding_setup_title">Set up your first session</string>
-    <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

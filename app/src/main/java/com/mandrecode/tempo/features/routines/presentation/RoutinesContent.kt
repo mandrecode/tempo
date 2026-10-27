@@ -29,11 +29,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
@@ -62,7 +59,6 @@ import com.mandrecode.tempo.features.routines.presentation.components.cards.Habi
 import com.mandrecode.tempo.features.routines.presentation.components.cards.HabitChainCard
 import com.mandrecode.tempo.features.routines.presentation.components.cards.QuitHabitCard
 import com.mandrecode.tempo.features.routines.presentation.components.sections.DayFilterRow
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.todayIn
@@ -85,7 +81,6 @@ fun RoutinesContent(
     uiState: RoutinesContract.UiState,
     onEvent: (RoutinesContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
-    onScrolledFromTopChange: (Boolean) -> Unit = {},
     showAddHabitButton: Boolean = true,
     selectedHabitId: Long? = null,
     selectedHabitChainId: Long? = null,
@@ -93,16 +88,7 @@ fun RoutinesContent(
 ) {
     val density = LocalDensity.current
     val listState = rememberLazyListState()
-    val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
-
-    LaunchedEffect(listState) {
-        snapshotFlow {
-            listState.firstVisibleItemIndex > 0 || listState.firstVisibleItemScrollOffset > 0
-        }.distinctUntilChanged().collect { isScrolledFromTop ->
-            currentOnScrolledFromTopChange(isScrolledFromTop)
-        }
-    }
 
     Box(
         // Transparent: the page's ambient backdrop is painted once by the screen around this

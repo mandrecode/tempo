@@ -34,14 +34,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.domain.model.ThemeMode
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
-import com.mandrecode.tempo.core.ui.outlinedIconRes
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoDarkPrimary
 import com.mandrecode.tempo.core.ui.theme.TempoLightPrimary
-import com.mandrecode.tempo.core.ui.titleRes
 import com.mandrecode.tempo.util.dynamicColorScheme
 import com.mandrecode.tempo.util.supportsDynamicColor
 
@@ -70,8 +67,6 @@ fun SettingsContent(
         VacationModeSection(uiState = uiState, onEvent = onEvent)
         CompletedTaskRetentionSection(uiState = uiState, onEvent = onEvent)
         FocusSection(uiState = uiState, onEvent = onEvent)
-        TabsAndNavigationSection(uiState = uiState, onEvent = onEvent)
-        DefaultTabSection(uiState = uiState, onEvent = onEvent)
         BackupSection(uiState = uiState, onEvent = onEvent)
         NotificationsSection()
         LanguageSection()
@@ -205,64 +200,6 @@ private fun NotificationsSection() {
                 trailingIcon = R.drawable.ic_open_in_new,
                 onClick = { openNotificationSettings(context) },
             )
-        }
-    }
-}
-
-@Composable
-internal fun TabsAndNavigationSection(
-    uiState: SettingsContract.UiState,
-    onEvent: (SettingsContract.UiEvent) -> Unit,
-) {
-    SettingsSection(title = stringResource(R.string.tabs_and_navigation)) {
-        TempoTab.entries.forEach { tab ->
-            item {
-                SettingsSwitchItem(
-                    icon = tab.outlinedIconRes,
-                    title = stringResource(tab.titleRes),
-                    checked = tab in uiState.enabledTabs,
-                    onCheckedChange = { onEvent(SettingsContract.UiEvent.TabToggled(tab, it)) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun DefaultTabSection(
-    uiState: SettingsContract.UiState,
-    onEvent: (SettingsContract.UiEvent) -> Unit,
-) {
-    // Nothing to choose between when only one tab is enabled.
-    val selectableTabs = TempoTab.entries.filter { it in uiState.enabledTabs }
-    if (selectableTabs.size < 2) return
-
-    SettingsSection(title = stringResource(R.string.default_tab)) {
-        item {
-            Row(
-                modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-            ) {
-                selectableTabs.forEachIndexed { index, tab ->
-                    ExpressiveChip(
-                        label = stringResource(tab.titleRes),
-                        isSelected = uiState.defaultTab == tab,
-                        onClick = { onEvent(SettingsContract.UiEvent.DefaultTabSelected(tab)) },
-                        isFirst = index == 0,
-                        isLast = index == selectableTabs.lastIndex,
-                        modifier = Modifier.weight(1f),
-                        height = 48.dp,
-                        horizontalPadding = 8.dp,
-                        icon = {
-                            Icon(
-                                painter = painterResource(tab.outlinedIconRes),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
-                    )
-                }
-            }
         }
     }
 }

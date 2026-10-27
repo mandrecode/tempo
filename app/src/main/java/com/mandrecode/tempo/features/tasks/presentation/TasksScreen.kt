@@ -64,7 +64,6 @@ import com.mandrecode.tempo.features.tasks.presentation.components.sections.Sort
 @Composable
 fun TasksScreen(
     modifier: Modifier = Modifier,
-    isSingleTabMode: Boolean = false,
     viewModel: TasksViewModel = viewModel(),
     pendingNotificationAction: PendingNotificationAction? = null,
     onConsumePendingNotificationAction: () -> Unit = {},
@@ -78,7 +77,6 @@ fun TasksScreen(
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     val currentOnConsumePendingNotificationAction by rememberUpdatedState(onConsumePendingNotificationAction)
-    val isListScrolledFromTop = remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         viewModel.checkPermissionsAndSyncReminders()
@@ -149,7 +147,6 @@ fun TasksScreen(
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.ShowSortMenu) }
         }
-    val compactSoloAction = isSingleTabMode && isListScrolledFromTop.value
     val onContentEvent: (TasksContract.UiEvent) -> Unit = { event ->
         val isSelectedCardActivated =
             isDockedEditor &&
@@ -168,7 +165,6 @@ fun TasksScreen(
         onFloatingBarStateChange(
             TasksFloatingBarState(
                 visible = showAddTaskRailButton,
-                compactSoloAction = compactSoloAction,
                 sortOption = uiState.sortOption,
                 onAddTask = onAddTask,
                 onSort = onSort,
@@ -246,7 +242,6 @@ fun TasksScreen(
                         TasksContent(
                             uiState = uiState,
                             onEvent = onContentEvent,
-                            onScrolledFromTopChange = { isListScrolledFromTop.value = it },
                             selectedTaskId = uiState.taskForm.editingTask?.id,
                             onContentBlockTopChange = { contentBlockTop = it },
                         )
