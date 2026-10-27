@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.components
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
@@ -10,9 +11,11 @@ import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import kotlinx.coroutines.flow.drop
@@ -69,6 +72,7 @@ fun TempoDatePickerDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = stringResource(R.string.ok),
+                modifier = Modifier.padding(end = DatePickerButtonsEndInset, bottom = DatePickerButtonsBottomInset),
                 onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         // Convert UTC millis back to LocalDate
@@ -84,7 +88,11 @@ fun TempoDatePickerDialog(
             )
         },
         dismissButton = {
-            DialogCancelButton(label = stringResource(R.string.cancel), onClick = onDismiss)
+            DialogCancelButton(
+                label = stringResource(R.string.cancel),
+                onClick = onDismiss,
+                modifier = Modifier.padding(bottom = DatePickerButtonsBottomInset),
+            )
         },
         colors = pickerColors,
     ) {
@@ -93,3 +101,9 @@ fun TempoDatePickerDialog(
         DatePicker(state = datePickerState, colors = pickerColors)
     }
 }
+
+// Material's date picker holds its buttons about 6dp from the dialog's right edge and 12dp from its
+// bottom, while its time picker keeps them 24dp and 28dp in. These make up the difference, so the
+// actions sit in the same place whichever picker is open.
+private val DatePickerButtonsEndInset = 18.dp
+private val DatePickerButtonsBottomInset = 16.dp
