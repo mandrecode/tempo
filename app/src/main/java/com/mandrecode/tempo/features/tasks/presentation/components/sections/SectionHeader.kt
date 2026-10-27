@@ -23,7 +23,6 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -339,11 +338,13 @@ internal fun SectionNameField(
             )
         }
         IconButton(onClick = confirm) {
-            // The plain done mark the task checkboxes use, not the circled check.
+            // The plain rounded check, from the same Material Symbols family and at the same size
+            // as the cancel mark beside it (ic_check is the circled one, for notifications).
             Icon(
-                imageVector = Icons.Filled.Check,
+                painter = painterResource(R.drawable.ic_done),
                 contentDescription = stringResource(R.string.section_save_name),
                 tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
             )
         }
     }
