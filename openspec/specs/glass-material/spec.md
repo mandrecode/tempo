@@ -59,7 +59,7 @@ The floating navigation pill, the add and sort controls, the snackbar and the ex
 - **THEN** the app renders no frames
 
 ### Requirement: Modals blur the app behind them
-Modal sheets and alert dialogs SHALL blur the app behind them, easing the blur in as they open and out as a sheet dismisses. The blur SHALL be drawn on the app's own root layer, so it shows on the frame the modal opens rather than when the app next redraws. It SHALL be heavy enough that the app behind reads as a wash of its colours, not recognisable shapes. While the blur shows, a modal sheet SHALL be nearly opaque, with a light rim and no shadow, so the form on it sits on a clean surface; the scrim or dim behind it SHALL be lighter.
+Modal sheets and alert dialogs SHALL blur the app behind them, never switching the blur on or off at once: a sheet's blur and scrim SHALL follow how far it is open (growing as it slides in, easing off as it is dragged down, gone once it has slid away), and a dialog's blur SHALL ease in and out. The blur SHALL be drawn on the app's own root layer, so it shows on the frame the modal opens rather than when the app next redraws. It SHALL be heavy enough that the app behind reads as a wash of its colours, not recognisable shapes. While the blur shows, a modal sheet SHALL be nearly opaque, with a light rim and no shadow, so the form on it sits on a clean surface; the scrim or dim behind it SHALL be lighter.
 
 #### Scenario: Opening the task editor
 - **WHEN** the task editor sheet opens on API 31+ with window blurs enabled

@@ -5,9 +5,7 @@ import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -47,6 +45,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -237,15 +236,14 @@ private fun TempoModalSheetDialogContent(
         onDismiss = state.onRequestDismiss,
     )
     TempoModalSheetWindowEffects()
-    val backdropBlurred = rememberBackdropBlur(visible = !state.dismissing.value)
+    // The blur and the scrim both follow how far the sheet is open, so they grow as it slides in,
+    // ease off under a drag and are gone once it has slid away, never switching on or off at once.
+    val backdropBlurred = rememberBackdropBlur { state.openFraction() }
     val glass = LocalTempoGlass.current
     // With the app blurred behind the window, depth does most of the separating, so the scrim only
     // needs to dim; without it, the scrim is the whole separation and keeps its full strength.
-    val scrimAlpha by animateFloatAsState(
-        targetValue = if (backdropBlurred) SHEET_SCRIM_ALPHA * glass.blurredScrimFraction else SHEET_SCRIM_ALPHA,
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
-        label = "sheetScrimAlpha",
-    )
+    val scrimAlpha = if (backdropBlurred) SHEET_SCRIM_ALPHA * glass.blurredScrimFraction else SHEET_SCRIM_ALPHA
+    val scrimColor = MaterialTheme.colorScheme.scrim
 
     val focusManager = LocalFocusManager.current
     LaunchedEffect(state.showDiscardDialog.value) {
@@ -263,7 +261,7 @@ private fun TempoModalSheetDialogContent(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = scrimAlpha))
+                .drawBehind { drawRect(scrimColor, alpha = scrimAlpha * state.openFraction()) }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,

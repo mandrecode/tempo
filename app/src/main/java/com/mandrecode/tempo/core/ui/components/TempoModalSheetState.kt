@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 
 private val SIDE_SHEET_WIDTH = 412.dp
 
@@ -147,3 +148,7 @@ private fun rememberWindowHeightDp(): Dp =
             .toFloat()
             .toDp()
     }
+
+/** How far the sheet is open along its dismiss axis: 0 hidden, 1 fully in place. */
+internal fun TempoModalSheetState.openFraction(): Float =
+    if (dismissAxisSizePx <= 0f) 1f else (1f - abs(offset.value) / dismissAxisSizePx).coerceIn(0f, 1f)

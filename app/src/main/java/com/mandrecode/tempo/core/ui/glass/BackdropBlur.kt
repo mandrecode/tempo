@@ -1,32 +1,33 @@
 package com.mandrecode.tempo.core.ui.glass
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.BlurEffect
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogWindowProvider
 import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
-import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 
-/** How many open modals are asking for the app behind them to be blurred. */
+/** How far each open modal wants the app behind it blurred, from 0 (not at all) to 1 (fully). */
 @Stable
 class BackdropBlur {
-    internal var requests by mutableIntStateOf(0)
+    internal val levels = mutableStateMapOf<Any, Float>()
 }
 
 internal val LocalBackdropBlur = staticCompositionLocalOf<BackdropBlur?> { null }
@@ -37,7 +38,8 @@ internal val LocalBackdropBlur = staticCompositionLocalOf<BackdropBlur?> { null 
  * Done here, on the app's root layer, rather than with the platform's cross-window blur: that one is
  * composited from the window behind, and on some devices it only appeared once that window drew
  * again (a scroll, a tick), so a sheet could open over a sharp app and blur it late. A layer of our
- * own blurs on the frame the sheet asks for it, and eases in and out with the sheet.
+ * own blurs on the frame the sheet asks for it, and follows the sheet as it slides in, is dragged
+ * and slides away, so the blur never switches on or off at once.
  *
  * Wrap the app's content in it once; [rememberBackdropBlur] is how a modal asks for it.
  */
@@ -48,16 +50,18 @@ fun BackdropBlurHost(
 ) {
     val blur = remember { BackdropBlur() }
     val glass = LocalTempoGlass.current
-    val radius by animateDpAsState(
-        targetValue = if (glass.blurEnabled && blur.requests > 0) glass.windowBlurRadius else 0.dp,
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
+    // Springy enough to keep up with a sheet under the finger; it is what eases a dialog's blur in
+    // and out, since a dialog has no slide to follow.
+    val level by animateFloatAsState(
+        targetValue = if (glass.blurEnabled) blur.levels.values.maxOrNull() ?: 0f else 0f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
         label = "backdropBlur",
     )
     CompositionLocalProvider(LocalBackdropBlur provides blur) {
         Box(
             modifier =
                 modifier.graphicsLayer {
-                    val px = radius.toPx()
+                    val px = glass.windowBlurRadius.toPx() * level
                     renderEffect = if (px > 0f) BlurEffect(px, px, TileMode.Clamp) else null
                 },
         ) {
@@ -67,22 +71,27 @@ fun BackdropBlurHost(
 }
 
 /**
- * Asks the [BackdropBlurHost] to blur the app behind the modal this is called from, for as long as
- * [visible] (a dismissing sheet passes false, so the app comes back into focus as it slides away).
+ * Asks the [BackdropBlurHost] to blur the app behind the modal this is called from, as far as
+ * [progress] says: a sheet passes how far it is open, so the blur grows as it slides in, eases off
+ * as it is dragged down and is gone once it has slid away.
  *
- * Returns whether the blur is showing, so the caller can thin its scrim and lighten its surface
- * only then. It is not below API 31, on low-RAM devices, in previews, or with no host above.
+ * Returns whether the blur can show at all, so the caller can thin its scrim and lighten its
+ * surface. It cannot below API 31, on low-RAM devices, in previews, or with no host above.
  */
 @Composable
-fun rememberBackdropBlur(visible: Boolean = true): Boolean {
+fun rememberBackdropBlur(progress: () -> Float = { 1f }): Boolean {
     val blur = LocalBackdropBlur.current
     val glass = LocalTempoGlass.current
     if (blur == null || !glass.blurEnabled) return false
-    DisposableEffect(blur, visible) {
-        if (visible) blur.requests++
-        onDispose { if (visible) blur.requests-- }
+    val key = remember { Any() }
+    val currentProgress by rememberUpdatedState(progress)
+    LaunchedEffect(blur, key) {
+        snapshotFlow { currentProgress().coerceIn(0f, 1f) }.collect { blur.levels[key] = it }
     }
-    return visible
+    DisposableEffect(blur, key) {
+        onDispose { blur.levels.remove(key) }
+    }
+    return true
 }
 
 /**
