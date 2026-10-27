@@ -73,4 +73,13 @@ class SectionDropTargetTest {
         assertThat(autoScrollStep(50f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(-10f)
         assertThat(autoScrollStep(-30f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(-20f)
     }
+
+    @Test
+    fun `under a sort a drop only changes the section`() {
+        // Another section: the task joins the end of its manual order, whatever card it lands on.
+        assertThat(dropActionFor(null, 0, DropTarget(10L, 1, catFirst), manualOrder = false))
+            .isEqualTo(SectionDropAction.Move(10L, Int.MAX_VALUE))
+        // Its own section: nothing to do, the sort keeps its place.
+        assertThat(dropActionFor(10L, 0, DropTarget(10L, 2, catSecond), manualOrder = false)).isNull()
+    }
 }

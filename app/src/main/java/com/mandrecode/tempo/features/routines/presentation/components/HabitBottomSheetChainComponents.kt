@@ -132,6 +132,7 @@ fun HabitMultiSelector(
                             interactionSource = chipInteractionSource,
                         )
 
+                    val chipShape = RoundedCornerShape(chipCornerRadius.value)
                     FilterChip(
                         modifier = Modifier.testTag(AVAILABLE_HABIT_CHIP_TEST_TAG),
                         selected = false,
@@ -145,7 +146,8 @@ fun HabitMultiSelector(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
-                        shape = RoundedCornerShape(chipCornerRadius.value),
+                        shape = chipShape,
+                        border = null,
                     )
                 }
             }

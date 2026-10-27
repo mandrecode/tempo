@@ -17,7 +17,7 @@ private const val CONNECTED_CARD_MORPH_MILLIS = 200
 val ConnectedCardGap: Dp = 3.dp
 
 /**
- * Where a card sits in a run of connected cards, the list's take on the Material 3 Expressive
+ * Where a card sits in a run of connected cards (#423), the list's take on the Material 3 Expressive
  * connected button group: the run's two ends keep the card's own round corners, and every join
  * inside it is tight, so a list of tasks reads as one block cut into rows.
  */

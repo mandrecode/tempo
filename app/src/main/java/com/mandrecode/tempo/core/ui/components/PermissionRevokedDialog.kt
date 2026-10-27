@@ -29,6 +29,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
@@ -129,6 +132,7 @@ fun PermissionRevokedDialog(
                 dismissOnClickOutside = false,
             ),
         title = {
+            DialogWindowGlass()
             Text(
                 text = stringResource(R.string.permissions_needed),
                 style = MaterialTheme.typography.dialogTitle,
@@ -136,13 +140,14 @@ fun PermissionRevokedDialog(
         },
         text = { Text(dialogText) },
         confirmButton = {
+            val confirmShape = RoundedCornerShape(confirmCornerRadius)
             Button(
                 onClick = {
                     context.startActivity(intentAction)
                     dismissPermissionRevokedDialog()
                 },
                 interactionSource = confirmInteractionSource,
-                shape = RoundedCornerShape(confirmCornerRadius),
+                shape = confirmShape,
             ) {
                 Text(
                     text = stringResource(R.string.go_to_settings),
@@ -152,11 +157,13 @@ fun PermissionRevokedDialog(
         },
         dismissButton = {
             OutlinedButton(
+                border = null,
                 onClick = confirmClearAllReminders,
                 interactionSource = dismissInteractionSource,
                 shape = RoundedCornerShape(dismissCornerRadius),
                 colors =
                     ButtonDefaults.outlinedButtonColors(
+                        containerColor = glassButtonContainer(),
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
             ) {

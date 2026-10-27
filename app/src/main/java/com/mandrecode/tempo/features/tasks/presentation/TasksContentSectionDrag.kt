@@ -39,12 +39,17 @@ private const val TARGET_CARD_ALPHA = 0.5f
 private fun cardEntryKey(taskId: Long) = "card_$taskId"
 
 /**
- * Dragging a task between sections in Manual sort (#61). Every header, card and empty-section
+ * Dragging a task between sections (#61), in any sort. Every header, card and empty-section
  * placeholder on screen reports where it is; the pointer's position over them is the drop target.
  * Bounds rather than an estimated row height, so it works however tall cards are.
+ *
+ * In [manualOrder] a drop also places the task within its section. Under a sort it only moves the
+ * task to another section, so nothing in the start section is a target.
  */
 @Stable
-internal class SectionDragState {
+internal class SectionDragState(
+    private val manualOrder: Boolean = true,
+) {
     val entries = mutableStateMapOf<String, DropEntry>()
     var draggedTaskId by mutableStateOf<Long?>(null)
         private set
@@ -73,6 +78,7 @@ internal class SectionDragState {
         val taskId = draggedTaskId ?: return@derivedStateOf null
         val others = entries.filterKeys { it != cardEntryKey(taskId) }.values
         resolveDropTarget(startCenterY + dragTotal, others)
+            ?.takeIf { manualOrder || it.sectionId != fromSectionId }
     }
 
     fun start(
@@ -116,7 +122,7 @@ internal class SectionDragState {
 
     /** Ends the drag and reports what it means, if anything. */
     fun finish(): SectionDropAction? {
-        val action = target?.let { dropActionFor(fromSectionId, fromIndex, it) }
+        val action = target?.let { dropActionFor(fromSectionId, fromIndex, it, manualOrder) }
         cancel()
         return action
     }

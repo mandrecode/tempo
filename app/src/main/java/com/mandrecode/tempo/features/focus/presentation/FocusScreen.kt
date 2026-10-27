@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.focus.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
@@ -23,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.LifecycleResumeEffect
@@ -31,6 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.core.ui.navigation.FocusFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationSnackbarBottomPadding
@@ -86,12 +86,13 @@ fun FocusScreen(
                 // Explicit fill rather than relying on the root Surface: on rail layouts
                 // adaptiveScreenContentLayout insets the Scaffold to clear the floating rail,
                 // exposing this Box's background in that gutter. It must match the Scaffold's own
-                // colour, matching what Routines and Tasks already do.
-                .background(MaterialTheme.colorScheme.background),
+                // colour, matching what Routines and Tasks already do. The page's one ambient
+                // backdrop; the Scaffold and content inside it stay transparent.
+                .ambientBackground(),
     ) {
         Scaffold(
             modifier = Modifier.adaptiveScreenContentLayout(railClearance = railContentClearance),
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = Color.Transparent,
             contentWindowInsets = WindowInsets(0),
             topBar = { topBar(uiState.isVacationModeActive) },
         ) { innerPadding ->

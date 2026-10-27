@@ -38,7 +38,8 @@ import com.mandrecode.tempo.features.focus.presentation.components.rememberSessi
  * belonging to the session rather than to navigation.
  *
  * It takes over the Focus tab's own slot rather than adding an element beside it: the tab it would
- * sit next to is the one it belongs to, and the bar has no width to spare.
+ * sit next to is the one it belongs to, and the bar has no width to spare. On Focus itself the slot
+ * goes back to being the tab, selected like any other.
  */
 @Composable
 internal fun FocusSessionChip(
@@ -58,6 +59,7 @@ internal fun FocusSessionChip(
             pressedRadius = FloatingToolbarPressedRadius,
         )
 
+    val chipShape = RoundedCornerShape(cornerRadius.value)
     Surface(
         onClick = {
             // Returning to Focus is navigation, matching the tab buttons beside it.
@@ -69,12 +71,9 @@ internal fun FocusSessionChip(
                 .height(FloatingToolbarItemSize)
                 .semantics { contentDescription = description },
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
-        // Always the session's own colour, on every surface and whichever tab you are on. Swapping
-        // it for the selected-tab treatment on Focus made the one control carrying a live session
-        // indistinguishable from an ordinary tab, and made the wide rail's copy of it look like a
-        // different component from the phone's. Being filled at all is what marks it as current;
-        // the icon still switches to its filled variant to say you are here.
+        shape = chipShape,
+        // The session's own colour, so it reads as the session rather than as navigation. It only
+        // shows away from Focus; on Focus the slot is the ordinary selected tab.
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {

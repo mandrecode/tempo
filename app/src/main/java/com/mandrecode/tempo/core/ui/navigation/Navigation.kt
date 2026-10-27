@@ -41,6 +41,9 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
+import com.mandrecode.tempo.core.ui.glass.GlassBackdropSource
+import com.mandrecode.tempo.core.ui.glass.ProvideGlassBackdrop
+import com.mandrecode.tempo.core.ui.glass.rememberGlassBackdrop
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -205,18 +208,13 @@ fun TempoNavHost(
     val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val insetPaddingModifier = rememberHorizontalInsetPadding()
 
-    Box(modifier = modifier.fillMaxSize()) {
-        HorizontalInsetMarginStrips()
-
-        TempoNavDisplay(
-            entries = activeEntries,
-            navigator = navigator,
-            editorSceneStrategy = editorSceneStrategy,
-            modifier = insetPaddingModifier,
-        )
-
-        SlideOverlays(navigator = navigator, onOpenTaskInTasks = openTaskInTasks)
-
+    GlassChromeLayers(
+        entries = activeEntries,
+        navigator = navigator,
+        editorSceneStrategy = editorSceneStrategy,
+        onOpenTaskInTasks = openTaskInTasks,
+        modifier = modifier,
+    ) {
         PersistentFloatingBar(
             modifier = insetPaddingModifier,
             currentRoute = navigator.currentRoute,
@@ -231,6 +229,41 @@ fun TempoNavHost(
             onOpenSettings = { navigator.navigate(SettingsRoute) },
             onRouteChange = onRouteChange,
         )
+    }
+}
+
+/**
+ * The app's two planes. Everything the floating [chrome] can sit over is recorded first, so its
+ * glass blurs what is really behind it — the Settings overlay included, which the rail stays beside
+ * on large windows — and the chrome is drawn above it, sampling that recording.
+ */
+@Composable
+private fun GlassChromeLayers(
+    entries: List<NavEntry<NavKey>>,
+    navigator: TempoNavigator,
+    editorSceneStrategy: SceneStrategy<NavKey>,
+    onOpenTaskInTasks: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    chrome: @Composable () -> Unit,
+) {
+    val glassBackdrop = rememberGlassBackdrop()
+    val insetPaddingModifier = rememberHorizontalInsetPadding()
+    Box(modifier = modifier.fillMaxSize()) {
+        GlassBackdropSource(backdrop = glassBackdrop, modifier = Modifier.fillMaxSize()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                HorizontalInsetMarginStrips()
+
+                TempoNavDisplay(
+                    entries = entries,
+                    navigator = navigator,
+                    editorSceneStrategy = editorSceneStrategy,
+                    modifier = insetPaddingModifier,
+                )
+
+                SlideOverlays(navigator = navigator, onOpenTaskInTasks = onOpenTaskInTasks)
+            }
+        }
+        ProvideGlassBackdrop(glassBackdrop, chrome)
     }
 }
 

@@ -2,7 +2,6 @@ package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -60,9 +59,11 @@ fun SettingsButton(
             modifier =
                 Modifier
                     .size(40.dp)
+                    // A light tint like the add-category chip's, not the chrome's: up here there is no
+                    // backdrop to blur, and a solid fill reads as a heavy disc on the header gradient.
+                    // Pressed or selected it is a clean, solid colour.
                     .clip(shape)
-                    .background(colors.container)
-                    .border(1.dp, colors.border, shape),
+                    .background(colors.container),
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),
@@ -76,7 +77,6 @@ fun SettingsButton(
 private data class SettingsButtonColors(
     val container: Color,
     val content: Color,
-    val border: Color,
 )
 
 @Composable
@@ -90,7 +90,8 @@ private fun settingsButtonColors(
             when {
                 isPressed -> colorScheme.primaryContainer
                 selected -> colorScheme.secondaryContainer
-                else -> colorScheme.surfaceContainer
+                // The add-category chip's fill, so the header gradient shows through it.
+                else -> colorScheme.surfaceVariant.copy(alpha = REST_CONTAINER_ALPHA)
             },
         label = "settingsButtonContainerColor",
     )
@@ -103,14 +104,7 @@ private fun settingsButtonColors(
             },
         label = "settingsButtonContentColor",
     )
-    val border by animateColorAsState(
-        targetValue =
-            if (isPressed || selected) {
-                colorScheme.primary
-            } else {
-                colorScheme.primary.copy(alpha = 0.48f)
-            },
-        label = "settingsButtonBorderColor",
-    )
-    return SettingsButtonColors(container = container, content = content, border = border)
+    return SettingsButtonColors(container = container, content = content)
 }
+
+private const val REST_CONTAINER_ALPHA = 0.5f

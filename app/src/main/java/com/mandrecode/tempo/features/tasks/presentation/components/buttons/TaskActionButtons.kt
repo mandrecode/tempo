@@ -19,6 +19,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.util.getIconForSortOption
 import com.mandrecode.tempo.core.ui.util.rememberPressableIconButtonAnimation
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
@@ -36,6 +37,9 @@ fun SortButton(
             baseRadius = baseSortRadius,
         )
     val (containerColor, contentColor) = sortButtonColors(sortOption)
+    val shape = RoundedCornerShape(buttonCornerRadius.value)
+    // Manual order is the resting state, so it is plain glass; an active sort keeps its role colour.
+    val glassTint = if (sortOption != SortOption.MANUAL) containerColor else Color.Unspecified
 
     if (expanded) {
         ExtendedFloatingActionButton(
@@ -47,9 +51,9 @@ fun SortButton(
                 )
             },
             onClick = onClick,
-            modifier = modifier.then(Modifier.height(48.dp)),
-            shape = RoundedCornerShape(buttonCornerRadius.value),
-            containerColor = containerColor,
+            modifier = modifier.then(Modifier.height(48.dp)).glass(shape, glassTint),
+            shape = shape,
+            containerColor = Color.Transparent,
             contentColor = contentColor,
             elevation =
                 FloatingActionButtonDefaults.bottomAppBarFabElevation(
@@ -62,9 +66,9 @@ fun SortButton(
     }
     FloatingActionButton(
         onClick = onClick,
-        modifier = modifier.then(Modifier.size(48.dp)),
-        shape = RoundedCornerShape(buttonCornerRadius.value),
-        containerColor = containerColor,
+        modifier = modifier.then(Modifier.size(48.dp)).glass(shape, glassTint),
+        shape = shape,
+        containerColor = Color.Transparent,
         contentColor = contentColor,
         elevation =
             FloatingActionButtonDefaults.bottomAppBarFabElevation(

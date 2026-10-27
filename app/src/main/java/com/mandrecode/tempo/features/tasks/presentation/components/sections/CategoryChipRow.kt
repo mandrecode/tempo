@@ -8,7 +8,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -49,7 +48,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -124,7 +122,6 @@ fun CategoryChipRow(
         modifier =
             modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
                 .height(84.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(horizontal = 16.dp),
@@ -259,16 +256,6 @@ private fun CategoryItem(
         label = "contentColor",
     )
 
-    val borderColor by animateColorAsState(
-        targetValue =
-            if (isSelected) {
-                Color.Transparent
-            } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            },
-        label = "borderColor",
-    )
-
     val height by animateDpAsState(
         targetValue = if (isSelected) 64.dp else 56.dp,
         label = "height",
@@ -276,12 +263,13 @@ private fun CategoryItem(
 
     val categoryName = category.name
 
+    val chipShape = RoundedCornerShape(animatedCornerRadius)
     Surface(
         modifier =
             modifier
                 .wrapContentWidth()
                 .height(height)
-                .clip(RoundedCornerShape(animatedCornerRadius))
+                .clip(chipShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -295,9 +283,10 @@ private fun CategoryItem(
                         }
                     },
                 ),
-        shape = RoundedCornerShape(animatedCornerRadius),
+        shape = chipShape,
         color = containerColor,
-        border = if (isSelected) null else BorderStroke(1.dp, borderColor),
+        // Before glass (and with it off): a quiet outline on the unselected chips.
+        border = null,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -482,21 +471,12 @@ private fun NewCategoryButton(onClick: () -> Unit) {
         label = "newCategoryContentColor",
     )
 
-    val borderColor by animateColorAsState(
-        targetValue =
-            if (isPressed) {
-                Color.Transparent
-            } else {
-                MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            },
-        label = "newCategoryBorderColor",
-    )
-
+    val addShape = RoundedCornerShape(animatedCornerRadius.value)
     Surface(
         modifier =
             Modifier
                 .size(56.dp)
-                .clip(RoundedCornerShape(animatedCornerRadius.value))
+                .clip(addShape)
                 .clickable(
                     interactionSource = interactionSource,
                     indication = null,
@@ -505,9 +485,9 @@ private fun NewCategoryButton(onClick: () -> Unit) {
                         onClick()
                     },
                 ),
-        shape = RoundedCornerShape(animatedCornerRadius.value),
+        shape = addShape,
         color = containerColor,
-        border = BorderStroke(1.dp, borderColor),
+        border = null,
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

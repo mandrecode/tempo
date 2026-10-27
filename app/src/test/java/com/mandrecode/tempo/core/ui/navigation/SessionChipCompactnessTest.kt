@@ -11,51 +11,44 @@ import org.junit.Test
  */
 class SessionChipCompactnessTest {
     @Test
-    fun `a narrow rail is always compact, wherever you are`() {
-        assertThat(compact(isRail = true, isExpandedRail = false, onFocus = false)).isTrue()
-        assertThat(compact(isRail = true, isExpandedRail = false, onFocus = true)).isTrue()
-        assertThat(
-            compact(isRail = true, isExpandedRail = false, onFocus = false, hasActions = true),
-        ).isTrue()
+    fun `a narrow rail is always compact`() {
+        assertThat(compact(isRail = true)).isTrue()
+        assertThat(compact(isRail = true, hasActions = true, roomy = true)).isTrue()
     }
 
     @Test
     fun `an expanded rail always shows the countdown`() {
         // Its rows are wide and labelled, so a bare icon would be the one row saying nothing.
-        assertThat(compact(isRail = true, isExpandedRail = true, onFocus = false)).isFalse()
-        assertThat(compact(isRail = true, isExpandedRail = true, onFocus = true)).isFalse()
-        assertThat(
-            compact(isRail = true, isExpandedRail = true, onFocus = true, hasActions = true),
-        ).isFalse()
+        assertThat(compact(isRail = true, isExpandedRail = true)).isFalse()
+        assertThat(compact(isRail = true, isExpandedRail = true, hasActions = true)).isFalse()
     }
 
     @Test
-    fun `the bottom bar shows the countdown away from Focus`() {
-        assertThat(compact(isRail = false, isExpandedRail = false, onFocus = false)).isFalse()
+    fun `the bottom bar shows the countdown when it fits`() {
+        assertThat(compact()).isFalse()
+        assertThat(compact(roomy = true)).isFalse()
     }
 
     @Test
-    fun `the bottom bar stays compact on Focus, where the session card is already open`() {
-        assertThat(compact(isRail = false, isExpandedRail = false, onFocus = true)).isTrue()
+    fun `the bottom bar shows the countdown beside a tab's actions on a wide screen`() {
+        assertThat(compact(hasActions = true, roomy = true)).isFalse()
     }
 
     @Test
-    fun `the bottom bar stays compact when a tab brings its own actions`() {
+    fun `the bottom bar stays compact beside a tab's actions on a phone`() {
         // The case the bar actually runs out of width in.
-        assertThat(
-            compact(isRail = false, isExpandedRail = false, onFocus = false, hasActions = true),
-        ).isTrue()
+        assertThat(compact(hasActions = true)).isTrue()
     }
 
     private fun compact(
-        isRail: Boolean,
-        isExpandedRail: Boolean,
-        onFocus: Boolean,
+        isRail: Boolean = false,
+        isExpandedRail: Boolean = false,
         hasActions: Boolean = false,
+        roomy: Boolean = false,
     ) = isSessionChipCompact(
         isRailLayout = isRail,
         isExpandedRail = isExpandedRail,
-        currentRoute = if (onFocus) FocusRoute else RoutinesRoute,
         hasContextualActions = hasActions,
+        hasRoomForCountdown = roomy,
     )
 }

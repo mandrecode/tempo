@@ -29,12 +29,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleRegular
@@ -50,8 +52,8 @@ fun OnboardingContent(
 ) {
     val layout = rememberOnboardingLayout()
     Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize().ambientBackground(),
+        color = Color.Transparent,
     ) {
         Column(
             modifier =

@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.focus.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -38,6 +37,7 @@ import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLinkButton
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.glass.glassPanel
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
@@ -56,6 +56,8 @@ import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskIte
 import kotlinx.collections.immutable.ImmutableList
 
 private val ContentBlockTopCornerRadius = 28.dp
+private val ContentBlockShape =
+    RoundedCornerShape(topStart = ContentBlockTopCornerRadius, topEnd = ContentBlockTopCornerRadius)
 
 /** The two levels of muting Tasks and Routines use for their own empty states. */
 private const val EMPTY_STATE_TITLE_ALPHA = 0.6f
@@ -70,9 +72,9 @@ fun FocusContent(
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
 
     Box(
-        // Matches the Scaffold containerColor this normally sits in, so the rounded seam below
-        // resolves against the right colour when previewed or tested standalone.
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        // Transparent: the page's ambient backdrop is painted once by the screen around this
+        // (and by the preview hosts), so the panel's translucency picks up the same glows.
+        modifier = modifier.fillMaxSize(),
     ) {
         FirstLoadCrossfade(
             isLoading = uiState.isLoading,
@@ -96,12 +98,8 @@ fun FocusContent(
                             .weight(1f)
                             .fillMaxWidth()
                             // clip before background so list overscroll cannot draw past the seam.
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = ContentBlockTopCornerRadius,
-                                    topEnd = ContentBlockTopCornerRadius,
-                                ),
-                            ).background(MaterialTheme.colorScheme.surface),
+                            .clip(ContentBlockShape)
+                            .glassPanel(ContentBlockShape, MaterialTheme.colorScheme.surface),
                 ) {
                     uiState.finishedSession?.let { finished ->
                         SessionFinishedSheet(

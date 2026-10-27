@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -35,6 +37,7 @@ internal fun ImportModeDialog(onEvent: (SettingsContract.UiEvent) -> Unit) {
     AlertDialog(
         onDismissRequest = { onEvent(SettingsContract.UiEvent.BackupDialogDismissed) },
         title = {
+            DialogWindowGlass()
             Text(
                 text = stringResource(R.string.backup_import_mode_title),
                 style = MaterialTheme.typography.dialogTitle,
@@ -80,13 +83,14 @@ private fun ImportModeActionButton(
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
 
+    val buttonShape = RoundedCornerShape(cornerRadius.value)
     Button(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
+        shape = buttonShape,
         modifier = Modifier.fillMaxWidth(),
         colors =
             if (isDestructive) {
@@ -108,6 +112,8 @@ private fun ImportModeCancelButton(onEvent: (SettingsContract.UiEvent) -> Unit) 
     val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
 
     OutlinedButton(
+        colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+        border = null,
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onEvent(SettingsContract.UiEvent.BackupDialogDismissed)

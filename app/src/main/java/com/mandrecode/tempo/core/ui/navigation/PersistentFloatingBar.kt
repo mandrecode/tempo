@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,6 +49,7 @@ import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.ui.components.SettingsButton
+import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
@@ -244,9 +246,9 @@ private fun RailScrollableContent(
 
 @Composable
 private fun RailAppTitle() {
-    // Bounded to the rail and shrunk to fit: a longer app name (the debug build's
-    // "Tempo (Debug)", or a translation) would otherwise run past the rail into the
-    // screen content, which starts only FloatingRailContentGap after it.
+    // Bounded to the rail and shrunk to fit: a longer app name (a translation, say) would
+    // otherwise run past the rail into the screen content, which starts only
+    // FloatingRailContentGap after it.
     val titleStyle = MaterialTheme.typography.topBarTitle
     Text(
         text = stringResource(R.string.app_name),
@@ -286,12 +288,7 @@ private fun SettingsRailButton(
     Surface(
         onClick = onClick,
         shape = CircleShape,
-        color =
-            if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                MaterialTheme.colorScheme.surfaceContainer
-            },
+        color = Color.Transparent,
         contentColor =
             if (selected) {
                 MaterialTheme.colorScheme.onSecondaryContainer
@@ -302,7 +299,10 @@ private fun SettingsRailButton(
             Modifier
                 .width(FloatingRailExpandedSurfaceWidth)
                 .height(FloatingToolbarItemSize)
-                .semantics { this.selected = selected },
+                .glass(
+                    shape = CircleShape,
+                    tint = if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Unspecified,
+                ).semantics { this.selected = selected },
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),

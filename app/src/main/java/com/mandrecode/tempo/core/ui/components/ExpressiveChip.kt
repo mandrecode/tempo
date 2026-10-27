@@ -3,7 +3,6 @@ package com.mandrecode.tempo.core.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -127,20 +126,22 @@ fun ExpressiveChip(
         label = "expressive_chip_content",
     )
 
+    val shape =
+        RoundedCornerShape(
+            topStart = startRadius,
+            bottomStart = startRadius,
+            topEnd = endRadius,
+            bottomEnd = endRadius,
+        )
+
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         Surface(
             modifier =
                 modifier
                     .height(height)
                     .padding(vertical = verticalInset)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = startRadius,
-                            bottomStart = startRadius,
-                            topEnd = endRadius,
-                            bottomEnd = endRadius,
-                        ),
-                    ).clickable(
+                    .clip(shape)
+                    .clickable(
                         interactionSource = interactionSource,
                         indication = null,
                         enabled = enabled,
@@ -149,20 +150,12 @@ fun ExpressiveChip(
                             onClick()
                         },
                     ),
-            shape =
-                RoundedCornerShape(
-                    topStart = startRadius,
-                    bottomStart = startRadius,
-                    topEnd = endRadius,
-                    bottomEnd = endRadius,
-                ),
+            shape = shape,
             color = containerColor,
+            // The finish is for the neutral glass; a selected chip is a clean, solid colour.
             border =
-                if (!isSelected) {
-                    BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-                    )
+                if (isSelected) {
+                    null
                 } else {
                     null
                 },

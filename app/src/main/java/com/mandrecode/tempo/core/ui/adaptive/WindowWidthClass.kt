@@ -2,6 +2,8 @@ package com.mandrecode.tempo.core.ui.adaptive
 
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.window.core.layout.WindowSizeClass
 
 /**
@@ -53,3 +55,15 @@ fun currentWindowWidthClass(): WindowWidthClass {
     val sizeClass = currentWindowAdaptiveInfoV2().windowSizeClass
     return windowWidthClass(sizeClass.minWidthDp)
 }
+
+/**
+ * The window's current width in dp, for layout decisions finer than a [WindowWidthClass]. Follows
+ * resizes that don't change the configuration (desktop windowing, some foldable transitions).
+ */
+@Composable
+fun currentWindowWidthDp(): Float =
+    with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width
+            .toDp()
+            .value
+    }

@@ -113,9 +113,11 @@ internal fun TaskAttachmentRow(
     modifier: Modifier = Modifier,
 ) {
     val openLabel = stringResource(R.string.open_attachment, attachment.displayName)
+    val rowShape = RoundedCornerShape(16.dp)
     Surface(
         onClick = onOpen,
-        shape = RoundedCornerShape(16.dp),
+        shape = rowShape,
+        border = null,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier =
             modifier

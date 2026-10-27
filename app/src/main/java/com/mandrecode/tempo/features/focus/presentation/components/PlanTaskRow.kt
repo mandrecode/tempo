@@ -169,6 +169,7 @@ private fun ChipTray(
     Surface(
         modifier = modifier,
         shape = shape,
+        border = null,
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         Box(

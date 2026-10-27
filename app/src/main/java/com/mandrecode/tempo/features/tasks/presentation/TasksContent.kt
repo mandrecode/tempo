@@ -1,8 +1,5 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
@@ -22,12 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -45,7 +39,6 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
@@ -69,9 +62,9 @@ import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.glass.glassPanel
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.groupLabel
-import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.core.ui.util.rememberViewportHold
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
@@ -105,6 +98,8 @@ private const val COMPLETED_GROUP_FALLBACK_RANK = 2
 private const val DRAGGED_ITEM_ALPHA = 0.8f
 private const val TARGET_ITEM_ALPHA = 0.5f
 private val ContentBlockTopCornerRadius = 28.dp
+private val ContentBlockShape =
+    RoundedCornerShape(topStart = ContentBlockTopCornerRadius, topEnd = ContentBlockTopCornerRadius)
 internal const val TASKS_CONTENT_BLOCK_TEST_TAG = "tasks_content_block"
 
 // Rough per-card height used to translate a drag distance into a number of slots. The list is
@@ -143,11 +138,11 @@ fun TasksContent(
     val showSectionShortcuts = currentWindowWidthClass().isAtLeast(WindowWidthClass.LARGE)
     val gridState = rememberLazyStaggeredGridState()
     val dragState = remember { TaskDragState() }
-    // Moving between sections is setting the order by hand, so it is what Manual sort offers;
-    // other sorts keep their tied-run drag (#61).
+    // Tasks move between sections in any sort (#61); only Manual also places them by hand.
     val sectionDragState =
-        remember(uiState.selectedCategoryId) { SectionDragState() }
-            .takeIf { uiState.sortOption == SortOption.MANUAL }
+        remember(uiState.selectedCategoryId, uiState.sortOption) {
+            SectionDragState(manualOrder = uiState.sortOption == SortOption.MANUAL)
+        }
 
     val hasCompletedTasks by remember(completedTaskGroups) {
         derivedStateOf {
@@ -175,10 +170,9 @@ fun TasksContent(
     }
 
     BoxWithConstraints(
-        // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
-        // here too so the rounded content block's corner cutouts (see below) still resolve to
-        // the correct tinted color when this composable is previewed/tested standalone.
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        // Transparent: the page's backdrop (background tone and header gradient) is painted once by
+        // the screen around this, and by the preview hosts.
+        modifier = modifier.fillMaxSize(),
     ) {
         // A wide pane spreads a sectioned category over two columns (#61).
         val isTwoColumn = !sectionedList?.sections.isNullOrEmpty() && maxWidth >= TwoColumnSectionsMinWidth
@@ -274,12 +268,8 @@ fun TasksContent(
                             // clip before background: background() alone doesn't clip children,
                             // so list overscroll/ripple effects would otherwise draw past the
                             // rounded top corners instead of respecting the seam.
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = ContentBlockTopCornerRadius,
-                                    topEnd = ContentBlockTopCornerRadius,
-                                ),
-                            ).background(MaterialTheme.colorScheme.surface)
+                            .clip(ContentBlockShape)
+                            .glassPanel(ContentBlockShape, MaterialTheme.colorScheme.surface)
                             .onGloballyPositioned { sectionDragState?.setViewport(it.boundsInRoot()) },
                 ) {
                     sectionDragState?.let { drag ->
@@ -393,6 +383,10 @@ fun TasksContent(
                                         )
 
                                     item(key = "completed_separator") {
+                                        // A sectioned list always ends in its section controls (Add
+                                        // section, or the field naming a new one), so the separator
+                                        // follows them even when no task is active.
+                                        val followsContent = hasActiveTasks || sectionedList != null
                                         val firstGroupLabel =
                                             if (showDivider) {
                                                 resolveGroupLabel(completedEntries.firstOrNull()?.key)
@@ -406,11 +400,12 @@ fun TasksContent(
                                             },
                                             showDivider = showDivider,
                                             firstGroupLabel = firstGroupLabel,
-                                            isFirstVisibleItem = !hasActiveTasks,
+                                            isFirstVisibleItem = !followsContent,
+                                            followsSectionControls = sectionedList != null,
                                             modifier =
                                                 Modifier
                                                     .animateItem()
-                                                    .groupSeparation(above = hasActiveTasks),
+                                                    .groupSeparation(above = followsContent),
                                         )
                                     }
 
@@ -621,74 +616,6 @@ private fun Modifier.taskReorderGestures(
                 onDragCancel = { dragState.reset() },
             )
         }
-}
-
-@Composable
-internal fun CompletedTasksSeparator(
-    isExpanded: Boolean,
-    onToggle: () -> Unit,
-    modifier: Modifier = Modifier,
-    showDivider: Boolean = true,
-    firstGroupLabel: String? = null,
-    // Whether this separator is the first *visible* content in the list, which is a question about
-    // whether there are any active tasks above it rather than about its index.
-    isFirstVisibleItem: Boolean = false,
-) {
-    val rotation by animateFloatAsState(
-        targetValue = if (isExpanded) 180f else 0f,
-        label = "rotation",
-    )
-
-    Row(
-        modifier =
-            modifier
-                .fillMaxWidth()
-                .padding(top = if (isFirstVisibleItem) 0.dp else 28.dp, bottom = 12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 3.dp,
-            modifier =
-                Modifier
-                    .padding(end = if (showDivider) 12.dp else 0.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .clickable { onToggle() },
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.completed_tasks),
-                    style = MaterialTheme.typography.sectionHeader,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-                Spacer(modifier = Modifier.size(8.dp))
-                Icon(
-                    imageVector = Icons.Default.KeyboardArrowDown,
-                    contentDescription = null,
-                    modifier =
-                        Modifier
-                            .size(20.dp)
-                            .rotate(rotation),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                )
-            }
-        }
-        if (showDivider) {
-            WavyDivider(modifier = Modifier.weight(1f))
-            if (isExpanded && firstGroupLabel != null) {
-                Text(
-                    text = firstGroupLabel,
-                    style = MaterialTheme.typography.groupLabel,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(start = 12.dp, end = 8.dp),
-                )
-            }
-        }
-    }
 }
 
 @Composable

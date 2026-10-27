@@ -2,7 +2,6 @@ package com.mandrecode.tempo.features.onboarding.presentation
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +28,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 @Composable
@@ -166,8 +166,12 @@ private fun OutlinedOnboardingButton(
         onClick = onClick,
         interactionSource = interactionSource,
         shape = shape,
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.container, contentColor = colors.content),
-        border = BorderStroke(1.dp, colors.border),
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                containerColor = glassButtonContainer(),
+                contentColor = colors.content,
+            ),
+        border = null,
         modifier = modifier,
     ) {
         Text(label)

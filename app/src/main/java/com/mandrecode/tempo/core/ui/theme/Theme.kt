@@ -1,8 +1,10 @@
 package com.mandrecode.tempo.core.ui.theme
 
+import android.app.ActivityManager
 import android.content.Context
 import android.content.ContextWrapper
 import android.os.Build
+import android.view.View
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -15,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import com.mandrecode.tempo.util.dynamicColorScheme
@@ -160,13 +163,36 @@ fun TempoTheme(
         }
     }
 
-    CompositionLocalProvider(LocalIsDarkTheme provides darkTheme) {
+    val glass =
+        remember(colorScheme, darkTheme) {
+            tempoGlass(
+                colorScheme = colorScheme,
+                darkTheme = darkTheme,
+                blurEnabled = supportsGlassBlur(view),
+            )
+        }
+
+    CompositionLocalProvider(
+        LocalIsDarkTheme provides darkTheme,
+        LocalTempoGlass provides glass,
+    ) {
         MaterialTheme(
             colorScheme = colorScheme,
             typography = Typography,
             content = content,
         )
     }
+}
+
+/**
+ * Backdrop blur runs a RenderEffect over a recorded layer, which only exists from API 31. Previews
+ * (layoutlib) and low-RAM devices get the denser no-blur tint instead: the first cannot render it,
+ * the second should not spend the memory on it.
+ */
+private fun supportsGlassBlur(view: View): Boolean {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || view.isInEditMode) return false
+    val activityManager = view.context.getSystemService(ActivityManager::class.java)
+    return activityManager?.isLowRamDevice != true
 }
 
 private tailrec fun Context.findComponentActivity(): ComponentActivity? =

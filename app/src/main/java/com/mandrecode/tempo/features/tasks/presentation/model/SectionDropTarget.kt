@@ -63,17 +63,25 @@ sealed interface SectionDropAction {
  * Turns a [target] into the action for a task that started at [fromIndex] in [fromSectionId], or
  * null when the drop changes nothing. Positions in the start section count the dragged task itself,
  * so dropping right below it is not a move.
+ *
+ * Without [manualOrder] a sort places the tasks, so a drop only changes the section: inside the
+ * start section it does nothing, and in another one the task joins the end of that section's
+ * manual order and shows wherever the sort puts it.
  */
 fun dropActionFor(
     fromSectionId: Long?,
     fromIndex: Int,
     target: DropTarget,
+    manualOrder: Boolean = true,
 ): SectionDropAction? =
-    if (target.sectionId == fromSectionId) {
-        val toIndex = if (target.position > fromIndex) target.position - 1 else target.position
-        if (toIndex == fromIndex) null else SectionDropAction.Reorder(fromIndex, toIndex)
-    } else {
-        SectionDropAction.Move(target.sectionId, target.position)
+    when {
+        target.sectionId != fromSectionId ->
+            SectionDropAction.Move(target.sectionId, if (manualOrder) target.position else Int.MAX_VALUE)
+        !manualOrder -> null
+        else -> {
+            val toIndex = if (target.position > fromIndex) target.position - 1 else target.position
+            if (toIndex == fromIndex) null else SectionDropAction.Reorder(fromIndex, toIndex)
+        }
     }
 
 /**

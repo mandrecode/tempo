@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.core.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,8 +15,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
@@ -34,18 +35,22 @@ fun ExpressiveSnackbarHost(
     }
 }
 
+private val SnackbarShape = RoundedCornerShape(28.dp)
+
 @Composable
 internal fun ExpressiveSnackbar(snackbarData: SnackbarData) {
+    // Floats over the page like the bar does, so it is the same chrome glass, with no shadow (it
+    // would show through the glass as a grey cast).
     Surface(
         modifier =
             Modifier
                 .padding(horizontal = MaterialTheme.spacing.large, vertical = MaterialTheme.spacing.medium)
-                .widthIn(max = 560.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                .widthIn(max = 560.dp)
+                .glass(SnackbarShape),
+        shape = SnackbarShape,
+        color = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-        shadowElevation = 2.dp,
+        shadowElevation = 0.dp,
         tonalElevation = 0.dp,
     ) {
         Row(
@@ -91,9 +96,10 @@ private fun ExpressiveSnackbarAction(
     onClick: () -> Unit,
 ) {
     val (actionInteractionSource, actionCornerRadius) = rememberPressableButtonAnimation()
+    val actionShape = RoundedCornerShape(actionCornerRadius.value)
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(actionCornerRadius.value),
+        shape = actionShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         interactionSource = actionInteractionSource,

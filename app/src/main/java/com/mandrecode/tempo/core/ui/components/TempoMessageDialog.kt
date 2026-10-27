@@ -11,6 +11,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -35,6 +36,7 @@ fun TempoMessageDialog(
         onDismissRequest = onDismiss,
         modifier = modifier,
         title = {
+            DialogWindowGlass()
             Text(
                 text = title,
                 style = MaterialTheme.typography.dialogTitle,
@@ -42,13 +44,14 @@ fun TempoMessageDialog(
         },
         text = text,
         confirmButton = {
+            val confirmShape = RoundedCornerShape(confirmCornerRadius.value)
             Button(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onDismiss()
                 },
                 interactionSource = confirmInteractionSource,
-                shape = RoundedCornerShape(confirmCornerRadius.value),
+                shape = confirmShape,
             ) {
                 Text(
                     text = confirmLabel,

@@ -32,6 +32,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -344,14 +348,33 @@ private fun TaskSectionSection(
     onSelectSection: (Long?) -> Unit,
 ) {
     val isSubtask = state.formState.parentTaskId != null || state.task?.parentTaskId != null
-    if (state.sections.isEmpty() || isSubtask) return
+    // Moving the task to a category with sections (or out of one) opens and closes the row rather
+    // than snapping it in; while it closes it keeps the sections it was showing.
+    var shownSections by remember { mutableStateOf(state.sections) }
+    if (state.sections.isNotEmpty()) shownSections = state.sections
+    AnimatedVisibility(
+        visible = state.sections.isNotEmpty() && !isSubtask,
+        enter = expandVertically() + fadeIn(),
+        exit = shrinkVertically() + fadeOut(),
+    ) {
+        Column {
+            Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
+            TaskSectionRow(sections = shownSections, selectedSectionId = state.formState.sectionId, onSelectSection)
+        }
+    }
+}
 
-    val options = listOf<TaskSection?>(null) + state.sections
-    val selectedIndex = options.indexOfFirst { it?.id == state.formState.sectionId }.coerceAtLeast(0)
+@Composable
+private fun TaskSectionRow(
+    sections: List<TaskSection>,
+    selectedSectionId: Long?,
+    onSelectSection: (Long?) -> Unit,
+) {
+    val options = listOf<TaskSection?>(null) + sections
+    val selectedIndex = options.indexOfFirst { it?.id == selectedSectionId }.coerceAtLeast(0)
     val listState = rememberLazyListState()
     LaunchedEffect(selectedIndex, options.size) { listState.animateScrollToItem(selectedIndex) }
 
-    Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
     EditorPropertyRow(
         iconPainter = painterResource(R.drawable.ic_view_agenda),
         iconContentDescription = stringResource(R.string.section_label),
@@ -453,12 +476,13 @@ private fun TaskReminderAndPeriodicitySection(
                 iconPainter = painterResource(R.drawable.ic_reminder),
                 iconContentDescription = stringResource(R.string.reminder_label),
             ) {
+                val chipShape =
+                    androidx.compose.foundation.shape
+                        .RoundedCornerShape(24.dp)
                 InputChip(
                     selected = true,
                     onClick = actions.onSetReminderClicked,
-                    shape =
-                        androidx.compose.foundation.shape
-                            .RoundedCornerShape(24.dp),
+                    shape = chipShape,
                     label = {
                         Text(
                             text = state.formattedReminder,

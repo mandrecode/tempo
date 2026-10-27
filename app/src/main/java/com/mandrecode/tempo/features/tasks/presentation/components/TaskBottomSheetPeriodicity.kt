@@ -145,8 +145,10 @@ private fun PillButton(
     enabled: Boolean,
     onClick: () -> Unit,
 ) {
+    val pillShape = RoundedCornerShape(PILL_CORNER_PERCENT)
     Surface(
-        shape = RoundedCornerShape(PILL_CORNER_PERCENT),
+        shape = pillShape,
+        border = null,
         color =
             MaterialTheme.colorScheme.surfaceContainerHighest.let {
                 if (enabled) it else it.copy(alpha = DISABLED_ALPHA)

@@ -28,6 +28,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 
 @Composable
 fun HandleReminderPermissions(
@@ -199,7 +200,10 @@ internal fun PermissionEducationDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.notification_permission_education_title)) },
+        title = {
+            DialogWindowGlass()
+            Text(stringResource(R.string.notification_permission_education_title))
+        },
         text = { Text(stringResource(R.string.notification_permission_education_message)) },
         confirmButton = {
             TextButton(onClick = onConfirm) {
@@ -222,7 +226,10 @@ internal fun PermissionRationaleDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.permission_required)) },
+        title = {
+            DialogWindowGlass()
+            Text(stringResource(R.string.permission_required))
+        },
         text = { Text(stringResource(textRes)) },
         confirmButton = {
             TextButton(onClick = onConfirm) { Text(stringResource(R.string.ok)) }

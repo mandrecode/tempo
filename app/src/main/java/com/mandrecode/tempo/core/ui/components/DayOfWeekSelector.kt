@@ -142,8 +142,9 @@ private fun WeekdayToggle(
 ) {
     val name = stringResource(label.nameRes)
     val initial = stringResource(label.initialRes)
+    val checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay)
     ToggleButton(
-        checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay),
+        checked = checked,
         onCheckedChange = {
             val toggle = toggledRepeatDays(selectedDays, label.day, nullMeansEveryDay)
             if (toggle is RepeatDaysToggle.Changed) onDaysChange(toggle.days)

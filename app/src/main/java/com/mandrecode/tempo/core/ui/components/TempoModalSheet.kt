@@ -5,7 +5,6 @@ import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -45,6 +44,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -62,7 +63,10 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassPanel
+import com.mandrecode.tempo.core.ui.glass.rememberBackdropBlur
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
+import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -195,6 +199,7 @@ internal fun TempoDockedSheet(
             modifier =
                 Modifier
                     .fillMaxSize()
+                    .glassPanel(DockedSheetShape, MaterialTheme.colorScheme.surface)
                     .semantics {
                         dismiss {
                             requestDismiss()
@@ -202,7 +207,7 @@ internal fun TempoDockedSheet(
                         }
                     },
             shape = DockedSheetShape,
-            color = MaterialTheme.colorScheme.surface,
+            color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             Column(
@@ -230,6 +235,14 @@ private fun TempoModalSheetDialogContent(
         onDismiss = state.onRequestDismiss,
     )
     TempoModalSheetWindowEffects()
+    // The blur and the scrim both follow how far the sheet is open, so they grow as it slides in,
+    // ease off under a drag and are gone once it has slid away, never switching on or off at once.
+    val backdropBlurred = rememberBackdropBlur { state.openFraction() }
+    val glass = LocalTempoGlass.current
+    // With the app blurred behind the window, depth does most of the separating, so the scrim only
+    // needs to dim; without it, the scrim is the whole separation and keeps its full strength.
+    val scrimAlpha = if (backdropBlurred) SHEET_SCRIM_ALPHA * glass.blurredScrimFraction else SHEET_SCRIM_ALPHA
+    val scrimColor = MaterialTheme.colorScheme.scrim
 
     val focusManager = LocalFocusManager.current
     LaunchedEffect(state.showDiscardDialog.value) {
@@ -247,7 +260,7 @@ private fun TempoModalSheetDialogContent(
         modifier =
             modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.scrim.copy(alpha = SHEET_SCRIM_ALPHA))
+                .drawBehind { drawRect(scrimColor, alpha = scrimAlpha * state.openFraction()) }
                 .clickable(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
@@ -256,6 +269,7 @@ private fun TempoModalSheetDialogContent(
     ) {
         TempoModalSheetSurface(
             state = state,
+            glassy = backdropBlurred,
             content = content,
         )
     }
@@ -264,9 +278,15 @@ private fun TempoModalSheetDialogContent(
 @Composable
 private fun BoxScope.TempoModalSheetSurface(
     state: TempoModalSheetState,
+    glassy: Boolean,
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     val layoutFactor = currentLayoutFactor()
+    // Fixed for the session: [glassy] only says whether this device blurs at all.
+    val sheetColor =
+        MaterialTheme.colorScheme.surfaceContainerHigh.let {
+            if (glassy) it.copy(alpha = LocalTempoGlass.current.sheetAlpha) else it
+        }
     Surface(
         modifier =
             Modifier
@@ -283,9 +303,12 @@ private fun BoxScope.TempoModalSheetSurface(
                     onClick = {},
                 ).then(if (state.direction == TempoModalSheetDirection.Bottom) Modifier.imePadding() else Modifier),
         shape = state.direction.shape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = sheetColor,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        shadowElevation = SHEET_SHADOW_ELEVATION,
+        // A shadow under a translucent surface shows through it as a grey cast; the rim and the
+        // blurred backdrop carry the edge instead.
+        shadowElevation = if (glassy) 0.dp else SHEET_SHADOW_ELEVATION,
+        border = null,
     ) {
         TempoModalSheetColumn(
             state = state,

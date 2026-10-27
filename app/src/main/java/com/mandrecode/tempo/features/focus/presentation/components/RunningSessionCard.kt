@@ -68,9 +68,10 @@ internal fun RunningSessionCard(
             1f - (remaining.inWholeSeconds.toFloat() / session.plannedLength.inWholeSeconds)
         }.coerceIn(0f, 1f)
 
+    val cardShape = RoundedCornerShape(CardCornerRadius)
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(CardCornerRadius),
+        shape = cardShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {

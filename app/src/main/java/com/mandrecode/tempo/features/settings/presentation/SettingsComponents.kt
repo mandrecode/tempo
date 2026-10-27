@@ -41,10 +41,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.components.CardGroupPosition
 import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
+import com.mandrecode.tempo.core.ui.glass.glassCardColor
 import com.mandrecode.tempo.core.ui.theme.settingsSectionTitle
 
 /**
- * A titled settings section: its items stand as one connected group of cards, rounded
+ * A titled settings section: its items stand as one connected group of glass cards (#423), rounded
  * at the group's two ends and joined tightly in between, the way the Tasks list groups its cards.
  *
  * Items are declared with [SettingsGroupScope.item]; one that is not [visible][SettingsGroupScope.item]
@@ -136,8 +138,12 @@ private fun SettingsGroupPiece(
                     .fillMaxWidth()
                     .padding(top = if (hasSeamAbove) ConnectedCardGap else 0.dp),
             shape = shape,
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            border = null,
+            colors =
+                CardDefaults.cardColors(
+                    containerColor = glassCardColor(MaterialTheme.colorScheme.surfaceContainer),
+                ),
+            elevation = glassCardElevation(),
         ) {
             content()
         }

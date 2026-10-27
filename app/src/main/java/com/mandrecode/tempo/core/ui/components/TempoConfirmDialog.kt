@@ -13,6 +13,9 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -43,6 +46,7 @@ fun TempoConfirmDialog(
         onDismissRequest = onCancel,
         modifier = modifier,
         title = {
+            DialogWindowGlass()
             Text(
                 text = title,
                 style = MaterialTheme.typography.dialogTitle,
@@ -50,6 +54,7 @@ fun TempoConfirmDialog(
         },
         text = text,
         confirmButton = {
+            val confirmShape = RoundedCornerShape(confirmCornerRadius.value)
             Button(
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -57,7 +62,7 @@ fun TempoConfirmDialog(
                 },
                 enabled = confirmEnabled,
                 interactionSource = confirmInteractionSource,
-                shape = RoundedCornerShape(confirmCornerRadius.value),
+                shape = confirmShape,
                 colors =
                     if (isDestructive) {
                         ButtonDefaults.buttonColors(
@@ -76,6 +81,8 @@ fun TempoConfirmDialog(
         },
         dismissButton = {
             OutlinedButton(
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+                border = null,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onCancel()

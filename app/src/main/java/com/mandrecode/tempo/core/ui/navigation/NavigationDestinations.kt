@@ -35,7 +35,7 @@ internal fun FocusDestination(
         viewModel = tabViewModel<FocusViewModel>(),
         topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
-                title = stringResource(R.string.focus),
+                sectionTitle = stringResource(R.string.focus),
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
                 titleBadge =
                     if (isVacationModeActive) {
@@ -83,7 +83,7 @@ internal fun RoutinesDestination(
         isSingleTabMode = isSingleTabMode,
         topBar = { isVacationModeActive ->
             RouteTopBarOrStatusInset(
-                title = stringResource(R.string.routines),
+                sectionTitle = stringResource(R.string.routines),
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
                 titleBadge =
                     if (isVacationModeActive) {
@@ -121,7 +121,7 @@ internal fun TasksDestination(
         isSingleTabMode = isSingleTabMode,
         topBar = {
             RouteTopBarOrStatusInset(
-                title = stringResource(R.string.tasks),
+                sectionTitle = stringResource(R.string.tasks),
                 onOpenSettings = { navigator.navigate(SettingsRoute) },
             )
         },
@@ -137,7 +137,7 @@ internal fun TasksDestination(
 
 @Composable
 private fun RouteTopBarOrStatusInset(
-    title: String,
+    sectionTitle: String,
     onOpenSettings: () -> Unit,
     titleBadge: @Composable (() -> Unit)? = null,
 ) {
@@ -146,7 +146,10 @@ private fun RouteTopBarOrStatusInset(
         Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
     } else {
         RouteTopBar(
-            title = title,
+            // The bottom bar names the tab you are on, so the header carries the app's name rather
+            // than saying it twice. The narrow rail's tabs are bare icons, so there it keeps the
+            // section's name: nothing else on screen would say it.
+            title = if (isRailLayout) sectionTitle else stringResource(R.string.app_name),
             onOpenSettings = onOpenSettings,
             showSettingsAction = !isRailLayout,
             titleBadge = titleBadge,

@@ -552,12 +552,13 @@ private fun HabitReminderSection(
         iconContentDescription = stringResource(R.string.reminder_label),
     ) {
         if (formattedReminder != null) {
+            val chipShape =
+                androidx.compose.foundation.shape
+                    .RoundedCornerShape(24.dp)
             InputChip(
                 selected = true,
                 onClick = onSetReminderClick,
-                shape =
-                    androidx.compose.foundation.shape
-                        .RoundedCornerShape(24.dp),
+                shape = chipShape,
                 label = {
                     Text(
                         text = formattedReminder,

@@ -71,7 +71,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.CardGroupPosition
-import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
@@ -89,6 +90,9 @@ private val SubtaskFallbackItemHeight = 68.dp
 // metadata-slot transitions finish together, avoiding a "sluggish" feeling where
 // layout snaps mid color-fade.
 internal const val CARD_CONTENT_ANIM_DURATION_MS = 200
+
+/** How much of the frost a completed card keeps: it recedes, as the old 40% background did. */
+private const val COMPLETED_FROST_FRACTION = 0.5f
 internal const val TASK_METADATA_COMPLETED_DATE_TAG = "task_metadata_completed_date"
 internal const val TASK_METADATA_REMINDER_DATE_TAG = "task_metadata_reminder_date"
 internal const val TASK_COMPLETION_CONTROL_TAG = "task_completion_control"
@@ -190,11 +194,13 @@ fun TaskItem(
 
     var isDescriptionExpanded by remember(task.id) { mutableStateOf(initialDescriptionExpanded) }
 
+    val frost = cardFrostColor()
     val baseCardColor =
+        // A completed card recedes into the frost.
         if (task.isCompleted) {
-            MaterialTheme.colorScheme.background.copy(alpha = 0.4f)
+            frost.copy(alpha = frost.alpha * COMPLETED_FROST_FRACTION)
         } else {
-            MaterialTheme.colorScheme.background
+            frost
         }
     val cardColor by animateColorAsState(
         targetValue = selectedContainerColor(baseCardColor, isSelected),
@@ -253,7 +259,6 @@ fun TaskItem(
     )
 
     val cardShape = groupPosition.animatedShape(cardCornerRadius)
-    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
         onClick = { onEdit(task) },
@@ -265,8 +270,9 @@ fun TaskItem(
                 }.semantics { selected = isSelected }
                 .scale(cardScale),
         shape = cardShape,
+        border = null,
         colors = CardDefaults.cardColors(containerColor = cardColor),
-        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
+        elevation = glassCardElevation(),
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),

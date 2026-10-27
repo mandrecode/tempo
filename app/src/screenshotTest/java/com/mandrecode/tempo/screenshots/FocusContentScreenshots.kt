@@ -1,9 +1,13 @@
 package com.mandrecode.tempo.screenshots
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.android.tools.screenshot.PreviewTest
 import com.mandrecode.tempo.core.domain.model.DailyFocusActivity
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.features.focus.domain.model.FocusAgendaItem
 import com.mandrecode.tempo.features.focus.presentation.FocusContent
 import com.mandrecode.tempo.features.focus.presentation.FocusContract
@@ -102,7 +106,12 @@ private val emptyDayState =
 @PreviewAdaptiveFormFactors
 @Composable
 private fun FocusContentMidDay() {
-    ScreenshotTheme { FocusContent(uiState = midDayState, onEvent = {}) }
+    ScreenshotTheme {
+        // The screen paints the page's ambient backdrop; the content is transparent over it.
+        Box(modifier = Modifier.fillMaxSize().ambientBackground()) {
+            FocusContent(uiState = midDayState, onEvent = {})
+        }
+    }
 }
 
 /** Nothing scheduled. The empty state centres itself, so it is the width-sensitive one. */
@@ -110,5 +119,10 @@ private fun FocusContentMidDay() {
 @PreviewAdaptiveFormFactors
 @Composable
 private fun FocusContentEmptyDay() {
-    ScreenshotTheme { FocusContent(uiState = emptyDayState, onEvent = {}) }
+    ScreenshotTheme {
+        // The screen paints the page's ambient backdrop; the content is transparent over it.
+        Box(modifier = Modifier.fillMaxSize().ambientBackground()) {
+            FocusContent(uiState = emptyDayState, onEvent = {})
+        }
+    }
 }

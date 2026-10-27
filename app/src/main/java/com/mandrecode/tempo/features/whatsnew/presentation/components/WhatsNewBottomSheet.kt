@@ -73,13 +73,14 @@ private fun GotItButton(
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
 
+    val buttonShape = RoundedCornerShape(cornerRadius.value)
     Button(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onClick()
         },
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
+        shape = buttonShape,
         modifier = modifier.height(48.dp),
     ) {
         Text(

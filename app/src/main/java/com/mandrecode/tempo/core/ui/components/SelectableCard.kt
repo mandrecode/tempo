@@ -1,51 +1,55 @@
 package com.mandrecode.tempo.core.ui.components
 
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 
 /** How strongly the selection accent tints a card's own resting color. */
 private const val SELECTED_TINT_ALPHA = 0.3f
 
-/** Smoothly lifts a source card while its editor is selected in a supporting pane. */
+/**
+ * A card's elevation: none, in every state, since a shadow under a translucent fill shows through
+ * it as a grey cast, and a pressed or selected card already says so with its colour.
+ */
 @Composable
-fun selectableCardElevation(isSelected: Boolean): Dp {
-    val elevation by animateDpAsState(
-        targetValue = if (isSelected) 6.dp else 0.dp,
-        animationSpec =
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow,
-            ),
-        label = "selectableCardElevation",
+fun glassCardElevation(): CardElevation =
+    CardDefaults.cardElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 0.dp,
+        focusedElevation = 0.dp,
+        hoveredElevation = 0.dp,
+        draggedElevation = 0.dp,
+        disabledElevation = 0.dp,
     )
-    return elevation
-}
+
+/** The frost a plain glass card is filled with: the theme's `TempoGlass.cardFrost`. */
+@Composable
+@ReadOnlyComposable
+fun cardFrostColor(): Color = LocalTempoGlass.current.cardFrost
 
 /**
  * Tints [baseColor] with the selection accent instead of swapping to a fixed color, so a
  * selected card reads as a highlighted variant of its own resting background — a colorful habit
  * card stays recognizably that color when selected — rather than jumping to an unrelated hue.
  *
- * Some resting card colors (an incomplete habit's tinted fill, for example) are themselves
- * translucent. [baseColor] is always flattened against the screen background before use, in both
- * the selected and unselected branches, so a Card's containerColor never carries translucency —
- * leaving it translucent produced visible compositing glitches, including a brief flash mid-tween
- * while animating between the two branches (interpolating alpha along the way).
+ * Some resting fills (a completed task receding into the frost, an incomplete habit's tint) are
+ * themselves translucent. [baseColor] is always flattened against the panel the cards sit on, in
+ * both branches, so a Card's container never carries translucency and the tween between the two
+ * never animates alpha (which let what is behind the card flash through mid-animation).
  */
 @Composable
 fun selectedContainerColor(
     baseColor: Color,
     isSelected: Boolean,
 ): Color {
-    val opaqueBase = baseColor.compositeOver(MaterialTheme.colorScheme.background)
+    val opaqueBase = baseColor.compositeOver(MaterialTheme.colorScheme.surface)
     return if (isSelected) {
         MaterialTheme.colorScheme.secondary
             .copy(alpha = SELECTED_TINT_ALPHA)

@@ -73,12 +73,20 @@ Completed tasks SHALL remain in the single existing Completed block below all se
 - **WHEN** the user completes a task in "Cat"
 - **THEN** it leaves "Cat" and appears in the Completed block, and "Cat"'s count drops by one
 
-### Requirement: Tasks move between sections by drag in Manual sort
-In Manual sort, the user SHALL be able to drag a task into a different section or out to unsectioned. Dropping on a collapsed section's header SHALL append the task to that section. The target SHALL be visibly highlighted during the drag.
+### Requirement: Tasks move between sections by drag in any sort
+In every sort, the user SHALL be able to drag a task into a different section or out to unsectioned. Dropping on a collapsed section's header SHALL append the task to that section. The target SHALL be visibly highlighted during the drag. Only Manual sort SHALL also place the task where it is dropped and reorder tasks within a section; under any other sort the moved task SHALL show where the sort places it, and nothing in its own section SHALL be a drop target.
 
 #### Scenario: Drag into another section
 - **WHEN** in Manual sort the user drags "Cat food" from "Shopping" and drops it between the tasks of "Cat"
 - **THEN** "Cat food" is in "Cat" at the drop position
+
+#### Scenario: Drag into another section while sorted
+- **WHEN** the list is sorted by priority and the user drags "Cat food" from "Shopping" onto a task in "Cat"
+- **THEN** "Cat food" is in "Cat", placed by its priority
+
+#### Scenario: No reordering while sorted
+- **WHEN** the list is sorted by priority and the user drags a task within its own section
+- **THEN** nothing is highlighted and the task stays where the sort placed it
 
 #### Scenario: Drop on collapsed header
 - **WHEN** the user drops a task on the collapsed "Home chores" header

@@ -80,9 +80,10 @@ private fun DurationItem(
             modifier = Modifier.weight(1f),
         )
         Spacer(modifier = Modifier.width(12.dp))
+        val valueShape = RoundedCornerShape(12.dp)
         Surface(
             onClick = { showPicker = true },
-            shape = RoundedCornerShape(12.dp),
+            shape = valueShape,
             color = MaterialTheme.colorScheme.secondaryContainer,
             contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
         ) {

@@ -85,8 +85,10 @@ private fun StepperButton(
 ) {
     val haptic = LocalHapticFeedback.current
 
+    val stepperShape = RoundedCornerShape(STEPPER_CORNER_PERCENT)
     Surface(
-        shape = RoundedCornerShape(STEPPER_CORNER_PERCENT),
+        shape = stepperShape,
+        border = null,
         color =
             MaterialTheme.colorScheme.surfaceContainerHighest.let {
                 if (enabled) it else it.copy(alpha = DISABLED_ALPHA)

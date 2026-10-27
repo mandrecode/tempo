@@ -56,6 +56,10 @@ kover {
                     "com.mandrecode.tempo.core.ui.components.*",
                     "com.mandrecode.tempo.core.ui.navigation.*",
                     "com.mandrecode.tempo.core.ui.theme.*",
+                    // Glass material: Modifier.Node drawing (GraphicsLayer, RenderEffect) and dialog
+                    // window blur. Rendering only, like the theme and components above; verified on
+                    // device and by the screenshot references, not unit-testable on the JVM.
+                    "com.mandrecode.tempo.core.ui.glass.*",
                     // Android entry points & broadcast receivers
                     "com.mandrecode.tempo.MainActivity",
                     "com.mandrecode.tempo.TempoApp",
@@ -204,7 +208,6 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
     buildTypes {
         debug {
             applicationIdSuffix = ".debug"
-            resValue("string", "app_name", "Tempo (Debug)")
         }
         release {
             isMinifyEnabled = true

@@ -162,6 +162,8 @@ internal fun CompletedBlock(
             onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
             showDivider = showDivider,
             firstGroupLabel = if (showDivider) resolveGroupLabel(entries.firstOrNull()?.key) else null,
+            // The grid only lays out sectioned categories, so the block always follows Add section.
+            followsSectionControls = true,
         )
         if (uiState.showCompletedTasks) {
             // Each headed completed group is a connected run; without headers they are one run.

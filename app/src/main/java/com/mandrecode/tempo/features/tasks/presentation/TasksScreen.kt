@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -25,6 +23,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -40,6 +39,7 @@ import com.mandrecode.tempo.core.ui.components.ExpressiveSnackbarHost
 import com.mandrecode.tempo.core.ui.components.HandleReminderPermissions
 import com.mandrecode.tempo.core.ui.components.HoldSplashWhileFirstLoad
 import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -211,8 +211,10 @@ fun TasksScreen(
                     // the Scaffold's top-block color, not whatever the root happens to be (root is
                     // deliberately colorScheme.surface — see MainActivity — to avoid a different
                     // flash on the tab-switch crossfade). On the Row rather than each child so the
-                    // pane's fade-in doesn't blend its gutter up from the white root.
-                    .background(MaterialTheme.colorScheme.background),
+                    // pane's fade-in doesn't blend its gutter up from the white root. The ambient
+                    // backdrop is painted here once, for the whole page; everything inside it is
+                    // transparent so the glows line up across the header, gutter and panel.
+                    .ambientBackground(),
         ) {
             Box(
                 modifier =
@@ -234,7 +236,7 @@ fun TasksScreen(
                                     ReadableContentMaxWidth
                                 },
                         ),
-                    containerColor = MaterialTheme.colorScheme.background,
+                    containerColor = Color.Transparent,
                     contentWindowInsets = WindowInsets(0),
                     topBar = topBar,
                 ) {
