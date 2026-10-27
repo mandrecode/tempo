@@ -10,6 +10,7 @@ import com.mandrecode.tempo.core.ui.theme.TempoTheme
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.features.tasks.domain.usecase.TaskSectionUseCases
 import com.mandrecode.tempo.features.tasks.presentation.TasksViewModel
 import com.mandrecode.tempo.features.tasks.presentation.components.TASK_BOTTOM_SHEET_TITLE_FIELD_TEST_TAG
 import io.mockk.coEvery
@@ -78,6 +79,9 @@ class FocusTaskEditorTest {
             mockk(relaxed = true),
             mockk(relaxed = true),
             mockk(relaxed = true),
+            mockk<TaskSectionUseCases>(relaxed = true) {
+                every { repository.getAllSections() } returns flowOf(emptyList())
+            },
             kotlin.time.Clock.System,
         )
     }

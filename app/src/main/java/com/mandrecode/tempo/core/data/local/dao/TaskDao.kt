@@ -17,6 +17,9 @@ interface TaskDao {
     @Query("SELECT * FROM tasks WHERE id = :id")
     suspend fun getTaskById(id: Long): TaskEntity?
 
+    @Query("SELECT * FROM tasks WHERE id IN (:ids)")
+    suspend fun getTasksByIds(ids: List<Long>): List<TaskEntity>
+
     @Query("SELECT * FROM tasks WHERE categoryId = :categoryId ORDER BY parentTaskId, sortOrder, id")
     suspend fun getTasksByCategoryId(categoryId: Long): List<TaskEntity>
 
@@ -172,4 +175,46 @@ interface TaskDao {
 
     @Query("DELETE FROM tasks")
     suspend fun deleteAllTasks()
+
+    @Query("SELECT id FROM tasks WHERE sectionId = :sectionId AND parentTaskId IS NULL")
+    suspend fun getTopLevelTaskIdsInSection(sectionId: Long): List<Long>
+
+    @Query("UPDATE tasks SET sectionId = NULL WHERE sectionId = :sectionId")
+    suspend fun clearSection(sectionId: Long)
+
+    @Query(
+        "UPDATE tasks SET sectionId = :sectionId " +
+            "WHERE id IN (:taskIds) AND categoryId = :categoryId AND sectionId IS NULL",
+    )
+    suspend fun assignSection(
+        taskIds: List<Long>,
+        sectionId: Long,
+        categoryId: Long,
+    )
+
+    @Query(
+        """
+        SELECT * FROM tasks
+        WHERE categoryId = :categoryId AND parentTaskId IS NULL AND isCompleted = 0
+            AND (
+                (:sectionId IS NULL AND (
+                    sectionId IS NULL
+                    OR sectionId NOT IN (SELECT id FROM task_sections WHERE categoryId = tasks.categoryId)
+                ))
+                OR sectionId = :sectionId
+            )
+        ORDER BY sortOrder ASC, id ASC
+        """,
+    )
+    suspend fun getActiveTopLevelTasksInSection(
+        categoryId: Long,
+        sectionId: Long?,
+    ): List<TaskEntity>
+
+    @Query("UPDATE tasks SET sectionId = :sectionId, sortOrder = :sortOrder WHERE id = :taskId")
+    suspend fun updateTaskSectionAndSortOrder(
+        taskId: Long,
+        sectionId: Long?,
+        sortOrder: Int,
+    )
 }

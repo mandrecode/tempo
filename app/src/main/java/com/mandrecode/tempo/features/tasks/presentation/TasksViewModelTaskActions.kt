@@ -72,7 +72,9 @@ internal fun TasksViewModel.createOrUpdateTask(
                 monthDayOption = editFields.monthDayOption,
                 parentTaskId = if (shouldUnlink) null else taskToEdit.parentTaskId,
             )
-        updateTask(updatedTask, comesFromDialog = !autoSave)
+        val withSection =
+            updatedTask.copy(sectionId = resolvedFormSectionId(categoryId, updatedTask.parentTaskId))
+        updateTask(withSection, comesFromDialog = !autoSave)
     } else {
         val newTask =
             Task(
@@ -86,6 +88,7 @@ internal fun TasksViewModel.createOrUpdateTask(
                 repeatDays = sanitized.repeatDays,
                 monthDayOption = sanitized.monthDayOption,
                 parentTaskId = parentTaskId,
+                sectionId = resolvedFormSectionId(categoryId, parentTaskId),
             )
         addTask(newTask, pendingAttachments = mutableUiState.value.taskForm.attachments)
 
@@ -418,6 +421,7 @@ internal suspend fun TasksViewModel.handleSchedulePermissionError(updateResult: 
 internal fun TasksViewModel.showTaskDialog(
     task: Task? = null,
     parentTaskId: Long? = null,
+    sectionId: Long? = null,
 ) {
     pendingOriginalReminderDate = null
     viewModelScope.launch {
@@ -454,6 +458,7 @@ internal fun TasksViewModel.showTaskDialog(
                         monthDayOption = task?.monthDayOption,
                         parentTaskId = parentTaskId,
                         parentTask = parentTask,
+                        sectionId = task?.sectionId ?: sectionId,
                     ),
             )
         }

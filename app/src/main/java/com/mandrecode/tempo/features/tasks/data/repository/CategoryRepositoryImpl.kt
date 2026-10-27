@@ -5,6 +5,7 @@ import com.mandrecode.tempo.core.data.insertOrVerifyRestoredEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.dao.TaskSectionDao
 import com.mandrecode.tempo.features.tasks.data.mapper.toDomain
 import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Category
@@ -18,6 +19,7 @@ class CategoryRepositoryImpl
     constructor(
         private val categoryDao: CategoryDao,
         private val taskDao: TaskDao,
+        private val sectionDao: TaskSectionDao,
         private val database: TempoDatabase,
     ) : CategoryRepository {
         override fun getAllCategories() = categoryDao.getAllCategories().map { list -> list.map { it.toDomain() } }
@@ -41,11 +43,14 @@ class CategoryRepositoryImpl
             database.withTransaction {
                 val persistedCategory = requireNotNull(categoryDao.getCategoryById(category.id))
                 val tasks = taskDao.getTasksByCategoryId(category.id)
+                val sections = sectionDao.getSectionsByCategorySync(category.id)
                 taskDao.deleteTasksByCategoryId(category.id)
+                sectionDao.deleteSectionsByCategory(category.id)
                 categoryDao.deleteCategoryById(category.id)
                 CategoryDeletionSnapshot(
                     category = persistedCategory.toDomain(),
                     tasks = tasks.map { it.toDomain() },
+                    sections = sections.map { it.toDomain() },
                 )
             }
 
@@ -58,6 +63,16 @@ class CategoryRepositoryImpl
                     recordDescription = "category ${snapshot.category.id}",
                 ) {
                     categoryDao.insertCategory(categoryEntity)
+                }
+                snapshot.sections.forEach { section ->
+                    val entity = section.toEntity()
+                    insertOrVerifyRestoredEntity(
+                        existing = sectionDao.getSectionById(section.id),
+                        snapshot = entity,
+                        recordDescription = "section ${section.id}",
+                    ) {
+                        sectionDao.insertSection(entity)
+                    }
                 }
                 snapshot.tasks
                     .sortedParentFirst()

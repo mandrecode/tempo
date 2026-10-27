@@ -17,4 +17,6 @@ sealed interface TaskDeletionSnapshot {
 data class CategoryDeletionSnapshot(
     val category: Category,
     val tasks: List<Task>,
+    /** The category's sections (#61), restored before its tasks so their sectionIds resolve. */
+    val sections: List<TaskSection> = emptyList(),
 )

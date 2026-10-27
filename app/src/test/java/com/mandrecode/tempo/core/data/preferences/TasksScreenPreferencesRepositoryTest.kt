@@ -25,6 +25,7 @@ class TasksScreenPreferencesRepositoryTest {
                 every { putString(any(), any()) } returns this
                 every { putBoolean(any(), any()) } returns this
                 every { putLong(any(), any()) } returns this
+                every { putStringSet(any(), any()) } returns this
                 every { apply() } just Runs
             }
         mockPrefs =
@@ -33,6 +34,7 @@ class TasksScreenPreferencesRepositoryTest {
                 every { getString(any(), any()) } returns SortOption.MANUAL.name
                 every { getBoolean(any(), any()) } returns true
                 every { getLong(any(), any()) } returns -1L
+                every { getStringSet(any(), any()) } returns emptySet()
             }
         mockContext =
             mockk {
@@ -129,5 +131,56 @@ class TasksScreenPreferencesRepositoryTest {
             mockPrefs.getLong("selected_category_id", 0L)
         } returns 5L
         assertThat(repository.getSelectedCategoryId()).isEqualTo(5L)
+    }
+
+    @Test
+    fun `no section is collapsed by default`() {
+        assertThat(repository.getCollapsedSectionIds()).isEmpty()
+    }
+
+    @Test
+    fun `collapsing a section adds its id and expanding removes it`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3", "junk")
+
+        repository.setSectionCollapsed(8L, collapsed = true)
+        verify { mockEditor.putStringSet("collapsed_section_ids", setOf("3", "8")) }
+
+        repository.setSectionCollapsed(3L, collapsed = false)
+        verify { mockEditor.putStringSet("collapsed_section_ids", emptySet()) }
+    }
+
+    @Test
+    fun `setting an unchanged collapse state writes nothing`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3")
+
+        repository.setSectionCollapsed(3L, collapsed = true)
+        repository.setSectionCollapsed(9L, collapsed = false)
+
+        verify(exactly = 0) { mockEditor.putStringSet(any(), any()) }
+    }
+
+    @Test
+    fun `collapsed ids skip unreadable entries`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3", "x")
+
+        assertThat(repository.getCollapsedSectionIds()).containsExactly(3L)
+    }
+
+    @Test
+    fun `pruning keeps only the collapsed ids of sections that still exist`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3", "8")
+
+        repository.pruneCollapsedSections(existingIds = setOf(8L, 9L))
+
+        verify { mockEditor.putStringSet("collapsed_section_ids", setOf("8")) }
+    }
+
+    @Test
+    fun `pruning with nothing stale writes nothing`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3")
+
+        repository.pruneCollapsedSections(existingIds = setOf(3L))
+
+        verify(exactly = 0) { mockEditor.putStringSet(any(), any()) }
     }
 }

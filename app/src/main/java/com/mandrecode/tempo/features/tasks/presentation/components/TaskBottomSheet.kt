@@ -10,6 +10,7 @@ import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.TasksContract
 import kotlinx.datetime.format.FormatStringsInDatetimeFormats
 
@@ -39,6 +40,8 @@ fun TaskBottomSheet(
     placement: SheetPlacement? = null,
     dismissRequestKey: Int = 0,
     attachmentActions: TaskAttachmentActions? = null,
+    sectionsByCategory: Map<Long, List<TaskSection>> = emptyMap(),
+    onSelectSection: (Long?) -> Unit = {},
 ) {
     TaskBottomSheetContent(
         categories = categories,
@@ -64,5 +67,7 @@ fun TaskBottomSheet(
         placement = placement,
         dismissRequestKey = dismissRequestKey,
         attachmentActions = attachmentActions,
+        sectionsByCategory = sectionsByCategory,
+        onSelectSection = onSelectSection,
     )
 }

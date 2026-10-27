@@ -45,6 +45,12 @@ internal val FloatingRailExpandedContentStartPadding =
     FloatingRailStartPadding + FloatingRailExpandedSurfaceWidth + FloatingRailContentGap
 internal val ReadableContentMaxWidth = 840.dp
 
+/**
+ * How wide a sectioned task list may grow with no editor docked beside it (#61): room for two
+ * columns of sections, still short of edge to edge on a desktop window.
+ */
+internal val SectionedContentMaxWidth = 1280.dp
+
 /** Enough to clear the floating bar spanning the bottom of a compact window. */
 internal val SnackbarFloatingBarBottomPadding = 88.dp
 
@@ -61,11 +67,12 @@ internal val SnackbarRailBottomPadding = 20.dp
 fun Modifier.adaptiveScreenContentLayout(
     railClearance: Dp,
     horizontalBias: Float = 0f,
+    maxContentWidth: Dp = ReadableContentMaxWidth,
 ): Modifier =
     padding(start = railClearance)
         .fillMaxWidth()
         .wrapContentWidth(BiasAlignment.Horizontal(horizontalBias))
-        .widthIn(max = ReadableContentMaxWidth)
+        .widthIn(max = maxContentWidth)
 
 /**
  * True when there is nothing to navigate between, so the navigation pill is replaced by the active

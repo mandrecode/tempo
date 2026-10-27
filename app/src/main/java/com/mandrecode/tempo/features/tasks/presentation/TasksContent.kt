@@ -4,8 +4,10 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -15,8 +17,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -45,6 +49,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -56,6 +62,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
+import com.mandrecode.tempo.core.ui.adaptive.WindowWidthClass
+import com.mandrecode.tempo.core.ui.adaptive.currentWindowWidthClass
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
@@ -67,6 +75,7 @@ import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.presentation.components.cards.TaskItem
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.CategoryChipRow
 import com.mandrecode.tempo.features.tasks.presentation.components.sections.EmptyStateContent
+import com.mandrecode.tempo.features.tasks.presentation.components.sections.SectionReorderSheet
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
@@ -74,6 +83,7 @@ import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
+import kotlinx.collections.immutable.toPersistentList
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.TimeZone
@@ -124,6 +134,18 @@ fun TasksContent(
     val activeTaskGroups = uiState.activeTasks
     val completedTaskGroups = uiState.completedTaskGroups
     val subtasksMap = uiState.subtasksMap
+    val sectionedList = uiState.sectionedList
+    // Naming, renaming and reordering sections (#61) are screen-local and end with the category.
+    val sectionEditState = remember(uiState.selectedCategoryId) { SectionEditState() }
+    val useStickySectionHeaders = isShortWindow()
+    val showSectionShortcuts = currentWindowWidthClass().isAtLeast(WindowWidthClass.LARGE)
+    val gridState = rememberLazyStaggeredGridState()
+    val dragState = remember { TaskDragState() }
+    // Moving between sections is setting the order by hand, so it is what Manual sort offers;
+    // other sorts keep their tied-run drag (#61).
+    val sectionDragState =
+        remember(uiState.selectedCategoryId) { SectionDragState() }
+            .takeIf { uiState.sortOption == SortOption.MANUAL }
 
     val hasCompletedTasks by remember(completedTaskGroups) {
         derivedStateOf {
@@ -150,12 +172,38 @@ fun TasksContent(
         onEvent(event)
     }
 
-    Box(
+    BoxWithConstraints(
         // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
         // here too so the rounded content block's corner cutouts (see below) still resolve to
         // the correct tinted color when this composable is previewed/tested standalone.
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
     ) {
+        // A wide pane spreads a sectioned category over two columns (#61).
+        val isTwoColumn = !sectionedList?.sections.isNullOrEmpty() && maxWidth >= TwoColumnSectionsMinWidth
+        // The card the one-column list and the two-column grid share; [gestures] carries the
+        // cross-section drag, otherwise the tied-run reorder applies.
+        val taskCard: @Composable (Task, Modifier?, Modifier) -> Unit = { task, gestures, base ->
+            val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
+            TaskListItem(
+                task = task,
+                subtasks = taskSubtasks,
+                isSubtasksExpanded = task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
+                isSelected = task.id == selectedTaskId,
+                onEvent = onRowEvent,
+                modifier =
+                    base
+                        .then(gestures ?: Modifier)
+                        .taskReorderGestures(
+                            enabled = gestures == null,
+                            reorderableRun = uiState.reorderableRuns[task.id],
+                            taskId = task.id,
+                            dragState = dragState,
+                            onReorder = { from, to, runTasks ->
+                                onEvent(TasksContract.UiEvent.ReorderTasks(from, to, runTasks))
+                            },
+                        ),
+            )
+        }
         FirstLoadCrossfade(
             isLoading = uiState.isLoading,
             loading = { TempoLoadingIndicator(message = stringResource(R.string.loading_tasks)) },
@@ -187,7 +235,20 @@ fun TasksContent(
                             TasksContract.UiEvent.ReorderCategories(fromIndex, toIndex, categories),
                         )
                     },
+                    onAddSection = { sectionEditState.newSectionDraft = NewSectionDraft.AtEnd },
                 )
+
+                if (showSectionShortcuts && sectionedList != null && sectionedList.sections.isNotEmpty()) {
+                    TasksSectionShortcuts(
+                        list = sectionedList,
+                        category = uiState.categories.firstOrNull { it.id == uiState.selectedCategoryId },
+                        isTwoColumn = isTwoColumn,
+                        listState = listState,
+                        gridState = gridState,
+                        collapsedSectionIds = uiState.collapsedSectionIds,
+                        editState = sectionEditState,
+                    )
+                }
 
                 Box(
                     modifier =
@@ -203,118 +264,92 @@ fun TasksContent(
                                     topStart = ContentBlockTopCornerRadius,
                                     topEnd = ContentBlockTopCornerRadius,
                                 ),
-                            ).background(MaterialTheme.colorScheme.surface),
+                            ).background(MaterialTheme.colorScheme.surface)
+                            .onGloballyPositioned { sectionDragState?.setViewport(it.boundsInRoot()) },
                 ) {
-                    if (!hasActiveTasks && completedTaskGroups.isEmpty()) {
+                    sectionDragState?.let { drag ->
+                        SectionDragAutoScroll(drag) { delta ->
+                            if (isTwoColumn && sectionedList != null) {
+                                gridState.scrollBy(delta)
+                            } else {
+                                listState.scrollBy(delta)
+                            }
+                        }
+                    }
+                    val hasNothingToList = !hasActiveTasks && completedTaskGroups.isEmpty()
+                    // An empty category keeps the empty screen even with sections on; one that has
+                    // sections lists them, and naming the first section needs the list (#61).
+                    val hasSectionUi =
+                        !sectionedList?.sections.isNullOrEmpty() || sectionEditState.newSectionDraft != null
+                    if (hasNothingToList && !hasSectionUi) {
                         EmptyStateContent()
                     } else {
-                        val dragState = remember { TaskDragState() }
+                        if (isTwoColumn && sectionedList != null) {
+                            SectionedTaskGrid(
+                                list = sectionedList,
+                                collapsedSectionIds = uiState.collapsedSectionIds,
+                                editState = sectionEditState,
+                                dragState = sectionDragState,
+                                gridState = gridState,
+                                contentPadding =
+                                    PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = listBottomPadding),
+                                onEvent = onEvent,
+                                taskCard = { task, gestures -> taskCard(task, gestures, Modifier) },
+                                completedBlock = {
+                                    CompletedBlock(
+                                        uiState = uiState,
+                                        onEvent = onEvent,
+                                        taskCard = { task -> taskCard(task, null, Modifier) },
+                                    )
+                                },
+                            )
+                        } else {
+                            LazyColumn(
+                                state = listState,
+                                // 16dp at the top, the same as the sides and the same as Routines,
+                                // which is the same block with the same 28dp corners. The first card
+                                // starts inside that curve, so anything less reads as the card being
+                                // shoved against the seam rather than sitting in the panel.
+                                contentPadding =
+                                    PaddingValues(
+                                        start = 16.dp,
+                                        end = 16.dp,
+                                        top = 16.dp,
+                                        bottom = listBottomPadding,
+                                    ),
+                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                val taskRow: @Composable LazyItemScope.(Task, Modifier?) -> Unit = { task, gestures ->
+                                    taskCard(task, gestures, Modifier.animateItem())
+                                }
 
-                        LazyColumn(
-                            state = listState,
-                            // 16dp at the top, the same as the sides and the same as Routines,
-                            // which is the same block with the same 28dp corners. The first card
-                            // starts inside that curve, so anything less reads as the card being
-                            // shoved against the seam rather than sitting in the panel.
-                            contentPadding =
-                                PaddingValues(
-                                    start = 16.dp,
-                                    end = 16.dp,
-                                    top = 16.dp,
-                                    bottom = listBottomPadding,
-                                ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxSize(),
-                        ) {
-                            val activeEntries =
-                                sortedActiveEntries(
-                                    groups = activeTaskGroups,
-                                    sortOption = uiState.sortOption,
-                                )
-                            val showActiveHeaders =
-                                uiState.sortOption == SortOption.BY_DATE ||
-                                    uiState.sortOption == SortOption.BY_PRIORITY
-
-                            activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
-                                if (showActiveHeaders) {
-                                    item(key = "active_header_${key.stableKey}") {
-                                        ActiveGroupHeader(
-                                            label = resolveActiveGroupLabel(key),
-                                            isFirst = groupIndex == 0,
-                                            modifier = Modifier.animateItem(),
+                                if (sectionedList != null) {
+                                    sectionedTaskItems(
+                                        list = sectionedList,
+                                        collapsedSectionIds = uiState.collapsedSectionIds,
+                                        useStickyHeaders = useStickySectionHeaders,
+                                        editState = sectionEditState,
+                                        onEvent = onEvent,
+                                        taskRow = taskRow,
+                                        dragState = sectionDragState,
+                                    )
+                                } else {
+                                    val activeEntries =
+                                        sortedActiveEntries(
+                                            groups = activeTaskGroups,
+                                            sortOption = uiState.sortOption,
                                         )
-                                    }
-                                }
+                                    val showActiveHeaders =
+                                        uiState.sortOption == SortOption.BY_DATE ||
+                                            uiState.sortOption == SortOption.BY_PRIORITY
 
-                                items(
-                                    items = tasksForGroup,
-                                    key = { task -> task.id },
-                                    contentType = { "task" },
-                                ) { task ->
-                                    val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
-
-                                    TaskListItem(
-                                        task = task,
-                                        subtasks = taskSubtasks,
-                                        isSubtasksExpanded =
-                                            task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
-                                        isSelected = task.id == selectedTaskId,
-                                        onEvent = onRowEvent,
-                                        modifier =
-                                            Modifier
-                                                .animateItem()
-                                                .taskReorderGestures(
-                                                    reorderableRun = uiState.reorderableRuns[task.id],
-                                                    taskId = task.id,
-                                                    dragState = dragState,
-                                                    onReorder = { from, to, runTasks ->
-                                                        onEvent(
-                                                            TasksContract.UiEvent.ReorderTasks(
-                                                                from,
-                                                                to,
-                                                                runTasks,
-                                                            ),
-                                                        )
-                                                    },
-                                                ),
-                                    )
-                                }
-                            }
-
-                            if (hasCompletedTasks) {
-                                val sortOption = uiState.sortOption
-                                val showDivider =
-                                    sortOption != SortOption.MANUAL
-                                val completedEntries =
-                                    sortedCompletedEntries(
-                                        groups = completedTaskGroups,
-                                        sortOption = sortOption,
-                                    )
-
-                                item(key = "completed_separator") {
-                                    val firstGroupLabel =
-                                        if (showDivider) {
-                                            resolveGroupLabel(completedEntries.firstOrNull()?.key)
-                                        } else {
-                                            null
-                                        }
-                                    CompletedTasksSeparator(
-                                        isExpanded = uiState.showCompletedTasks,
-                                        onToggle = { onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility) },
-                                        showDivider = showDivider,
-                                        firstGroupLabel = firstGroupLabel,
-                                        isFirstVisibleItem = !hasActiveTasks,
-                                        modifier = Modifier.animateItem(),
-                                    )
-                                }
-
-                                if (uiState.showCompletedTasks) {
-                                    completedEntries.forEachIndexed { index, (key, tasksForGroup) ->
-                                        // Skip first group header — it's shown in the separator
-                                        if (index > 0 && showDivider) {
-                                            item(key = "group_header_${key.stableKey}") {
-                                                CompletedGroupHeader(
-                                                    label = resolveGroupLabel(key),
+                                    activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
+                                        if (showActiveHeaders) {
+                                            item(key = "active_header_${key.stableKey}") {
+                                                ActiveGroupHeader(
+                                                    label = resolveActiveGroupLabel(key),
+                                                    isFirst = groupIndex == 0,
                                                     modifier = Modifier.animateItem(),
                                                 )
                                             }
@@ -325,27 +360,81 @@ fun TasksContent(
                                             key = { task -> task.id },
                                             contentType = { "task" },
                                         ) { task ->
-                                            val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
+                                            taskRow(task, null)
+                                        }
+                                    }
+                                }
 
-                                            TaskListItem(
-                                                task = task,
-                                                subtasks = taskSubtasks,
-                                                isSubtasksExpanded =
-                                                    task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
-                                                isSelected = task.id == selectedTaskId,
-                                                onEvent = onRowEvent,
+                                if (hasCompletedTasks) {
+                                    val sortOption = uiState.sortOption
+                                    val showDivider =
+                                        sortOption != SortOption.MANUAL
+                                    val completedEntries =
+                                        sortedCompletedEntries(
+                                            groups = completedTaskGroups,
+                                            sortOption = sortOption,
+                                        )
+
+                                    item(key = "completed_separator") {
+                                        val firstGroupLabel =
+                                            if (showDivider) {
+                                                resolveGroupLabel(completedEntries.firstOrNull()?.key)
+                                            } else {
+                                                null
+                                            }
+                                        CompletedTasksSeparator(
+                                            isExpanded = uiState.showCompletedTasks,
+                                            onToggle = {
+                                                onEvent(TasksContract.UiEvent.ToggleCompletedTasksVisibility)
+                                            },
+                                            showDivider = showDivider,
+                                            firstGroupLabel = firstGroupLabel,
+                                            isFirstVisibleItem = !hasActiveTasks,
+                                            modifier = Modifier.animateItem(),
+                                        )
+                                    }
+
+                                    if (uiState.showCompletedTasks) {
+                                        completedEntries.forEachIndexed { index, (key, tasksForGroup) ->
+                                            // Skip first group header — it's shown in the separator
+                                            if (index > 0 && showDivider) {
+                                                item(key = "group_header_${key.stableKey}") {
+                                                    CompletedGroupHeader(
+                                                        label = resolveGroupLabel(key),
+                                                        modifier = Modifier.animateItem(),
+                                                    )
+                                                }
+                                            }
+
+                                            items(
+                                                items = tasksForGroup,
+                                                key = { task -> task.id },
+                                                contentType = { "task" },
+                                            ) { task ->
+                                                val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
+
+                                                TaskListItem(
+                                                    task = task,
+                                                    subtasks = taskSubtasks,
+                                                    isSubtasksExpanded =
+                                                        task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
+                                                    isSelected = task.id == selectedTaskId,
+                                                    onEvent = onRowEvent,
+                                                    modifier = Modifier.animateItem(),
+                                                )
+                                            }
+                                        }
+
+                                        // Below the last completed task rather than in the separator: it
+                                        // only shows once the tasks it deletes are on screen.
+                                        item(key = "completed_clear") {
+                                            ClearCompletedFooter(
+                                                onClick = {
+                                                    onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks)
+                                                },
                                                 modifier = Modifier.animateItem(),
                                             )
                                         }
-                                    }
-
-                                    // Below the last completed task rather than in the separator: it
-                                    // only shows once the tasks it deletes are on screen.
-                                    item(key = "completed_clear") {
-                                        ClearCompletedFooter(
-                                            onClick = { onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks) },
-                                            modifier = Modifier.animateItem(),
-                                        )
                                     }
                                 }
                             }
@@ -354,11 +443,21 @@ fun TasksContent(
                 }
             }
         }
+
+        if (sectionEditState.isReorderSheetVisible && sectionedList != null) {
+            SectionReorderSheet(
+                sections = sectionedList.sections.map { it.section }.toPersistentList(),
+                onReorder = { from, to, sections ->
+                    onEvent(TasksContract.UiEvent.ReorderSections(from, to, sections))
+                },
+                onDismiss = { sectionEditState.isReorderSheetVisible = false },
+            )
+        }
     }
 }
 
 @Composable
-private fun TaskListItem(
+internal fun TaskListItem(
     task: Task,
     subtasks: ImmutableList<Task>,
     isSubtasksExpanded: Boolean,
@@ -451,8 +550,9 @@ private fun Modifier.taskReorderGestures(
     taskId: Long,
     dragState: TaskDragState,
     onReorder: (fromIndex: Int, toIndex: Int, tasks: List<Task>) -> Unit,
+    enabled: Boolean = true,
 ): Modifier {
-    if (reorderableRun == null) return this
+    if (reorderableRun == null || !enabled) return this
 
     val density = LocalDensity.current
     val haptic = LocalHapticFeedback.current
@@ -616,7 +716,7 @@ internal fun CompletedGroupHeader(
  * Resolves a [CompletedGroupKey] to its user-visible label string.
  */
 @Composable
-private fun resolveGroupLabel(key: CompletedGroupKey?): String? {
+internal fun resolveGroupLabel(key: CompletedGroupKey?): String? {
     val today = Clock.System.todayIn(TimeZone.currentSystemDefault())
     val yesterday = today.minus(1, DateTimeUnit.DAY)
 
@@ -673,7 +773,7 @@ private fun sortedActiveEntries(
     }
 }
 
-private fun sortedCompletedEntries(
+internal fun sortedCompletedEntries(
     groups: Map<CompletedGroupKey, ImmutableList<Task>>,
     sortOption: SortOption,
 ): List<Map.Entry<CompletedGroupKey, ImmutableList<Task>>> {

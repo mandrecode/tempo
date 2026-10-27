@@ -94,4 +94,15 @@ class UpdateCategoryUseCaseTest {
             assertThat(slot.captured.color).isEqualTo("blue")
             assertThat(slot.captured.icon).isEqualTo("star")
         }
+
+    @Test
+    fun `turning sections off only flips the switch so tasks keep their sections`() =
+        runTest {
+            val category = Category(id = 3L, name = "S&V", sectionsEnabled = true)
+            coEvery { categoryRepository.getCategoryByName("S&V") } returns category
+
+            useCase(category.copy(sectionsEnabled = false))
+
+            coVerify { categoryRepository.updateCategory(category.copy(sectionsEnabled = false)) }
+        }
 }

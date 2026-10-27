@@ -20,6 +20,7 @@ fun TaskEntity.toDomain(): Task =
         sortOrder = sortOrder,
         completedAt = completedAt,
         nextInstanceId = nextInstanceId,
+        sectionId = sectionId,
     )
 
 fun Task.toEntity(): TaskEntity =
@@ -39,6 +40,7 @@ fun Task.toEntity(): TaskEntity =
         sortOrder = sortOrder,
         completedAt = completedAt,
         nextInstanceId = nextInstanceId,
+        sectionId = sectionId,
     )
 
 fun List<TaskEntity>.toDomain(): List<Task> = map { it.toDomain() }

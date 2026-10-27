@@ -8,6 +8,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 
 /**
  * Full snapshot of the user's data as carried by a backup file.
@@ -27,6 +28,7 @@ data class BackupData(
     val chainMemberships: List<ChainMembership>,
     val settings: BackupSettings? = null,
     val dailyFocusActivity: List<DailyFocusActivity> = emptyList(),
+    val sections: List<TaskSection> = emptyList(),
 )
 
 /** The app configuration carried by a backup file. */

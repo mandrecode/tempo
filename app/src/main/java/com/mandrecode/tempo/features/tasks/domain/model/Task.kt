@@ -32,6 +32,11 @@ data class Task(
      * table when tasks are loaded, never stored on the task itself.
      */
     val hasAttachments: Boolean = false,
+    /**
+     * The section of [categoryId] this task sits in (#61), or null when unsectioned. Only
+     * meaningful for top-level tasks; a category change clears it.
+     */
+    val sectionId: Long? = null,
 )
 
 /**

@@ -84,6 +84,7 @@ fun CategoryChipRow(
     onRequestDeleteCategory: (Category) -> Unit,
     onReorderCategories: (fromIndex: Int, toIndex: Int, categories: List<Category>) -> Unit,
     modifier: Modifier = Modifier,
+    onAddSection: () -> Unit = {},
 ) {
     val listState = rememberLazyListState()
     val density = LocalDensity.current
@@ -141,6 +142,7 @@ fun CategoryChipRow(
                 onSelectCategory = { onSelectCategory(category.id) },
                 onEdit = { onShowCategoryDialog(category) },
                 onRequestDelete = { onRequestDeleteCategory(category) },
+                onAddSection = onAddSection,
                 modifier =
                     Modifier
                         .graphicsLayer {
@@ -217,6 +219,7 @@ private fun CategoryItem(
     onSelectCategory: () -> Unit,
     onEdit: () -> Unit,
     onRequestDelete: () -> Unit,
+    onAddSection: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var isDropdownExpanded by remember { mutableStateOf(false) }
@@ -366,6 +369,24 @@ private fun CategoryItem(
                             isDropdownExpanded = false
                         },
                     )
+                    // Only a category with sections on offers to add one (#61).
+                    if (category.sectionsEnabled) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.section_add)) },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.ic_add_row_below),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(20.dp),
+                                )
+                            },
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                onAddSection()
+                                isDropdownExpanded = false
+                            },
+                        )
+                    }
                     if (!category.isDefault) {
                         DropdownMenuItem(
                             text = {

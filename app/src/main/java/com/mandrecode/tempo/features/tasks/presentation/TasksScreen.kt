@@ -43,6 +43,8 @@ import com.mandrecode.tempo.core.ui.components.PermissionRevokedDialog
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
+import com.mandrecode.tempo.core.ui.navigation.ReadableContentMaxWidth
+import com.mandrecode.tempo.core.ui.navigation.SectionedContentMaxWidth
 import com.mandrecode.tempo.core.ui.navigation.TasksFloatingBarState
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.core.ui.navigation.animatedDockedContentBias
@@ -195,6 +197,8 @@ fun TasksScreen(
     // exiting pane from recomposing into a blank "new task" form mid-animation.
     val frozenUiState = rememberFrozenWhileHidden(uiState, isLive = uiState.taskForm.isVisible)
 
+    val hasSections = !uiState.sectionedList?.sections.isNullOrEmpty()
+    val useSectionedWidth = hasSections && !(isDockedEditor && uiState.taskForm.isVisible)
     Box(modifier = modifier.fillMaxSize()) {
         Row(
             modifier =
@@ -221,6 +225,14 @@ fun TasksScreen(
                         Modifier.adaptiveScreenContentLayout(
                             railClearance = railContentClearance,
                             horizontalBias = contentBias,
+                            // A sectioned category may use the width for two columns, unless an
+                            // editor is docked beside it (#61).
+                            maxContentWidth =
+                                if (useSectionedWidth) {
+                                    SectionedContentMaxWidth
+                                } else {
+                                    ReadableContentMaxWidth
+                                },
                         ),
                     containerColor = MaterialTheme.colorScheme.background,
                     contentWindowInsets = WindowInsets(0),
@@ -300,7 +312,7 @@ fun TasksScreen(
                 nameError = uiState.categoryForm.nameError,
                 onDismiss = { viewModel.onEvent(TasksContract.UiEvent.HideCategoryDialog) },
                 onClearError = { viewModel.onEvent(TasksContract.UiEvent.ClearCategoryError) },
-                onSave = { name, color, icon, isDefault ->
+                onSave = { name, color, icon, isDefault, sectionsEnabled ->
                     if (editingCategory != null) {
                         viewModel.onEvent(
                             TasksContract.UiEvent.UpdateCategory(
@@ -309,6 +321,7 @@ fun TasksScreen(
                                     color = color,
                                     icon = icon,
                                     isDefault = isDefault,
+                                    sectionsEnabled = sectionsEnabled,
                                 ),
                             ),
                         )
@@ -318,6 +331,7 @@ fun TasksScreen(
                                 name = name,
                                 color = color,
                                 icon = icon,
+                                sectionsEnabled = sectionsEnabled,
                             ),
                         )
                     }
@@ -382,6 +396,8 @@ internal fun TaskEditor(
 ) {
     TaskBottomSheet(
         categories = uiState.categories,
+        sectionsByCategory = uiState.enabledSectionsByCategory(),
+        onSelectSection = { onEvent(TasksContract.UiEvent.SetTaskSection(it)) },
         selectedCategoryIdFromFilter = uiState.taskEditorCategoryId(),
         formState = uiState.taskForm,
         onSetPriority = { onEvent(TasksContract.UiEvent.SetPriority(it)) },
@@ -442,3 +458,7 @@ private fun TasksContract.UiState.taskEditorCategoryId(): Long =
         taskForm.parentTask != null -> taskForm.parentTask.categoryId
         else -> selectedCategoryId
     }
+
+/** Only categories with sections on offer the editor's choice; a hidden section is kept as it is. */
+private fun TasksContract.UiState.enabledSectionsByCategory() =
+    sectionsByCategory.filterKeys { id -> categories.any { it.id == id && it.sectionsEnabled } }

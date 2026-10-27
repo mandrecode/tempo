@@ -18,6 +18,7 @@ import com.mandrecode.tempo.core.data.entity.HabitChainMemberEntity
 import com.mandrecode.tempo.core.data.entity.HabitEntity
 import com.mandrecode.tempo.core.data.entity.TaskAttachmentEntity
 import com.mandrecode.tempo.core.data.entity.TaskEntity
+import com.mandrecode.tempo.core.data.entity.TaskSectionEntity
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
 import com.mandrecode.tempo.core.data.local.dao.DailyFocusActivityDao
 import com.mandrecode.tempo.core.data.local.dao.HabitChainDao
@@ -25,6 +26,7 @@ import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.core.data.local.dao.TaskAttachmentDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.dao.TaskSectionDao
 import com.mandrecode.tempo.core.data.local.security.DatabaseEncryptionMigrator
 import com.mandrecode.tempo.core.data.local.security.DbKdfIterMarker
 import com.mandrecode.tempo.core.data.local.security.DbPassphraseProvider
@@ -42,8 +44,9 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
         HabitChainMemberEntity::class,
         DailyFocusActivityEntity::class,
         TaskAttachmentEntity::class,
+        TaskSectionEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -61,6 +64,8 @@ abstract class TempoDatabase : RoomDatabase() {
     abstract fun dailyFocusActivityDao(): DailyFocusActivityDao
 
     abstract fun taskAttachmentDao(): TaskAttachmentDao
+
+    abstract fun taskSectionDao(): TaskSectionDao
 
     companion object {
         const val DATABASE_NAME = "tempo_database"
@@ -284,6 +289,33 @@ abstract class TempoDatabase : RoomDatabase() {
                 }
             }
 
+        /**
+         * Adds task sections (#61): the `task_sections` table, a nullable `tasks.sectionId` and the
+         * per-category `sectionsEnabled` switch. Purely additive — every existing task reads as
+         * unsectioned and every category has sections off, so no backfill is needed.
+         */
+        val MIGRATION_11_12 =
+            object : Migration(11, 12) {
+                override fun migrate(db: SupportSQLiteDatabase) {
+                    db.execSQL(
+                        """
+                        CREATE TABLE IF NOT EXISTS `task_sections` (
+                            `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                            `categoryId` INTEGER NOT NULL,
+                            `name` TEXT NOT NULL,
+                            `sortOrder` INTEGER NOT NULL
+                        )
+                        """.trimIndent(),
+                    )
+                    db.execSQL(
+                        "CREATE INDEX IF NOT EXISTS `index_task_sections_categoryId` ON `task_sections` (`categoryId`)",
+                    )
+                    db.execSQL("ALTER TABLE tasks ADD COLUMN sectionId INTEGER DEFAULT NULL")
+                    db.execSQL("ALTER TABLE categories ADD COLUMN sectionsEnabled INTEGER NOT NULL DEFAULT 0")
+                    db.execSQL("CREATE INDEX IF NOT EXISTS `index_tasks_sectionId` ON `tasks` (`sectionId`)")
+                }
+            }
+
         val MIGRATIONS =
             arrayOf(
                 MIGRATION_1_2,
@@ -296,6 +328,7 @@ abstract class TempoDatabase : RoomDatabase() {
                 MIGRATION_8_9,
                 MIGRATION_9_10,
                 MIGRATION_10_11,
+                MIGRATION_11_12,
             )
 
         suspend fun getDatabase(

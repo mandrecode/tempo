@@ -260,6 +260,32 @@
     <string name="msg_category_update_failed">Failed to update category: %1$s</string>
     <string name="msg_category_deleted_success_prefix">Category</string>
     <string name="msg_category_deleted_success_suffix">\u0020and all its tasks deleted successfully</string>
+    <!-- Task sections (#61) -->
+    <string name="msg_section_name_empty">Section name can\'t be empty</string>
+    <string name="msg_section_name_too_long">Section name is too long</string>
+    <string name="msg_section_name_exists">A section named \"%1$s\" already exists</string>
+    <string name="msg_section_deleted_prefix">Section</string>
+    <string name="msg_section_deleted_suffix">\u0020deleted. Its tasks moved to No section</string>
+    <string name="section_add">Add section</string>
+    <string name="section_name_label">Section name</string>
+    <string name="section_save_name">Save section name</string>
+    <string name="section_add_task_cd">Add task to %1$s</string>
+    <string name="section_options_cd">%1$s section options</string>
+    <string name="section_rename">Rename</string>
+    <string name="section_reorder">Reorder sections</string>
+    <string name="section_add_below">Add section below</string>
+    <string name="section_delete">Delete section</string>
+    <string name="section_empty_placeholder">No tasks yet — add one or drag it here</string>
+    <string name="section_state_expanded">Expanded</string>
+    <string name="section_state_collapsed">Collapsed</string>
+    <string name="section_none">No section</string>
+    <string name="section_label">Section</string>
+    <string name="category_sections_label">Sections</string>
+    <string name="category_sections_description">Group tasks into sections</string>
+    <plurals name="section_overdue_count">
+        <item quantity="one">%1$d overdue</item>
+        <item quantity="other">%1$d overdue</item>
+    </plurals>
     <string name="msg_category_delete_failed">Failed to delete category: %1$s</string>
     <string name="msg_cannot_delete_last_category">Cannot delete the last category</string>
     <string name="msg_cannot_delete_inbox">The Inbox category cannot be deleted</string>
@@ -547,8 +573,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Add from Focus, attach files, and new day pickers</string>
-    <string name="whats_new_description">Focus now has the same add button as Tasks, so you can create a task without leaving your day. Any task can now carry attachments: add pictures, PDFs or other documents from the task editor and open them with a tap. Habits and chains pick their days the way an alarm does, the whole week now fits at the top of Routines, and the editors\' choices (priority, repeat, category) are now grouped buttons. Focus now sits in the middle of the navigation bar. On tablets, foldables and desktop windows, the layout now glides to its new shape as the window changes size.</string>
+    <string name="whats_new_title">Sections inside your lists</string>
+    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

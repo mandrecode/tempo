@@ -10,9 +10,11 @@ import com.mandrecode.tempo.core.ui.model.PermissionInfo
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.presentation.model.ActiveGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.CompletedGroupKey
 import com.mandrecode.tempo.features.tasks.presentation.model.ReorderableRun
+import com.mandrecode.tempo.features.tasks.presentation.model.SectionedTaskList
 import com.mandrecode.tempo.features.tasks.presentation.model.SortOption
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.ImmutableMap
@@ -59,6 +61,15 @@ object TasksContract {
          * distinguished by the sort and therefore not draggable.
          */
         val reorderableRuns: ImmutableMap<Long, ReorderableRun> = persistentMapOf(),
+        /**
+         * The selected category's active list split by section (#61), or null when the category
+         * has no sections — then [activeTasks] drives the list exactly as before sections existed.
+         */
+        val sectionedList: SectionedTaskList? = null,
+        /** Every category's sections in order, for the editor's Section options. */
+        val sectionsByCategory: ImmutableMap<Long, ImmutableList<TaskSection>> = persistentMapOf(),
+        /** Sections the user collapsed; remembered on the device across navigation and restarts. */
+        val collapsedSectionIds: PersistentSet<Long> = persistentSetOf(),
     )
 
     data class TaskFormState(
@@ -73,6 +84,8 @@ object TasksContract {
         val monthDayOption: MonthDayOption? = null,
         val parentTaskId: Long? = null,
         val parentTask: Task? = null,
+        /** The section the task will be saved into (#61), or null for unsectioned. */
+        val sectionId: Long? = null,
         @StringRes val titleError: Int? = null,
         @StringRes val descriptionError: Int? = null,
         /**
@@ -116,6 +129,7 @@ object TasksContract {
             val name: String,
             val color: String? = null,
             val icon: String? = null,
+            val sectionsEnabled: Boolean = false,
         ) : UiEvent
 
         data class UpdateCategory(
@@ -148,6 +162,8 @@ object TasksContract {
         data class ShowTaskDialog(
             val task: Task? = null,
             val parentTaskId: Long? = null,
+            /** Preselects a section for a new task, as the section header's add action does. */
+            val sectionId: Long? = null,
         ) : UiEvent
 
         data object HideTaskDialog : UiEvent
@@ -265,6 +281,45 @@ object TasksContract {
         data object ConfirmClearAllReminders : UiEvent
 
         data object OnPermissionsGranted : UiEvent
+
+        // Sections (#61)
+
+        /** Adds a section, last in the category or right after [afterSectionId]. */
+        data class AddSection(
+            val name: String,
+            val afterSectionId: Long? = null,
+        ) : UiEvent
+
+        data class RenameSection(
+            val sectionId: Long,
+            val name: String,
+        ) : UiEvent
+
+        data class ReorderSections(
+            val fromIndex: Int,
+            val toIndex: Int,
+            val sections: List<TaskSection>,
+        ) : UiEvent
+
+        data class DeleteSection(
+            val section: TaskSection,
+        ) : UiEvent
+
+        data class ToggleSectionCollapsed(
+            val sectionId: Long,
+        ) : UiEvent
+
+        /** Moves a task into [sectionId] (null = unsectioned) at [index] among its active tasks. */
+        data class MoveTaskToSection(
+            val taskId: Long,
+            val sectionId: Long?,
+            val index: Int,
+        ) : UiEvent
+
+        /** The editor's Section choice; null is "No section". */
+        data class SetTaskSection(
+            val sectionId: Long?,
+        ) : UiEvent
 
         data class UndoDeletion(
             val token: Long,

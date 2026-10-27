@@ -145,7 +145,7 @@ class HabitChainLiveActivityManager
                             )
                         NotificationCompat.Action
                             .Builder(
-                                R.drawable.ic_check, // Assuming this exists or using a generic one
+                                R.drawable.ic_check_circle, // Assuming this exists or using a generic one
                                 context.getString(R.string.habit_chain_complete_current),
                                 pendingActionIntent,
                             ).build()

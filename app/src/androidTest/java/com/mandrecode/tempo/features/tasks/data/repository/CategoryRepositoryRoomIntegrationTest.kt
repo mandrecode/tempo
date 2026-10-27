@@ -26,6 +26,7 @@ class CategoryRepositoryRoomIntegrationTest {
             CategoryRepositoryImpl(
                 databaseRule.database.categoryDao(),
                 databaseRule.database.taskDao(),
+                databaseRule.database.taskSectionDao(),
                 databaseRule.database,
             )
     }

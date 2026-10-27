@@ -38,6 +38,7 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.DeleteTaskUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderCategoriesUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.TaskSectionUseCases
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
@@ -135,6 +136,9 @@ class TasksScreenTest {
                 mockk(relaxed = true),
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                mockk<TaskSectionUseCases>(relaxed = true) {
+                    every { repository.getAllSections() } returns flowOf(emptyList())
+                },
                 kotlin.time.Clock.System,
             )
     }
@@ -197,6 +201,9 @@ class TasksScreenTest {
                 mockk(relaxed = true),
                 mockk(relaxed = true),
                 mockk(relaxed = true),
+                mockk<TaskSectionUseCases>(relaxed = true) {
+                    every { repository.getAllSections() } returns flowOf(emptyList())
+                },
                 kotlin.time.Clock.System,
             )
 

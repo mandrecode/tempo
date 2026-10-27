@@ -4,12 +4,16 @@ import androidx.room.withTransaction
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.core.data.entity.CategoryEntity
 import com.mandrecode.tempo.core.data.entity.TaskEntity
+import com.mandrecode.tempo.core.data.entity.TaskSectionEntity
 import com.mandrecode.tempo.core.data.local.TempoDatabase
 import com.mandrecode.tempo.core.data.local.dao.CategoryDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.dao.TaskSectionDao
+import com.mandrecode.tempo.features.tasks.data.mapper.toEntity
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.CategoryDeletionSnapshot
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -28,6 +32,7 @@ import org.junit.Test
 class CategoryRepositoryTest {
     private lateinit var categoryDao: CategoryDao
     private lateinit var taskDao: TaskDao
+    private lateinit var sectionDao: TaskSectionDao
     private lateinit var database: TempoDatabase
     private lateinit var repository: CategoryRepository
 
@@ -35,13 +40,14 @@ class CategoryRepositoryTest {
     fun setUp() {
         categoryDao = mockk(relaxed = true)
         taskDao = mockk(relaxed = true)
+        sectionDao = mockk(relaxed = true)
         database = mockk(relaxed = true)
         mockkStatic("androidx.room.RoomDatabaseKt")
         @Suppress("UNCHECKED_CAST")
         coEvery { database.withTransaction(any<suspend () -> Any?>()) } coAnswers {
             (args[1] as (suspend () -> Any?)).invoke()
         }
-        repository = CategoryRepositoryImpl(categoryDao, taskDao, database)
+        repository = CategoryRepositoryImpl(categoryDao, taskDao, sectionDao, database)
     }
 
     @After
@@ -209,5 +215,38 @@ class CategoryRepositoryTest {
 
             val result = repository.getCategoryByName("Work")
             assertThat(result).isEqualTo(Category(id = 1, name = "Work"))
+        }
+
+    @Test
+    fun `deleteCategoryWithSnapshot captures and deletes the category's sections`() =
+        runTest {
+            val category = Category(id = 3L, name = "S&V")
+            coEvery { categoryDao.getCategoryById(3L) } returns category.toEntity()
+            coEvery { sectionDao.getSectionsByCategorySync(3L) } returns
+                listOf(TaskSectionEntity(id = 8L, categoryId = 3L, name = "Cat", sortOrder = 0))
+
+            val result = repository.deleteCategoryWithSnapshot(category)
+
+            assertThat(result.sections)
+                .containsExactly(TaskSection(id = 8L, categoryId = 3L, name = "Cat", sortOrder = 0))
+            coVerify { sectionDao.deleteSectionsByCategory(3L) }
+        }
+
+    @Test
+    fun `restoreDeletedCategory restores sections before tasks`() =
+        runTest {
+            val category = Category(id = 3L, name = "S&V")
+            val section = TaskSection(id = 8L, categoryId = 3L, name = "Cat", sortOrder = 0)
+            val task = Task(id = 20L, title = "Buy litter", description = "", categoryId = 3L, sectionId = 8L)
+            coEvery { categoryDao.getCategoryById(3L) } returns null
+            coEvery { sectionDao.getSectionById(8L) } returns null
+            coEvery { taskDao.getTaskById(20L) } returns null
+
+            repository.restoreDeletedCategory(CategoryDeletionSnapshot(category, listOf(task), listOf(section)))
+
+            coVerifyOrder {
+                sectionDao.insertSection(TaskSectionEntity(id = 8L, categoryId = 3L, name = "Cat", sortOrder = 0))
+                taskDao.insertTask(match { it.id == 20L && it.sectionId == 8L })
+            }
         }
 }

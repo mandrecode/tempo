@@ -13,15 +13,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -45,6 +49,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -77,7 +82,7 @@ fun CategoryEditSheet(
     categories: List<Category>,
     nameError: Int?,
     onDismiss: () -> Unit,
-    onSave: (name: String, color: String?, icon: String?, isDefault: Boolean) -> Unit,
+    onSave: (name: String, color: String?, icon: String?, isDefault: Boolean, sectionsEnabled: Boolean) -> Unit,
     onDelete: (() -> Unit)?,
     onClearError: () -> Unit,
     modifier: Modifier = Modifier,
@@ -99,6 +104,7 @@ fun CategoryEditSheet(
     var selectedColorKey by remember(category?.id) { mutableStateOf(category?.color) }
     var selectedIconName by remember(category?.id) { mutableStateOf(category?.icon) }
     var selectedIsDefault by remember(category?.id) { mutableStateOf(category?.isDefault ?: false) }
+    var sectionsEnabled by remember(category?.id) { mutableStateOf(category?.sectionsEnabled ?: false) }
 
     // Track auto-selected values to exclude from unsaved-changes detection
     var autoSelectedColor by remember(category?.id) { mutableStateOf<String?>(null) }
@@ -153,6 +159,7 @@ fun CategoryEditSheet(
             selectedColorKey,
             selectedIconName,
             selectedIsDefault,
+            sectionsEnabled,
             autoSelectedColor,
             autoSelectedIcon,
         ) {
@@ -160,9 +167,11 @@ fun CategoryEditSheet(
                 nameField.text != (category?.name ?: "") ||
                     selectedColorKey != category?.color ||
                     selectedIconName != category?.icon ||
-                    selectedIsDefault != (category?.isDefault ?: false)
+                    selectedIsDefault != (category?.isDefault ?: false) ||
+                    sectionsEnabled != (category?.sectionsEnabled ?: false)
             } else {
                 nameField.text.isNotBlank() ||
+                    sectionsEnabled ||
                     (selectedColorKey != null && selectedColorKey != autoSelectedColor) ||
                     (selectedIconName != null && selectedIconName != autoSelectedIcon)
             }
@@ -299,6 +308,16 @@ fun CategoryEditSheet(
                 )
             }
 
+            Spacer(modifier = Modifier.height(20.dp))
+
+            CategorySectionsToggle(
+                checked = sectionsEnabled,
+                onCheckedChange = {
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    sectionsEnabled = it
+                },
+            )
+
             if (isEditing) {
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -431,7 +450,13 @@ fun CategoryEditSheet(
                     Button(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            currentOnSave(nameField.text.trim(), selectedColorKey, selectedIconName, selectedIsDefault)
+                            currentOnSave(
+                                nameField.text.trim(),
+                                selectedColorKey,
+                                selectedIconName,
+                                selectedIsDefault,
+                                sectionsEnabled,
+                            )
                         },
                         shape = RoundedCornerShape(saveCornerRadius.value),
                         enabled = saveEnabled,
@@ -452,6 +477,59 @@ fun CategoryEditSheet(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Turns sections on or off for the category (#61), drawn as a settings option: a rounded card
+ * with an icon, title, explanation and switch. Off by default; off hides the sections without
+ * deleting them, so turning it back on brings them back as they were.
+ */
+@Composable
+private fun CategorySectionsToggle(
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+) {
+    val title = stringResource(R.string.category_sections_label)
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+                    .padding(horizontal = 16.dp, vertical = 20.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_view_agenda),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(28.dp),
+                )
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = stringResource(R.string.category_sections_description),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Spacer(modifier = Modifier.width(12.dp))
+            // The whole card is the control; the switch only shows its state.
+            Switch(checked = checked, onCheckedChange = null)
         }
     }
 }

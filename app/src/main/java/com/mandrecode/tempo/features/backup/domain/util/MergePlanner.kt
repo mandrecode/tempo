@@ -11,6 +11,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import jakarta.inject.Inject
 
 /**
@@ -36,6 +37,7 @@ class MergePlanner
             val tasks = planTasks(incoming, local, categories, conflicts)
             val habits = planHabits(incoming, local, conflicts)
             val chains = planChains(incoming, local, conflicts)
+            val sections = planSections(incoming, local, categories)
             val memberships =
                 incoming.chainMemberships.filter { it.chainId in chains.insertedIds }
             return MergePlan(
@@ -48,6 +50,9 @@ class MergePlanner
                 chainsToInsert = chains.toInsert,
                 chainIdMap = chains.idMap,
                 membershipsToInsert = memberships,
+                sectionsToInsert = sections.toInsert,
+                sectionIdMap = sections.idMap,
+                sectionAliases = sections.aliases,
                 summary =
                     ImportSummary(
                         categories = categories.counts,
@@ -109,6 +114,46 @@ class MergePlanner
                 }
             }
             return plan
+        }
+
+        /**
+         * Sections (#61) carry no content to conflict on: one matching a same-named section of
+         * its resolved local category is reused, anything else is appended to that category.
+         * Sections of conflicted categories still resolve to the local category, like tasks do.
+         */
+        private fun planSections(
+            incoming: BackupData,
+            local: BackupData,
+            categories: EntityPlan<Category>,
+        ): SectionPlan {
+            val toInsert = mutableListOf<TaskSection>()
+            val idMap = mutableMapOf<Long, Long>()
+            val aliases = mutableMapOf<Long, Long>()
+            // Same-named incoming sections of one category are one section, like local ones.
+            val firstByName = mutableMapOf<Pair<Long, String>, Long>()
+            val localByCategory = local.sections.groupBy { it.categoryId }
+            val nextSortOrder =
+                localByCategory.mapValues { (_, sections) -> sections.maxOf { it.sortOrder } + 1 }.toMutableMap()
+            incoming.sections.sortedBy { it.sortOrder }.forEach { section ->
+                val canonical = firstByName.getOrPut(section.categoryId to section.name) { section.id }
+                if (canonical != section.id) {
+                    aliases[section.id] = canonical
+                    return@forEach
+                }
+                val localCategoryId = categories.idMap[section.categoryId]
+                val match =
+                    localCategoryId?.let { id -> localByCategory[id]?.firstOrNull { it.name == section.name } }
+                when {
+                    match != null -> idMap[section.id] = match.id
+                    localCategoryId != null -> {
+                        val sortOrder = nextSortOrder[localCategoryId] ?: 0
+                        nextSortOrder[localCategoryId] = sortOrder + 1
+                        toInsert += section.copy(sortOrder = sortOrder)
+                    }
+                    section.categoryId in categories.insertedIds -> toInsert += section
+                }
+            }
+            return SectionPlan(toInsert, idMap, aliases)
         }
 
         private fun planTasks(
@@ -350,7 +395,8 @@ private fun memberTitles(
         .mapNotNull { habitTitles[it.habitId] }
 }
 
-private fun Category.contentKey() = copy(id = 0, sortOrder = 0, isDefault = false)
+// Whether sections are on is a view preference, like the sort order, not content to conflict on.
+private fun Category.contentKey() = copy(id = 0, sortOrder = 0, isDefault = false, sectionsEnabled = false)
 
 // nextInstanceId values are database ids and meaningless across devices, but
 // *having* a next-occurrence link is content: a linked archived task must not
@@ -362,8 +408,16 @@ private fun Task.contentKey() =
         nextInstanceId = if (nextInstanceId == null) null else 0,
         categoryId = 0,
         parentTaskId = null,
+        // Section ids are database ids too, and sections are structure rather than content.
+        sectionId = null,
     )
 
 private fun Habit.contentKey() = copy(id = 0)
 
 private fun HabitChain.contentKey() = copy(id = 0, habitIds = emptyList())
+
+private data class SectionPlan(
+    val toInsert: List<TaskSection>,
+    val idMap: Map<Long, Long>,
+    val aliases: Map<Long, Long>,
+)

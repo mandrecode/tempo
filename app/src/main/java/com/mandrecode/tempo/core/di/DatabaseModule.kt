@@ -9,6 +9,7 @@ import com.mandrecode.tempo.core.data.local.dao.HabitChainMemberDao
 import com.mandrecode.tempo.core.data.local.dao.HabitDao
 import com.mandrecode.tempo.core.data.local.dao.TaskAttachmentDao
 import com.mandrecode.tempo.core.data.local.dao.TaskDao
+import com.mandrecode.tempo.core.data.local.dao.TaskSectionDao
 import com.mandrecode.tempo.core.data.local.security.DatabaseEncryptionMigrator
 import com.mandrecode.tempo.core.data.local.security.DbPassphraseProvider
 import com.mandrecode.tempo.core.data.local.security.KeystoreDbPassphraseProvider
@@ -76,4 +77,7 @@ object DatabaseModule {
 
     @Provides
     fun provideTaskAttachmentDao(database: TempoDatabase): TaskAttachmentDao = database.taskAttachmentDao()
+
+    @Provides
+    fun provideTaskSectionDao(database: TempoDatabase): TaskSectionDao = database.taskSectionDao()
 }

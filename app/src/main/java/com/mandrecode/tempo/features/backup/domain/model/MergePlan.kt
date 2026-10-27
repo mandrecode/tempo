@@ -4,6 +4,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 
 /**
  * Execution plan for a merge import.
@@ -29,4 +30,10 @@ data class MergePlan(
     val chainIdMap: Map<Long, Long>,
     val membershipsToInsert: List<ChainMembership>,
     val summary: ImportSummary,
+    /** Incoming sections with no same-named section in their resolved category (#61). */
+    val sectionsToInsert: List<TaskSection> = emptyList(),
+    /** Incoming section id → local section id for sections matched by name. */
+    val sectionIdMap: Map<Long, Long> = emptyMap(),
+    /** Incoming section id → the same-named incoming section it folds into, inserted once. */
+    val sectionAliases: Map<Long, Long> = emptyMap(),
 )

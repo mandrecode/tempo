@@ -29,6 +29,7 @@ class CreateCategoryUseCase
             name: String,
             color: String? = null,
             icon: String? = null,
+            sectionsEnabled: Boolean = false,
         ): Result {
             val trimmedName = name.trim()
             when (ValidationUtils.validateCategoryName(trimmedName)) {
@@ -42,7 +43,13 @@ class CreateCategoryUseCase
             }
             val nextSortOrder = categoryRepository.getMaxSortOrder() + 1
             categoryRepository.insertCategory(
-                Category(name = trimmedName, color = color, icon = icon, sortOrder = nextSortOrder),
+                Category(
+                    name = trimmedName,
+                    color = color,
+                    icon = icon,
+                    sortOrder = nextSortOrder,
+                    sectionsEnabled = sectionsEnabled,
+                ),
             )
             return Result.Success(trimmedName)
         }

@@ -11,7 +11,7 @@ import kotlinx.datetime.LocalDateTime
 
 @Entity(
     tableName = "tasks",
-    indices = [Index("categoryId"), Index("parentTaskId")],
+    indices = [Index("categoryId"), Index("parentTaskId"), Index("sectionId")],
 )
 data class TaskEntity(
     @PrimaryKey(autoGenerate = true)
@@ -33,4 +33,7 @@ data class TaskEntity(
     // the spawned next-occurrence task. Used to roll back the spawn (and restore recurrence
     // fields from the next instance) when the user unchecks the archived task.
     val nextInstanceId: Long? = null,
+    // The task's section inside its category (#61), or null when unsectioned. Only meaningful
+    // for top-level tasks; cleared whenever the task changes category.
+    val sectionId: Long? = null,
 )

@@ -17,9 +17,11 @@ import com.mandrecode.tempo.features.tasks.data.attachment.AttachmentFileStore
 import com.mandrecode.tempo.features.tasks.data.repository.CategoryRepositoryImpl
 import com.mandrecode.tempo.features.tasks.data.repository.TaskAttachmentRepositoryImpl
 import com.mandrecode.tempo.features.tasks.data.repository.TaskRepositoryImpl
+import com.mandrecode.tempo.features.tasks.data.repository.TaskSectionRepositoryImpl
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskAttachmentRepository
 import com.mandrecode.tempo.features.tasks.domain.repository.TaskRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskSectionRepository
 import com.mandrecode.tempo.infrastructure.attachments.AndroidAttachmentFileStore
 import com.mandrecode.tempo.infrastructure.focus.AndroidFocusSessionScheduler
 import dagger.Binds
@@ -29,6 +31,8 @@ import dagger.hilt.components.SingletonComponent
 
 @Module
 @InstallIn(SingletonComponent::class)
+// One binding per repository; the function count grows with the app, not with complexity.
+@Suppress("TooManyFunctions")
 abstract class RepositoryModule {
     @Binds
     abstract fun bindTaskRepository(impl: TaskRepositoryImpl): TaskRepository
@@ -44,6 +48,9 @@ abstract class RepositoryModule {
 
     @Binds
     abstract fun bindCategoryRepository(impl: CategoryRepositoryImpl): CategoryRepository
+
+    @Binds
+    abstract fun bindTaskSectionRepository(impl: TaskSectionRepositoryImpl): TaskSectionRepository
 
     @Binds
     abstract fun bindHabitChainRepository(impl: HabitChainRepositoryImpl): HabitChainRepository

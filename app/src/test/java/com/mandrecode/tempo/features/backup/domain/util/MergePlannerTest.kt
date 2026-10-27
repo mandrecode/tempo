@@ -9,6 +9,7 @@ import com.mandrecode.tempo.features.routines.domain.model.Habit
 import com.mandrecode.tempo.features.routines.domain.model.HabitChain
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.model.Task
+import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import kotlinx.datetime.LocalDateTime
 import org.junit.Test
 
@@ -273,6 +274,28 @@ class MergePlannerTest {
     }
 
     private fun emptyData() = backupData()
+
+    @Test
+    fun `same-named incoming sections of one category become one section`() {
+        val incoming =
+            BackupData(
+                categories = listOf(category(id = 1, name = "Work")),
+                tasks = emptyList(),
+                habits = emptyList(),
+                habitChains = emptyList(),
+                chainMemberships = emptyList(),
+                sections =
+                    listOf(
+                        TaskSection(id = 5, categoryId = 1, name = "Q3", sortOrder = 0),
+                        TaskSection(id = 6, categoryId = 1, name = "Q3", sortOrder = 1),
+                    ),
+            )
+
+        val plan = planner.plan(incoming, emptyData())
+
+        assertThat(plan.sectionsToInsert.map { it.id }).containsExactly(5L)
+        assertThat(plan.sectionAliases).containsExactly(6L, 5L)
+    }
 
     private fun backupData(
         categories: List<Category> = emptyList(),

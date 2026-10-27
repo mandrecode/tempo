@@ -20,12 +20,14 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.TaskSectionUseCases
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
 import com.mandrecode.tempo.infrastructure.permissions.PermissionChecker
 import dagger.hilt.android.lifecycle.HiltViewModel
 import jakarta.inject.Inject
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -64,6 +66,7 @@ class TasksViewModel
         internal val restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase,
         internal val restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase,
         internal val taskAttachmentRepository: TaskAttachmentRepository,
+        internal val sectionUseCases: TaskSectionUseCases,
         private val clock: Clock,
     ) : ViewModel() {
         private val initialSelectedCategoryId = tasksScreenPreferencesRepository.getSelectedCategoryId()
@@ -75,6 +78,7 @@ class TasksViewModel
                     sortOption =
                         tasksScreenPreferencesRepository.getSortOption(initialSelectedCategoryId),
                     showCompletedTasks = tasksScreenPreferencesRepository.getShowCompletedTasks(),
+                    collapsedSectionIds = tasksScreenPreferencesRepository.getCollapsedSectionIds().toPersistentSet(),
                 ),
             )
         internal val mutableUiState: MutableStateFlow<TasksContract.UiState>
@@ -163,7 +167,8 @@ class TasksViewModel
                 is TasksContract.UiEvent.ShowDefaultCategory -> showDefaultCategory()
                 is TasksContract.UiEvent.ShowCategoryDialog -> showCategoryDialog(event.category)
                 is TasksContract.UiEvent.HideCategoryDialog -> hideCategoryDialog()
-                is TasksContract.UiEvent.AddCategory -> addCategory(event.name, event.color, event.icon)
+                is TasksContract.UiEvent.AddCategory ->
+                    addCategory(event.name, event.color, event.icon, event.sectionsEnabled)
                 is TasksContract.UiEvent.UpdateCategory -> updateCategory(event.category)
                 is TasksContract.UiEvent.RequestDeleteCategory -> requestDeleteCategory(event.category)
                 is TasksContract.UiEvent.CancelDeleteCategory -> cancelDeleteCategory()
@@ -172,7 +177,8 @@ class TasksViewModel
                 is TasksContract.UiEvent.SetDefaultCategory -> setDefaultCategory(event.categoryId)
                 is TasksContract.UiEvent.ReorderCategories ->
                     reorderCategories(event.fromIndex, event.toIndex, event.categories)
-                is TasksContract.UiEvent.ShowTaskDialog -> showTaskDialog(event.task, event.parentTaskId)
+                is TasksContract.UiEvent.ShowTaskDialog ->
+                    showTaskDialog(event.task, event.parentTaskId, event.sectionId)
                 is TasksContract.UiEvent.HideTaskDialog -> hideTaskDialog()
                 is TasksContract.UiEvent.CreateOrUpdateTask ->
                     createOrUpdateTask(
@@ -223,6 +229,15 @@ class TasksViewModel
                         event.toIndex,
                         event.subtasks,
                     )
+                is TasksContract.UiEvent.AddSection -> addSection(event.name, event.afterSectionId)
+                is TasksContract.UiEvent.RenameSection -> renameSection(event.sectionId, event.name)
+                is TasksContract.UiEvent.ReorderSections ->
+                    reorderSections(event.fromIndex, event.toIndex, event.sections)
+                is TasksContract.UiEvent.DeleteSection -> deleteSection(event.section)
+                is TasksContract.UiEvent.ToggleSectionCollapsed -> toggleSectionCollapsed(event.sectionId)
+                is TasksContract.UiEvent.MoveTaskToSection ->
+                    moveTaskToSection(event.taskId, event.sectionId, event.index)
+                is TasksContract.UiEvent.SetTaskSection -> setTaskFormSection(event.sectionId)
                 is TasksContract.UiEvent.RequestDeleteCompletedTasks -> requestDeleteCompletedTasks()
                 is TasksContract.UiEvent.CancelDeleteCompletedTasks -> cancelDeleteCompletedTasks()
                 is TasksContract.UiEvent.ConfirmDeleteCompletedTasks -> confirmDeleteCompletedTasks()

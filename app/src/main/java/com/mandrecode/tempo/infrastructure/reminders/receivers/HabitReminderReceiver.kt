@@ -226,7 +226,7 @@ class HabitReminderReceiver : BroadcastReceiver() {
                 .setAutoCancel(true)
                 .setContentIntent(pendingIntent)
                 .addAction(
-                    R.drawable.ic_check,
+                    R.drawable.ic_check_circle,
                     actionLabel,
                     markAsCompletePendingIntent,
                 ).build()

@@ -30,6 +30,7 @@ import com.mandrecode.tempo.features.tasks.domain.usecase.ReorderTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.RestoreDeletedTasksUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.SetDefaultCategoryUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.TaskSectionUseCases
 import com.mandrecode.tempo.features.tasks.domain.usecase.ToggleTaskCompletionUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateCategoryUseCase
 import com.mandrecode.tempo.features.tasks.domain.usecase.UpdateTaskUseCase
@@ -90,6 +91,10 @@ class TasksViewModelTest {
     private lateinit var restoreDeletedTasksUseCase: RestoreDeletedTasksUseCase
     private lateinit var restoreDeletedCategoryUseCase: RestoreDeletedCategoryUseCase
     private val testDispatcher = StandardTestDispatcher()
+    private val sectionUseCases =
+        mockk<TaskSectionUseCases>(relaxed = true) {
+            every { repository.getAllSections() } returns flowOf(emptyList())
+        }
 
     @Before
     fun setup() {
@@ -146,6 +151,7 @@ class TasksViewModelTest {
             restoreDeletedTasksUseCase,
             restoreDeletedCategoryUseCase,
             taskAttachmentRepository,
+            sectionUseCases,
             clock,
         )
 

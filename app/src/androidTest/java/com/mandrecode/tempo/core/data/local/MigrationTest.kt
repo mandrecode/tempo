@@ -362,4 +362,42 @@ class MigrationTest {
                 }
             }
     }
+
+    @Test
+    fun migrate11To12_addsTaskSectionsAndLeavesEverythingUnsectioned() {
+        helper.createDatabase(DB_NAME, 11).use { db ->
+            db.execSQL(
+                "INSERT INTO categories (id, name, color, icon, isDefault, sortOrder) VALUES (-1, 'Inbox', NULL, 'inbox', 1, -1)",
+            )
+            db.execSQL(
+                """
+                INSERT INTO tasks (id, title, description, isCompleted, categoryId, priority,
+                    parentTaskId, sortOrder, periodicityInterval)
+                VALUES (1, 'Buy litter', 'desc', 0, -1, NULL, NULL, 0, 1)
+                """.trimIndent(),
+            )
+        }
+
+        helper
+            .runMigrationsAndValidate(
+                DB_NAME,
+                12,
+                true,
+                TempoDatabase.MIGRATION_11_12,
+            ).use { db ->
+                db.query("SELECT sectionId FROM tasks WHERE id = 1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.isNull(0)).isTrue()
+                }
+                db.query("SELECT sectionsEnabled FROM categories WHERE id = -1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.getInt(0)).isEqualTo(0)
+                }
+                db.execSQL("INSERT INTO task_sections (categoryId, name, sortOrder) VALUES (-1, 'Cat', 0)")
+                db.query("SELECT name FROM task_sections WHERE categoryId = -1").use { cursor ->
+                    assertThat(cursor.moveToFirst()).isTrue()
+                    assertThat(cursor.getString(0)).isEqualTo("Cat")
+                }
+            }
+    }
 }
