@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -25,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -104,6 +106,7 @@ internal fun TaskAttachmentsSection(
 }
 
 private val ATTACHMENT_ITEM_GAP = 8.dp
+private const val ATTACHMENT_OUTLINE_ALPHA = 0.5f
 
 @Composable
 internal fun TaskAttachmentRow(
@@ -117,8 +120,10 @@ internal fun TaskAttachmentRow(
     Surface(
         onClick = onOpen,
         shape = rowShape,
-        border = null,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        // No fill: a tonal fill barely separates from the translucent glass sheet behind it, so the
+        // row is told apart by an outline instead.
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = ATTACHMENT_OUTLINE_ALPHA)),
+        color = Color.Transparent,
         modifier =
             modifier
                 .fillMaxWidth()
