@@ -3,6 +3,7 @@ package com.mandrecode.tempo.features.tasks.domain.usecase
 import com.google.common.truth.Truth.assertThat
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskSectionRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -12,6 +13,7 @@ import org.junit.Before
 import org.junit.Test
 
 class UpdateCategoryUseCaseTest {
+    private val sectionRepository = mockk<TaskSectionRepository>(relaxed = true)
     private lateinit var useCase: UpdateCategoryUseCase
     private lateinit var categoryRepository: CategoryRepository
 
@@ -19,7 +21,7 @@ class UpdateCategoryUseCaseTest {
     fun setup() {
         categoryRepository = mockk(relaxed = true)
         coEvery { categoryRepository.getCategoryByName(any()) } returns null
-        useCase = UpdateCategoryUseCase(categoryRepository)
+        useCase = UpdateCategoryUseCase(categoryRepository, sectionRepository)
     }
 
     @Test
@@ -93,5 +95,30 @@ class UpdateCategoryUseCaseTest {
             coVerify { categoryRepository.updateCategory(capture(slot)) }
             assertThat(slot.captured.color).isEqualTo("blue")
             assertThat(slot.captured.icon).isEqualTo("star")
+        }
+
+    @Test
+    fun `turning sections off moves every task of the category to no section`() =
+        runTest {
+            val category = Category(id = 3L, name = "S&V", sectionsEnabled = true)
+            coEvery { categoryRepository.getCategoryById(3L) } returns category
+            coEvery { categoryRepository.getCategoryByName("S&V") } returns category
+
+            useCase(category.copy(sectionsEnabled = false))
+
+            coVerify { sectionRepository.unsectionCategory(3L) }
+            coVerify { categoryRepository.updateCategory(category.copy(sectionsEnabled = false)) }
+        }
+
+    @Test
+    fun `other edits leave task sections alone`() =
+        runTest {
+            val category = Category(id = 3L, name = "S&V", sectionsEnabled = true)
+            coEvery { categoryRepository.getCategoryById(3L) } returns category
+            coEvery { categoryRepository.getCategoryByName("Home") } returns null
+
+            useCase(category.copy(name = "Home"))
+
+            coVerify(exactly = 0) { sectionRepository.unsectionCategory(any()) }
         }
 }

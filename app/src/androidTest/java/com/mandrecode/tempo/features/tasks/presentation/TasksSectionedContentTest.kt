@@ -197,6 +197,27 @@ class TasksSectionedContentTest {
         assertThat(move.sectionId).isNull()
     }
 
+    @Test
+    fun emptyCategoryWithSectionsOn_keepsTheEmptyScreen() {
+        composeTestRule.setContent {
+            TempoTheme {
+                TasksContent(
+                    uiState =
+                        TasksContract.UiState(
+                            isLoading = false,
+                            categories = persistentListOf(sv.copy(sectionsEnabled = true)),
+                            selectedCategoryId = sv.id,
+                            sectionedList = SectionedTaskList(persistentListOf(), persistentListOf()),
+                        ),
+                    onEvent = {},
+                )
+            }
+        }
+
+        composeTestRule.onNodeWithText("Nothing here", substring = true).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Add section").assertDoesNotExist()
+    }
+
     /** Long-presses [source] and drags its centre onto the centre of [target]. */
     private fun dragOnto(
         source: SemanticsNodeInteraction,

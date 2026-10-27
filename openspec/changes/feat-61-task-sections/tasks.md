@@ -75,6 +75,7 @@
 - [x] 12.5 Add the per-category Sections toggle (column with SQL default, model, backup field, edit sheet switch, list/editor gating; drop the chip-menu entry) and verify with ViewModel, migration, seed, sheet and backup tests.
 - [x] 12.6 Draw the Sections toggle as a settings option card and the name input as the header it becomes, sized to its text; verify on device.
 - [x] 12.7 Stop the new-section field reopening with the previous name (plain remember instead of saveable) and verify keyboard Done saves and reopens empty on device.
+- [x] 12.8 Keep the empty screen for an empty category, restore "Add section" in the category menu when sections are on, and unsection every task when sections are turned off; verify with use case and UI tests and on device.
 
 ## Workflow follow-up
 

@@ -63,6 +63,8 @@ class TaskSectionRepositoryImpl
                 SectionDeletionSnapshot(section = section.toDomain(), taskIds = taskIds)
             }
 
+        override suspend fun unsectionCategory(categoryId: Long) = taskDao.clearSectionsInCategory(categoryId)
+
         override suspend fun restoreDeletedSection(snapshot: SectionDeletionSnapshot) {
             database.withTransaction {
                 if (sectionDao.getSectionById(snapshot.section.id) == null) {

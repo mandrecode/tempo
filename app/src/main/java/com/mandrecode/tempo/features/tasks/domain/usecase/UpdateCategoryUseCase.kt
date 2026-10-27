@@ -4,12 +4,14 @@ import com.mandrecode.tempo.core.domain.util.ValidationResult
 import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.features.tasks.domain.model.Category
 import com.mandrecode.tempo.features.tasks.domain.repository.CategoryRepository
+import com.mandrecode.tempo.features.tasks.domain.repository.TaskSectionRepository
 import jakarta.inject.Inject
 
 class UpdateCategoryUseCase
     @Inject
     constructor(
         private val categoryRepository: CategoryRepository,
+        private val sectionRepository: TaskSectionRepository,
     ) {
         sealed class Result {
             data object Success : Result()
@@ -35,6 +37,12 @@ class UpdateCategoryUseCase
                 if (existing.id != category.id) {
                     return Result.AlreadyExists(trimmedName)
                 }
+            }
+            // Turning sections off folds the list back into one (#61): every task loses its section,
+            // while the (now empty) sections stay for when they are turned on again.
+            val stored = categoryRepository.getCategoryById(category.id)
+            if (stored?.sectionsEnabled == true && !category.sectionsEnabled) {
+                sectionRepository.unsectionCategory(category.id)
             }
             categoryRepository.updateCategory(category.copy(name = trimmedName))
             return Result.Success

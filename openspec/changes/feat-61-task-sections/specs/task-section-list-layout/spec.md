@@ -14,8 +14,12 @@ When the selected category has sections turned off, the Tasks list SHALL render 
 - **THEN** the list shows the existing date group headers and no section UI
 
 #### Scenario: Sections on, none yet
-- **WHEN** the user selects a category with sections on and no section yet
+- **WHEN** the user selects a category with sections on, tasks and no section yet
 - **THEN** its tasks are listed unsectioned, followed by an "Add section" action
+
+#### Scenario: Empty category with sections on
+- **WHEN** the user selects a category with sections on, no tasks and no section
+- **THEN** the usual empty screen is shown without an "Add section" action, and the category chip's menu offers "Add section"
 
 ### Requirement: Empty sections stay quiet
 An empty section's placeholder SHALL be a soft tint without an outline, and SHALL be highlighted only while a dragged task is over it.

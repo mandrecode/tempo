@@ -220,6 +220,7 @@ fun TasksContent(
                             TasksContract.UiEvent.ReorderCategories(fromIndex, toIndex, categories),
                         )
                     },
+                    onAddSection = { sectionEditState.newSectionDraft = NewSectionDraft.AtEnd },
                 )
 
                 if (showSectionShortcuts && sectionedList != null && sectionedList.sections.isNotEmpty()) {
@@ -250,9 +251,11 @@ fun TasksContent(
                             ).background(MaterialTheme.colorScheme.surface),
                 ) {
                     val hasNothingToList = !hasActiveTasks && completedTaskGroups.isEmpty()
-                    // A category with sections on lists them, or the button to add one, even when
-                    // it has no tasks (#61).
-                    if (hasNothingToList && sectionedList == null) {
+                    // An empty category keeps the empty screen even with sections on; one that has
+                    // sections lists them, and naming the first section needs the list (#61).
+                    val hasSectionUi =
+                        !sectionedList?.sections.isNullOrEmpty() || sectionEditState.newSectionDraft != null
+                    if (hasNothingToList && !hasSectionUi) {
                         EmptyStateContent()
                     } else {
                         if (isTwoColumn && sectionedList != null) {
