@@ -115,9 +115,10 @@ internal fun SectionHeader(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         SectionTitle(name, taskCount, isCollapsed, onToggleCollapse, headerShape)
-        // 12dp on both sides: the add button below keeps its own 12dp around the glyph.
+        // 12dp on both sides: the title keeps 12dp after the count, the add button its own 12dp
+        // around the glyph.
         HorizontalDivider(
-            modifier = Modifier.weight(1f).padding(start = 12.dp),
+            modifier = Modifier.weight(1f),
             color = MaterialTheme.colorScheme.outlineVariant,
         )
         if (isCollapsed && overdueCount > 0) {
@@ -166,7 +167,9 @@ private fun SectionTitle(
                     heading()
                     contentDescription = "$name, $countDescription"
                     stateDescription = stateText
-                }.clickable(role = Role.Button, onClick = onToggleCollapse),
+                }.clickable(role = Role.Button, onClick = onToggleCollapse)
+                // Room after the count inside the toggle, so its ripple does not end on the number.
+                .padding(end = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.size(SectionEdgeSlot), contentAlignment = Alignment.Center) {
