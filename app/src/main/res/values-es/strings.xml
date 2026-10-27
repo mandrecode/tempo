@@ -299,7 +299,6 @@
     <string name="section_label">Sección</string>
     <string name="category_sections_label">Secciones</string>
     <string name="category_sections_description">Agrupa las tareas en secciones</string>
-    <string name="section_reorder_done">Listo</string>
     <plurals name="section_overdue_count">
         <item quantity="one">%1$d vencida</item>
         <item quantity="other">%1$d vencidas</item>

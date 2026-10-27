@@ -2,9 +2,11 @@ package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.SemanticsNodeInteraction
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -165,7 +167,10 @@ class TasksSectionedContentTest {
         composeTestRule.onNodeWithContentDescription("Cat section options").performClick()
         composeTestRule.onNodeWithText("Reorder sections").performClick()
 
-        composeTestRule.onNodeWithText("Done").assertIsDisplayed()
+        // The sheet lists every section (so each name shows twice: header and sheet row), and has
+        // no Done button: drops save as they happen.
+        composeTestRule.onAllNodesWithText("Garden").assertCountEquals(2)
+        composeTestRule.onNodeWithText("Done").assertDoesNotExist()
     }
 
     @Test

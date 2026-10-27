@@ -13,7 +13,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -52,17 +51,22 @@ internal fun SectionReorderSheet(
     onReorder: (fromIndex: Int, toIndex: Int, sections: List<TaskSection>) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    TempoModalBottomSheet(onDismissRequest = onDismiss, adaptivePlacement = true) { onRequestDismiss ->
-        Column(modifier = Modifier.padding(horizontal = 16.dp).padding(bottom = 16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = stringResource(R.string.section_reorder),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.weight(1f),
-                )
-                TextButton(onClick = onRequestDismiss) { Text(stringResource(R.string.section_reorder_done)) }
-            }
-            ReorderableSectionRows(sections = sections, onReorder = onReorder)
+    // Laid out like the sort sheet: same header and padding, and no Done — each drop is saved
+    // as it happens, so the sheet just closes like the others (swipe, scrim or back).
+    TempoModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp)
+                    .padding(bottom = 32.dp),
+        ) {
+            TasksSheetHeader(title = stringResource(R.string.section_reorder))
+            ReorderableSectionRows(
+                sections = sections,
+                onReorder = onReorder,
+                modifier = Modifier.padding(horizontal = 24.dp),
+            )
         }
     }
 }
@@ -71,6 +75,7 @@ internal fun SectionReorderSheet(
 private fun ReorderableSectionRows(
     sections: ImmutableList<TaskSection>,
     onReorder: (fromIndex: Int, toIndex: Int, sections: List<TaskSection>) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val haptic = LocalHapticFeedback.current
     val stepPx = with(LocalDensity.current) { (ReorderRowHeight + ReorderRowSpacing).toPx() }
@@ -80,7 +85,7 @@ private fun ReorderableSectionRows(
     fun targetOf(from: Int) = (from + (dragOffset / stepPx).roundToInt()).coerceIn(0, sections.lastIndex)
     val targetIndex = if (draggedIndex < 0) -1 else targetOf(draggedIndex)
 
-    Column(verticalArrangement = Arrangement.spacedBy(ReorderRowSpacing), modifier = Modifier.padding(top = 8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(ReorderRowSpacing), modifier = modifier.padding(top = 8.dp)) {
         sections.forEachIndexed { index, section ->
             val isDragged = index == draggedIndex
             SectionReorderRow(

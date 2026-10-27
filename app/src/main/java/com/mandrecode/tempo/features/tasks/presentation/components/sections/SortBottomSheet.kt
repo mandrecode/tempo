@@ -50,23 +50,7 @@ fun SortBottomSheet(
                     .padding(top = 8.dp)
                     .padding(bottom = 32.dp),
         ) {
-            // Header
-            ListItem(
-                headlineContent = {
-                    Text(
-                        text = stringResource(R.string.sort_by),
-                        style = MaterialTheme.typography.sheetTitle,
-                    )
-                },
-                colors =
-                    ListItemDefaults.colors(
-                        containerColor = Color.Transparent,
-                    ),
-                modifier =
-                    Modifier
-                        .padding(top = 12.dp)
-                        .padding(horizontal = 16.dp),
-            )
+            TasksSheetHeader(title = stringResource(R.string.sort_by))
 
             // Sort options
             SortOption.entries.forEach { sortOption ->
@@ -123,5 +107,26 @@ internal fun SortOptionItem(
             Modifier
                 .fillMaxWidth()
                 .clickable(onClick = onClick),
+    )
+}
+
+/** The title of a Tasks bottom sheet (sort, reorder sections), so every one reads the same. */
+@Composable
+internal fun TasksSheetHeader(
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    ListItem(
+        headlineContent = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.sheetTitle,
+            )
+        },
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+        modifier =
+            modifier
+                .padding(top = 12.dp)
+                .padding(horizontal = 16.dp),
     )
 }

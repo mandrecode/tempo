@@ -281,7 +281,6 @@
     <string name="section_label">Section</string>
     <string name="category_sections_label">Sections</string>
     <string name="category_sections_description">Group tasks into sections</string>
-    <string name="section_reorder_done">Done</string>
     <plurals name="section_overdue_count">
         <item quantity="one">%1$d overdue</item>
         <item quantity="other">%1$d overdue</item>
