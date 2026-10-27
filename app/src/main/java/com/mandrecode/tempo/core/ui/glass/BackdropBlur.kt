@@ -25,12 +25,17 @@ import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import kotlinx.coroutines.flow.collectLatest
 
 /**
- * How far each open modal wants the app behind it blurred, from 0 (not at all) to 1 (fully), and
- * how far it is blurred right now ([shown]), eased toward the strongest request.
+ * How far each open modal wants the app behind it blurred, from 0 (not at all) to 1 (fully).
+ *
+ * A modal with no motion of its own (an alert) asks through [levels], and [shown] eases toward the
+ * strongest of those. A sheet already moves smoothly, so it hands over its [followers] instead and
+ * the blur layer reads them as it draws: the blur is then exactly as strong as the sheet is open on
+ * that very frame, with no hop or easing in between to trail it while it is dragged.
  */
 @Stable
 class BackdropBlur {
     internal val levels = mutableStateMapOf<Any, Float>()
+    internal val followers = mutableStateMapOf<Any, () -> Float>()
     internal val shown = Animatable(0f)
 }
 
@@ -54,9 +59,8 @@ fun BackdropBlurHost(
 ) {
     val blur = remember { BackdropBlur() }
     val glass = LocalTempoGlass.current
-    // Springy enough to keep up with a sheet under the finger; it is what eases a dialog's blur in
-    // and out, since a dialog has no slide to follow. Driven here and read only in the layer below,
-    // so a sliding sheet redraws the blur without recomposing the app.
+    // What eases a dialog's blur in and out, since a dialog has no slide to follow. Driven here and
+    // read only in the layer below, so it redraws the blur without recomposing the app.
     LaunchedEffect(blur, glass.blurEnabled) {
         snapshotFlow { if (glass.blurEnabled) blur.levels.values.maxOrNull() ?: 0f else 0f }
             .collectLatest { target -> blur.shown.animateTo(target, BlurLevelSpring) }
@@ -65,7 +69,15 @@ fun BackdropBlurHost(
         Box(
             modifier =
                 modifier.graphicsLayer {
-                    val px = glass.windowBlurRadius.toPx() * blur.shown.value
+                    val level =
+                        if (glass.blurEnabled) {
+                            var strongest = blur.shown.value
+                            blur.followers.values.forEach { strongest = maxOf(strongest, it().coerceIn(0f, 1f)) }
+                            strongest
+                        } else {
+                            0f
+                        }
+                    val px = glass.windowBlurRadius.toPx() * level
                     renderEffect = if (px > 0f) BlurEffect(px, px, TileMode.Clamp) else null
                 },
         ) {
@@ -75,25 +87,30 @@ fun BackdropBlurHost(
 }
 
 /**
- * Asks the [BackdropBlurHost] to blur the app behind the modal this is called from, as far as
- * [progress] says: a sheet passes how far it is open, so the blur grows as it slides in, eases off
- * as it is dragged down and is gone once it has slid away.
+ * Asks the [BackdropBlurHost] to blur the app behind the modal this is called from. A sheet passes
+ * [progress], how far it is open, so the blur grows as it slides in, follows it as it is dragged
+ * down and is gone once it has slid away. With no [progress] (an alert) the blur eases in and out.
  *
  * Returns whether the blur can show at all, so the caller can thin its scrim and lighten its
  * surface. It cannot below API 31, on low-RAM devices, in previews, or with no host above.
  */
 @Composable
-fun rememberBackdropBlur(progress: () -> Float = { 1f }): Boolean {
+fun rememberBackdropBlur(progress: (() -> Float)? = null): Boolean {
     val blur = LocalBackdropBlur.current
     val glass = LocalTempoGlass.current
     if (blur == null || !glass.blurEnabled) return false
     val key = remember { Any() }
     val currentProgress by rememberUpdatedState(progress)
-    LaunchedEffect(blur, key) {
-        snapshotFlow { currentProgress().coerceIn(0f, 1f) }.collect { blur.levels[key] = it }
-    }
-    DisposableEffect(blur, key) {
-        onDispose { blur.levels.remove(key) }
+    DisposableEffect(blur, key, progress != null) {
+        if (progress != null) {
+            blur.followers[key] = { currentProgress?.invoke() ?: 0f }
+        } else {
+            blur.levels[key] = 1f
+        }
+        onDispose {
+            blur.followers.remove(key)
+            blur.levels.remove(key)
+        }
     }
     return true
 }
