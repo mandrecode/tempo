@@ -113,7 +113,8 @@ internal fun TaskAttachmentRow(
     modifier: Modifier = Modifier,
 ) {
     val openLabel = stringResource(R.string.open_attachment, attachment.displayName)
-    val rowShape = RoundedCornerShape(16.dp)
+    // The same 24dp pill as the reminder chip and the Add buttons.
+    val rowShape = RoundedCornerShape(24.dp)
     Surface(
         onClick = onOpen,
         shape = rowShape,
@@ -139,7 +140,7 @@ internal fun TaskAttachmentRow(
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = attachment.displayName,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.MiddleEllipsis,
                 modifier = Modifier.weight(1f),
@@ -148,6 +149,7 @@ internal fun TaskAttachmentRow(
                 Icon(
                     painter = painterResource(R.drawable.ic_close),
                     contentDescription = stringResource(R.string.remove_attachment, attachment.displayName),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
