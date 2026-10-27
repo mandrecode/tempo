@@ -36,6 +36,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
+import com.mandrecode.tempo.core.ui.editor.EDITOR_SET_ITEM_CORNER_RADIUS
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
@@ -113,12 +114,13 @@ internal fun TaskAttachmentRow(
     modifier: Modifier = Modifier,
 ) {
     val openLabel = stringResource(R.string.open_attachment, attachment.displayName)
-    val rowShape = RoundedCornerShape(16.dp)
+    val rowShape = RoundedCornerShape(EDITOR_SET_ITEM_CORNER_RADIUS)
     Surface(
         onClick = onOpen,
         shape = rowShape,
-        border = null,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        // The tonal fill of the editor's other added items: the reminder chip, and the Add button
+        // beside this row. The neutral selector grey is for choosing, not for what has been added.
+        color = MaterialTheme.colorScheme.secondaryContainer,
         modifier =
             modifier
                 .fillMaxWidth()
@@ -132,13 +134,13 @@ internal fun TaskAttachmentRow(
             Icon(
                 painter = painterResource(attachment.kind.iconRes()),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(12.dp))
             Text(
                 text = attachment.displayName,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.MiddleEllipsis,
                 modifier = Modifier.weight(1f),
@@ -147,6 +149,7 @@ internal fun TaskAttachmentRow(
                 Icon(
                     painter = painterResource(R.drawable.ic_close),
                     contentDescription = stringResource(R.string.remove_attachment, attachment.displayName),
+                    modifier = Modifier.size(18.dp),
                 )
             }
         }
