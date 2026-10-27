@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.2](https://github.com/mandrecode/tempo/compare/v1.16.1...v1.16.2) (2026-10-27)
+
+
+### Bug Fixes
+
+* **#461:** let back reach the task sheet once the keyboard is closed ([#462](https://github.com/mandrecode/tempo/issues/462)) ([1cb4402](https://github.com/mandrecode/tempo/commit/1cb44021e7f915100f3ffd0287193fc7449347d3))
+
 ## [1.16.1](https://github.com/mandrecode/tempo/compare/v1.16.0...v1.16.1) (2026-10-26)
 
 
