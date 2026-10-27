@@ -623,10 +623,7 @@ private fun TaskPeriodicitySection(
                         }
                     },
                     colors =
-                        selectorButtonColors(
-                            checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                            checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        ),
+                        selectorButtonColors(),
                     modifier =
                         Modifier.testTag(
                             "taskPeriodicityChip_${period.name}",

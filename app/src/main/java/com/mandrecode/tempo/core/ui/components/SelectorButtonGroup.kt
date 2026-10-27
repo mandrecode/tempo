@@ -39,12 +39,13 @@ val SelectorButtonHeight: Dp = 48.dp
 
 /**
  * The colours of one selector: the off state matches the repeat-day and Routines day toggles, the
- * on state is the caller's (priority uses its own colour, periodicity the tertiary pair).
+ * on state is the caller's (priority uses its own colour) and otherwise the primary container, the
+ * same selected tone as the repeat selector and the day toggles.
  */
 @Composable
 fun selectorButtonColors(
-    checkedContainerColor: Color = MaterialTheme.colorScheme.primary,
-    checkedContentColor: Color = MaterialTheme.colorScheme.onPrimary,
+    checkedContainerColor: Color = MaterialTheme.colorScheme.primaryContainer,
+    checkedContentColor: Color = MaterialTheme.colorScheme.onPrimaryContainer,
 ): ToggleButtonColors =
     ToggleButtonDefaults.colors(
         containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
