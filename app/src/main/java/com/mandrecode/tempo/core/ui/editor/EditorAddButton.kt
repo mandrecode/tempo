@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.core.ui.editor
 
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
@@ -10,6 +11,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -30,11 +32,28 @@ internal fun EditorAddButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    quiet: Boolean = false,
 ) {
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
     val radius by cornerRadius
     val addShape = RoundedCornerShape(radius)
+    if (quiet) {
+        TextButton(
+            onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+            enabled = enabled,
+            shape = addShape,
+            contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
+            interactionSource = interactionSource,
+            modifier = modifier.height(EDITOR_CONTROL_HEIGHT),
+        ) {
+            AddButtonContent(label)
+        }
+        return
+    }
     FilledTonalButton(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -46,12 +65,17 @@ internal fun EditorAddButton(
         interactionSource = interactionSource,
         modifier = modifier.height(EDITOR_CONTROL_HEIGHT),
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_add),
-            contentDescription = null,
-            modifier = Modifier.size(ButtonDefaults.IconSize),
-        )
-        Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
-        Text(text = label, style = MaterialTheme.typography.labelLarge)
+        AddButtonContent(label)
     }
+}
+
+@Composable
+private fun RowScope.AddButtonContent(label: String) {
+    Icon(
+        painter = painterResource(R.drawable.ic_add),
+        contentDescription = null,
+        modifier = Modifier.size(ButtonDefaults.IconSize),
+    )
+    Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+    Text(text = label, style = MaterialTheme.typography.labelLarge)
 }

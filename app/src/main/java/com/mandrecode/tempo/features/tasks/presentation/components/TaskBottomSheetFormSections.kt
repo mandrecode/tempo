@@ -689,10 +689,6 @@ private fun TaskPeriodicitySection(
                             modifier = Modifier.weight(1f),
                             nullMeansEveryDay = false,
                             enabled = !isPeriodicityReadOnly,
-                            selectedContainerColor =
-                                MaterialTheme.colorScheme.tertiaryContainer,
-                            selectedContentColor =
-                                MaterialTheme.colorScheme.onTertiaryContainer,
                         )
                     }
                 }
