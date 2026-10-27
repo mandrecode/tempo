@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -90,6 +89,8 @@ internal fun TaskAttachmentsSection(
             EditorAddButton(
                 label = stringResource(R.string.add_attachment),
                 onClick = { picker.launch(arrayOf("*/*")) },
+                // Once a file is attached the button steps back, so it is not mistaken for another one.
+                quiet = attachments.isNotEmpty(),
             )
             // Inside the sheet, where it is seen: a snackbar would sit under the sheet's window.
             errors.forEach { error ->
@@ -115,6 +116,7 @@ internal fun TaskAttachmentRow(
 ) {
     val openLabel = stringResource(R.string.open_attachment, attachment.displayName)
     val rowShape = RoundedCornerShape(EDITOR_SET_ITEM_CORNER_RADIUS)
+    // The row hugs its name like the reminder chip does, up to the row's width, where it truncates.
     Surface(
         onClick = onOpen,
         shape = rowShape,
@@ -123,7 +125,6 @@ internal fun TaskAttachmentRow(
         color = MaterialTheme.colorScheme.secondaryContainer,
         modifier =
             modifier
-                .fillMaxWidth()
                 .heightIn(min = EDITOR_CONTROL_HEIGHT)
                 .semantics { contentDescription = openLabel },
     ) {
@@ -143,7 +144,7 @@ internal fun TaskAttachmentRow(
                 style = MaterialTheme.typography.labelLarge,
                 maxLines = 1,
                 overflow = TextOverflow.MiddleEllipsis,
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f, fill = false),
             )
             IconButton(onClick = onRemove) {
                 Icon(
