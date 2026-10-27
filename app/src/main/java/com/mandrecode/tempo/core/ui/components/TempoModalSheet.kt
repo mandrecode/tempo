@@ -4,7 +4,6 @@ import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import androidx.activity.ExperimentalActivityApi
 import androidx.activity.compose.PredictiveBackHandler
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -283,15 +282,11 @@ private fun BoxScope.TempoModalSheetSurface(
     content: @Composable ColumnScope.(onRequestDismiss: () -> Unit) -> Unit,
 ) {
     val layoutFactor = currentLayoutFactor()
-    val glass = LocalTempoGlass.current
-    val sheetColor by animateColorAsState(
-        targetValue =
-            MaterialTheme.colorScheme.surfaceContainerHigh.let {
-                if (glassy) it.copy(alpha = glass.sheetAlpha) else it
-            },
-        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
-        label = "sheetColor",
-    )
+    // Fixed for the session: [glassy] only says whether this device blurs at all.
+    val sheetColor =
+        MaterialTheme.colorScheme.surfaceContainerHigh.let {
+            if (glassy) it.copy(alpha = LocalTempoGlass.current.sheetAlpha) else it
+        }
     Surface(
         modifier =
             Modifier

@@ -43,8 +43,6 @@ import com.mandrecode.tempo.core.ui.components.CardGroupPosition
 import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.glass.glassCardColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.settingsSectionTitle
 
 /**
@@ -138,10 +136,9 @@ private fun SettingsGroupPiece(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = if (hasSeamAbove) ConnectedCardGap else 0.dp)
-                    .glassSheen(shape),
+                    .padding(top = if (hasSeamAbove) ConnectedCardGap else 0.dp),
             shape = shape,
-            border = glassRim(),
+            border = null,
             colors =
                 CardDefaults.cardColors(
                     containerColor = glassCardColor(MaterialTheme.colorScheme.surfaceContainer),

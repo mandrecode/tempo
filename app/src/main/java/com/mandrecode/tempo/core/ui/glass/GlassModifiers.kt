@@ -9,11 +9,10 @@ import android.view.ViewTreeObserver
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.isSpecified
 import androidx.compose.ui.graphics.BlurEffect
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.RenderEffect
 import androidx.compose.ui.graphics.Shape
@@ -23,7 +22,6 @@ import androidx.compose.ui.graphics.asComposeRenderEffect
 import androidx.compose.ui.graphics.drawOutline
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.isSpecified
@@ -40,8 +38,10 @@ import androidx.compose.ui.node.invalidateDraw
 import androidx.compose.ui.node.requireGraphicsContext
 import androidx.compose.ui.node.requireView
 import androidx.compose.ui.platform.InspectorInfo
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.TempoGlass
@@ -49,8 +49,7 @@ import kotlin.math.ceil
 
 /**
  * Floating chrome glass: blurs what is behind [shape] (the [LocalGlassBackdrop] the chrome sits
- * over), lays a fill on top, a faint sheen across the upper half, and a specular rim around the
- * edge, drawn above the content so it stays crisp where a selected item touches the edge.
+ * over) and lays a fill on top. No outline: the chrome's own tone sets it apart.
  *
  * [tint] is the fill colour — neutral glass when unspecified, or a role colour (the add button's
  * `primaryContainer`) for tinted glass, which keeps its hue and loses only enough opacity to show
@@ -66,9 +65,8 @@ fun Modifier.glass(
 ): Modifier = this then GlassElement(shape = shape, tint = tint)
 
 /**
- * The content block's material: [color] made slightly translucent over the page's ambient backdrop,
- * with a light rim along the top edge. No blur: what is behind a panel is the ambient gradient,
- * which is already as soft as a blur would make it.
+ * The content block's material: [color], with a faint wash of the secondary tone down from its top
+ * edge. No blur: what is behind a panel is the ambient gradient, already as soft as a blur would be.
  */
 fun Modifier.glassPanel(
     shape: Shape,
@@ -104,6 +102,9 @@ private class GlassNode(
     private var positionInWindow = Offset.Unspecified
     private var blurredLastFrame = false
     private var observedView: View? = null
+    private val clip = OutlineClip()
+    private var frost: RenderEffect? = null
+    private var frostRadius = Float.NaN
 
     /**
      * Content changing behind the glass (a list scrolling, a tab switching) does not redraw the
@@ -137,23 +138,15 @@ private class GlassNode(
     override fun ContentDrawScope.draw() {
         val glass = currentValueOf(LocalTempoGlass)
         val backdrop = currentValueOf(LocalGlassBackdrop)
-        val outline = shape.createOutline(size, layoutDirection, this)
         val sourceLayer = backdrop?.layer?.takeIf { glass.blurEnabled && positionInWindow.isSpecified }
         val blurred = sourceLayer != null
         blurredLastFrame = blurred
 
-        clipPath(Path().apply { addOutline(outline) }) {
+        clipPath(clip.pathFor(shape, size, layoutDirection, this)) {
             if (sourceLayer != null) drawBlurredBackdrop(sourceLayer, backdrop.positionInWindow, glass)
             drawRect(fillColor(glass, blurred))
-            drawRect(
-                Brush.verticalGradient(
-                    0f to glass.sheen,
-                    SHEEN_END to Color.Transparent,
-                ),
-            )
         }
         drawContent()
-        drawRim(outline, glass)
     }
 
     private fun fillColor(
@@ -182,7 +175,11 @@ private class GlassNode(
         val padding = ceil(radius * 2).toInt()
         val graphicsContext = requireGraphicsContext()
         val layer = graphicsContext.createGraphicsLayer()
-        layer.renderEffect = frostedBlur(radius)
+        // The effect only depends on the radius, so it is built once rather than every frame.
+        layer.renderEffect = frost.takeIf { frostRadius == radius } ?: frostedBlur(radius).also {
+            frost = it
+            frostRadius = radius
+        }
         layer.topLeft = IntOffset(-padding, -padding)
         layer.record(
             size =
@@ -198,21 +195,6 @@ private class GlassNode(
         }
         drawLayer(layer)
         graphicsContext.releaseGraphicsLayer(layer)
-    }
-
-    private fun DrawScope.drawRim(
-        outline: Outline,
-        glass: TempoGlass,
-    ) {
-        val width = glass.rimWidth.toPx()
-        // Inset by half the stroke so the whole rim lands inside the shape, the way a lens edge does.
-        clipPath(Path().apply { addOutline(outline) }) {
-            drawOutline(
-                outline = outline,
-                brush = Brush.verticalGradient(listOf(glass.rimTop, glass.rimBottom)),
-                style = Stroke(width = width * 2),
-            )
-        }
     }
 }
 
@@ -251,29 +233,11 @@ private class GlassPanelNode(
             drawOutline(outline, brush = topGlow(glass.panelWash, PanelWashExtent.toPx()))
         }
         drawContent()
-        // Only the top catches the light: the panel's sides and bottom run into the window edges.
-        clipPath(Path().apply { addOutline(outline) }) {
-            drawOutline(
-                outline = outline,
-                brush =
-                    Brush.verticalGradient(
-                        0f to glass.panelRimTop,
-                        PanelRimFade.toPx() / size.height.coerceAtLeast(1f) to Color.Transparent,
-                    ),
-                style = Stroke(width = glass.rimWidth.toPx() * 2),
-            )
-        }
     }
 }
 
-/** How far down a chrome surface its sheen fades out — the upper half, like light from above. */
-private const val SHEEN_END = 0.55f
-
 /** How far down the content panel its secondary wash reaches before it has faded out. */
 private val PanelWashExtent = 520.dp
-
-/** The panel rim fades over its rounded corners, then the sides are left bare. */
-private val PanelRimFade = 36.dp
 
 /**
  * The chrome's frost: a blur of what is behind it with the colour pushed up afterwards, the way a
@@ -297,3 +261,27 @@ private fun saturatedBlur(radius: Float): RenderEffect {
 }
 
 private const val FROST_SATURATION = 1.2f
+
+/** A clip path for a shape, rebuilt only when the shape, size or direction changes. */
+private class OutlineClip {
+    private val path = Path()
+    private var shape: Shape? = null
+    private var size = Size.Unspecified
+    private var direction: LayoutDirection? = null
+
+    fun pathFor(
+        shape: Shape,
+        size: Size,
+        direction: LayoutDirection,
+        density: Density,
+    ): Path {
+        if (shape != this.shape || size != this.size || direction != this.direction) {
+            path.reset()
+            path.addOutline(shape.createOutline(size, direction, density))
+            this.shape = shape
+            this.size = size
+            this.direction = direction
+        }
+        return path
+    }
+}

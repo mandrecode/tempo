@@ -63,8 +63,6 @@ import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
@@ -510,12 +508,11 @@ private fun TaskReminderAndPeriodicitySection(
                             selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                             selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         ),
-                    border = glassRim(),
+                    border = null,
                     modifier =
                         Modifier
                             .padding(start = 4.dp)
-                            .height(EDITOR_CONTROL_HEIGHT)
-                            .glassSheen(chipShape),
+                            .height(EDITOR_CONTROL_HEIGHT),
                 )
             }
 

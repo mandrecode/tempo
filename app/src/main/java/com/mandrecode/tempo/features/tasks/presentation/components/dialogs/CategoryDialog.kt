@@ -38,10 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
 import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -77,10 +74,9 @@ fun CategoryDialog(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp)
-                    .glassSheen(CategoryDialogShape),
+                    .padding(16.dp),
             shape = CategoryDialogShape,
-            border = glassRim(),
+            border = null,
             colors =
                 CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -140,7 +136,7 @@ fun CategoryDialog(
 
                     OutlinedButton(
                         colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
-                        border = glassButtonBorder(),
+                        border = null,
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onDismiss()

@@ -20,7 +20,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
-import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
 import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
@@ -114,7 +113,7 @@ private fun ImportModeCancelButton(onEvent: (SettingsContract.UiEvent) -> Unit) 
 
     OutlinedButton(
         colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
-        border = glassButtonBorder(),
+        border = null,
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onEvent(SettingsContract.UiEvent.BackupDialogDismissed)

@@ -66,8 +66,6 @@ import com.mandrecode.tempo.core.ui.components.cardFrostColor
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
@@ -471,10 +469,9 @@ fun HabitCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .semantics { selected = isSelected }
-                    .glassSheen(cardShape),
+                    .semantics { selected = isSelected },
             shape = cardShape,
-            border = glassRim(),
+            border = null,
             colors =
                 CardDefaults.cardColors(
                     containerColor = containerColor,

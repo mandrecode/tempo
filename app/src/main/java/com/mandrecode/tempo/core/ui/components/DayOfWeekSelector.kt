@@ -32,7 +32,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
-import com.mandrecode.tempo.core.ui.glass.glassRim
 
 /**
  * One day of the week: its full name (for accessibility) and its one-letter initial. The initial
@@ -153,7 +152,6 @@ private fun WeekdayToggle(
         enabled = enabled,
         colors = colors,
         shapes = ToggleButtonDefaults.shapesFor(WeekdayButtonHeight),
-        border = if (checked) null else glassRim(),
         // A single letter in a narrow button: the default side padding would clip it.
         contentPadding = PaddingValues(0.dp),
         modifier =

@@ -39,23 +39,25 @@ fun cardFrostColor(): Color = LocalTempoGlass.current.cardFrost
  * selected card reads as a highlighted variant of its own resting background — a colorful habit
  * card stays recognizably that color when selected — rather than jumping to an unrelated hue.
  *
- * At rest a card keeps its own fill, frost included: glass cards carry no shadow, which is what
- * made a translucent fill glitch before (it showed through). Selected, the tint is laid over the
- * fill flattened against the screen background, so the one card you are editing beside the list
- * stands out solid from the frosted ones around it.
+ * Some resting fills (a completed task receding into the frost, an incomplete habit's tint) are
+ * themselves translucent. [baseColor] is always flattened against the panel the cards sit on, in
+ * both branches, so a Card's container never carries translucency and the tween between the two
+ * never animates alpha (which let what is behind the card flash through mid-animation).
  */
 @Composable
 fun selectedContainerColor(
     baseColor: Color,
     isSelected: Boolean,
-): Color =
-    if (isSelected) {
+): Color {
+    val opaqueBase = baseColor.compositeOver(MaterialTheme.colorScheme.surface)
+    return if (isSelected) {
         MaterialTheme.colorScheme.secondary
             .copy(alpha = SELECTED_TINT_ALPHA)
-            .compositeOver(baseColor.compositeOver(MaterialTheme.colorScheme.background))
+            .compositeOver(opaqueBase)
     } else {
-        baseColor
+        opaqueBase
     }
+}
 
 /**
  * The selection accent as a translucent overlay, for rows already rendered on top of a resolved

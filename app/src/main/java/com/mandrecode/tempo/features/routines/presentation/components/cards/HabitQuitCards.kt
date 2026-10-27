@@ -29,8 +29,6 @@ import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.components.cardFrostColor
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -72,10 +70,9 @@ fun QuitHabitCard(
         modifier =
             modifier
                 .fillMaxWidth()
-                .semantics { selected = isSelected }
-                .glassSheen(state.cardShape),
+                .semantics { selected = isSelected },
         shape = state.cardShape,
-        border = glassRim(),
+        border = null,
         colors =
             CardDefaults.cardColors(
                 containerColor = containerColor,

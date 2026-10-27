@@ -38,8 +38,6 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.editor.EDITOR_CONTROL_HEIGHT
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.features.tasks.domain.model.TaskAttachment
 import com.mandrecode.tempo.infrastructure.attachments.attachmentContentUri
 
@@ -119,14 +117,13 @@ internal fun TaskAttachmentRow(
     Surface(
         onClick = onOpen,
         shape = rowShape,
-        border = glassRim(),
+        border = null,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         modifier =
             modifier
                 .fillMaxWidth()
                 .heightIn(min = EDITOR_CONTROL_HEIGHT)
-                .semantics { contentDescription = openLabel }
-                .glassSheen(rowShape),
+                .semantics { contentDescription = openLabel },
     ) {
         Row(
             modifier = Modifier.padding(start = 16.dp),

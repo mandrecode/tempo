@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.PastelGreenDark
 import com.mandrecode.tempo.core.ui.theme.PastelGreenLight
@@ -145,7 +144,7 @@ private fun HabitTypeCard(
                         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         onClick()
                     },
-                ).glassSheen(cardShape),
+                ),
         shape = cardShape,
         color = containerColor,
         contentColor = contentColor,

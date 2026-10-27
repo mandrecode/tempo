@@ -31,8 +31,6 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.WavyDivider
 import com.mandrecode.tempo.core.ui.glass.glassCardColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import kotlinx.datetime.minus
@@ -101,13 +99,12 @@ private fun CompletedToggle(
     Surface(
         color = glassCardColor(MaterialTheme.colorScheme.secondaryContainer),
         shape = CompletedToggleShape,
-        border = glassRim(),
+        border = null,
         tonalElevation = 0.dp,
         modifier =
             Modifier
                 .padding(end = 12.dp)
                 .clip(CompletedToggleShape)
-                .glassSheen(CompletedToggleShape)
                 .clickable { onToggle() },
     ) {
         Row(

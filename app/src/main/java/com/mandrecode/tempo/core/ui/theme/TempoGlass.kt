@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.core.ui.theme
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.ColorScheme
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -20,7 +19,7 @@ import androidx.compose.ui.unit.dp
  * - **Panel** — the content block below: solid surface, with a faint, smooth
  *   wash of the secondary tone down from its top edge.
  * - **Chrome** — the floating bar, rail and modal sheets: real backdrop blur where the platform can
- *   do it, a denser tint where it cannot, and a flat hairline rim.
+ *   do it, a denser tint where it cannot. No outline: a tone of its own sets it apart.
  * - **Finish** — the components on those (cards, buttons, chips): their own pre-glass colours,
  *   opaque, so the list keeps its contrast. Nothing is outlined, lit or shadowed.
  *
@@ -46,12 +45,6 @@ data class TempoGlass(
     /** Alpha applied to a coloured chrome fill (the add button, a selected control) over blur. */
     val tintedAlpha: Float,
     val tintedFallbackAlpha: Float,
-    /** The chrome's edge; transparent, as nothing in the glass is outlined. */
-    val rimTop: Color,
-    val rimBottom: Color,
-    val rimWidth: Dp,
-    /** A faint sheen across the upper half of a chrome surface, so it reads as a lens, not a sticker. */
-    val sheen: Color,
     val panelAlpha: Float,
     /**
      * A very smooth wash of the secondary tone down the content panel, from its top edge: the one
@@ -66,7 +59,6 @@ data class TempoGlass(
      * its own colour; a selected card turns opaque.
      */
     val cardFrost: Color,
-    val panelRimTop: Color,
     /**
      * Fill of a modal sheet while the window behind it is blurred. Nearly opaque: a sheet holds a
      * form, and text fields need a clean surface; the frost shows around it, through the scrim.
@@ -75,10 +67,6 @@ data class TempoGlass(
     /** How much of the modal scrim is kept once the blur is doing the separating. */
     val blurredScrimFraction: Float,
     val ambient: TempoAmbient,
-    /** The finish tier's rim: top-lit like the chrome's, settling on a defining shade at the bottom. */
-    val componentRim: BorderStroke,
-    /** The finish tier's sheen, laid over a component's upper half; faint, as it sits over text. */
-    val componentSheen: Color,
 )
 
 /**
@@ -93,7 +81,6 @@ data class TempoAmbient(
 
 internal val GlassBlurRadius = 28.dp
 internal val GlassWindowBlurRadius = 40.dp
-internal val GlassRimWidth = 1.dp
 
 /**
  * Cards keep all of their own colour: the list's contrast (cards on the panel)
@@ -115,20 +102,13 @@ internal fun tempoGlass(
             chromeFallbackTint = colorScheme.surfaceContainerHighest.copy(alpha = 0.94f),
             tintedAlpha = 0.78f,
             tintedFallbackAlpha = 0.96f,
-            rimTop = Color.Transparent,
-            rimBottom = Color.Transparent,
-            rimWidth = GlassRimWidth,
-            sheen = Color.Transparent,
             panelAlpha = 1f,
             panelWash = colorScheme.secondaryContainer.copy(alpha = 0.10f),
             cardAlpha = GLASS_CARD_ALPHA,
             cardFrost = colorScheme.background.copy(alpha = GLASS_CARD_ALPHA),
-            panelRimTop = Color.Transparent,
             sheetAlpha = 0.95f,
             blurredScrimFraction = 0.55f,
             ambient = tempoAmbient(colorScheme, darkTheme),
-            componentRim = NoRim,
-            componentSheen = Color.Transparent,
         )
     } else {
         TempoGlass(
@@ -140,20 +120,13 @@ internal fun tempoGlass(
             chromeFallbackTint = colorScheme.surfaceContainerHigh.copy(alpha = 0.97f),
             tintedAlpha = 0.80f,
             tintedFallbackAlpha = 0.97f,
-            rimTop = Color.Transparent,
-            rimBottom = Color.Transparent,
-            rimWidth = GlassRimWidth,
-            sheen = Color.Transparent,
             panelAlpha = 1f,
             panelWash = colorScheme.secondaryContainer.copy(alpha = 0.18f),
             cardAlpha = GLASS_CARD_ALPHA,
             cardFrost = colorScheme.background.copy(alpha = GLASS_CARD_ALPHA),
-            panelRimTop = Color.Transparent,
             sheetAlpha = 0.96f,
             blurredScrimFraction = 0.5f,
             ambient = tempoAmbient(colorScheme, darkTheme),
-            componentRim = NoRim,
-            componentSheen = Color.Transparent,
         )
     }
 
@@ -179,12 +152,6 @@ private fun glow(
     mix: Float,
     alpha: Float,
 ) = lerp(container, accent, mix).copy(alpha = alpha)
-
-/**
- * Nothing draws an outline: content components are set apart by their own colours on the two-tone
- * page, and the floating chrome by a tone of its own.
- */
-private val NoRim = BorderStroke(0.dp, Color.Transparent)
 
 private val DefaultTempoGlass =
     tempoGlass(

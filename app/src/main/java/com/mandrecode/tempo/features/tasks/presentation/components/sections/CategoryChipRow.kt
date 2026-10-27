@@ -59,8 +59,6 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.categoryChipSelected
@@ -284,11 +282,11 @@ private fun CategoryItem(
                             onSelectCategory()
                         }
                     },
-                ).glassSheen(chipShape),
+                ),
         shape = chipShape,
         color = containerColor,
         // Before glass (and with it off): a quiet outline on the unselected chips.
-        border = glassRim(),
+        border = null,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 16.dp),
@@ -486,10 +484,10 @@ private fun NewCategoryButton(onClick: () -> Unit) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onClick()
                     },
-                ).glassSheen(addShape),
+                ),
         shape = addShape,
         color = containerColor,
-        border = glassRim(),
+        border = null,
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

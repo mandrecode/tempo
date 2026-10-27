@@ -15,7 +15,6 @@ import androidx.compose.ui.res.stringResource
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.cardFrostColor
 import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
-import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
 import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
@@ -83,7 +82,7 @@ fun TempoConfirmDialog(
         dismissButton = {
             OutlinedButton(
                 colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
-                border = glassButtonBorder(),
+                border = null,
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onCancel()

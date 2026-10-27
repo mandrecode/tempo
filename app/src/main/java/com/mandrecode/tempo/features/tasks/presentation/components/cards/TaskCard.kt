@@ -74,8 +74,6 @@ import com.mandrecode.tempo.core.ui.components.CardGroupPosition
 import com.mandrecode.tempo.core.ui.components.cardFrostColor
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.core.ui.theme.cardTitle
@@ -270,10 +268,9 @@ fun TaskItem(
                 .graphicsLayer {
                     translationY = cardOffset.toPx()
                 }.semantics { selected = isSelected }
-                .scale(cardScale)
-                .glassSheen(cardShape),
+                .scale(cardScale),
         shape = cardShape,
-        border = glassRim(),
+        border = null,
         colors = CardDefaults.cardColors(containerColor = cardColor),
         elevation = glassCardElevation(),
     ) {

@@ -28,8 +28,6 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
 import com.mandrecode.tempo.core.domain.model.MonthDayOption
 import com.mandrecode.tempo.core.domain.model.Periodicity
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDateTime
 
@@ -150,7 +148,7 @@ private fun PillButton(
     val pillShape = RoundedCornerShape(PILL_CORNER_PERCENT)
     Surface(
         shape = pillShape,
-        border = glassRim(),
+        border = null,
         color =
             MaterialTheme.colorScheme.surfaceContainerHighest.let {
                 if (enabled) it else it.copy(alpha = DISABLED_ALPHA)
@@ -160,8 +158,7 @@ private fun PillButton(
                 .size(width = PILL_BUTTON_WIDTH, height = PILL_BUTTON_HEIGHT)
                 .minimumInteractiveComponentSize()
                 .clip(RoundedCornerShape(PILL_CORNER_PERCENT))
-                .clickable(enabled = enabled, onClick = onClick)
-                .glassSheen(pillShape),
+                .clickable(enabled = enabled, onClick = onClick),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

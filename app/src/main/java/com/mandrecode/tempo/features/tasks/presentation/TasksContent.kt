@@ -383,6 +383,10 @@ fun TasksContent(
                                         )
 
                                     item(key = "completed_separator") {
+                                        // A sectioned list always ends in its section controls (Add
+                                        // section, or the field naming a new one), so the separator
+                                        // follows them even when no task is active.
+                                        val followsContent = hasActiveTasks || sectionedList != null
                                         val firstGroupLabel =
                                             if (showDivider) {
                                                 resolveGroupLabel(completedEntries.firstOrNull()?.key)
@@ -396,12 +400,12 @@ fun TasksContent(
                                             },
                                             showDivider = showDivider,
                                             firstGroupLabel = firstGroupLabel,
-                                            isFirstVisibleItem = !hasActiveTasks,
+                                            isFirstVisibleItem = !followsContent,
                                             followsSectionControls = sectionedList != null,
                                             modifier =
                                                 Modifier
                                                     .animateItem()
-                                                    .groupSeparation(above = hasActiveTasks),
+                                                    .groupSeparation(above = followsContent),
                                         )
                                     }
 

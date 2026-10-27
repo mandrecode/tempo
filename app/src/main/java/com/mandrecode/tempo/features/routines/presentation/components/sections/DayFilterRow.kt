@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassRim
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDate
@@ -100,7 +99,6 @@ fun DayFilterRow(
                                 checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                                 checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ),
-                        border = if (isSelected) null else glassRim(),
                         interactionSource = interactionSource,
                         contentPadding = PaddingValues(0.dp),
                         modifier =

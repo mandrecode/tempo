@@ -2,7 +2,6 @@ package com.mandrecode.tempo.core.ui.components
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -23,7 +22,6 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.glass.glassRim
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 @Composable
@@ -65,8 +63,7 @@ fun SettingsButton(
                     // backdrop to blur, and a solid fill reads as a heavy disc on the header gradient.
                     // Pressed or selected it is a clean, solid colour.
                     .clip(shape)
-                    .background(colors.container)
-                    .border(glassRim(), shape),
+                    .background(colors.container),
         ) {
             Icon(
                 painter = painterResource(id = R.drawable.ic_settings),

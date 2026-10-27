@@ -23,8 +23,6 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.glass.glassCardColor
-import com.mandrecode.tempo.core.ui.glass.glassRim
-import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 
@@ -153,8 +151,8 @@ private fun ConceptCard(
     Card(
         colors = CardDefaults.cardColors(containerColor = glassCardColor(MaterialTheme.colorScheme.surfaceContainer)),
         elevation = glassCardElevation(),
-        border = glassRim(),
-        modifier = Modifier.fillMaxWidth().glassSheen(CardDefaults.shape),
+        border = null,
+        modifier = Modifier.fillMaxWidth(),
     ) {
         Row(
             modifier = Modifier.padding(if (compact) 12.dp else 16.dp),

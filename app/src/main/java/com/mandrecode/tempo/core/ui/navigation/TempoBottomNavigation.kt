@@ -27,7 +27,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -38,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.ui.adaptive.currentWindowWidthDp
 import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.outlinedIconRes
 import com.mandrecode.tempo.core.ui.selectedIconRes
@@ -442,7 +442,7 @@ private fun sessionSlotFor(
             isRailLayout = isRailLayout,
             isExpandedRail = isExpandedRail,
             hasContextualActions = hasContextualActions,
-            hasRoomForCountdown = LocalConfiguration.current.screenWidthDp >= SESSION_COUNTDOWN_ROOMY_WIDTH_DP,
+            hasRoomForCountdown = currentWindowWidthDp() >= SESSION_COUNTDOWN_ROOMY_WIDTH_DP,
         )
     return focusSessionSlot(session = session, compact = compact, onOpenSession = onOpenSession)
 }

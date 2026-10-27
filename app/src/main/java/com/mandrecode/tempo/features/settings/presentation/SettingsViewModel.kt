@@ -80,20 +80,23 @@ class SettingsViewModel
             )
 
         init {
-            observeAppearance()
+            observeThemeMode()
+            observeTempoColors()
             loadVersionInfo()
             observeTabPreferences()
             observeFocusPreferences()
             observePreferenceStores()
         }
 
-        /** Theme and colour scheme, mirrored from where they are stored. */
-        private fun observeAppearance() {
+        private fun observeThemeMode() {
             viewModelScope.launch {
                 themePreferencesRepository.getThemeMode().collect { mode ->
                     _uiState.update { it.copy(selectedThemeMode = mode) }
                 }
             }
+        }
+
+        private fun observeTempoColors() {
             viewModelScope.launch {
                 themePreferencesRepository.getUseTempoColors().collect { enabled ->
                     _uiState.update { it.copy(useTempoColors = enabled) }
@@ -141,9 +144,14 @@ class SettingsViewModel
 
         fun onEvent(event: SettingsContract.UiEvent) {
             when (event) {
-                is SettingsContract.UiEvent.ThemeModeSelected,
-                is SettingsContract.UiEvent.TempoColorsToggled,
-                -> onAppearanceEvent(event)
+                is SettingsContract.UiEvent.ThemeModeSelected -> {
+                    themePreferencesRepository.setThemeMode(event.mode)
+                }
+
+                is SettingsContract.UiEvent.TempoColorsToggled -> {
+                    themePreferencesRepository.setUseTempoColors(event.enabled)
+                    refreshQuickAddTaskWidget()
+                }
 
                 is SettingsContract.UiEvent.FocusSessionLengthChanged -> {
                     focusSessionRepository.setDefaultLengthMinutes(event.minutes)
@@ -201,18 +209,6 @@ class SettingsViewModel
                 is SettingsContract.UiEvent.ImportModeChosen,
                 is SettingsContract.UiEvent.BackupDialogDismissed,
                 -> backupDelegate.onEvent(event, backupHost)
-            }
-        }
-
-        /** Theme and colour scheme: the look of the app, each stored straight away. */
-        private fun onAppearanceEvent(event: SettingsContract.UiEvent) {
-            when (event) {
-                is SettingsContract.UiEvent.ThemeModeSelected -> themePreferencesRepository.setThemeMode(event.mode)
-                is SettingsContract.UiEvent.TempoColorsToggled -> {
-                    themePreferencesRepository.setUseTempoColors(event.enabled)
-                    refreshQuickAddTaskWidget()
-                }
-                else -> Unit
             }
         }
 
