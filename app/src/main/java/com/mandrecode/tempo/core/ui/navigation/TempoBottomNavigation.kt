@@ -27,6 +27,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -113,7 +115,10 @@ fun TempoBottomNavigation(
         )
     // Tapping the tab you are already on goes to that tab's home state (Tasks: the default
     // category, #452) rather than doing nothing.
+    // A light tick on every tap, the reselect too: it is a gesture with no visible change of tab.
+    val haptic = LocalHapticFeedback.current
     val onItemClick: (NavigationItem) -> Unit = { item ->
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         if (currentRoute == item.route) {
             onReselect(item.route)
         } else {
