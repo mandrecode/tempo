@@ -40,6 +40,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
@@ -356,6 +358,28 @@ internal fun HabitItem(
     }
 }
 
+/**
+ * The timeline's vertical line beside a card. [extendBelow] carries it across the gap to the next
+ * card, so the line runs unbroken down the day instead of stopping at each card's edge.
+ */
+@Composable
+internal fun TimelineRail(
+    color: Color?,
+    extendBelow: Dp,
+    modifier: Modifier = Modifier,
+) {
+    val lineColor = color?.copy(alpha = 0.3f) ?: MaterialTheme.colorScheme.outlineVariant
+    Box(
+        modifier =
+            modifier
+                .width(2.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    drawRect(lineColor, size = Size(size.width, size.height + extendBelow.toPx()))
+                },
+    )
+}
+
 @Composable
 fun HabitCard(
     habit: Habit,
@@ -366,6 +390,7 @@ fun HabitCard(
     onToggle: ((Long, Boolean) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    timelineExtension: Dp = 0.dp,
     isSelected: Boolean = false,
 ) {
     val dateStr = selectedDate.toString()
@@ -449,17 +474,7 @@ fun HabitCard(
                 }
             }
 
-            Box(
-                modifier =
-                    Modifier
-                        .width(2.dp)
-                        .fillMaxHeight()
-                        .background(
-                            color =
-                                resolvedHabitColor?.copy(alpha = 0.3f)
-                                    ?: MaterialTheme.colorScheme.outlineVariant,
-                        ),
-            )
+            TimelineRail(color = resolvedHabitColor, extendBelow = timelineExtension)
 
             Spacer(modifier = Modifier.width(16.dp))
         }
