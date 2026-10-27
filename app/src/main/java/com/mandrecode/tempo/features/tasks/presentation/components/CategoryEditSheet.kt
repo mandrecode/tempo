@@ -508,7 +508,7 @@ private fun CategorySectionsToggle(
         ) {
             Box(modifier = Modifier.size(44.dp), contentAlignment = Alignment.Center) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_list),
+                    painter = painterResource(R.drawable.ic_view_agenda),
                     contentDescription = null,
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.size(28.dp),

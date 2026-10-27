@@ -353,7 +353,7 @@ private fun TaskSectionSection(
 
     Spacer(modifier = Modifier.height(EDITOR_PROPERTY_ROW_GAP))
     EditorPropertyRow(
-        iconPainter = painterResource(R.drawable.ic_sort),
+        iconPainter = painterResource(R.drawable.ic_view_agenda),
         iconContentDescription = stringResource(R.string.section_label),
     ) {
         LazyRow(
