@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
@@ -51,6 +52,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.isSpecified
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.cardFrostColor
 import com.mandrecode.tempo.core.ui.components.glassCardElevation
@@ -73,7 +75,20 @@ import kotlin.time.Clock
 
 /** Where the chain's title sits in the card: the time beside it is centred on this line. */
 private val ChainTitleTopPadding = 14.dp
-private val ChainTitleLineHeight = 32.dp
+
+/**
+ * The height of the chain title's first line, from the text style rather than a fixed dp, so the
+ * time beside it stays centred on the title at any font scale.
+ */
+@Composable
+private fun chainTitleLineHeight(): Dp {
+    val lineHeight = MaterialTheme.typography.chainTitle.lineHeight
+    return with(LocalDensity.current) {
+        if (lineHeight.isSpecified) lineHeight.toDp() else DefaultChainTitleLineHeight
+    }
+}
+
+private val DefaultChainTitleLineHeight = 32.dp
 
 @Composable
 fun HabitChainCard(
@@ -190,7 +205,7 @@ fun HabitChainCard(
             TimelineTime(
                 timeLabel = timeLabel,
                 firstRowTop = ChainTitleTopPadding,
-                firstRowHeight = ChainTitleLineHeight,
+                firstRowHeight = chainTitleLineHeight(),
             )
 
             TimelineRail(extendBelow = timelineExtension)
