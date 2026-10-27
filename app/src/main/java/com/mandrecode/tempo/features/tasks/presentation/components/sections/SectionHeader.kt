@@ -30,11 +30,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -77,6 +79,8 @@ private val SectionNameMaxWidth = 220.dp
 
 /** The leading slot, as wide as the trailing menu button, so both ends of a header sit alike. */
 private val SectionEdgeSlot = 48.dp
+private val SectionActionSize = 40.dp
+private val SectionActionIconSize = 24.dp
 
 /**
  * The divider that introduces a section of a category (#61): collapse toggle, name and active-task
@@ -124,21 +128,24 @@ internal fun SectionHeader(
         if (isCollapsed && overdueCount > 0) {
             OverdueBadge(overdueCount)
         }
-        IconButton(onClick = onAddTask) {
-            Icon(
-                painter = painterResource(R.drawable.ic_add),
-                contentDescription = stringResource(R.string.section_add_task_cd, name),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(20.dp),
+        // Both actions at the same glyph size and in tighter 40dp targets, so they read as a pair.
+        CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides SectionActionSize) {
+            IconButton(onClick = onAddTask, modifier = Modifier.size(SectionActionSize)) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_add),
+                    contentDescription = stringResource(R.string.section_add_task_cd, name),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(SectionActionIconSize),
+                )
+            }
+            SectionMenu(
+                name = name,
+                onRename = onRename,
+                onReorderSections = onReorderSections,
+                onAddSectionBelow = onAddSectionBelow,
+                onDelete = onDelete,
             )
         }
-        SectionMenu(
-            name = name,
-            onRename = onRename,
-            onReorderSections = onReorderSections,
-            onAddSectionBelow = onAddSectionBelow,
-            onDelete = onDelete,
-        )
     }
 }
 
@@ -229,11 +236,12 @@ private fun SectionMenu(
         expanded = false
     }
     Box {
-        IconButton(onClick = { expanded = true }) {
+        IconButton(onClick = { expanded = true }, modifier = Modifier.size(SectionActionSize)) {
             Icon(
                 imageVector = Icons.Default.MoreVert,
                 contentDescription = stringResource(R.string.section_options_cd, name),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(SectionActionIconSize),
             )
         }
         DropdownMenu(

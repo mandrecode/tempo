@@ -1,5 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation.components.sections
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -134,7 +135,10 @@ private fun SectionReorderRow(
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (isDragged) colors.surfaceContainerHighest else colors.surfaceContainer,
+        // One step brighter than the sheet's own tint, and outlined: in the dark theme the plain
+        // container tones sit too close to the glass sheet for each card to read as a card.
+        color = if (isDragged) colors.surfaceContainerHighest else colors.surfaceContainerHigh,
+        border = BorderStroke(1.dp, if (isTarget) colors.primary else colors.outlineVariant),
         shadowElevation = if (isDragged) 6.dp else 0.dp,
         modifier =
             Modifier
