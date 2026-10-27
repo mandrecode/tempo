@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.1](https://github.com/mandrecode/tempo/compare/v1.16.0...v1.16.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* smooth the docked editor seams on large windows ([#459](https://github.com/mandrecode/tempo/issues/459)) ([8639229](https://github.com/mandrecode/tempo/commit/8639229bbd89b33834f5a1b6084da73779b6b31b))
+
 ## [1.16.0](https://github.com/mandrecode/tempo/compare/v1.15.0...v1.16.0) (2026-10-25)
 
 

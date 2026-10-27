@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,8 +42,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
@@ -50,8 +51,10 @@ import com.mandrecode.tempo.core.ui.components.SettingsButton
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 import com.mandrecode.tempo.features.focus.domain.repository.FocusSessionRepository
 
-internal fun floatingControlsMotionSpec() =
-    spring<Dp>(
+private val RailTitleMinFontSize = 16.sp
+
+internal fun <T> floatingControlsMotionSpec() =
+    spring<T>(
         dampingRatio = Spring.DampingRatioNoBouncy,
         stiffness = Spring.StiffnessMediumLow,
     )
@@ -201,16 +204,7 @@ private fun RailScrollableContent(
         horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,
     ) {
         if (isExpandedRail) {
-            Text(
-                text = stringResource(R.string.app_name),
-                style = MaterialTheme.typography.topBarTitle,
-                color = MaterialTheme.colorScheme.primary,
-                modifier =
-                    Modifier.padding(
-                        start = FloatingToolbarRailSurfacePadding,
-                        bottom = FloatingToolbarItemSpacing,
-                    ),
-            )
+            RailAppTitle()
             AnimatedVisibility(
                 visible = !settingsSelected && addAction != null,
                 enter = expandVertically(expandFrom = Alignment.Top) + fadeIn(),
@@ -246,6 +240,33 @@ private fun RailScrollableContent(
             expanded = isExpandedRail,
         )
     }
+}
+
+@Composable
+private fun RailAppTitle() {
+    // Bounded to the rail and shrunk to fit: a longer app name (the debug build's
+    // "Tempo (Debug)", or a translation) would otherwise run past the rail into the
+    // screen content, which starts only FloatingRailContentGap after it.
+    val titleStyle = MaterialTheme.typography.topBarTitle
+    Text(
+        text = stringResource(R.string.app_name),
+        style = titleStyle,
+        color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
+        autoSize =
+            TextAutoSize.StepBased(
+                minFontSize = RailTitleMinFontSize,
+                maxFontSize = titleStyle.fontSize,
+            ),
+        modifier =
+            Modifier
+                .width(FloatingRailExpandedSurfaceWidth)
+                .padding(
+                    start = FloatingToolbarRailSurfacePadding,
+                    end = FloatingToolbarRailSurfacePadding,
+                    bottom = FloatingToolbarItemSpacing,
+                ),
+    )
 }
 
 @Composable

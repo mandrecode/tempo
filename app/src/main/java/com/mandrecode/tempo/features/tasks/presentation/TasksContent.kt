@@ -48,10 +48,13 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
@@ -97,6 +100,7 @@ private const val COMPLETED_GROUP_FALLBACK_RANK = 2
 private const val DRAGGED_ITEM_ALPHA = 0.8f
 private const val TARGET_ITEM_ALPHA = 0.5f
 private val ContentBlockTopCornerRadius = 28.dp
+internal const val TASKS_CONTENT_BLOCK_TEST_TAG = "tasks_content_block"
 
 // Rough per-card height used to translate a drag distance into a number of slots. The list is
 // lazy, so measured heights aren't available for cards that haven't been composed yet.
@@ -109,7 +113,9 @@ fun TasksContent(
     modifier: Modifier = Modifier,
     onScrolledFromTopChange: (Boolean) -> Unit = {},
     selectedTaskId: Long? = null,
+    onContentBlockTopChange: (Dp) -> Unit = {},
 ) {
+    val density = LocalDensity.current
     val listState = rememberLazyListState()
     val currentOnScrolledFromTopChange by rememberUpdatedState(onScrolledFromTopChange)
     val listBottomPadding = floatingNavigationBottomClearancePadding(defaultPadding = 16.dp)
@@ -202,7 +208,13 @@ fun TasksContent(
             Column(
                 modifier = Modifier.fillMaxWidth(),
             ) {
+                // The header's height is where the rounded content block starts, which a docked editor pane
+                // beside this content lines its own surface up with (see DockedEditorPane).
                 CategoryChipRow(
+                    modifier =
+                        Modifier.onSizeChanged {
+                            onContentBlockTopChange(with(density) { it.height.toDp() })
+                        },
                     categories = uiState.categories,
                     counts = uiState.uncompletedTasksCounts,
                     selectedCategoryId = uiState.selectedCategoryId,
@@ -240,6 +252,7 @@ fun TasksContent(
                         Modifier
                             .weight(1f)
                             .fillMaxWidth()
+                            .testTag(TASKS_CONTENT_BLOCK_TEST_TAG)
                             // clip before background: background() alone doesn't clip children,
                             // so list overscroll/ripple effects would otherwise draw past the
                             // rounded top corners instead of respecting the seam.

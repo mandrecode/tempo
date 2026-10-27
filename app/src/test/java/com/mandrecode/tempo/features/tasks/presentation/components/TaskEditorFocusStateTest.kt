@@ -14,7 +14,7 @@ class TaskEditorFocusStateTest {
 
     @Test
     fun givenTitleFocused_thenTitleOwnsBack() {
-        val state = TaskEditorFocusState()
+        val state = keyboardOpenState()
 
         state.onTitleFocusChanged(true)
 
@@ -24,7 +24,7 @@ class TaskEditorFocusStateTest {
 
     @Test
     fun givenTitleToDescriptionHandoff_whenGainArrivesBeforeLoss_thenNeverPassesThroughNone() {
-        val state = TaskEditorFocusState()
+        val state = keyboardOpenState()
         state.onTitleFocusChanged(true)
 
         state.onDescriptionFocusChanged(true)
@@ -36,7 +36,7 @@ class TaskEditorFocusStateTest {
 
     @Test
     fun givenDescriptionToTitleHandoff_whenLossArrivesBeforeGain_thenEndsOnTitle() {
-        val state = TaskEditorFocusState()
+        val state = keyboardOpenState()
         state.onDescriptionFocusChanged(true)
 
         state.onDescriptionFocusChanged(false)
@@ -48,7 +48,7 @@ class TaskEditorFocusStateTest {
 
     @Test
     fun givenFocusedField_whenFocusIsCleared_thenBackIsReleased() {
-        val state = TaskEditorFocusState()
+        val state = keyboardOpenState()
         state.onDescriptionFocusChanged(true)
 
         state.onDescriptionFocusChanged(false)
@@ -56,4 +56,28 @@ class TaskEditorFocusStateTest {
         assertThat(state.focusedField).isEqualTo(TaskEditorField.None)
         assertThat(state.ownsBack).isFalse()
     }
+
+    @Test
+    fun givenFocusedField_whenKeyboardClosesOnItsOwn_thenBackIsReleasedButFocusIsKept() {
+        val state = keyboardOpenState()
+        state.onDescriptionFocusChanged(true)
+
+        state.onKeyboardVisibilityChanged(false)
+
+        assertThat(state.focusedField).isEqualTo(TaskEditorField.Description)
+        assertThat(state.ownsBack).isFalse()
+    }
+
+    @Test
+    fun givenFocusedField_whenKeyboardReopens_thenBackIsOwnedAgain() {
+        val state = TaskEditorFocusState()
+        state.onTitleFocusChanged(true)
+        assertThat(state.ownsBack).isFalse()
+
+        state.onKeyboardVisibilityChanged(true)
+
+        assertThat(state.ownsBack).isTrue()
+    }
+
+    private fun keyboardOpenState() = TaskEditorFocusState().apply { onKeyboardVisibilityChanged(true) }
 }

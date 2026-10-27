@@ -23,6 +23,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.movableContentOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -58,17 +59,19 @@ internal val SnackbarRailBottomPadding = 20.dp
 
 /**
  * Lays out top-level screen content adaptively: reserves [railClearance] for the floating rail
- * and caps content at a readable width,
- * centered in the remaining space, on wide windows. Obtain the clearance for the current window
- * from [floatingRailContentClearance].
+ * and caps content at a readable width on wide windows, placed in the remaining space by
+ * [horizontalBias] (-1 start, 0 centred, 1 end). Obtain the clearance for the current window
+ * from [floatingRailContentClearance], and the bias beside a docked editor from
+ * [animatedDockedContentBias].
  */
 fun Modifier.adaptiveScreenContentLayout(
     railClearance: Dp,
+    horizontalBias: Float = 0f,
     maxContentWidth: Dp = ReadableContentMaxWidth,
 ): Modifier =
     padding(start = railClearance)
         .fillMaxWidth()
-        .wrapContentWidth(Alignment.CenterHorizontally)
+        .wrapContentWidth(BiasAlignment.Horizontal(horizontalBias))
         .widthIn(max = maxContentWidth)
 
 /**
