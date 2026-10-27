@@ -38,7 +38,7 @@ internal fun BackupSection(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     SettingsSection(title = stringResource(R.string.settings_backup)) {
-        Column {
+        item {
             SettingsItem(
                 icon = R.drawable.ic_file_upload,
                 title = stringResource(R.string.backup_export_title),
@@ -46,7 +46,8 @@ internal fun BackupSection(
                 trailingIcon = R.drawable.ic_chevron_right,
                 onClick = { onEvent(SettingsContract.UiEvent.ExportClicked) },
             )
-            SettingsItemDivider()
+        }
+        item {
             SettingsItem(
                 icon = R.drawable.ic_file_download,
                 title = stringResource(R.string.backup_import_title),

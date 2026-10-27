@@ -1,11 +1,5 @@
 package com.mandrecode.tempo.features.settings.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,7 +34,7 @@ internal fun RemindersSection(
     val catchUpTime = uiState.missedReminderCatchUpTime
 
     SettingsSection(title = stringResource(R.string.settings_reminders)) {
-        Column {
+        item {
             SettingsSwitchItem(
                 icon = R.drawable.ic_reminder,
                 title = stringResource(R.string.settings_repeat_missed_reminders),
@@ -49,19 +43,12 @@ internal fun RemindersSection(
                     onEvent(SettingsContract.UiEvent.MissedReminderCatchUpToggled(it))
                 },
             )
-            AnimatedVisibility(
-                visible = uiState.missedReminderCatchUpEnabled,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                Column {
-                    SettingsItemDivider()
-                    CatchUpTimeItem(
-                        time = catchUpTime,
-                        onClick = { showTimePicker = true },
-                    )
-                }
-            }
+        }
+        item(visible = uiState.missedReminderCatchUpEnabled) {
+            CatchUpTimeItem(
+                time = catchUpTime,
+                onClick = { showTimePicker = true },
+            )
         }
     }
 

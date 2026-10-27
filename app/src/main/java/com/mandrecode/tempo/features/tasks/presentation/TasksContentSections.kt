@@ -47,11 +47,14 @@ internal fun LazyListScope.sectionedTaskItems(
     }
     sectionTasks(list.unsectioned, sectionId = null, dragState, onEvent, taskRow)
 
-    list.sections.forEach { sectionUi ->
+    list.sections.forEachIndexed { index, sectionUi ->
         val section = sectionUi.section
         val isCollapsed = section.id in collapsedSectionIds
+        // Room above a header that follows cards; the first item keeps the list's top inset.
+        val separatedAbove = index > 0 || list.unsectioned.isNotEmpty()
         val header: @Composable LazyItemScope.() -> Unit = {
-            SectionHeaderItem(sectionUi, isCollapsed, editState, onEvent, dragState, Modifier.animateItem())
+            val spaced = Modifier.animateItem().groupSeparation(above = separatedAbove)
+            SectionHeaderItem(sectionUi, isCollapsed, editState, onEvent, dragState, spaced)
         }
         if (useStickyHeaders) {
             stickyHeader(key = sectionHeaderKey(section.id), contentType = "section_header") { header() }
@@ -91,7 +94,7 @@ internal fun LazyListScope.sectionedTaskItems(
         item(key = "section_add", contentType = "section_add") {
             AddSectionButton(
                 onClick = { editState.newSectionDraft = NewSectionDraft.AtEnd },
-                modifier = Modifier.animateItem(),
+                modifier = Modifier.animateItem().padding(top = GroupSeparation),
             )
         }
     }

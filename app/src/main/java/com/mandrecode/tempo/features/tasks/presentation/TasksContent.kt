@@ -64,6 +64,8 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.adaptive.WindowWidthClass
 import com.mandrecode.tempo.core.ui.adaptive.currentWindowWidthClass
+import com.mandrecode.tempo.core.ui.components.CardGroupPosition
+import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
@@ -182,6 +184,18 @@ fun TasksContent(
         val isTwoColumn = !sectionedList?.sections.isNullOrEmpty() && maxWidth >= TwoColumnSectionsMinWidth
         // The card the one-column list and the two-column grid share; [gestures] carries the
         // cross-section drag, otherwise the tied-run reorder applies.
+        // Each card's place in its connected run: per section, per header group, or the whole list.
+        val groupPositions =
+            remember(sectionedList, activeTaskGroups, completedTaskGroups, uiState.sortOption) {
+                listCardGroupPositions(
+                    sectioned = sectionedList,
+                    activeRuns = sortedActiveEntries(activeTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
+                    separateActiveRuns = uiState.sortOption.hasActiveGroupHeaders,
+                    completedRuns =
+                        sortedCompletedEntries(completedTaskGroups, uiState.sortOption).map { (_, tasks) -> tasks },
+                    separateCompletedRuns = uiState.sortOption.hasCompletedGroupHeaders,
+                )
+            }
         val taskCard: @Composable (Task, Modifier?, Modifier) -> Unit = { task, gestures, base ->
             val taskSubtasks = subtasksMap[task.id] ?: persistentListOf()
             TaskListItem(
@@ -190,6 +204,7 @@ fun TasksContent(
                 isSubtasksExpanded = task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
                 isSelected = task.id == selectedTaskId,
                 onEvent = onRowEvent,
+                groupPosition = groupPositions[task.id] ?: CardGroupPosition.SINGLE,
                 modifier =
                     base
                         .then(gestures ?: Modifier)
@@ -317,7 +332,9 @@ fun TasksContent(
                                         top = 16.dp,
                                         bottom = listBottomPadding,
                                     ),
-                                verticalArrangement = Arrangement.spacedBy(8.dp),
+                                // The seam between the cards of a connected run; headers and other
+                                // rows add their own room (GroupSeparation).
+                                verticalArrangement = Arrangement.spacedBy(ConnectedCardGap),
                                 modifier = Modifier.fillMaxSize(),
                             ) {
                                 val taskRow: @Composable LazyItemScope.(Task, Modifier?) -> Unit = { task, gestures ->
@@ -340,9 +357,7 @@ fun TasksContent(
                                             groups = activeTaskGroups,
                                             sortOption = uiState.sortOption,
                                         )
-                                    val showActiveHeaders =
-                                        uiState.sortOption == SortOption.BY_DATE ||
-                                            uiState.sortOption == SortOption.BY_PRIORITY
+                                    val showActiveHeaders = uiState.sortOption.hasActiveGroupHeaders
 
                                     activeEntries.forEachIndexed { groupIndex, (key, tasksForGroup) ->
                                         if (showActiveHeaders) {
@@ -350,7 +365,10 @@ fun TasksContent(
                                                 ActiveGroupHeader(
                                                     label = resolveActiveGroupLabel(key),
                                                     isFirst = groupIndex == 0,
-                                                    modifier = Modifier.animateItem(),
+                                                    modifier =
+                                                        Modifier
+                                                            .animateItem()
+                                                            .groupSeparation(above = groupIndex > 0),
                                                 )
                                             }
                                         }
@@ -367,8 +385,7 @@ fun TasksContent(
 
                                 if (hasCompletedTasks) {
                                     val sortOption = uiState.sortOption
-                                    val showDivider =
-                                        sortOption != SortOption.MANUAL
+                                    val showDivider = sortOption.hasCompletedGroupHeaders
                                     val completedEntries =
                                         sortedCompletedEntries(
                                             groups = completedTaskGroups,
@@ -390,7 +407,10 @@ fun TasksContent(
                                             showDivider = showDivider,
                                             firstGroupLabel = firstGroupLabel,
                                             isFirstVisibleItem = !hasActiveTasks,
-                                            modifier = Modifier.animateItem(),
+                                            modifier =
+                                                Modifier
+                                                    .animateItem()
+                                                    .groupSeparation(above = hasActiveTasks),
                                         )
                                     }
 
@@ -401,7 +421,10 @@ fun TasksContent(
                                                 item(key = "group_header_${key.stableKey}") {
                                                     CompletedGroupHeader(
                                                         label = resolveGroupLabel(key),
-                                                        modifier = Modifier.animateItem(),
+                                                        modifier =
+                                                            Modifier
+                                                                .animateItem()
+                                                                .groupSeparation(above = true),
                                                     )
                                                 }
                                             }
@@ -420,6 +443,8 @@ fun TasksContent(
                                                         task.id in uiState.expandedTaskIds || taskSubtasks.isEmpty(),
                                                     isSelected = task.id == selectedTaskId,
                                                     onEvent = onRowEvent,
+                                                    groupPosition =
+                                                        groupPositions[task.id] ?: CardGroupPosition.SINGLE,
                                                     modifier = Modifier.animateItem(),
                                                 )
                                             }
@@ -432,7 +457,7 @@ fun TasksContent(
                                                 onClick = {
                                                     onEvent(TasksContract.UiEvent.RequestDeleteCompletedTasks)
                                                 },
-                                                modifier = Modifier.animateItem(),
+                                                modifier = Modifier.animateItem().padding(top = GroupSeparation),
                                             )
                                         }
                                     }
@@ -464,6 +489,7 @@ internal fun TaskListItem(
     isSelected: Boolean,
     onEvent: (TasksContract.UiEvent) -> Unit,
     modifier: Modifier = Modifier,
+    groupPosition: CardGroupPosition = CardGroupPosition.SINGLE,
 ) {
     val onToggleSubtasksExpansion =
         remember(task.id) {
@@ -488,6 +514,7 @@ internal fun TaskListItem(
         },
         subtasks = subtasks,
         isSubtasksExpanded = isSubtasksExpanded,
+        groupPosition = groupPosition,
         modifier = modifier,
     )
 }

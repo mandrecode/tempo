@@ -1,6 +1,5 @@
 package com.mandrecode.tempo.features.settings.presentation
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,7 +36,7 @@ internal fun FocusSection(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     SettingsSection(title = stringResource(R.string.settings_focus)) {
-        Column {
+        item {
             DurationItem(
                 icon = R.drawable.ic_timer,
                 title = stringResource(R.string.focus_session_length),
@@ -45,7 +44,8 @@ internal fun FocusSection(
                 maxMinutes = FocusSession.SESSION_LENGTH_RANGE.last,
                 onChange = { onEvent(SettingsContract.UiEvent.FocusSessionLengthChanged(it)) },
             )
-            SettingsItemDivider()
+        }
+        item {
             DurationItem(
                 icon = R.drawable.ic_coffee,
                 title = stringResource(R.string.focus_break_length),

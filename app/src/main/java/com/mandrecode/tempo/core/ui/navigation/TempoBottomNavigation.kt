@@ -1,14 +1,22 @@
 package com.mandrecode.tempo.core.ui.navigation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
@@ -28,6 +39,7 @@ import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepositor
 import com.mandrecode.tempo.core.domain.model.TempoTab
 import com.mandrecode.tempo.core.ui.outlinedIconRes
 import com.mandrecode.tempo.core.ui.selectedIconRes
+import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.core.ui.titleRes
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -221,6 +233,7 @@ private fun BottomBarPill(
                     item = item,
                     selected = selected,
                     onClick = { onItemClick(item) },
+                    expandsWhenSelected = true,
                 )
             }
         }
@@ -242,46 +255,94 @@ private fun navigateTo(
  * A [Surface] rather than an icon button so it can carry the same press treatment as everything
  * else in the bar: the corners pull in while held and settle back on release. The session chip has
  * always done this, and a tab that stayed rigid beside it read as the odd one out.
+ *
+ * The selected tab is filled with the primary colour. On the bottom bar ([expandsWhenSelected]) it
+ * also widens to show its name, the Material 3 Expressive navigation item: switching tabs,
+ * one pill grows while the other shrinks back to an icon. A narrow rail has no width to grow into,
+ * so there the selected tab stays an icon.
  */
 @Composable
 private fun ToolbarNavigationButton(
     item: NavigationItem,
     selected: Boolean,
     onClick: () -> Unit,
+    expandsWhenSelected: Boolean = false,
 ) {
     val (interactionSource, cornerRadius) =
         rememberPressableButtonAnimation(
             baseRadius = FloatingToolbarItemSize / 2,
             pressedRadius = FloatingToolbarPressedRadius,
         )
+    val colors = navigationItemColors(selected)
+    val title = stringResource(item.titleRes)
 
     Surface(
         onClick = onClick,
-        modifier = Modifier.size(FloatingToolbarItemSize),
+        modifier = Modifier.height(FloatingToolbarItemSize).widthIn(min = FloatingToolbarItemSize),
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
-        color =
-            if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                Color.Transparent
-            },
-        contentColor =
-            if (selected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+        color = colors.container,
+        contentColor = colors.content,
     ) {
-        Box(contentAlignment = Alignment.Center) {
+        Row(
+            modifier = Modifier.padding(horizontal = NavigationItemIconInset),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
             Icon(
                 painter =
                     painterResource(id = if (selected) item.selectedIcon else item.unselectedIcon),
-                contentDescription = stringResource(item.titleRes),
+                contentDescription = title,
             )
+            AnimatedVisibility(
+                visible = selected && expandsWhenSelected,
+                enter = expandHorizontally(NavigationLabelSpring) + fadeIn(),
+                exit = shrinkHorizontally(NavigationLabelSpring) + fadeOut(),
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    // The icon already says the name to TalkBack; reading it twice would be noise.
+                    modifier =
+                        Modifier
+                            .padding(start = NavigationLabelGap, end = NavigationLabelTrailing)
+                            .clearAndSetSemantics {},
+                )
+            }
         }
     }
 }
+
+/** The fill and content colours of a navigation item, eased between the two states. */
+@Composable
+private fun navigationItemColors(selected: Boolean): NavigationItemColors {
+    val container by animateColorAsState(
+        targetValue = if (selected) MaterialTheme.colorScheme.primary else Color.Transparent,
+        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
+        label = "navigationItemContainer",
+    )
+    val content by animateColorAsState(
+        targetValue =
+            if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+        animationSpec = tween(TempoMotionTokens.DURATION_STANDARD_MILLIS),
+        label = "navigationItemContent",
+    )
+    return NavigationItemColors(container, content)
+}
+
+private data class NavigationItemColors(
+    val container: Color,
+    val content: Color,
+)
+
+/** Centres the 24dp icon in the item, and keeps that inset when the label opens beside it. */
+private val NavigationItemIconInset = (FloatingToolbarItemSize - 24.dp) / 2
+private val NavigationLabelGap = 8.dp
+private val NavigationLabelTrailing = 4.dp
+private val NavigationLabelSpring =
+    spring<IntSize>(dampingRatio = Spring.DampingRatioLowBouncy, stiffness = Spring.StiffnessMediumLow)
 
 @Composable
 private fun ExpandedRailNavigationRow(
@@ -301,6 +362,7 @@ private fun ExpandedRailNavigationRow(
             baseRadius = FloatingToolbarItemSize / 2,
             pressedRadius = FloatingToolbarPressedRadius,
         )
+    val colors = navigationItemColors(selected)
 
     Surface(
         onClick = onClick,
@@ -310,18 +372,8 @@ private fun ExpandedRailNavigationRow(
                 .height(FloatingToolbarItemSize),
         interactionSource = interactionSource,
         shape = RoundedCornerShape(cornerRadius.value),
-        color =
-            if (selected) {
-                MaterialTheme.colorScheme.secondaryContainer
-            } else {
-                Color.Transparent
-            },
-        contentColor =
-            if (selected) {
-                MaterialTheme.colorScheme.onSecondaryContainer
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
+        color = colors.container,
+        contentColor = colors.content,
     ) {
         Row(
             modifier = Modifier.padding(horizontal = MaterialTheme.spacing.default),

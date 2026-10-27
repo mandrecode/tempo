@@ -1,5 +1,10 @@
 package com.mandrecode.tempo.features.settings.presentation
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,19 +14,23 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,14 +39,24 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.components.CardGroupPosition
+import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.theme.settingsSectionTitle
 
+/**
+ * A titled settings section: its items stand as one connected group of cards, rounded
+ * at the group's two ends and joined tightly in between, the way the Tasks list groups its cards.
+ *
+ * Items are declared with [SettingsGroupScope.item]; one that is not [visible][SettingsGroupScope.item]
+ * folds away with its seam, and the group around it re-rounds to its new ends.
+ */
 @Composable
 internal fun SettingsSection(
     title: String,
     modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
+    content: SettingsGroupScope.() -> Unit,
 ) {
+    val items = SettingsGroupScope().apply(content).items
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -47,9 +66,76 @@ internal fun SettingsSection(
             style = MaterialTheme.typography.settingsSectionTitle,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        Column(modifier = Modifier.fillMaxWidth()) {
+            settingsGroupPositions(items.map { it.visible }).forEachIndexed { index, position ->
+                key(index) {
+                    SettingsGroupPiece(
+                        visible = items[index].visible,
+                        position = position,
+                        // The seam belongs to the piece below it, so it folds away with that piece.
+                        // It only exists when a visible piece stands above; the first one has none.
+                        hasSeamAbove =
+                            position != null &&
+                                position != CardGroupPosition.SINGLE &&
+                                position != CardGroupPosition.FIRST,
+                        content = items[index].content,
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Each item's place in the group, null while it is hidden. Hidden items don't count: the visible
+ * ones form the run, so the group re-rounds to its new ends.
+ */
+internal fun settingsGroupPositions(visible: List<Boolean>): List<CardGroupPosition?> {
+    val visibleCount = visible.count { it }
+    var visibleIndex = 0
+    return visible.map { if (it) CardGroupPosition.of(visibleIndex++, visibleCount) else null }
+}
+
+/** Collects a [SettingsSection]'s items. */
+internal class SettingsGroupScope {
+    internal val items = mutableListOf<SettingsGroupItem>()
+
+    /** One piece of the group; [visible] false folds it away (with an expand/shrink). */
+    fun item(
+        visible: Boolean = true,
+        content: @Composable () -> Unit,
+    ) {
+        items += SettingsGroupItem(visible, content)
+    }
+}
+
+internal class SettingsGroupItem(
+    val visible: Boolean,
+    val content: @Composable () -> Unit,
+)
+
+@Composable
+private fun SettingsGroupPiece(
+    visible: Boolean,
+    position: CardGroupPosition?,
+    hasSeamAbove: Boolean,
+    content: @Composable () -> Unit,
+) {
+    // A piece on its way out keeps the shape it had, rather than snapping square as it shrinks.
+    var shownPosition by remember { mutableStateOf(position ?: CardGroupPosition.SINGLE) }
+    if (position != null) shownPosition = position
+    val shape = shownPosition.animatedShape(SettingsCardRadius)
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically(),
+        exit = fadeOut() + shrinkVertically(),
+    ) {
         Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(28.dp),
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = if (hasSeamAbove) ConnectedCardGap else 0.dp),
+            shape = shape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
         ) {
@@ -57,6 +143,8 @@ internal fun SettingsSection(
         }
     }
 }
+
+private val SettingsCardRadius = 24.dp
 
 @Composable
 internal fun SettingsItem(
@@ -71,6 +159,7 @@ internal fun SettingsItem(
         modifier =
             modifier
                 .fillMaxWidth()
+                .heightIn(min = SettingsRowMinHeight)
                 .clickable(onClick = onClick)
                 .padding(SettingsItemPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -116,6 +205,7 @@ internal fun SettingsSwitchItem(
         modifier =
             modifier
                 .fillMaxWidth()
+                .heightIn(min = SettingsRowMinHeight)
                 .padding(SettingsItemPadding),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -135,16 +225,13 @@ internal fun SettingsSwitchItem(
     }
 }
 
-internal val SettingsItemPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp)
-internal val SettingsSectionContentPadding = PaddingValues(horizontal = 12.dp, vertical = 16.dp)
-
-@Composable
-internal fun SettingsItemDivider(modifier: Modifier = Modifier) {
-    HorizontalDivider(
-        modifier = modifier.padding(start = 76.dp, end = 16.dp),
-        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.65f),
-    )
-}
+/**
+ * Rows sized like Android's own Settings: at least [SettingsRowMinHeight] tall, whether they hold
+ * one line beside a switch or a title over a summary, with room above and below rather than around.
+ */
+internal val SettingsItemPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp)
+internal val SettingsRowMinHeight = 72.dp
+internal val SettingsSectionContentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp)
 
 @Composable
 internal fun ColorDot(
@@ -163,14 +250,14 @@ internal fun ColorDot(
 @Composable
 internal fun SettingsIcon(icon: Int) {
     Box(
-        modifier = Modifier.size(44.dp),
+        modifier = Modifier.size(40.dp),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(id = icon),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(28.dp),
+            modifier = Modifier.size(24.dp),
         )
     }
 }

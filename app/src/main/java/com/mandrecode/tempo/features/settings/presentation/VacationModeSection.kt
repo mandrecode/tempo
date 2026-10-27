@@ -1,11 +1,5 @@
 package com.mandrecode.tempo.features.settings.presentation
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -52,7 +46,7 @@ internal fun VacationModeSection(
     var showDatePicker by remember { mutableStateOf(false) }
 
     SettingsSection(title = stringResource(R.string.settings_vacation_mode)) {
-        Column {
+        item {
             SettingsSwitchItem(
                 icon = R.drawable.ic_beach_access,
                 title = stringResource(R.string.settings_vacation_mode_pause_habits),
@@ -61,22 +55,15 @@ internal fun VacationModeSection(
                     onEvent(SettingsContract.UiEvent.VacationModeToggled(it))
                 },
             )
-            AnimatedVisibility(
-                visible = uiState.vacationModeActive,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                Column {
-                    SettingsItemDivider()
-                    VacationEndDateItem(
-                        endDate = uiState.vacationEndDate,
-                        onClick = { showDatePicker = true },
-                        onClear = {
-                            onEvent(SettingsContract.UiEvent.VacationEndDateChanged(null))
-                        },
-                    )
-                }
-            }
+        }
+        item(visible = uiState.vacationModeActive) {
+            VacationEndDateItem(
+                endDate = uiState.vacationEndDate,
+                onClick = { showDatePicker = true },
+                onClear = {
+                    onEvent(SettingsContract.UiEvent.VacationEndDateChanged(null))
+                },
+            )
         }
     }
 

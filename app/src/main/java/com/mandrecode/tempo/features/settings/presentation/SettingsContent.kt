@@ -88,45 +88,47 @@ internal fun ThemeSection(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     SettingsSection(title = stringResource(R.string.theme)) {
-        Column(
-            modifier = Modifier.padding(SettingsSectionContentPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+        item {
+            Column(
+                modifier = Modifier.padding(SettingsSectionContentPadding),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                uiState.availableThemeModes.forEachIndexed { index, themeMode ->
-                    ExpressiveChip(
-                        label = themeMode.label(),
-                        isSelected = uiState.selectedThemeMode == themeMode,
-                        onClick = { onEvent(SettingsContract.UiEvent.ThemeModeSelected(themeMode)) },
-                        isFirst = index == 0,
-                        isLast = index == uiState.availableThemeModes.size - 1,
-                        modifier = Modifier.weight(1f),
-                        height = 48.dp,
-                        horizontalPadding = 8.dp,
-                        icon = {
-                            Icon(
-                                painter = painterResource(themeMode.iconRes()),
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        },
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
+                ) {
+                    uiState.availableThemeModes.forEachIndexed { index, themeMode ->
+                        ExpressiveChip(
+                            label = themeMode.label(),
+                            isSelected = uiState.selectedThemeMode == themeMode,
+                            onClick = { onEvent(SettingsContract.UiEvent.ThemeModeSelected(themeMode)) },
+                            isFirst = index == 0,
+                            isLast = index == uiState.availableThemeModes.size - 1,
+                            modifier = Modifier.weight(1f),
+                            height = 48.dp,
+                            horizontalPadding = 8.dp,
+                            icon = {
+                                Icon(
+                                    painter = painterResource(themeMode.iconRes()),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp),
+                                )
+                            },
+                        )
+                    }
+                }
+                AnimatedVisibility(
+                    visible = uiState.selectedThemeMode == ThemeMode.SYSTEM,
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically(),
+                ) {
+                    Text(
+                        text = stringResource(R.string.theme_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 4.dp),
                     )
                 }
-            }
-            AnimatedVisibility(
-                visible = uiState.selectedThemeMode == ThemeMode.SYSTEM,
-                enter = fadeIn() + expandVertically(),
-                exit = fadeOut() + shrinkVertically(),
-            ) {
-                Text(
-                    text = stringResource(R.string.theme_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                )
             }
         }
     }
@@ -151,40 +153,42 @@ internal fun ColorSchemeSection(
     val tempoDotColor = remember(isDarkTheme) { if (isDarkTheme) TempoDarkPrimary else TempoLightPrimary }
 
     SettingsSection(title = stringResource(R.string.settings_color_scheme)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            ExpressiveChip(
-                label = stringResource(R.string.settings_color_scheme_dynamic),
-                isSelected = !uiState.useTempoColors,
-                onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(false)) },
-                isFirst = true,
-                isLast = false,
-                modifier = Modifier.weight(1f),
-                height = 48.dp,
-                horizontalPadding = 8.dp,
-                icon = {
-                    ColorDot(
-                        color = if (!uiState.useTempoColors) LocalContentColor.current else dynamicDotColor,
-                    )
-                },
-            )
-            ExpressiveChip(
-                label = stringResource(R.string.settings_color_scheme_tempo),
-                isSelected = uiState.useTempoColors,
-                onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(true)) },
-                isFirst = false,
-                isLast = true,
-                modifier = Modifier.weight(1f),
-                height = 48.dp,
-                horizontalPadding = 8.dp,
-                icon = {
-                    ColorDot(
-                        color = if (uiState.useTempoColors) LocalContentColor.current else tempoDotColor,
-                    )
-                },
-            )
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                ExpressiveChip(
+                    label = stringResource(R.string.settings_color_scheme_dynamic),
+                    isSelected = !uiState.useTempoColors,
+                    onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(false)) },
+                    isFirst = true,
+                    isLast = false,
+                    modifier = Modifier.weight(1f),
+                    height = 48.dp,
+                    horizontalPadding = 8.dp,
+                    icon = {
+                        ColorDot(
+                            color = if (!uiState.useTempoColors) LocalContentColor.current else dynamicDotColor,
+                        )
+                    },
+                )
+                ExpressiveChip(
+                    label = stringResource(R.string.settings_color_scheme_tempo),
+                    isSelected = uiState.useTempoColors,
+                    onClick = { onEvent(SettingsContract.UiEvent.TempoColorsToggled(true)) },
+                    isFirst = false,
+                    isLast = true,
+                    modifier = Modifier.weight(1f),
+                    height = 48.dp,
+                    horizontalPadding = 8.dp,
+                    icon = {
+                        ColorDot(
+                            color = if (uiState.useTempoColors) LocalContentColor.current else tempoDotColor,
+                        )
+                    },
+                )
+            }
         }
     }
 }
@@ -193,13 +197,15 @@ internal fun ColorSchemeSection(
 private fun NotificationsSection() {
     val context = LocalContext.current
     SettingsSection(title = stringResource(R.string.settings_notifications)) {
-        SettingsItem(
-            icon = R.drawable.ic_notifications,
-            title = stringResource(R.string.settings_notifications_subtitle),
-            subtitle = stringResource(R.string.settings_notifications_description),
-            trailingIcon = R.drawable.ic_open_in_new,
-            onClick = { openNotificationSettings(context) },
-        )
+        item {
+            SettingsItem(
+                icon = R.drawable.ic_notifications,
+                title = stringResource(R.string.settings_notifications_subtitle),
+                subtitle = stringResource(R.string.settings_notifications_description),
+                trailingIcon = R.drawable.ic_open_in_new,
+                onClick = { openNotificationSettings(context) },
+            )
+        }
     }
 }
 
@@ -209,11 +215,8 @@ internal fun TabsAndNavigationSection(
     onEvent: (SettingsContract.UiEvent) -> Unit,
 ) {
     SettingsSection(title = stringResource(R.string.tabs_and_navigation)) {
-        Column {
-            TempoTab.entries.forEachIndexed { index, tab ->
-                if (index > 0) {
-                    SettingsItemDivider()
-                }
+        TempoTab.entries.forEach { tab ->
+            item {
                 SettingsSwitchItem(
                     icon = tab.outlinedIconRes,
                     title = stringResource(tab.titleRes),
@@ -235,28 +238,30 @@ internal fun DefaultTabSection(
     if (selectableTabs.size < 2) return
 
     SettingsSection(title = stringResource(R.string.default_tab)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-        ) {
-            selectableTabs.forEachIndexed { index, tab ->
-                ExpressiveChip(
-                    label = stringResource(tab.titleRes),
-                    isSelected = uiState.defaultTab == tab,
-                    onClick = { onEvent(SettingsContract.UiEvent.DefaultTabSelected(tab)) },
-                    isFirst = index == 0,
-                    isLast = index == selectableTabs.lastIndex,
-                    modifier = Modifier.weight(1f),
-                    height = 48.dp,
-                    horizontalPadding = 8.dp,
-                    icon = {
-                        Icon(
-                            painter = painterResource(tab.outlinedIconRes),
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    },
-                )
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(SettingsSectionContentPadding),
+                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                selectableTabs.forEachIndexed { index, tab ->
+                    ExpressiveChip(
+                        label = stringResource(tab.titleRes),
+                        isSelected = uiState.defaultTab == tab,
+                        onClick = { onEvent(SettingsContract.UiEvent.DefaultTabSelected(tab)) },
+                        isFirst = index == 0,
+                        isLast = index == selectableTabs.lastIndex,
+                        modifier = Modifier.weight(1f),
+                        height = 48.dp,
+                        horizontalPadding = 8.dp,
+                        icon = {
+                            Icon(
+                                painter = painterResource(tab.outlinedIconRes),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        },
+                    )
+                }
             }
         }
     }
@@ -269,13 +274,15 @@ private fun LanguageSection() {
     val languageName = currentLocale.getDisplayName(currentLocale).replaceFirstChar { it.titlecase(currentLocale) }
 
     SettingsSection(title = stringResource(R.string.settings_language)) {
-        SettingsItem(
-            icon = R.drawable.ic_language,
-            title = stringResource(R.string.settings_language_subtitle),
-            subtitle = languageName,
-            trailingIcon = R.drawable.ic_open_in_new,
-            onClick = { openLanguageSettings(context) },
-        )
+        item {
+            SettingsItem(
+                icon = R.drawable.ic_language,
+                title = stringResource(R.string.settings_language_subtitle),
+                subtitle = languageName,
+                trailingIcon = R.drawable.ic_open_in_new,
+                onClick = { openLanguageSettings(context) },
+            )
+        }
     }
 }
 
@@ -287,7 +294,7 @@ private fun AboutSection(
     val context = LocalContext.current
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         SettingsSection(title = stringResource(R.string.about)) {
-            Column {
+            item {
                 SettingsItem(
                     icon = R.drawable.ic_info,
                     title = stringResource(R.string.view_onboarding),
@@ -295,7 +302,8 @@ private fun AboutSection(
                     trailingIcon = R.drawable.ic_chevron_right,
                     onClick = onOnboardingClick,
                 )
-                SettingsItemDivider()
+            }
+            item {
                 SettingsItem(
                     icon = R.drawable.ic_star,
                     title = stringResource(R.string.review_app),
@@ -303,7 +311,8 @@ private fun AboutSection(
                     trailingIcon = R.drawable.ic_chevron_right,
                     onClick = { openReview(context) },
                 )
-                SettingsItemDivider()
+            }
+            item {
                 SettingsItem(
                     icon = R.drawable.ic_feedback,
                     title = stringResource(R.string.send_feedback),
@@ -311,7 +320,8 @@ private fun AboutSection(
                     trailingIcon = R.drawable.ic_chevron_right,
                     onClick = { openFeedback(context, appVersion) },
                 )
-                SettingsItemDivider()
+            }
+            item {
                 SettingsItem(
                     icon = R.drawable.ic_code,
                     title = stringResource(R.string.source_code),

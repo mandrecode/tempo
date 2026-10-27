@@ -577,8 +577,8 @@
     <string name="onboarding_setup_description">Elige lo que aparece en la app. Podrás cambiarlo más tarde en Ajustes.</string>
     <string name="whats_new_legend">✨ Novedades en la v%1$s: %2$s</string>
     <string name="whats_new_got_it">Entendido</string>
-    <string name="whats_new_title">Secciones dentro de tus listas</string>
-    <string name="whats_new_description">Divide una categoría larga en secciones, como Gato, Tareas de casa y Compras dentro de una misma lista compartida. Activa Secciones en las opciones de una categoría para empezar a añadirlas y después contrae, renombra, reordena o elimina cada una desde su cabecera. Mueve una tarea eligiendo su sección en el editor o arrastrándola en orden manual. En tabletas y ventanas de escritorio, las secciones tienen sus propios accesos y se reparten en dos columnas.</string>
+    <string name="whats_new_title">Secciones dentro de tus listas y grupos conectados</string>
+    <string name="whats_new_description">Divide una categoría larga en secciones, como Gato, Tareas de casa y Compras dentro de una misma lista compartida. Activa Secciones en las opciones de una categoría para empezar a añadirlas y después contrae, renombra, reordena o elimina cada una desde su cabecera. Mueve una tarea eligiendo su sección en el editor o arrastrándola en orden manual. En tabletas y ventanas de escritorio, las secciones tienen sus propios accesos y se reparten en dos columnas. Tus tareas y ajustes se agrupan ahora en bloques conectados, y la pestaña en la que estás muestra su nombre.</string>
     <string name="review_app">Valorar aplicación</string>
     <string name="review_app_description">Valóranos en Play Store</string>
     <string name="send_feedback">Enviar comentarios</string>
