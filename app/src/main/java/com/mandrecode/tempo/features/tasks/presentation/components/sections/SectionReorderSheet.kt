@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.PointerInputScope
@@ -40,6 +41,7 @@ import kotlin.math.roundToInt
 
 private val ReorderRowHeight = 56.dp
 private val ReorderRowSpacing = 6.dp
+private const val DRAGGED_ROW_TINT_ALPHA = 0.14f
 
 /**
  * Reorders a category's sections (#61) on a surface of their own, so moving a whole section never
@@ -134,7 +136,15 @@ private fun SectionReorderRow(
     val colors = MaterialTheme.colorScheme
     Surface(
         shape = RoundedCornerShape(20.dp),
-        color = if (isDragged) colors.surfaceContainerHighest else colors.surfaceContainer,
+        // The editor's solid selector fill: in the dark theme the plain container tones sit too close
+        // to the glass sheet for each card to read as a card. The lifted row is the same fill under
+        // a wash of the primary, so it still stands out from its neighbours.
+        color =
+            if (isDragged) {
+                colors.primary.copy(alpha = DRAGGED_ROW_TINT_ALPHA).compositeOver(colors.surfaceContainerHighest)
+            } else {
+                colors.surfaceContainerHighest
+            },
         shadowElevation = if (isDragged) 6.dp else 0.dp,
         modifier =
             Modifier
