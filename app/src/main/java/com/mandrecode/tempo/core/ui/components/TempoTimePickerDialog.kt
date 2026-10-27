@@ -1,6 +1,7 @@
 package com.mandrecode.tempo.core.ui.components
 
 import android.text.format.DateFormat
+import androidx.compose.foundation.layout.offset
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
@@ -13,6 +14,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.glass.DialogWindowGlass
 import kotlinx.coroutines.flow.drop
@@ -54,11 +56,16 @@ fun TempoTimePickerDialog(
         confirmButton = {
             DialogConfirmButton(
                 label = stringResource(R.string.ok),
+                modifier = Modifier.offset(y = TimePickerButtonsBottomTrim),
                 onClick = { onConfirm(timePickerState.hour, timePickerState.minute) },
             )
         },
         dismissButton = {
-            DialogCancelButton(label = stringResource(R.string.cancel), onClick = onDismiss)
+            DialogCancelButton(
+                label = stringResource(R.string.cancel),
+                onClick = onDismiss,
+                modifier = Modifier.offset(y = TimePickerButtonsBottomTrim),
+            )
         },
     ) {
         // Blurs the app behind the picker and lightens the dim, like the app's alert dialogs.
@@ -66,3 +73,7 @@ fun TempoTimePickerDialog(
         TimePicker(state = timePickerState)
     }
 }
+
+// Material's time picker keeps its buttons 28dp from the dialog's bottom but 24dp from its right
+// edge; moving them down 4dp makes both 24dp, as in every other dialog.
+private val TimePickerButtonsBottomTrim = 4.dp

@@ -103,7 +103,7 @@ fun TempoDatePickerDialog(
 }
 
 // Material's date picker holds its buttons about 6dp from the dialog's right edge and 12dp from its
-// bottom, while its time picker keeps them 24dp and 28dp in. These make up the difference, so the
-// actions sit in the same place whichever picker is open.
+// bottom. These make up the difference to the 24dp on both edges that Material gives a dialog's
+// actions, which is also where the time picker's end up.
 private val DatePickerButtonsEndInset = 18.dp
-private val DatePickerButtonsBottomInset = 16.dp
+private val DatePickerButtonsBottomInset = 12.dp
