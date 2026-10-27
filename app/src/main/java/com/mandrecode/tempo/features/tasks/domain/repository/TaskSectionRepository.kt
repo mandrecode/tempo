@@ -11,10 +11,14 @@ interface TaskSectionRepository {
 
     suspend fun getSectionById(id: Long): TaskSection?
 
-    /** Inserts [name] as the last section of [categoryId] and returns its id. */
+    /**
+     * Inserts [name] into [categoryId] and returns its id: last, or right below [afterSectionId]
+     * when that is a section of the category, all in one transaction.
+     */
     suspend fun createSection(
         categoryId: Long,
         name: String,
+        afterSectionId: Long? = null,
     ): Long
 
     suspend fun renameSection(

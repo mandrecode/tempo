@@ -40,4 +40,7 @@ interface TasksScreenPreferencesRepository {
         sectionId: Long,
         collapsed: Boolean,
     )
+
+    /** Forgets collapsed ids that are not in [existingIds]: sections gone with a category or an import. */
+    fun pruneCollapsedSections(existingIds: Set<Long>)
 }

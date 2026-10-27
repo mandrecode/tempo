@@ -34,4 +34,6 @@ data class MergePlan(
     val sectionsToInsert: List<TaskSection> = emptyList(),
     /** Incoming section id → local section id for sections matched by name. */
     val sectionIdMap: Map<Long, Long> = emptyMap(),
+    /** Incoming section id → the same-named incoming section it folds into, inserted once. */
+    val sectionAliases: Map<Long, Long> = emptyMap(),
 )

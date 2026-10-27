@@ -249,7 +249,7 @@ class TasksViewModelSectionTest {
     @Test
     fun `adding a blank section explains why`() =
         runTest {
-            coEvery { sectionUseCases.create(any(), any()) } returns CreateTaskSectionUseCase.Result.EmptyName
+            coEvery { sectionUseCases.create(any(), any(), any()) } returns CreateTaskSectionUseCase.Result.EmptyName
             val viewModel = createViewModel()
             val effects = mutableListOf<TasksContract.UiEffect>()
             backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiEffect.toList(effects) }
@@ -258,7 +258,7 @@ class TasksViewModelSectionTest {
             viewModel.onEvent(TasksContract.UiEvent.AddSection(" "))
             advanceUntilIdle()
 
-            coVerify { sectionUseCases.create(sv.id, " ") }
+            coVerify { sectionUseCases.create(sv.id, " ", null) }
             assertThat((effects.single() as TasksContract.UiEffect.ShowSnackbar).messageResId)
                 .isEqualTo(R.string.msg_section_name_empty)
         }
@@ -267,6 +267,7 @@ class TasksViewModelSectionTest {
     fun `deleting a section offers undo, which restores it and its collapse state`() =
         runTest {
             every { preferences.getCollapsedSectionIds() } returns setOf(shopping.id)
+            sections.value = listOf(cat, shopping)
             val snapshot = SectionDeletionSnapshot(shopping, listOf(3L))
             coEvery { sectionUseCases.delete(shopping.id) } returns snapshot
             val viewModel = createViewModel()
@@ -364,5 +365,17 @@ class TasksViewModelSectionTest {
             val list = viewModel.uiState.value.sectionedList!!
             assertThat(list.unsectioned.map { it.id }).containsExactly(1L)
             assertThat(list.sections).isEmpty()
+        }
+
+    @Test
+    fun `collapsed ids of sections that no longer exist are dropped on the first load`() =
+        runTest {
+            every { preferences.getCollapsedSectionIds() } returns setOf(cat.id, 99L)
+            sections.value = listOf(cat)
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            assertThat(viewModel.uiState.value.collapsedSectionIds).containsExactly(cat.id)
+            verify { preferences.pruneCollapsedSections(setOf(cat.id)) }
         }
 }

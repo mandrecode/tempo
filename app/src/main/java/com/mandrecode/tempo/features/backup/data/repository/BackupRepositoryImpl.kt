@@ -249,6 +249,9 @@ class BackupRepositoryImpl
                             section.copy(id = 0, categoryId = categoryIds.getValue(section.categoryId)).toEntity(),
                         )
                 }
+                plan.sectionAliases.forEach { (alias, canonical) ->
+                    sectionIds[canonical]?.let { sectionIds[alias] = it }
+                }
                 insertMergedTasks(plan, categoryIds, sectionIds)
                 val habitIds = plan.habitIdMap.toMutableMap()
                 plan.habitsToInsert.forEach { habit ->

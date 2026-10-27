@@ -19,6 +19,7 @@ import kotlinx.collections.immutable.ImmutableMap
 import kotlinx.collections.immutable.persistentMapOf
 import kotlinx.collections.immutable.toPersistentList
 import kotlinx.collections.immutable.toPersistentMap
+import kotlinx.collections.immutable.toPersistentSet
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
@@ -257,8 +258,21 @@ internal fun TasksViewModel.loadData() {
                         mutableUiState.value.sortOption
                     }
 
+                // Collapsed ids of sections that went with a category or an import are dropped once, on
+                // the first load: pruning later could race an undo that is re-collapsing a section.
+                val isFirstLoad = mutableUiState.value.isLoading
+                val existingSectionIds =
+                    data.sectionsByCategory.values.flatMapTo(mutableSetOf()) { sections -> sections.map { it.id } }
+                if (isFirstLoad) tasksScreenPreferencesRepository.pruneCollapsedSections(existingSectionIds)
+
                 mutableUiState.update { currentState ->
                     currentState.copy(
+                        collapsedSectionIds =
+                            if (isFirstLoad) {
+                                currentState.collapsedSectionIds.filter { it in existingSectionIds }.toPersistentSet()
+                            } else {
+                                currentState.collapsedSectionIds
+                            },
                         tasks = data.tasks,
                         categories = data.categories,
                         uncompletedTasksCounts = data.counts,

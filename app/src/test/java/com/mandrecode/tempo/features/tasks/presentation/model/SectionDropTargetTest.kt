@@ -64,4 +64,13 @@ class SectionDropTargetTest {
         assertThat(dropActionFor(10L, 1, DropTarget(null, 0, unsectionedCard)))
             .isEqualTo(SectionDropAction.Move(null, 0))
     }
+
+    @Test
+    fun `auto-scroll is idle away from the edges and ramps up towards them`() {
+        assertThat(autoScrollStep(500f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(0f)
+        assertThat(autoScrollStep(950f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(10f)
+        assertThat(autoScrollStep(1200f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(20f)
+        assertThat(autoScrollStep(50f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(-10f)
+        assertThat(autoScrollStep(-30f, top = 0f, bottom = 1000f, edge = 100f, maxStep = 20f)).isEqualTo(-20f)
+    }
 }

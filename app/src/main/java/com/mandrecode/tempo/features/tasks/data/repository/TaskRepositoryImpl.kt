@@ -53,7 +53,7 @@ class TaskRepositoryImpl
 
         override suspend fun updateTask(task: Task) {
             val oldTask = taskDao.getTaskById(task.id)
-            val entity = task.toEntity().clearingSectionOnCategoryChange(oldTask)
+            val entity = task.toEntity().withValidSection(oldTask)
             if (oldTask != null && oldTask.categoryId != entity.categoryId) {
                 taskDao.updateSubtasksCategory(entity.id, entity.categoryId)
             }
@@ -64,7 +64,7 @@ class TaskRepositoryImpl
             database.withTransaction {
                 val stored = taskDao.getTasksByIds(tasks.map { it.id }).associateBy { it.id }
                 taskDao.updateTasks(
-                    tasks.map { task -> task.toEntity().clearingSectionOnCategoryChange(stored[task.id]) },
+                    tasks.map { task -> task.toEntity().withValidSection(stored[task.id]) },
                 )
             }
 
@@ -171,8 +171,11 @@ class TaskRepositoryImpl
     }
 
 /**
- * A section belongs to one category (#61), so it cannot follow a task out of it. Enforced here,
- * at the single write point, rather than by every caller that can move a task.
+ * A section belongs to one category (#61), so it cannot follow a task out of it, and only top-level
+ * tasks are sectioned, so a task that is (or becomes) a subtask has none. Enforced here, at the
+ * single write point, rather than by every caller that can move a task.
  */
-private fun TaskEntity.clearingSectionOnCategoryChange(stored: TaskEntity?): TaskEntity =
-    if (stored != null && stored.categoryId != categoryId && sectionId != null) copy(sectionId = null) else this
+private fun TaskEntity.withValidSection(stored: TaskEntity?): TaskEntity {
+    val leavesCategory = stored != null && stored.categoryId != categoryId
+    return if (sectionId != null && (leavesCategory || parentTaskId != null)) copy(sectionId = null) else this
+}

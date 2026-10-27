@@ -32,21 +32,30 @@ class TaskSectionRepositoryImpl
         override suspend fun createSection(
             categoryId: Long,
             name: String,
+            afterSectionId: Long?,
         ): Long =
             database.withTransaction {
                 val nextSortOrder = (sectionDao.getMaxSortOrder(categoryId) ?: -1) + 1
-                sectionDao.insertSection(
-                    TaskSectionEntity(categoryId = categoryId, name = name, sortOrder = nextSortOrder),
-                )
+                val id =
+                    sectionDao.insertSection(
+                        TaskSectionEntity(categoryId = categoryId, name = name, sortOrder = nextSortOrder),
+                    )
+                if (afterSectionId != null) {
+                    val ordered = sectionDao.getSectionsByCategorySync(categoryId).map { it.id }.toMutableList()
+                    val anchor = ordered.indexOf(afterSectionId)
+                    if (anchor >= 0) {
+                        ordered.remove(id)
+                        ordered.add(anchor + 1, id)
+                        ordered.forEachIndexed { index, sectionId -> sectionDao.updateSortOrder(sectionId, index) }
+                    }
+                }
+                id
             }
 
         override suspend fun renameSection(
             id: Long,
             name: String,
-        ) {
-            val section = sectionDao.getSectionById(id) ?: return
-            sectionDao.updateSection(section.copy(name = name))
-        }
+        ) = sectionDao.renameSection(id, name)
 
         override suspend fun updateSortOrders(orderedIds: List<Long>) {
             database.withTransaction {

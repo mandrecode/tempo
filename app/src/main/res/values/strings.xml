@@ -263,6 +263,7 @@
     <!-- Task sections (#61) -->
     <string name="msg_section_name_empty">Section name can\'t be empty</string>
     <string name="msg_section_name_too_long">Section name is too long</string>
+    <string name="msg_section_name_exists">A section named \"%1$s\" already exists</string>
     <string name="msg_section_deleted_prefix">Section</string>
     <string name="msg_section_deleted_suffix">\u0020deleted. Its tasks moved to No section</string>
     <string name="section_add">Add section</string>

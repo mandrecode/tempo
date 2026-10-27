@@ -4,7 +4,6 @@ import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Update
 import com.mandrecode.tempo.core.data.entity.TaskSectionEntity
 import kotlinx.coroutines.flow.Flow
 
@@ -25,8 +24,11 @@ interface TaskSectionDao {
     @Insert
     suspend fun insertSection(section: TaskSectionEntity): Long
 
-    @Update
-    suspend fun updateSection(section: TaskSectionEntity)
+    @Query("UPDATE task_sections SET name = :name WHERE id = :id")
+    suspend fun renameSection(
+        id: Long,
+        name: String,
+    )
 
     @Query("UPDATE task_sections SET sortOrder = :sortOrder WHERE id = :id")
     suspend fun updateSortOrder(
@@ -40,6 +42,7 @@ interface TaskSectionDao {
     @Query("DELETE FROM task_sections WHERE categoryId = :categoryId")
     suspend fun deleteSectionsByCategory(categoryId: Long)
 
+    /** Every section, for backups. */
     @Query("SELECT * FROM task_sections ORDER BY id ASC")
     suspend fun getAllSectionsSync(): List<TaskSectionEntity>
 

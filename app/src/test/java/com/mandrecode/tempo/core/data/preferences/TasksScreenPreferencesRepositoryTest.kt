@@ -165,4 +165,22 @@ class TasksScreenPreferencesRepositoryTest {
 
         assertThat(repository.getCollapsedSectionIds()).containsExactly(3L)
     }
+
+    @Test
+    fun `pruning keeps only the collapsed ids of sections that still exist`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3", "8")
+
+        repository.pruneCollapsedSections(existingIds = setOf(8L, 9L))
+
+        verify { mockEditor.putStringSet("collapsed_section_ids", setOf("8")) }
+    }
+
+    @Test
+    fun `pruning with nothing stale writes nothing`() {
+        every { mockPrefs.getStringSet("collapsed_section_ids", any()) } returns setOf("3")
+
+        repository.pruneCollapsedSections(existingIds = setOf(3L))
+
+        verify(exactly = 0) { mockEditor.putStringSet(any(), any()) }
+    }
 }

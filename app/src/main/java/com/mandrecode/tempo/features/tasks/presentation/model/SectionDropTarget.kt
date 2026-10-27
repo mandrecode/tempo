@@ -75,3 +75,21 @@ fun dropActionFor(
     } else {
         SectionDropAction.Move(target.sectionId, target.position)
     }
+
+/**
+ * How far to auto-scroll while the pointer is at [pointerY] in a viewport spanning [top]..[bottom]:
+ * nothing beyond [edge] px from either side, then up to [maxStep] px per frame at the side itself,
+ * negative towards the top.
+ */
+fun autoScrollStep(
+    pointerY: Float,
+    top: Float,
+    bottom: Float,
+    edge: Float,
+    maxStep: Float,
+): Float =
+    when {
+        pointerY < top + edge -> -maxStep * ((top + edge - pointerY) / edge).coerceIn(0f, 1f)
+        pointerY > bottom - edge -> maxStep * ((pointerY - (bottom - edge)) / edge).coerceIn(0f, 1f)
+        else -> 0f
+    }

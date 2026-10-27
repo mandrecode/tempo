@@ -50,8 +50,9 @@ class MergePlanner
                 chainsToInsert = chains.toInsert,
                 chainIdMap = chains.idMap,
                 membershipsToInsert = memberships,
-                sectionsToInsert = sections.first,
-                sectionIdMap = sections.second,
+                sectionsToInsert = sections.toInsert,
+                sectionIdMap = sections.idMap,
+                sectionAliases = sections.aliases,
                 summary =
                     ImportSummary(
                         categories = categories.counts,
@@ -124,13 +125,21 @@ class MergePlanner
             incoming: BackupData,
             local: BackupData,
             categories: EntityPlan<Category>,
-        ): Pair<List<TaskSection>, Map<Long, Long>> {
+        ): SectionPlan {
             val toInsert = mutableListOf<TaskSection>()
             val idMap = mutableMapOf<Long, Long>()
+            val aliases = mutableMapOf<Long, Long>()
+            // Same-named incoming sections of one category are one section, like local ones.
+            val firstByName = mutableMapOf<Pair<Long, String>, Long>()
             val localByCategory = local.sections.groupBy { it.categoryId }
             val nextSortOrder =
                 localByCategory.mapValues { (_, sections) -> sections.maxOf { it.sortOrder } + 1 }.toMutableMap()
             incoming.sections.sortedBy { it.sortOrder }.forEach { section ->
+                val canonical = firstByName.getOrPut(section.categoryId to section.name) { section.id }
+                if (canonical != section.id) {
+                    aliases[section.id] = canonical
+                    return@forEach
+                }
                 val localCategoryId = categories.idMap[section.categoryId]
                 val match =
                     localCategoryId?.let { id -> localByCategory[id]?.firstOrNull { it.name == section.name } }
@@ -144,7 +153,7 @@ class MergePlanner
                     section.categoryId in categories.insertedIds -> toInsert += section
                 }
             }
-            return toInsert to idMap
+            return SectionPlan(toInsert, idMap, aliases)
         }
 
         private fun planTasks(
@@ -406,3 +415,9 @@ private fun Task.contentKey() =
 private fun Habit.contentKey() = copy(id = 0)
 
 private fun HabitChain.contentKey() = copy(id = 0, habitIds = emptyList())
+
+private data class SectionPlan(
+    val toInsert: List<TaskSection>,
+    val idMap: Map<Long, Long>,
+    val aliases: Map<Long, Long>,
+)

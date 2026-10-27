@@ -19,6 +19,8 @@ Each category SHALL have a Sections option in its edit sheet, off by default for
 ### Requirement: A section belongs to exactly one category
 A section SHALL have a name and a position, and SHALL belong to exactly one category. It SHALL NOT have a due date, priority, reminder, recurrence, completion state, icon, colour, default flag or sharing identity. Sections SHALL NOT contain other sections.
 
+A section's name SHALL be unique within its category, ignoring case; creating or renaming a section to a name the category already has SHALL be refused with a message. Merging a backup into a category that has sections turned off SHALL still add its sections, which stay hidden until the category turns sections on.
+
 #### Scenario: Section is not completable
 - **WHEN** the user views a section in the Tasks list
 - **THEN** it offers no completion control, and no date, priority or reminder can be set on it

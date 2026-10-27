@@ -80,4 +80,14 @@ class SectionDragStateTest {
         assertThat(editState.newSectionDraft).isNull()
         assertThat(editState.isReorderSheetVisible).isFalse()
     }
+
+    @Test
+    fun `scrolling under the finger moves the card but not the pointer`() {
+        state.start(taskId = 2L, sectionId = 10L, index = 0)
+        state.drag(75f)
+        state.onScrolled(40f)
+
+        assertThat(state.offsetY).isEqualTo(115f)
+        assertThat(state.isTargeting(DropEntry.Kind.Placeholder, 11L)).isTrue()
+    }
 }

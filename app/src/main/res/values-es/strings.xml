@@ -281,6 +281,7 @@
     <!-- Task sections (#61) -->
     <string name="msg_section_name_empty">El nombre de la sección no puede estar vacío</string>
     <string name="msg_section_name_too_long">El nombre de la sección es demasiado largo</string>
+    <string name="msg_section_name_exists">Ya existe una sección llamada \"%1$s\"</string>
     <string name="msg_section_deleted_prefix">Sección</string>
     <string name="msg_section_deleted_suffix">\u0020eliminada. Sus tareas pasaron a Sin sección</string>
     <string name="section_add">Añadir sección</string>

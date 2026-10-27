@@ -233,4 +233,24 @@ class TaskRepositoryTest {
                 )
             }
         }
+
+    @Test
+    fun `updateTask drops the section of a task that is a subtask`() =
+        runTest {
+            coEvery { taskDao.getTaskById(5L) } returns
+                TaskEntity(id = 5L, title = "Buy litter", description = "", categoryId = 1L, sectionId = 9L)
+
+            repository.updateTask(
+                Task(
+                    id = 5L,
+                    title = "Buy litter",
+                    description = "",
+                    categoryId = 1L,
+                    parentTaskId = 2L,
+                    sectionId = 9L,
+                ),
+            )
+
+            coVerify { taskDao.updateTask(match { it.sectionId == null }) }
+        }
 }

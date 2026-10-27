@@ -57,6 +57,26 @@ class TaskSectionRepositoryTest {
         }
 
     @Test
+    fun `createSection after a section renumbers the category in one transaction`() =
+        runTest {
+            coEvery { sectionDao.getMaxSortOrder(3L) } returns 2
+            coEvery { sectionDao.insertSection(any()) } returns 12L
+            coEvery { sectionDao.getSectionsByCategorySync(3L) } returns
+                listOf(1L, 2L, 3L, 12L).mapIndexed { index, id ->
+                    TaskSectionEntity(id = id, categoryId = 3L, name = "S$id", sortOrder = index)
+                }
+
+            repository.createSection(3L, "Garden", afterSectionId = 1L)
+
+            coVerifyOrder {
+                sectionDao.updateSortOrder(1L, 0)
+                sectionDao.updateSortOrder(12L, 1)
+                sectionDao.updateSortOrder(2L, 2)
+                sectionDao.updateSortOrder(3L, 3)
+            }
+        }
+
+    @Test
     fun `createSection starts at zero in a category without sections`() =
         runTest {
             coEvery { sectionDao.getMaxSortOrder(3L) } returns null

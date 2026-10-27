@@ -23,7 +23,7 @@ class SectionUseCasesTest {
     @Test
     fun `create trims the name and appends the section`() =
         runTest {
-            coEvery { repository.createSection(3L, "Garden") } returns 12L
+            coEvery { repository.createSection(3L, "Garden", null) } returns 12L
 
             val result = CreateTaskSectionUseCase(repository)(3L, "  Garden ")
 
@@ -36,7 +36,7 @@ class SectionUseCasesTest {
             val result = CreateTaskSectionUseCase(repository)(3L, "   ")
 
             assertThat(result).isEqualTo(CreateTaskSectionUseCase.Result.EmptyName)
-            coVerify(exactly = 0) { repository.createSection(any(), any()) }
+            coVerify(exactly = 0) { repository.createSection(any(), any(), any()) }
         }
 
     @Test
@@ -54,10 +54,49 @@ class SectionUseCasesTest {
         runTest {
             val rename = RenameTaskSectionUseCase(repository)
 
-            assertThat(rename(8L, " Shopping list ")).isTrue()
-            assertThat(rename(8L, " ")).isFalse()
+            coEvery { repository.getSectionById(8L) } returns TaskSection(8L, 3L, "Shopping", 1)
+            coEvery { repository.getSectionsByCategory(3L) } returns listOf(TaskSection(8L, 3L, "Shopping", 1))
+
+            assertThat(rename(8L, " Shopping list ")).isEqualTo(RenameTaskSectionUseCase.Result.Success)
+            assertThat(rename(8L, " ")).isEqualTo(RenameTaskSectionUseCase.Result.EmptyName)
 
             coVerify(exactly = 1) { repository.renameSection(8L, "Shopping list") }
+        }
+
+    @Test
+    fun `rename refuses a name another section of the category has, ignoring case`() =
+        runTest {
+            coEvery { repository.getSectionById(8L) } returns TaskSection(8L, 3L, "Shopping", 1)
+            coEvery { repository.getSectionsByCategory(3L) } returns
+                listOf(TaskSection(7L, 3L, "Cat", 0), TaskSection(8L, 3L, "Shopping", 1))
+
+            val clash = RenameTaskSectionUseCase(repository)(8L, " cat ")
+            val sameName = RenameTaskSectionUseCase(repository)(8L, "SHOPPING")
+
+            assertThat(clash).isEqualTo(RenameTaskSectionUseCase.Result.AlreadyExists("cat"))
+            assertThat(sameName).isEqualTo(RenameTaskSectionUseCase.Result.Success)
+            coVerify(exactly = 0) { repository.renameSection(8L, "cat") }
+        }
+
+    @Test
+    fun `create refuses a name the category already has, ignoring case`() =
+        runTest {
+            coEvery { repository.getSectionsByCategory(3L) } returns listOf(TaskSection(7L, 3L, "Garden", 0))
+
+            val result = CreateTaskSectionUseCase(repository)(3L, " garden ")
+
+            assertThat(result).isEqualTo(CreateTaskSectionUseCase.Result.AlreadyExists("garden"))
+            coVerify(exactly = 0) { repository.createSection(any(), any(), any()) }
+        }
+
+    @Test
+    fun `create passes the section to place it after`() =
+        runTest {
+            coEvery { repository.createSection(3L, "Garden", 7L) } returns 12L
+
+            val result = CreateTaskSectionUseCase(repository)(3L, "Garden", afterSectionId = 7L)
+
+            assertThat(result).isEqualTo(CreateTaskSectionUseCase.Result.Success(12L))
         }
 
     @Test

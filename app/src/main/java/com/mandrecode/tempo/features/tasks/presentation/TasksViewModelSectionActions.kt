@@ -5,6 +5,7 @@ import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.util.toUserFacingMessage
 import com.mandrecode.tempo.features.tasks.domain.model.TaskSection
 import com.mandrecode.tempo.features.tasks.domain.usecase.CreateTaskSectionUseCase
+import com.mandrecode.tempo.features.tasks.domain.usecase.RenameTaskSectionUseCase
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -18,15 +19,10 @@ internal fun TasksViewModel.addSection(
 ) {
     val categoryId = mutableUiState.value.selectedCategoryId
     launchSectionAction {
-        when (val result = sectionUseCases.create(categoryId, name)) {
-            is CreateTaskSectionUseCase.Result.Success ->
-                // A new section is created last; "Add section below" then moves it under its neighbour.
-                if (afterSectionId != null) {
-                    val sections = sectionUseCases.repository.getSectionsByCategory(categoryId)
-                    val from = sections.indexOfFirst { it.id == result.sectionId }
-                    val to = sections.indexOfFirst { it.id == afterSectionId } + 1
-                    sectionUseCases.reorder(from, to, sections)
-                }
+        when (val result = sectionUseCases.create(categoryId, name, afterSectionId)) {
+            is CreateTaskSectionUseCase.Result.Success -> Unit
+            is CreateTaskSectionUseCase.Result.AlreadyExists ->
+                showSnackbar(R.string.msg_section_name_exists, listOf(result.name))
             CreateTaskSectionUseCase.Result.EmptyName -> showSnackbar(R.string.msg_section_name_empty)
             CreateTaskSectionUseCase.Result.TooLong -> showSnackbar(R.string.msg_section_name_too_long)
         }
@@ -38,8 +34,12 @@ internal fun TasksViewModel.renameSection(
     name: String,
 ) {
     launchSectionAction {
-        if (!sectionUseCases.rename(sectionId, name)) {
-            showSnackbar(R.string.msg_section_name_empty)
+        when (val result = sectionUseCases.rename(sectionId, name)) {
+            RenameTaskSectionUseCase.Result.EmptyName -> showSnackbar(R.string.msg_section_name_empty)
+            RenameTaskSectionUseCase.Result.TooLong -> showSnackbar(R.string.msg_section_name_too_long)
+            is RenameTaskSectionUseCase.Result.AlreadyExists ->
+                showSnackbar(R.string.msg_section_name_exists, listOf(result.name))
+            RenameTaskSectionUseCase.Result.Success, RenameTaskSectionUseCase.Result.NotFound -> Unit
         }
     }
 }

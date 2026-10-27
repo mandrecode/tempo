@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -48,6 +49,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -261,8 +264,18 @@ fun TasksContent(
                                     topStart = ContentBlockTopCornerRadius,
                                     topEnd = ContentBlockTopCornerRadius,
                                 ),
-                            ).background(MaterialTheme.colorScheme.surface),
+                            ).background(MaterialTheme.colorScheme.surface)
+                            .onGloballyPositioned { sectionDragState?.setViewport(it.boundsInRoot()) },
                 ) {
+                    sectionDragState?.let { drag ->
+                        SectionDragAutoScroll(drag) { delta ->
+                            if (isTwoColumn && sectionedList != null) {
+                                gridState.scrollBy(delta)
+                            } else {
+                                listState.scrollBy(delta)
+                            }
+                        }
+                    }
                     val hasNothingToList = !hasActiveTasks && completedTaskGroups.isEmpty()
                     // An empty category keeps the empty screen even with sections on; one that has
                     // sections lists them, and naming the first section needs the list (#61).

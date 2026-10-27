@@ -64,6 +64,14 @@ class TasksScreenPreferencesRepositoryImpl
             if (changed) prefs.edit { putStringSet(KEY_COLLAPSED_SECTION_IDS, ids.toSet()) }
         }
 
+        override fun pruneCollapsedSections(existingIds: Set<Long>) {
+            val stored = getCollapsedSectionIds()
+            val kept = stored.filterTo(mutableSetOf()) { it in existingIds }
+            if (kept.size != stored.size) {
+                prefs.edit { putStringSet(KEY_COLLAPSED_SECTION_IDS, kept.mapTo(mutableSetOf(), Long::toString)) }
+            }
+        }
+
         companion object {
             private const val PREFS_NAME = "tasks_screen_prefs"
             private const val KEY_SHOW_COMPLETED_TASKS = "show_completed_tasks"
