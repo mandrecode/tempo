@@ -249,7 +249,7 @@ class BackupRepositoryImpl
                             section.copy(id = 0, categoryId = categoryIds.getValue(section.categoryId)).toEntity(),
                         )
                 }
-                val taskIds = insertMergedTasks(plan, categoryIds, sectionIds)
+                insertMergedTasks(plan, categoryIds, sectionIds)
                 val habitIds = plan.habitIdMap.toMutableMap()
                 plan.habitsToInsert.forEach { habit ->
                     habitIds[habit.id] = database.habitDao().insertHabit(habit.copy(id = 0).toEntity())
