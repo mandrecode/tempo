@@ -43,6 +43,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
@@ -52,8 +53,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.chainTitle
@@ -134,8 +138,8 @@ fun HabitChainCard(
         if (allCompleted) {
             resolvedChainColor ?: MaterialTheme.colorScheme.primary
         } else {
-            resolvedChainColor?.copy(alpha = 0.15f)
-                ?: MaterialTheme.colorScheme.background
+            resolvedChainColor?.copy(alpha = 0.15f)?.compositeOver(cardFrostColor())
+                ?: cardFrostColor()
         }
     val containerColor by animateColorAsState(
         targetValue = selectedContainerColor(baseContainerColor, isSelected),
@@ -165,7 +169,6 @@ fun HabitChainCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
-    val selectionElevation = selectableCardElevation(isSelected)
 
     // Title, progress and icons share the chain colour until every habit is done, then the
     // card's content colour.
@@ -216,14 +219,16 @@ fun HabitChainCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .semantics { selected = isSelected },
+                    .semantics { selected = isSelected }
+                    .glassSheen(cardShape),
             shape = cardShape,
+            border = glassRim(),
             colors =
                 CardDefaults.cardColors(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
+            elevation = glassCardElevation(isSelected),
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 // Faded chain icon behind the header, top right
@@ -372,8 +377,9 @@ private fun ChainProgress(
             )
         }
 
+        val pillShape = RoundedCornerShape(50)
         Surface(
-            shape = RoundedCornerShape(50),
+            shape = pillShape,
             // The accent is already the content colour once every habit is done.
             color = accentColor.copy(alpha = if (allCompleted) 0.2f else 0.12f),
         ) {

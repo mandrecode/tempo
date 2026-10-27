@@ -21,6 +21,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
+import com.mandrecode.tempo.core.ui.glass.glassCardColor
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 
@@ -147,8 +151,10 @@ private fun ConceptCard(
     compact: Boolean,
 ) {
     Card(
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
-        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = glassCardColor(MaterialTheme.colorScheme.surfaceContainer)),
+        elevation = glassCardElevation(),
+        border = glassRim(),
+        modifier = Modifier.fillMaxWidth().glassSheen(CardDefaults.shape),
     ) {
         Row(
             modifier = Modifier.padding(if (compact) 12.dp else 16.dp),
@@ -189,7 +195,7 @@ private fun ConceptCard(
 @Composable
 internal fun HeroIcon(iconRes: Int) {
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = EducationIconShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {
@@ -203,6 +209,8 @@ internal fun HeroIcon(iconRes: Int) {
         )
     }
 }
+
+private val EducationIconShape = RoundedCornerShape(28.dp)
 
 private data class EducationConcept(
     val iconRes: Int,

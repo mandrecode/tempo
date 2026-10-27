@@ -33,6 +33,7 @@ import com.mandrecode.tempo.core.domain.util.TabPreferencesPolicy
 import com.mandrecode.tempo.core.ui.MainViewModel
 import com.mandrecode.tempo.core.ui.StartupContentGate
 import com.mandrecode.tempo.core.ui.components.StartupContentGateHost
+import com.mandrecode.tempo.core.ui.glass.BackdropBlurHost
 import com.mandrecode.tempo.core.ui.model.MainUiState
 import com.mandrecode.tempo.core.ui.navigation.OnboardingRoute
 import com.mandrecode.tempo.core.ui.navigation.PendingNotificationAction
@@ -169,6 +170,7 @@ class MainActivity :
                                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                             },
                         useTempoColors = state.useTempoColors,
+                        glassEffects = state.glassEffects,
                     ) {
                         // colorScheme.surface, not .background: Tasks/Routines' NavDisplay
                         // crossfade layers both scenes' alpha over this Surface, so whatever
@@ -180,30 +182,33 @@ class MainActivity :
                             modifier = Modifier.fillMaxSize(),
                             color = MaterialTheme.colorScheme.surface,
                         ) {
-                            TempoNavHost(
-                                navigationPreferencesRepository = navigationPreferencesRepository,
-                                focusSessionRepository = focusSessionRepository,
-                                routinesNavigationTrigger = routinesNavigationTrigger.longValue,
-                                tasksNavigationTrigger = tasksNavigationTrigger.longValue,
-                                pendingNotificationAction = pendingNotificationAction,
-                                onConsumePendingNotificationAction = {
-                                    mainViewModel.consumePendingNotificationAction()
-                                    intent.clearNotificationExtras()
-                                },
-                                startDestination = startDestination,
-                                onRouteChange = { routeName ->
-                                    navigationPreferencesRepository.saveLastRoute(routeName)
-                                },
-                                onOnboardingActiveChange = { isOnboardingSectionActive = it },
-                            )
-
-                            val whatsNewEntry = state.whatsNewEntry
-                            if (whatsNewEntry != null && !isOnboardingSectionActive && hasSplashHandedOver) {
-                                WhatsNewBottomSheet(
-                                    entry = whatsNewEntry,
-                                    versionName = state.whatsNewVersionName,
-                                    onDismissRequest = mainViewModel::onWhatsNewDismissed,
+                            // Blurs everything here while a sheet or dialog is open over it.
+                            BackdropBlurHost(modifier = Modifier.fillMaxSize()) {
+                                TempoNavHost(
+                                    navigationPreferencesRepository = navigationPreferencesRepository,
+                                    focusSessionRepository = focusSessionRepository,
+                                    routinesNavigationTrigger = routinesNavigationTrigger.longValue,
+                                    tasksNavigationTrigger = tasksNavigationTrigger.longValue,
+                                    pendingNotificationAction = pendingNotificationAction,
+                                    onConsumePendingNotificationAction = {
+                                        mainViewModel.consumePendingNotificationAction()
+                                        intent.clearNotificationExtras()
+                                    },
+                                    startDestination = startDestination,
+                                    onRouteChange = { routeName ->
+                                        navigationPreferencesRepository.saveLastRoute(routeName)
+                                    },
+                                    onOnboardingActiveChange = { isOnboardingSectionActive = it },
                                 )
+
+                                val whatsNewEntry = state.whatsNewEntry
+                                if (whatsNewEntry != null && !isOnboardingSectionActive && hasSplashHandedOver) {
+                                    WhatsNewBottomSheet(
+                                        entry = whatsNewEntry,
+                                        versionName = state.whatsNewVersionName,
+                                        onDismissRequest = mainViewModel::onWhatsNewDismissed,
+                                    )
+                                }
                             }
                         }
                     }

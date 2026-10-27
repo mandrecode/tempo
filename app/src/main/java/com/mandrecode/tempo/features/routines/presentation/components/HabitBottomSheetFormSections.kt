@@ -45,6 +45,8 @@ import com.mandrecode.tempo.core.ui.editor.EDITOR_TEXT_FIELD_BOTTOM_INSET
 import com.mandrecode.tempo.core.ui.editor.EditorAddButton
 import com.mandrecode.tempo.core.ui.editor.EditorPropertyRow
 import com.mandrecode.tempo.core.ui.editor.editorTransparentTextFieldColors
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.DescriptionEditorState
@@ -552,12 +554,13 @@ private fun HabitReminderSection(
         iconContentDescription = stringResource(R.string.reminder_label),
     ) {
         if (formattedReminder != null) {
+            val chipShape =
+                androidx.compose.foundation.shape
+                    .RoundedCornerShape(24.dp)
             InputChip(
                 selected = true,
                 onClick = onSetReminderClick,
-                shape =
-                    androidx.compose.foundation.shape
-                        .RoundedCornerShape(24.dp),
+                shape = chipShape,
                 label = {
                     Text(
                         text = formattedReminder,
@@ -581,11 +584,12 @@ private fun HabitReminderSection(
                         selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         selectedTrailingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
                     ),
-                border = null,
+                border = glassRim(),
                 modifier =
                     Modifier
                         .padding(start = 4.dp)
-                        .height(EDITOR_CONTROL_HEIGHT),
+                        .height(EDITOR_CONTROL_HEIGHT)
+                        .glassSheen(chipShape),
             )
         } else {
             EditorAddButton(

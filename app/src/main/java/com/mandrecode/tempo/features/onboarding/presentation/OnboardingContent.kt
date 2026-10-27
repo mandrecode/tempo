@@ -29,17 +29,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingPageHeadlineShort
 import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleRegular
 import com.mandrecode.tempo.core.ui.theme.onboardingWelcomeTitleShort
 import com.mandrecode.tempo.features.settings.presentation.ColorSchemeSection
+import com.mandrecode.tempo.features.settings.presentation.GlassEffectsSection
 import com.mandrecode.tempo.features.settings.presentation.ThemeSection
 
 @Composable
@@ -50,8 +53,8 @@ fun OnboardingContent(
 ) {
     val layout = rememberOnboardingLayout()
     Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+        modifier = modifier.fillMaxSize().ambientBackground(),
+        color = Color.Transparent,
     ) {
         Column(
             modifier =
@@ -272,6 +275,8 @@ private fun AppearancePage(
         body = {
             ThemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
             ColorSchemeSection(uiState = settingsUiState, onEvent = onSettingsEvent)
+            // Flipping it restyles this very page, so the choice is made looking at its result.
+            GlassEffectsSection(uiState = settingsUiState, onEvent = onSettingsEvent)
         },
     )
 }

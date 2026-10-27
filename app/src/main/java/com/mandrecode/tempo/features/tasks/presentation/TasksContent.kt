@@ -1,7 +1,6 @@
 package com.mandrecode.tempo.features.tasks.presentation
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
@@ -69,7 +68,12 @@ import com.mandrecode.tempo.core.ui.components.ConnectedCardGap
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.glass.glassCardColor
+import com.mandrecode.tempo.core.ui.glass.glassPanel
+import com.mandrecode.tempo.core.ui.glass.glassRimOr
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
+import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.groupLabel
 import com.mandrecode.tempo.core.ui.theme.sectionHeader
 import com.mandrecode.tempo.core.ui.util.rememberViewportHold
@@ -105,6 +109,8 @@ private const val COMPLETED_GROUP_FALLBACK_RANK = 2
 private const val DRAGGED_ITEM_ALPHA = 0.8f
 private const val TARGET_ITEM_ALPHA = 0.5f
 private val ContentBlockTopCornerRadius = 28.dp
+private val ContentBlockShape =
+    RoundedCornerShape(topStart = ContentBlockTopCornerRadius, topEnd = ContentBlockTopCornerRadius)
 internal const val TASKS_CONTENT_BLOCK_TEST_TAG = "tasks_content_block"
 
 // Rough per-card height used to translate a drag distance into a number of slots. The list is
@@ -175,10 +181,9 @@ fun TasksContent(
     }
 
     BoxWithConstraints(
-        // Matches the Scaffold containerColor this is normally hosted in (TasksScreen) — kept
-        // here too so the rounded content block's corner cutouts (see below) still resolve to
-        // the correct tinted color when this composable is previewed/tested standalone.
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        // Transparent: the page's backdrop (background tone and header gradient) is painted once by
+        // the screen around this, and by the preview hosts.
+        modifier = modifier.fillMaxSize(),
     ) {
         // A wide pane spreads a sectioned category over two columns (#61).
         val isTwoColumn = !sectionedList?.sections.isNullOrEmpty() && maxWidth >= TwoColumnSectionsMinWidth
@@ -274,12 +279,8 @@ fun TasksContent(
                             // clip before background: background() alone doesn't clip children,
                             // so list overscroll/ripple effects would otherwise draw past the
                             // rounded top corners instead of respecting the seam.
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = ContentBlockTopCornerRadius,
-                                    topEnd = ContentBlockTopCornerRadius,
-                                ),
-                            ).background(MaterialTheme.colorScheme.surface)
+                            .clip(ContentBlockShape)
+                            .glassPanel(ContentBlockShape, MaterialTheme.colorScheme.surface)
                             .onGloballyPositioned { sectionDragState?.setViewport(it.boundsInRoot()) },
                 ) {
                     sectionDragState?.let { drag ->
@@ -646,14 +647,19 @@ internal fun CompletedTasksSeparator(
                 .padding(top = if (isFirstVisibleItem) 0.dp else 28.dp, bottom = 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        // Frosted like the cards it opens onto with glass on; the tonal pill it was without.
+        val glassOn = LocalTempoGlass.current.enabled
+        val colorScheme = MaterialTheme.colorScheme
         Surface(
-            color = MaterialTheme.colorScheme.secondaryContainer,
-            shape = RoundedCornerShape(16.dp),
-            tonalElevation = 3.dp,
+            color = glassCardColor(MaterialTheme.colorScheme.secondaryContainer),
+            shape = CompletedToggleShape,
+            border = glassRimOr(null),
+            tonalElevation = if (glassOn) 0.dp else 3.dp,
             modifier =
                 Modifier
                     .padding(end = if (showDivider) 12.dp else 0.dp)
-                    .clip(RoundedCornerShape(16.dp))
+                    .clip(CompletedToggleShape)
+                    .glassSheen(CompletedToggleShape)
                     .clickable { onToggle() },
         ) {
             Row(
@@ -663,7 +669,7 @@ internal fun CompletedTasksSeparator(
                 Text(
                     text = stringResource(R.string.completed_tasks),
                     style = MaterialTheme.typography.sectionHeader,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                    color = if (glassOn) colorScheme.onSurface else colorScheme.onSecondaryContainer,
                 )
                 Spacer(modifier = Modifier.size(8.dp))
                 Icon(
@@ -673,7 +679,7 @@ internal fun CompletedTasksSeparator(
                         Modifier
                             .size(20.dp)
                             .rotate(rotation),
-                    tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                    tint = if (glassOn) colorScheme.onSurfaceVariant else colorScheme.onSecondaryContainer,
                 )
             }
         }
@@ -690,6 +696,8 @@ internal fun CompletedTasksSeparator(
         }
     }
 }
+
+private val CompletedToggleShape = RoundedCornerShape(16.dp)
 
 @Composable
 internal fun ClearCompletedFooter(

@@ -12,6 +12,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.core.ui.theme.topBarTitle
 
@@ -47,8 +48,9 @@ fun TempoTopBar(
         actions = actions,
         colors =
             TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.background,
-                scrolledContainerColor = MaterialTheme.colorScheme.background,
+                // Transparent over the page's ambient backdrop, which the screen paints once.
+                containerColor = Color.Transparent,
+                scrolledContainerColor = Color.Transparent,
                 titleContentColor = MaterialTheme.colorScheme.primary,
             ),
         modifier = modifier,

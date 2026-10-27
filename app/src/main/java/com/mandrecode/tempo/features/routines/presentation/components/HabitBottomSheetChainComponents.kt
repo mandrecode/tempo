@@ -59,6 +59,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.core.ui.util.rememberPressableChipAnimation
@@ -132,8 +134,9 @@ fun HabitMultiSelector(
                             interactionSource = chipInteractionSource,
                         )
 
+                    val chipShape = RoundedCornerShape(chipCornerRadius.value)
                     FilterChip(
-                        modifier = Modifier.testTag(AVAILABLE_HABIT_CHIP_TEST_TAG),
+                        modifier = Modifier.testTag(AVAILABLE_HABIT_CHIP_TEST_TAG).glassSheen(chipShape),
                         selected = false,
                         onClick = {
                             onSelectHabits(selectedHabitIds + habit.id)
@@ -145,7 +148,8 @@ fun HabitMultiSelector(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant,
                                 labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             ),
-                        shape = RoundedCornerShape(chipCornerRadius.value),
+                        shape = chipShape,
+                        border = glassRim(),
                     )
                 }
             }

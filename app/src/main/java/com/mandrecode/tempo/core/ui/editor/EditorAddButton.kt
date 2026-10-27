@@ -34,13 +34,14 @@ internal fun EditorAddButton(
     val haptic = LocalHapticFeedback.current
     val (interactionSource, cornerRadius) = rememberPressableButtonAnimation()
     val radius by cornerRadius
+    val addShape = RoundedCornerShape(radius)
     FilledTonalButton(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
             onClick()
         },
         enabled = enabled,
-        shape = RoundedCornerShape(radius),
+        shape = addShape,
         contentPadding = ButtonDefaults.ButtonWithIconContentPadding,
         interactionSource = interactionSource,
         modifier = modifier.height(EDITOR_CONTROL_HEIGHT),

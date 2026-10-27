@@ -18,6 +18,8 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
@@ -47,13 +49,14 @@ fun DeleteHabitChainConfirmDialog(
                 Text(stringResource(R.string.delete_habit_chain_message))
                 Spacer(modifier = Modifier.height(16.dp))
 
+                val keepShape = RoundedCornerShape(keepHabitsCornerRadius.value)
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onConfirm(false)
                     },
                     interactionSource = keepHabitsInteractionSource,
-                    shape = RoundedCornerShape(keepHabitsCornerRadius.value),
+                    shape = keepShape,
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -69,13 +72,14 @@ fun DeleteHabitChainConfirmDialog(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                val deleteAllShape = RoundedCornerShape(deleteAllCornerRadius.value)
                 Button(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onConfirm(true)
                     },
                     interactionSource = deleteAllInteractionSource,
-                    shape = RoundedCornerShape(deleteAllCornerRadius.value),
+                    shape = deleteAllShape,
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                         ButtonDefaults.buttonColors(
@@ -93,6 +97,8 @@ fun DeleteHabitChainConfirmDialog(
         confirmButton = {},
         dismissButton = {
             OutlinedButton(
+                colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+                border = glassButtonBorder(),
                 onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                     onCancel()

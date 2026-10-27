@@ -459,6 +459,8 @@
     <string name="settings_color_scheme">Color Scheme</string>
     <string name="settings_color_scheme_dynamic">Dynamic</string>
     <string name="settings_color_scheme_tempo">Tempo</string>
+    <string name="settings_glass">Glass</string>
+    <string name="settings_glass_effects">Frosted glass</string>
     <string name="tabs_and_navigation">Tabs &amp; Navigation</string>
     <string name="tab_warning">At least one main tab (Routines or Tasks) must remain active for the app to function properly.</string>
     <string name="default_tab">Default Tab</string>
@@ -573,8 +575,8 @@
     <string name="onboarding_setup_description">Choose what appears in the app. You can change any of this later in Settings.</string>
     <string name="whats_new_legend">✨ New features in v%1$s: %2$s</string>
     <string name="whats_new_got_it">Got it</string>
-    <string name="whats_new_title">Sections inside your lists, and connected groups</string>
-    <string name="whats_new_description">Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns. Your tasks and settings now sit together in connected groups, and the tab you are on shows its name.</string>
+    <string name="whats_new_title">A new glass look, and sections inside your lists</string>
+    <string name="whats_new_description">Tempo has a new look: the navigation bar and sheets are frosted glass over a soft gradient in your theme\'s colours. Prefer solid surfaces? Turn off Frosted glass in Settings. Split a long category into sections, like Cat, Home chores and Shopping inside one shared list. Turn on Sections in a category\'s options to start adding them, then collapse, rename, reorder or delete each one from its header. Move a task by picking its section in the editor, or by dragging it in manual order. On tablets and desktop windows, sections get their own shortcuts and spread over two columns. Your tasks and settings now sit together in connected groups, and the tab you are on shows its name.</string>
     <string name="review_app">Review App</string>
     <string name="review_app_description">Rate us on the Play Store</string>
     <string name="send_feedback">Send Feedback</string>

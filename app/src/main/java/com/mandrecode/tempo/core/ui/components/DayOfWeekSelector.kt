@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.DayOfWeek
+import com.mandrecode.tempo.core.ui.glass.glassRim
 
 /**
  * One day of the week: its full name (for accessibility) and its one-letter initial. The initial
@@ -142,8 +143,9 @@ private fun WeekdayToggle(
 ) {
     val name = stringResource(label.nameRes)
     val initial = stringResource(label.initialRes)
+    val checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay)
     ToggleButton(
-        checked = label.day in displayedRepeatDays(selectedDays, nullMeansEveryDay),
+        checked = checked,
         onCheckedChange = {
             val toggle = toggledRepeatDays(selectedDays, label.day, nullMeansEveryDay)
             if (toggle is RepeatDaysToggle.Changed) onDaysChange(toggle.days)
@@ -151,6 +153,7 @@ private fun WeekdayToggle(
         enabled = enabled,
         colors = colors,
         shapes = ToggleButtonDefaults.shapesFor(WeekdayButtonHeight),
+        border = if (checked) null else glassRim(),
         // A single letter in a narrow button: the default side padding would clip it.
         contentPadding = PaddingValues(0.dp),
         modifier =

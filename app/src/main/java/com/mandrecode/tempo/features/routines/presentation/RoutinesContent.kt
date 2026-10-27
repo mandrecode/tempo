@@ -5,7 +5,6 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -51,6 +50,7 @@ import com.mandrecode.tempo.core.domain.model.VacationPeriod
 import com.mandrecode.tempo.core.ui.components.FirstLoadCrossfade
 import com.mandrecode.tempo.core.ui.components.TempoLoadingIndicator
 import com.mandrecode.tempo.core.ui.components.WavyDivider
+import com.mandrecode.tempo.core.ui.glass.glassPanel
 import com.mandrecode.tempo.core.ui.navigation.floatingNavigationBottomClearancePadding
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing
 import com.mandrecode.tempo.core.ui.theme.emptyStateTitle
@@ -69,6 +69,8 @@ import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
 private val ContentBlockTopCornerRadius = 28.dp
+private val ContentBlockShape =
+    RoundedCornerShape(topStart = ContentBlockTopCornerRadius, topEnd = ContentBlockTopCornerRadius)
 
 /**
  * [showAddHabitButton] makes this composable self-sufficient in isolation (used directly by
@@ -103,10 +105,9 @@ fun RoutinesContent(
     }
 
     Box(
-        // Matches the Scaffold containerColor this is normally hosted in (RoutinesScreen) —
-        // kept here too so the rounded content block's corner cutouts (see below) still resolve
-        // to the correct tinted color when this composable is previewed/tested standalone.
-        modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background),
+        // Transparent: the page's ambient backdrop is painted once by the screen around this
+        // (and by the preview hosts), so the panel's translucency picks up the same glows.
+        modifier = modifier.fillMaxSize(),
     ) {
         FirstLoadCrossfade(
             isLoading = uiState.isLoading,
@@ -128,7 +129,6 @@ fun RoutinesContent(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.background)
                             .onSizeChanged { onContentBlockTopChange(with(density) { it.height.toDp() }) },
                 ) {
                     DayFilterRow(
@@ -145,12 +145,8 @@ fun RoutinesContent(
                             // clip before background: background() alone doesn't clip children,
                             // so list overscroll/ripple effects would otherwise draw past the
                             // rounded top corners instead of respecting the seam.
-                            .clip(
-                                RoundedCornerShape(
-                                    topStart = ContentBlockTopCornerRadius,
-                                    topEnd = ContentBlockTopCornerRadius,
-                                ),
-                            ).background(MaterialTheme.colorScheme.surface),
+                            .clip(ContentBlockShape)
+                            .glassPanel(ContentBlockShape, MaterialTheme.colorScheme.surface),
                 ) {
                     val allBuildItems = scheduledItems + unscheduledItems
                     if (allBuildItems.isEmpty() && quitHabits.isEmpty()) {

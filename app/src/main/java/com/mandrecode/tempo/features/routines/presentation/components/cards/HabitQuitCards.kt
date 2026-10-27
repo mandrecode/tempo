@@ -19,14 +19,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.domain.model.VacationPeriod
-import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.resolveColor
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -62,21 +66,22 @@ fun QuitHabitCard(
         )
     val containerColor = selectionColors.container
     val contentColor = selectionColors.content
-    val selectionElevation = selectableCardElevation(isSelected)
 
     Card(
         onClick = onEdit,
         modifier =
             modifier
                 .fillMaxWidth()
-                .semantics { selected = isSelected },
+                .semantics { selected = isSelected }
+                .glassSheen(state.cardShape),
         shape = state.cardShape,
+        border = glassRim(),
         colors =
             CardDefaults.cardColors(
                 containerColor = containerColor,
                 contentColor = contentColor,
             ),
-        elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
+        elevation = glassCardElevation(isSelected),
     ) {
         HabitItem(
             habit = habit,
@@ -217,8 +222,8 @@ private fun rememberQuitHabitCardColors(
             if (isCompleted) {
                 resolvedHabitColor ?: MaterialTheme.colorScheme.primary
             } else {
-                resolvedHabitColor?.copy(alpha = 0.15f)
-                    ?: MaterialTheme.colorScheme.background
+                resolvedHabitColor?.copy(alpha = 0.15f)?.compositeOver(cardFrostColor())
+                    ?: cardFrostColor()
             },
         animationSpec = tween(300),
         label = "quit_card_color",
@@ -250,8 +255,9 @@ private fun StreakBadge(
     contentColor: Color,
     accentColor: Color,
 ) {
+    val pillShape = RoundedCornerShape(50)
     Surface(
-        shape = RoundedCornerShape(50),
+        shape = pillShape,
         color =
             if (isCompleted) {
                 contentColor.copy(alpha = 0.2f)

@@ -70,9 +70,10 @@ internal fun FocusSummaryHero(
         label = "focus_day_progress",
     )
 
+    val heroShape = RoundedCornerShape(HeroCornerRadius)
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(HeroCornerRadius),
+        shape = heroShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
     ) {

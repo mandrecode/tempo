@@ -1,11 +1,9 @@
 package com.mandrecode.tempo.screenshots
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,6 +15,7 @@ import com.android.tools.screenshot.PreviewTest
 import com.mandrecode.tempo.core.domain.model.Priority
 import com.mandrecode.tempo.core.ui.adaptive.DockedEditorPane
 import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
+import com.mandrecode.tempo.core.ui.glass.ambientBackground
 import com.mandrecode.tempo.core.ui.navigation.FloatingRailExpandedContentStartPadding
 import com.mandrecode.tempo.core.ui.navigation.adaptiveScreenContentLayout
 import com.mandrecode.tempo.features.tasks.domain.model.Category
@@ -120,7 +119,7 @@ private fun DockedTasksScreen(task: Task?) {
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
+                    .ambientBackground(),
         ) {
             Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                 TasksContent(

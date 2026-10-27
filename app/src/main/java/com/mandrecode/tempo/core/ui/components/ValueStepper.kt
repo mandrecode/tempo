@@ -24,6 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 
 /**
  * A minus/value/plus stepper.
@@ -85,8 +87,10 @@ private fun StepperButton(
 ) {
     val haptic = LocalHapticFeedback.current
 
+    val stepperShape = RoundedCornerShape(STEPPER_CORNER_PERCENT)
     Surface(
-        shape = RoundedCornerShape(STEPPER_CORNER_PERCENT),
+        shape = stepperShape,
+        border = glassRim(),
         color =
             MaterialTheme.colorScheme.surfaceContainerHighest.let {
                 if (enabled) it else it.copy(alpha = DISABLED_ALPHA)
@@ -100,7 +104,7 @@ private fun StepperButton(
                     // Adjusting a value is a small commit, matching the tick a toggle gives.
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                     onClick()
-                },
+                }.glassSheen(stepperShape),
     ) {
         Box(contentAlignment = Alignment.Center) {
             Icon(

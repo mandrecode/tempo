@@ -30,6 +30,7 @@ object OnboardingContract {
         val availableThemeModes: ImmutableList<ThemeMode> =
             persistentListOf(ThemeMode.LIGHT, ThemeMode.DARK, ThemeMode.SYSTEM),
         val useTempoColors: Boolean = true,
+        val glassEffects: Boolean = true,
         val enabledTabs: ImmutableSet<TempoTab> = TempoTab.entries.toPersistentSet(),
         val defaultTab: TempoTab = TempoTab.DEFAULT,
     ) {
@@ -48,6 +49,10 @@ object OnboardingContract {
 
         data class UseTempoColorsToggled(
             val useTempoColors: Boolean,
+        ) : UiEvent
+
+        data class GlassEffectsToggled(
+            val enabled: Boolean,
         ) : UiEvent
 
         data class ThemeModeSelected(

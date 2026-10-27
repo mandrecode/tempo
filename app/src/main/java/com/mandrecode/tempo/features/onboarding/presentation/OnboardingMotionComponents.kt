@@ -29,6 +29,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 @Composable
@@ -166,8 +168,12 @@ private fun OutlinedOnboardingButton(
         onClick = onClick,
         interactionSource = interactionSource,
         shape = shape,
-        colors = ButtonDefaults.outlinedButtonColors(containerColor = colors.container, contentColor = colors.content),
-        border = BorderStroke(1.dp, colors.border),
+        colors =
+            ButtonDefaults.outlinedButtonColors(
+                containerColor = glassButtonContainer(),
+                contentColor = colors.content,
+            ),
+        border = glassButtonBorder(BorderStroke(1.dp, colors.border)),
         modifier = modifier,
     ) {
         Text(label)

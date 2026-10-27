@@ -32,6 +32,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
@@ -130,6 +132,8 @@ private fun EditorFooterCancelConfirmRow(
         val (cancelInteractionSource, cancelCornerRadius) = rememberPressableButtonAnimation()
 
         OutlinedButton(
+            colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+            border = glassButtonBorder(),
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onRequestDismiss()
@@ -184,9 +188,10 @@ private fun EditorFooterConfirmButton(
         label = "confirm_content_color",
     )
 
+    val confirmShape = RoundedCornerShape(confirmCornerRadius.value)
     Button(
         onClick = onConfirmClick,
-        shape = RoundedCornerShape(confirmCornerRadius.value),
+        shape = confirmShape,
         enabled = confirmEnabled,
         modifier = Modifier.height(48.dp),
         contentPadding = PaddingValues(horizontal = 24.dp),

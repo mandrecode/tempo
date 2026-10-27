@@ -80,26 +80,28 @@ class SettingsViewModel
             )
 
         init {
-            observeThemeMode()
-            observeTempoColors()
+            observeAppearance()
             loadVersionInfo()
             observeTabPreferences()
             observeFocusPreferences()
             observePreferenceStores()
         }
 
-        private fun observeThemeMode() {
+        /** Theme, colour scheme and glass, mirrored from where they are stored. */
+        private fun observeAppearance() {
             viewModelScope.launch {
                 themePreferencesRepository.getThemeMode().collect { mode ->
                     _uiState.update { it.copy(selectedThemeMode = mode) }
                 }
             }
-        }
-
-        private fun observeTempoColors() {
             viewModelScope.launch {
                 themePreferencesRepository.getUseTempoColors().collect { enabled ->
                     _uiState.update { it.copy(useTempoColors = enabled) }
+                }
+            }
+            viewModelScope.launch {
+                themePreferencesRepository.getGlassEffects().collect { enabled ->
+                    _uiState.update { it.copy(glassEffects = enabled) }
                 }
             }
         }
@@ -144,14 +146,10 @@ class SettingsViewModel
 
         fun onEvent(event: SettingsContract.UiEvent) {
             when (event) {
-                is SettingsContract.UiEvent.ThemeModeSelected -> {
-                    themePreferencesRepository.setThemeMode(event.mode)
-                }
-
-                is SettingsContract.UiEvent.TempoColorsToggled -> {
-                    themePreferencesRepository.setUseTempoColors(event.enabled)
-                    refreshQuickAddTaskWidget()
-                }
+                is SettingsContract.UiEvent.ThemeModeSelected,
+                is SettingsContract.UiEvent.TempoColorsToggled,
+                is SettingsContract.UiEvent.GlassEffectsToggled,
+                -> onAppearanceEvent(event)
 
                 is SettingsContract.UiEvent.FocusSessionLengthChanged -> {
                     focusSessionRepository.setDefaultLengthMinutes(event.minutes)
@@ -209,6 +207,20 @@ class SettingsViewModel
                 is SettingsContract.UiEvent.ImportModeChosen,
                 is SettingsContract.UiEvent.BackupDialogDismissed,
                 -> backupDelegate.onEvent(event, backupHost)
+            }
+        }
+
+        /** Theme, colour scheme and glass: the look of the app, each stored straight away. */
+        private fun onAppearanceEvent(event: SettingsContract.UiEvent) {
+            when (event) {
+                is SettingsContract.UiEvent.ThemeModeSelected -> themePreferencesRepository.setThemeMode(event.mode)
+                is SettingsContract.UiEvent.TempoColorsToggled -> {
+                    themePreferencesRepository.setUseTempoColors(event.enabled)
+                    refreshQuickAddTaskWidget()
+                }
+                is SettingsContract.UiEvent.GlassEffectsToggled ->
+                    themePreferencesRepository.setGlassEffects(event.enabled)
+                else -> Unit
             }
         }
 

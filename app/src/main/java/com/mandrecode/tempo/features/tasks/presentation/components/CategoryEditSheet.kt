@@ -60,6 +60,8 @@ import com.mandrecode.tempo.core.domain.util.ValidationUtils
 import com.mandrecode.tempo.core.ui.components.ColorPicker
 import com.mandrecode.tempo.core.ui.components.IconPicker
 import com.mandrecode.tempo.core.ui.components.TempoModalTopSheet
+import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.dialogAction
@@ -343,6 +345,7 @@ fun CategoryEditSheet(
                     val (defaultInteractionSource, defaultCornerRadius) =
                         rememberPressableButtonAnimation()
 
+                    val defaultShape = RoundedCornerShape(defaultCornerRadius.value)
                     Button(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
@@ -352,7 +355,7 @@ fun CategoryEditSheet(
                             Modifier
                                 .align(Alignment.CenterHorizontally)
                                 .height(48.dp),
-                        shape = RoundedCornerShape(defaultCornerRadius.value),
+                        shape = defaultShape,
                         interactionSource = defaultInteractionSource,
                     ) {
                         Icon(
@@ -380,12 +383,13 @@ fun CategoryEditSheet(
                     val (deleteInteractionSource, deleteCornerRadius) =
                         rememberPressableIconButtonAnimation()
 
+                    val deleteShape = RoundedCornerShape(deleteCornerRadius.value)
                     Button(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             currentOnDelete?.invoke()
                         },
-                        shape = RoundedCornerShape(deleteCornerRadius.value),
+                        shape = deleteShape,
                         modifier = Modifier.height(48.dp),
                         colors =
                             ButtonDefaults.buttonColors(
@@ -409,6 +413,8 @@ fun CategoryEditSheet(
                         rememberPressableButtonAnimation()
 
                     OutlinedButton(
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+                        border = glassButtonBorder(),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onRequestDismiss()
@@ -447,6 +453,7 @@ fun CategoryEditSheet(
                         label = "save_content_color",
                     )
 
+                    val saveShape = RoundedCornerShape(saveCornerRadius.value)
                     Button(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -458,7 +465,7 @@ fun CategoryEditSheet(
                                 sectionsEnabled,
                             )
                         },
-                        shape = RoundedCornerShape(saveCornerRadius.value),
+                        shape = saveShape,
                         enabled = saveEnabled,
                         colors =
                             ButtonDefaults.buttonColors(

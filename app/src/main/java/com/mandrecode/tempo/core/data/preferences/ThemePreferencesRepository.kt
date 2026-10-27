@@ -17,4 +17,9 @@ interface ThemePreferencesRepository {
     fun currentUseTempoColors(): Boolean
 
     fun setUseTempoColors(enabled: Boolean)
+
+    /** Whether the glass look (frost and blur) is on. On by default; off gives solid surfaces. */
+    fun getGlassEffects(): Flow<Boolean>
+
+    fun setGlassEffects(enabled: Boolean)
 }

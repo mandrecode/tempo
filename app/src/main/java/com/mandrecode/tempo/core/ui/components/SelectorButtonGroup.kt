@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glassRim
 
 /** Default height for the editors' selector rows: a full touch target. */
 val SelectorButtonHeight: Dp = 48.dp
@@ -98,6 +99,7 @@ fun ConnectedSelectorButton(
         enabled = enabled,
         shapes = connectedButtonShapes(index, count),
         colors = colors,
+        border = if (checked) null else glassRim(),
         interactionSource = interactionSource,
         contentPadding = PaddingValues(horizontal = SelectorContentPadding),
         modifier = modifier.heightIn(min = height).semantics { role = Role.RadioButton },

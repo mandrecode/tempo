@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.ExpressiveChip
 import com.mandrecode.tempo.core.ui.components.SquaredSelection
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.TempoSpacing.cardContentPadding
 import com.mandrecode.tempo.features.tasks.domain.model.Task
 import com.mandrecode.tempo.features.tasks.domain.model.UndatedTask
@@ -167,8 +169,9 @@ private fun ChipTray(
     content: @Composable () -> Unit,
 ) {
     Surface(
-        modifier = modifier,
+        modifier = modifier.glassSheen(shape),
         shape = shape,
+        border = glassRim(),
         color = MaterialTheme.colorScheme.surfaceContainerHighest,
     ) {
         Box(

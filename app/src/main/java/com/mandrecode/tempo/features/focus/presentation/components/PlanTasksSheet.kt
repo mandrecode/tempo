@@ -272,12 +272,13 @@ private fun PlanSheetDoneButton(onClick: () -> Unit) {
         modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
         horizontalArrangement = Arrangement.End,
     ) {
+        val doneShape = RoundedCornerShape(cornerRadius.value)
         Button(
             onClick = {
                 haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                 onClick()
             },
-            shape = RoundedCornerShape(cornerRadius.value),
+            shape = doneShape,
             interactionSource = interactionSource,
             contentPadding = PaddingValues(horizontal = 24.dp),
             modifier = Modifier.height(48.dp).testTag(PLAN_SHEET_DONE_TAG),

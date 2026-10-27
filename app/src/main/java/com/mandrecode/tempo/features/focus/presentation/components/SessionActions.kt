@@ -346,7 +346,7 @@ private fun SessionActionSurface(
             when (action.emphasis) {
                 ButtonEmphasis.DISCARD -> BorderStroke(1.dp, colors.discardBorder)
                 ButtonEmphasis.QUIET -> BorderStroke(1.dp, colors.quietBorder)
-                else -> null
+                ButtonEmphasis.FILLED, ButtonEmphasis.TONAL -> null
             },
     ) {
         SessionActionLabel(action = action, compact = compact)

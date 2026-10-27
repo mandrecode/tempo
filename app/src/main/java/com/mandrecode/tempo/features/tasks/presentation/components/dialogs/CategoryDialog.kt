@@ -38,10 +38,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.mandrecode.tempo.R
+import com.mandrecode.tempo.core.ui.glass.glassButtonBorder
+import com.mandrecode.tempo.core.ui.glass.glassButtonContainer
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.dialogAction
 import com.mandrecode.tempo.core.ui.theme.dialogTitle
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 import com.mandrecode.tempo.features.tasks.domain.model.Category
+
+// Consistent with app's rounded design
+private val CategoryDialogShape = RoundedCornerShape(24.dp)
 
 @Composable
 fun CategoryDialog(
@@ -70,8 +77,10 @@ fun CategoryDialog(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(16.dp),
-            shape = RoundedCornerShape(24.dp), // Consistent with app's rounded design
+                    .padding(16.dp)
+                    .glassSheen(CategoryDialogShape),
+            shape = CategoryDialogShape,
+            border = glassRim(),
             colors =
                 CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer,
@@ -130,6 +139,8 @@ fun CategoryDialog(
                     val (cancelInteractionSource, cancelCornerRadius) = rememberPressableButtonAnimation()
 
                     OutlinedButton(
+                        colors = ButtonDefaults.outlinedButtonColors(containerColor = glassButtonContainer()),
+                        border = glassButtonBorder(),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onDismiss()
@@ -169,6 +180,7 @@ fun CategoryDialog(
                         label = "confirm_content_color",
                     )
 
+                    val confirmShape = RoundedCornerShape(confirmCornerRadius.value)
                     Button(
                         onClick = {
                             if (categoryName.isNotBlank()) {
@@ -178,7 +190,7 @@ fun CategoryDialog(
                                 isNameError = true
                             }
                         },
-                        shape = RoundedCornerShape(confirmCornerRadius.value),
+                        shape = confirmShape,
                         enabled = confirmEnabled,
                         colors =
                             ButtonDefaults.buttonColors(

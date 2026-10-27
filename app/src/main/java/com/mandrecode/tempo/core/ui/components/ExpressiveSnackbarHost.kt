@@ -16,8 +16,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glass
+import com.mandrecode.tempo.core.ui.theme.LocalTempoGlass
 import com.mandrecode.tempo.core.ui.theme.spacing
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
@@ -34,18 +37,24 @@ fun ExpressiveSnackbarHost(
     }
 }
 
+private val SnackbarShape = RoundedCornerShape(28.dp)
+
 @Composable
 internal fun ExpressiveSnackbar(snackbarData: SnackbarData) {
+    // Floats over the page like the bar does, so it is the same chrome glass, with no shadow (it
+    // would show through the glass as a grey cast). With glass off it is the solid card it was.
+    val glassOn = LocalTempoGlass.current.enabled
     Surface(
         modifier =
             Modifier
                 .padding(horizontal = MaterialTheme.spacing.large, vertical = MaterialTheme.spacing.medium)
-                .widthIn(max = 560.dp),
-        shape = RoundedCornerShape(28.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                .widthIn(max = 560.dp)
+                .then(if (glassOn) Modifier.glass(SnackbarShape) else Modifier),
+        shape = SnackbarShape,
+        color = if (glassOn) Color.Transparent else MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-        shadowElevation = 2.dp,
+        border = if (glassOn) null else BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+        shadowElevation = if (glassOn) 0.dp else 2.dp,
         tonalElevation = 0.dp,
     ) {
         Row(
@@ -91,9 +100,10 @@ private fun ExpressiveSnackbarAction(
     onClick: () -> Unit,
 ) {
     val (actionInteractionSource, actionCornerRadius) = rememberPressableButtonAnimation()
+    val actionShape = RoundedCornerShape(actionCornerRadius.value)
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(actionCornerRadius.value),
+        shape = actionShape,
         color = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         interactionSource = actionInteractionSource,

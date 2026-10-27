@@ -27,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavKey
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.outlinedIconRes
 import com.mandrecode.tempo.core.ui.selectedIconRes
 import com.mandrecode.tempo.core.ui.theme.TempoMotionTokens
@@ -100,17 +102,15 @@ fun TempoBottomNavigation(
     val isRailLayout = isFloatingNavigationRailLayout()
     val isExpandedRail = isRailLayout && isExpandedFloatingRailLayout()
 
-    val sessionSlot: (@Composable (Modifier) -> Unit)? =
-        activeSession?.let { session ->
-            focusSessionSlot(
-                session = session,
-                isRailLayout = isRailLayout,
-                isExpandedRail = isExpandedRail,
-                currentRoute = currentRoute,
-                hasContextualActions = hasContextualActions,
-                onOpenSession = onOpenSession,
-            )
-        }
+    val sessionSlot =
+        sessionSlotFor(
+            activeSession = activeSession,
+            currentRoute = currentRoute,
+            isRailLayout = isRailLayout,
+            isExpandedRail = isExpandedRail,
+            hasContextualActions = hasContextualActions,
+            onOpenSession = onOpenSession,
+        )
     // Tapping the tab you are already on goes to that tab's home state (Tasks: the default
     // category, #452) rather than doing nothing.
     val onItemClick: (NavigationItem) -> Unit = { item ->
@@ -122,9 +122,9 @@ fun TempoBottomNavigation(
     }
 
     Surface(
-        modifier = modifier,
+        modifier = modifier.glass(FloatingToolbarShape),
         shape = FloatingToolbarShape,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        color = Color.Transparent,
         tonalElevation = 0.dp,
         shadowElevation = 0.dp,
     ) {
@@ -257,7 +257,7 @@ private fun navigateTo(
  * always done this, and a tab that stayed rigid beside it read as the odd one out.
  *
  * The selected tab is filled with the primary colour. On the bottom bar ([expandsWhenSelected]) it
- * also widens to show its name, the Material 3 Expressive navigation item: switching tabs,
+ * also widens to show its name, the Material 3 Expressive navigation item (#423): switching tabs,
  * one pill grows while the other shrinks back to an icon. A narrow rail has no width to grow into,
  * so there the selected tab stays an icon.
  */
@@ -393,37 +393,64 @@ private fun ExpandedRailNavigationRow(
 }
 
 /**
- * Whether the session slot shows the countdown or only its icon.
- *
- * The countdown needs room, and how much room there is depends on the shape of the bar rather than
- * on where you happen to be:
+ * Whether the session slot shows the countdown or only its icon. It shows it wherever it fits:
  *
  * - An expanded rail has wide, labelled rows. A bare icon there would be the one row saying nothing.
  * - A narrow rail is one icon wide by construction, so there is nowhere for a countdown to go —
  *   expanding pushed the pill straight out of the rail and over the content behind it.
- * - On the bottom bar it expands away from Focus, where you are not already looking at the session
- *   card, and only when the bar is not also carrying a tab's own action buttons — which is the case
- *   it actually runs out of width in.
+ * - The bottom bar shows it, unless it also carries a tab's own action buttons on a phone-wide
+ *   screen: with those beside it and the selected tab showing its name, a countdown no longer fits.
+ *
+ * (On Focus the slot is not a session pill at all, but the ordinary tab.)
  */
 internal fun isSessionChipCompact(
     isRailLayout: Boolean,
     isExpandedRail: Boolean,
-    currentRoute: NavKey,
     hasContextualActions: Boolean,
+    hasRoomForCountdown: Boolean,
 ): Boolean =
     when {
         isExpandedRail -> false
         isRailLayout -> true
-        else -> currentRoute == FocusRoute || hasContextualActions
+        else -> hasContextualActions && !hasRoomForCountdown
     }
 
-/** The Focus tab's slot while a session is running, sized to the room the bar actually has. */
-private fun focusSessionSlot(
-    session: FocusSession,
+/**
+ * The screen width (dp) from which the bottom bar fits the countdown beside a tab's own actions:
+ * sort and add, three tabs, the selected one showing its name, and the countdown.
+ */
+internal const val SESSION_COUNTDOWN_ROOMY_WIDTH_DP = 480
+
+/**
+ * The Focus tab's slot while a session is running, or null for the ordinary tab. On Focus itself the
+ * tab stays an ordinary selected tab: the session card is right there, and the selection moving
+ * between tabs should look the same whichever tab it lands on. Away from Focus, the running
+ * session takes the Focus tab's slot so it stays in sight.
+ */
+@Composable
+private fun sessionSlotFor(
+    activeSession: FocusSession?,
+    currentRoute: NavKey,
     isRailLayout: Boolean,
     isExpandedRail: Boolean,
-    currentRoute: NavKey,
     hasContextualActions: Boolean,
+    onOpenSession: () -> Unit,
+): (@Composable (Modifier) -> Unit)? {
+    val session = activeSession?.takeIf { currentRoute != FocusRoute } ?: return null
+    val compact =
+        isSessionChipCompact(
+            isRailLayout = isRailLayout,
+            isExpandedRail = isExpandedRail,
+            hasContextualActions = hasContextualActions,
+            hasRoomForCountdown = LocalConfiguration.current.screenWidthDp >= SESSION_COUNTDOWN_ROOMY_WIDTH_DP,
+        )
+    return focusSessionSlot(session = session, compact = compact, onOpenSession = onOpenSession)
+}
+
+/** The session pill in the Focus tab's slot. */
+private fun focusSessionSlot(
+    session: FocusSession,
+    compact: Boolean,
     onOpenSession: () -> Unit,
 ): @Composable (Modifier) -> Unit =
     { slotModifier ->
@@ -431,13 +458,6 @@ private fun focusSessionSlot(
             session = session,
             onClick = onOpenSession,
             modifier = slotModifier,
-            compact =
-                isSessionChipCompact(
-                    isRailLayout = isRailLayout,
-                    isExpandedRail = isExpandedRail,
-                    currentRoute = currentRoute,
-                    hasContextualActions = hasContextualActions,
-                ),
-            selected = currentRoute == FocusRoute,
+            compact = compact,
         )
     }

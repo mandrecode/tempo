@@ -98,6 +98,7 @@ class SettingsViewModelTest {
 
         coEvery { themePreferencesRepository.getThemeMode() } returns flowOf(ThemeMode.SYSTEM)
         coEvery { themePreferencesRepository.getUseTempoColors() } returns flowOf(false)
+        coEvery { themePreferencesRepository.getGlassEffects() } returns flowOf(true)
         coEvery { navigationPreferencesRepository.enabledTabs() } returns flowOf(TempoTab.entries.toSet())
         coEvery { navigationPreferencesRepository.getDefaultTab() } returns flowOf(TempoTab.ROUTINES)
         every { completedTaskRetentionPreferences.isEnabled } returns MutableStateFlow(false)

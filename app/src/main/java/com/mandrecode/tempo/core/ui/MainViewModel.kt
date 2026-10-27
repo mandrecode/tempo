@@ -44,11 +44,13 @@ class MainViewModel
                 themePreferencesRepository.getUseTempoColors(),
                 navigationPreferencesRepository.getDefaultTab(),
                 navigationPreferencesRepository.enabledTabs(),
-            ) { themeMode, useTempoColors, defaultTab, enabledTabs ->
+                themePreferencesRepository.getGlassEffects(),
+            ) { themeMode, useTempoColors, defaultTab, enabledTabs, glassEffects ->
                 MainUiState.Success(
                     themeMode = themeMode,
                     useTempoColors = useTempoColors,
                     defaultTab = defaultTab,
+                    glassEffects = glassEffects,
                     enabledTabs = enabledTabs,
                     isOnboardingCompleted = false,
                     whatsNewVersionName = appVersionName,

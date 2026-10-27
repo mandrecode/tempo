@@ -35,6 +35,7 @@ import com.mandrecode.tempo.util.DateTimeFormatter
 import kotlinx.datetime.LocalDate
 
 private val UpNextCornerRadius = 22.dp
+private val UpNextCardShape = RoundedCornerShape(UpNextCornerRadius)
 
 /**
  * The one item worth starting next.
@@ -61,7 +62,7 @@ internal fun UpNextCard(
 
     Surface(
         modifier = modifier,
-        shape = RoundedCornerShape(UpNextCornerRadius),
+        shape = UpNextCardShape,
         color = MaterialTheme.colorScheme.tertiaryContainer,
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
     ) {
@@ -195,6 +196,7 @@ internal fun StartSessionButton(
             pressedRadius = PillPressedRadius,
         )
 
+    val actionShape = RoundedCornerShape(cornerRadius.value)
     Surface(
         onClick = {
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -204,7 +206,7 @@ internal fun StartSessionButton(
         // card whichever action it happens to be offering. Two heights for the same shape of card
         // made the row jog as it scrolled past.
         modifier = modifier.height(UpNextActionHeight),
-        shape = RoundedCornerShape(cornerRadius.value),
+        shape = actionShape,
         color = MaterialTheme.colorScheme.onTertiaryContainer,
         contentColor = MaterialTheme.colorScheme.tertiaryContainer,
         interactionSource = interactionSource,
@@ -266,6 +268,7 @@ private fun WorkedOnButton(
     val (interactionSource, cornerRadius) =
         rememberPressableButtonAnimation(baseRadius = PillRadius, pressedRadius = PillPressedRadius)
 
+    val actionShape = RoundedCornerShape(cornerRadius.value)
     Surface(
         onClick = {
             haptic.performHapticFeedback(
@@ -275,7 +278,7 @@ private fun WorkedOnButton(
         },
         modifier = Modifier.size(UpNextActionHeight),
         interactionSource = interactionSource,
-        shape = RoundedCornerShape(cornerRadius.value),
+        shape = actionShape,
         color =
             MaterialTheme.colorScheme.onTertiaryContainer.let {
                 if (filled) it else it.copy(alpha = QUIET_CONTAINER_ALPHA)

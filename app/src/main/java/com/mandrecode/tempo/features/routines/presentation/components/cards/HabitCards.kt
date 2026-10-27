@@ -42,6 +42,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -61,9 +62,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
-import com.mandrecode.tempo.core.ui.components.selectableCardElevation
+import com.mandrecode.tempo.core.ui.components.cardFrostColor
+import com.mandrecode.tempo.core.ui.components.glassCardElevation
 import com.mandrecode.tempo.core.ui.components.selectedContainerColor
 import com.mandrecode.tempo.core.ui.components.selectedTintOverlayColor
+import com.mandrecode.tempo.core.ui.glass.glassRim
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.LocalIsDarkTheme
 import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
@@ -401,8 +405,8 @@ fun HabitCard(
         if (isCompleted) {
             resolvedHabitColor ?: MaterialTheme.colorScheme.primary
         } else {
-            resolvedHabitColor?.copy(alpha = 0.15f)
-                ?: MaterialTheme.colorScheme.background
+            resolvedHabitColor?.copy(alpha = 0.15f)?.compositeOver(cardFrostColor())
+                ?: cardFrostColor()
         }
     val containerColor by animateColorAsState(
         targetValue = selectedContainerColor(baseContainerColor, isSelected),
@@ -422,7 +426,6 @@ fun HabitCard(
     )
 
     val cardShape = RoundedCornerShape(cardCornerRadius)
-    val selectionElevation = selectableCardElevation(isSelected)
 
     Row(
         // As in HabitChainCard: the parameter existed but never reached the root, so a caller's
@@ -468,14 +471,16 @@ fun HabitCard(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .semantics { selected = isSelected },
+                    .semantics { selected = isSelected }
+                    .glassSheen(cardShape),
             shape = cardShape,
+            border = glassRim(),
             colors =
                 CardDefaults.cardColors(
                     containerColor = containerColor,
                     contentColor = contentColor,
                 ),
-            elevation = CardDefaults.cardElevation(defaultElevation = selectionElevation),
+            elevation = glassCardElevation(isSelected),
         ) {
             HabitItem(
                 habit = habit,

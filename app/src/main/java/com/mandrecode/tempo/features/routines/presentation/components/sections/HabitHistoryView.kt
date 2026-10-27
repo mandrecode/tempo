@@ -366,9 +366,10 @@ private fun StreakLabel(
         label = "streakPillTextColor",
     )
 
+    val pillShape = RoundedCornerShape(STREAK_PILL_CORNER_RADIUS)
     Surface(
         modifier = Modifier.testTag(HABIT_HISTORY_STREAK_PILL_TEST_TAG),
-        shape = RoundedCornerShape(STREAK_PILL_CORNER_RADIUS),
+        shape = pillShape,
         color = backgroundColor,
     ) {
         Box(

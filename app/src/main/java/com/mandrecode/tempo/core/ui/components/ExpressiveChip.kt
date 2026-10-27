@@ -30,6 +30,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.mandrecode.tempo.core.ui.glass.glassRimOr
+import com.mandrecode.tempo.core.ui.glass.glassSheen
 import com.mandrecode.tempo.core.ui.theme.filterChipSelected
 
 /**
@@ -127,20 +129,22 @@ fun ExpressiveChip(
         label = "expressive_chip_content",
     )
 
+    val shape =
+        RoundedCornerShape(
+            topStart = startRadius,
+            bottomStart = startRadius,
+            topEnd = endRadius,
+            bottomEnd = endRadius,
+        )
+
     CompositionLocalProvider(LocalContentColor provides contentColor) {
         Surface(
             modifier =
                 modifier
                     .height(height)
                     .padding(vertical = verticalInset)
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = startRadius,
-                            bottomStart = startRadius,
-                            topEnd = endRadius,
-                            bottomEnd = endRadius,
-                        ),
-                    ).clickable(
+                    .clip(shape)
+                    .clickable(
                         interactionSource = interactionSource,
                         indication = null,
                         enabled = enabled,
@@ -148,23 +152,15 @@ fun ExpressiveChip(
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             onClick()
                         },
-                    ),
-            shape =
-                RoundedCornerShape(
-                    topStart = startRadius,
-                    bottomStart = startRadius,
-                    topEnd = endRadius,
-                    bottomEnd = endRadius,
-                ),
+                    ).then(if (isSelected) Modifier else Modifier.glassSheen(shape)),
+            shape = shape,
             color = containerColor,
+            // The finish is for the neutral glass; a selected chip is a clean, solid colour.
             border =
-                if (!isSelected) {
-                    BorderStroke(
-                        1.dp,
-                        MaterialTheme.colorScheme.outline.copy(alpha = 0.1f),
-                    )
-                } else {
+                if (isSelected) {
                     null
+                } else {
+                    glassRimOr(BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)))
                 },
         ) {
             Row(

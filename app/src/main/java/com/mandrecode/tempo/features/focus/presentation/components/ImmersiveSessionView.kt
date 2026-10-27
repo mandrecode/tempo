@@ -494,8 +494,9 @@ private fun SessionMetadataPill(
     containerColor: Color,
     contentColor: Color,
 ) {
+    val pillShape = RoundedCornerShape(percent = FULLY_ROUNDED)
     Surface(
-        shape = RoundedCornerShape(percent = FULLY_ROUNDED),
+        shape = pillShape,
         color = containerColor,
         contentColor = contentColor,
     ) {

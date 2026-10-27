@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mandrecode.tempo.core.data.preferences.NavigationPreferencesRepository
 import com.mandrecode.tempo.core.domain.model.TempoTab
+import com.mandrecode.tempo.core.ui.glass.glass
 import com.mandrecode.tempo.core.ui.util.rememberPressableButtonAnimation
 
 internal val FloatingRailStartPadding = 24.dp
@@ -212,10 +214,15 @@ fun TempoBottomRailActionButton(
     val haptic = LocalHapticFeedback.current
     val (buttonInteractionSource, buttonCornerRadius) = rememberPressableButtonAnimation()
 
+    val shape = RoundedCornerShape(buttonCornerRadius.value)
+
     FloatingActionButton(
-        modifier = modifier.size(FloatingToolbarActionButtonSize),
-        shape = RoundedCornerShape(buttonCornerRadius.value),
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        modifier =
+            modifier
+                .size(FloatingToolbarActionButtonSize)
+                .glass(shape, tint = MaterialTheme.colorScheme.primaryContainer),
+        shape = shape,
+        containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         elevation =
             FloatingActionButtonDefaults.elevation(
@@ -248,6 +255,7 @@ fun TempoSoloActionButton(
 ) {
     val haptic = LocalHapticFeedback.current
     val (buttonInteractionSource, buttonCornerRadius) = rememberPressableButtonAnimation()
+    val shape = RoundedCornerShape(buttonCornerRadius.value)
 
     ExtendedFloatingActionButton(
         text = { Text(label) },
@@ -262,9 +270,9 @@ fun TempoSoloActionButton(
             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             onClick()
         },
-        modifier = modifier,
-        shape = RoundedCornerShape(buttonCornerRadius.value),
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        modifier = modifier.glass(shape, tint = MaterialTheme.colorScheme.primaryContainer),
+        shape = shape,
+        containerColor = Color.Transparent,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         elevation =
             FloatingActionButtonDefaults.elevation(
