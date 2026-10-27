@@ -6,7 +6,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -51,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.mandrecode.tempo.R
 import com.mandrecode.tempo.core.ui.components.cardFrostColor
@@ -72,6 +71,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
+/** Where the chain's title sits in the card: the time beside it is centred on this line. */
+private val ChainTitleTopPadding = 14.dp
+private val ChainTitleLineHeight = 32.dp
+
 @Composable
 fun HabitChainCard(
     habitChain: HabitChain,
@@ -84,6 +87,7 @@ fun HabitChainCard(
     onHabitClick: ((Long) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    timelineExtension: Dp = 0.dp,
     isSelected: Boolean = false,
     selectedHabitId: Long? = null,
 ) {
@@ -183,31 +187,13 @@ fun HabitChainCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            Column(
-                modifier = Modifier.width(64.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
-                if (timeLabel != null) {
-                    Text(
-                        text = timeLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                }
-            }
-
-            Box(
-                modifier =
-                    Modifier
-                        .width(2.dp)
-                        .fillMaxHeight()
-                        .background(
-                            color =
-                                resolvedChainColor?.copy(alpha = 0.3f)
-                                    ?: MaterialTheme.colorScheme.outlineVariant,
-                        ),
+            TimelineTime(
+                timeLabel = timeLabel,
+                firstRowTop = ChainTitleTopPadding,
+                firstRowHeight = ChainTitleLineHeight,
             )
+
+            TimelineRail(extendBelow = timelineExtension)
 
             Spacer(modifier = Modifier.width(16.dp))
         }
@@ -254,7 +240,7 @@ fun HabitChainCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = 14.dp),
+                            .padding(top = ChainTitleTopPadding),
                 ) {
                     HabitChainHeader(
                         title = habitChain.title,

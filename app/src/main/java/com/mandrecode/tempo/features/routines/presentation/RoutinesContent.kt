@@ -171,7 +171,7 @@ fun RoutinesContent(
                                     top = 16.dp,
                                     bottom = listBottomPadding,
                                 ),
-                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(TimelineItemGap),
                         ) {
                             items(
                                 items = scheduledItems,
@@ -186,6 +186,8 @@ fun RoutinesContent(
                                     habitsById = habitsById,
                                     onEvent = onEvent,
                                     showTimeline = showTimeline,
+                                    // Carries the line over the list's gap to the next scheduled item.
+                                    timelineExtension = timelineExtensionAfter(item, scheduledItems),
                                     selectedHabitId = selectedHabitId,
                                     selectedHabitChainId = selectedHabitChainId,
                                     modifier = Modifier.animateItem(),
@@ -256,6 +258,13 @@ fun RoutinesContent(
     }
 }
 
+private val TimelineItemGap = 8.dp
+
+private fun timelineExtensionAfter(
+    item: RoutinesContract.TimelineItem,
+    scheduledItems: List<RoutinesContract.TimelineItem>,
+): Dp = if (item == scheduledItems.lastOrNull()) 0.dp else TimelineItemGap
+
 @Composable
 @Suppress("LongMethod")
 internal fun TimelineItemCard(
@@ -265,6 +274,7 @@ internal fun TimelineItemCard(
     onEvent: (RoutinesContract.UiEvent) -> Unit,
     showTimeline: Boolean,
     modifier: Modifier = Modifier,
+    timelineExtension: Dp = 0.dp,
     selectedHabitId: Long? = null,
     selectedHabitChainId: Long? = null,
 ) {
@@ -311,6 +321,7 @@ internal fun TimelineItemCard(
                     },
                     timeLabel = timeLabel,
                     showTimeline = showTimeline,
+                    timelineExtension = timelineExtension,
                 )
             }
         } else if (!item.isChain && item.habitId != null) {
@@ -334,6 +345,7 @@ internal fun TimelineItemCard(
                     },
                     timeLabel = timeLabel,
                     showTimeline = showTimeline,
+                    timelineExtension = timelineExtension,
                     isSelected = habit.id == selectedHabitId,
                 )
             }

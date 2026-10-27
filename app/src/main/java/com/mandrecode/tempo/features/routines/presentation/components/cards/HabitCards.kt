@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,6 +41,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
@@ -71,6 +74,7 @@ import com.mandrecode.tempo.core.ui.theme.MutedContentAlpha
 import com.mandrecode.tempo.core.ui.theme.TempoIcon
 import com.mandrecode.tempo.core.ui.theme.cardTitle
 import com.mandrecode.tempo.core.ui.theme.resolveColor
+import com.mandrecode.tempo.core.ui.theme.timelineTime
 import com.mandrecode.tempo.core.ui.util.EnhancedDescriptionText
 import com.mandrecode.tempo.core.ui.util.sanitizeDescription
 import com.mandrecode.tempo.features.routines.domain.model.Habit
@@ -356,6 +360,66 @@ internal fun HabitItem(
     }
 }
 
+/**
+ * The time a scheduled card sits at, in the column beside the card, centred on the card's first
+ * row. A habit card is a single row, so that is its middle; a chain card is tall, so its time stays
+ * with the chain's title ([firstRowHeight] below [firstRowTop]) rather than floating beside
+ * whichever habit sits in its middle. Set in the theme's tertiary, the timeline's own accent: it is
+ * readable on the panel in every palette, and apart from both the habit colours on the cards and
+ * the primary used for selection.
+ */
+@Composable
+internal fun RowScope.TimelineTime(
+    timeLabel: String?,
+    modifier: Modifier = Modifier,
+    firstRowTop: Dp = 0.dp,
+    firstRowHeight: Dp? = null,
+) {
+    val sizing = if (firstRowHeight != null) Modifier.height(firstRowHeight) else Modifier.fillMaxHeight()
+    Box(
+        modifier =
+            modifier
+                .width(TimelineTimeColumnWidth)
+                .padding(top = firstRowTop)
+                .then(sizing)
+                .padding(end = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        if (timeLabel != null) {
+            Text(
+                text = timeLabel,
+                style = MaterialTheme.typography.timelineTime,
+                color = MaterialTheme.colorScheme.tertiary,
+            )
+        }
+    }
+}
+
+/**
+ * The timeline's vertical line beside a card, one colour for every card (the tertiary of the times
+ * beside it, softened) so it reads as a single line down the day rather than a stripe per habit.
+ * [extendBelow] carries it across the gap to the next card.
+ */
+@Composable
+internal fun TimelineRail(
+    extendBelow: Dp,
+    modifier: Modifier = Modifier,
+) {
+    val lineColor = MaterialTheme.colorScheme.tertiary.copy(alpha = TIMELINE_LINE_ALPHA)
+    Box(
+        modifier =
+            modifier
+                .width(2.dp)
+                .fillMaxHeight()
+                .drawBehind {
+                    drawRect(lineColor, size = Size(size.width, size.height + extendBelow.toPx()))
+                },
+    )
+}
+
+private val TimelineTimeColumnWidth = 64.dp
+private const val TIMELINE_LINE_ALPHA = 0.4f
+
 @Composable
 fun HabitCard(
     habit: Habit,
@@ -366,6 +430,7 @@ fun HabitCard(
     onToggle: ((Long, Boolean) -> Unit)? = null,
     timeLabel: String? = null,
     showTimeline: Boolean = true,
+    timelineExtension: Dp = 0.dp,
     isSelected: Boolean = false,
 ) {
     val dateStr = selectedDate.toString()
@@ -435,31 +500,9 @@ fun HabitCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            Column(
-                modifier = Modifier.width(64.dp),
-                horizontalAlignment = Alignment.End,
-            ) {
-                if (timeLabel != null) {
-                    Text(
-                        text = timeLabel,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(end = 12.dp),
-                    )
-                }
-            }
+            TimelineTime(timeLabel)
 
-            Box(
-                modifier =
-                    Modifier
-                        .width(2.dp)
-                        .fillMaxHeight()
-                        .background(
-                            color =
-                                resolvedHabitColor?.copy(alpha = 0.3f)
-                                    ?: MaterialTheme.colorScheme.outlineVariant,
-                        ),
-            )
+            TimelineRail(extendBelow = timelineExtension)
 
             Spacer(modifier = Modifier.width(16.dp))
         }

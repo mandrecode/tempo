@@ -236,6 +236,13 @@ val Typography.sectionHeader: TextStyle
 val Typography.groupLabel: TextStyle
     get() = labelMedium.copy(fontWeight = FontWeight.SemiBold, letterSpacing = 0.5.sp)
 
+/**
+ * A scheduled time on the routines timeline. Tabular figures keep the digits the same width, so
+ * the times line up down the column whatever they read.
+ */
+val Typography.timelineTime: TextStyle
+    get() = labelLarge.copy(fontWeight = FontWeight.SemiBold, fontFeatureSettings = "tnum")
+
 /** Bold metadata label (dates, counters on cards). */
 val Typography.metadataLabel: TextStyle
     get() = labelSmall.copy(fontWeight = FontWeight.Bold)
