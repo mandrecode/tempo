@@ -361,25 +361,35 @@ internal fun HabitItem(
 }
 
 /**
- * The time a scheduled card sits at, in the column beside the card. It stays with the card's first
- * line, its title, however tall the card grows: a chain's time belongs to the whole chain, not to
- * whichever habit happens to sit in its middle.
+ * The time a scheduled card sits at, in the column beside the card, centred on the card's first
+ * row. A habit card is a single row, so that is its middle; a chain card is tall, so its time stays
+ * with the chain's title ([firstRowHeight] below [firstRowTop]) rather than floating beside
+ * whichever habit sits in its middle. Tinted with the card's colour, which ties it to the card
+ * while the line stays one neutral colour.
  */
 @Composable
-internal fun RowScope.TimelineTime(timeLabel: String?) {
+internal fun RowScope.TimelineTime(
+    timeLabel: String?,
+    color: Color?,
+    modifier: Modifier = Modifier,
+    firstRowTop: Dp = 0.dp,
+    firstRowHeight: Dp? = null,
+) {
+    val sizing = if (firstRowHeight != null) Modifier.height(firstRowHeight) else Modifier.fillMaxHeight()
     Box(
         modifier =
-            Modifier
+            modifier
                 .width(TimelineTimeColumnWidth)
-                .fillMaxHeight()
-                .padding(top = TimelineTimeTopPadding, end = 12.dp),
-        contentAlignment = Alignment.TopEnd,
+                .padding(top = firstRowTop)
+                .then(sizing)
+                .padding(end = 12.dp),
+        contentAlignment = Alignment.Center,
     ) {
         if (timeLabel != null) {
             Text(
                 text = timeLabel,
                 style = MaterialTheme.typography.timelineTime,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = color ?: MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
     }
@@ -408,7 +418,6 @@ internal fun TimelineRail(
 }
 
 private val TimelineTimeColumnWidth = 64.dp
-private val TimelineTimeTopPadding = 16.dp
 
 @Composable
 fun HabitCard(
@@ -490,7 +499,7 @@ fun HabitCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            TimelineTime(timeLabel)
+            TimelineTime(timeLabel, resolvedHabitColor)
 
             TimelineRail(extendBelow = timelineExtension)
 

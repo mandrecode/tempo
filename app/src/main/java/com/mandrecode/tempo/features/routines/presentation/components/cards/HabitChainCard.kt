@@ -71,6 +71,10 @@ import kotlinx.datetime.minus
 import kotlinx.datetime.todayIn
 import kotlin.time.Clock
 
+/** Where the chain's title sits in the card: the time beside it is centred on this line. */
+private val ChainTitleTopPadding = 14.dp
+private val ChainTitleLineHeight = 32.dp
+
 @Composable
 fun HabitChainCard(
     habitChain: HabitChain,
@@ -183,7 +187,12 @@ fun HabitChainCard(
         horizontalArrangement = Arrangement.Start,
     ) {
         if (showTimeline) {
-            TimelineTime(timeLabel)
+            TimelineTime(
+                timeLabel = timeLabel,
+                color = resolvedChainColor,
+                firstRowTop = ChainTitleTopPadding,
+                firstRowHeight = ChainTitleLineHeight,
+            )
 
             TimelineRail(extendBelow = timelineExtension)
 
@@ -232,7 +241,7 @@ fun HabitChainCard(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .padding(top = 14.dp),
+                            .padding(top = ChainTitleTopPadding),
                 ) {
                     HabitChainHeader(
                         title = habitChain.title,
