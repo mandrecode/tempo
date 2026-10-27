@@ -117,9 +117,9 @@ internal fun TaskAttachmentRow(
     Surface(
         onClick = onOpen,
         shape = rowShape,
-        // The editor's solid selector fill (SelectorButtonGroup, DayOfWeekSelector), the one step that
-        // stands apart from the glass sheet in both themes.
-        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        // The tonal fill of the editor's other added items: the reminder chip, and the Add button
+        // beside this row. The neutral selector grey is for choosing, not for what has been added.
+        color = MaterialTheme.colorScheme.secondaryContainer,
         modifier =
             modifier
                 .fillMaxWidth()
@@ -133,7 +133,7 @@ internal fun TaskAttachmentRow(
             Icon(
                 painter = painterResource(attachment.kind.iconRes()),
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = MaterialTheme.colorScheme.onSecondaryContainer,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(modifier = Modifier.width(12.dp))
