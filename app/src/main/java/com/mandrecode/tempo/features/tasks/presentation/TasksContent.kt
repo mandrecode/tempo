@@ -138,11 +138,11 @@ fun TasksContent(
     val showSectionShortcuts = currentWindowWidthClass().isAtLeast(WindowWidthClass.LARGE)
     val gridState = rememberLazyStaggeredGridState()
     val dragState = remember { TaskDragState() }
-    // Moving between sections is setting the order by hand, so it is what Manual sort offers;
-    // other sorts keep their tied-run drag (#61).
+    // Tasks move between sections in any sort (#61); only Manual also places them by hand.
     val sectionDragState =
-        remember(uiState.selectedCategoryId) { SectionDragState() }
-            .takeIf { uiState.sortOption == SortOption.MANUAL }
+        remember(uiState.selectedCategoryId, uiState.sortOption) {
+            SectionDragState(manualOrder = uiState.sortOption == SortOption.MANUAL)
+        }
 
     val hasCompletedTasks by remember(completedTaskGroups) {
         derivedStateOf {

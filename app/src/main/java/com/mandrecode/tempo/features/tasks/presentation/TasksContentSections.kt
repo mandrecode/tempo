@@ -101,8 +101,8 @@ internal fun LazyListScope.sectionedTaskItems(
 }
 
 /**
- * One section's cards. With [dragState] (Manual sort) each card drags across sections; without it
- * the row keeps the list's usual within-run reordering.
+ * One section's cards. With [dragState] each card drags across sections (and, in Manual sort,
+ * within its own); without it the row keeps the list's usual within-run reordering.
  */
 private fun LazyListScope.sectionTasks(
     tasks: List<Task>,

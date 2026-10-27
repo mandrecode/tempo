@@ -44,6 +44,25 @@ class SectionDragStateTest {
     }
 
     @Test
+    fun `under a sort a card moves to another section but never targets its own`() {
+        val sorted =
+            SectionDragState(manualOrder = false).apply {
+                entries.putAll(state.entries)
+                entries["card_3"] = DropEntry(DropEntry.Kind.Card, 10L, top = 250f, bottom = 350f, index = 1)
+                entries.remove("placeholder_11")
+            }
+        sorted.start(taskId = 2L, sectionId = 10L, index = 0)
+        sorted.drag(100f)
+
+        assertThat(sorted.target).isNull()
+
+        sorted.drag(-250f)
+
+        assertThat(sorted.isTargeting(DropEntry.Kind.Card, null, 0)).isTrue()
+        assertThat(sorted.finish()).isEqualTo(SectionDropAction.Move(null, Int.MAX_VALUE))
+    }
+
+    @Test
     fun `a card that never registered cannot start a drag`() {
         state.start(taskId = 99L, sectionId = null, index = 0)
 
