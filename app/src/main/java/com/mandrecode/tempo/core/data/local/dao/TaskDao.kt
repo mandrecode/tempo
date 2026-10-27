@@ -182,7 +182,10 @@ interface TaskDao {
     @Query("UPDATE tasks SET sectionId = NULL WHERE sectionId = :sectionId")
     suspend fun clearSection(sectionId: Long)
 
-    @Query("UPDATE tasks SET sectionId = :sectionId WHERE id IN (:taskIds) AND categoryId = :categoryId AND sectionId IS NULL")
+    @Query(
+        "UPDATE tasks SET sectionId = :sectionId " +
+            "WHERE id IN (:taskIds) AND categoryId = :categoryId AND sectionId IS NULL",
+    )
     suspend fun assignSection(
         taskIds: List<Long>,
         sectionId: Long,
