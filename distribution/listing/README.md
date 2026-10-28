@@ -1,9 +1,10 @@
 # Play Store Listing Copy
 
 Source of truth for the Play Store listing text (app title, short
-description, full description). Unlike the release notes in
-`distribution/whatsnew/` (see its README), these files are **not** wired into
-any CI workflow — publish.yml only uploads `whatsNewDirectory`. Update the Play Console listing manually by copying
+description, full description). Unlike the Play "What's new" text, which
+publish.yml generates from `CHANGELOG.md` at release time (see
+`docs/implementation/play-store-changelog.md`), these files are **not** wired
+into any CI workflow. Update the Play Console listing manually by copying
 these files in, and keep both in sync when either changes.
 
 ## Files

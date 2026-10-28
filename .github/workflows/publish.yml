@@ -42,11 +42,6 @@ jobs:
         with:
           ref: ${{ steps.version.outputs.tag }}
 
-      # Fail before building if the hand-written notes for this version are
-      # missing, too long, linked or untranslated. See distribution/whatsnew/README.md.
-      - name: Check Play Store release notes
-        run: ./scripts/generate-whatsnew.sh --check "${{ steps.version.outputs.version }}"
-
       - name: Set up JDK 21
         uses: actions/setup-java@v6.0.0
         with:
@@ -109,10 +104,10 @@ jobs:
             app/build/outputs/apk/release/tempo-${{ steps.version.outputs.version }}.apk \
             --clobber
 
-      - name: Stage Play Store release notes
+      - name: Generate Play Store changelog
         run: ./scripts/generate-whatsnew.sh "${{ steps.version.outputs.version }}"
 
-      - name: Validate release note links are stripped
+      - name: Validate changelog links are stripped
         run: |
           if grep -R -n -E 'https://github\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+' build/whatsnew/; then
             echo "::error::Play Store changelog still contains GitHub issue/PR links."
