@@ -11,13 +11,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.TextAutoSize
@@ -156,8 +159,9 @@ private fun PersistentLandscapeFloatingBar(
         modifier =
             Modifier
                 .fillMaxHeight()
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                // systemBars rather than statusBars: in a freeform desktop window the top inset is the
+                // caption bar, whose back arrow otherwise draws over the expanded rail's app title.
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Vertical))
                 .padding(start = FloatingRailStartPadding, top = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(FloatingToolbarItemSpacing),
         horizontalAlignment = if (isExpandedRail) Alignment.Start else Alignment.CenterHorizontally,

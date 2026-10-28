@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.18.0](https://github.com/mandrecode/tempo/compare/v1.17.0...v1.18.0) (2026-10-27)
+
+
+### Features
+
+* **#423:** glassmorphism UI with a theme-derived glass material ([#465](https://github.com/mandrecode/tempo/issues/465)) ([72be9a3](https://github.com/mandrecode/tempo/commit/72be9a39ad48471000813bf9d1e3524c460f4936))
+* **#474:** carry the routines timeline line across the gaps between items ([#489](https://github.com/mandrecode/tempo/issues/489)) ([4c47ae5](https://github.com/mandrecode/tempo/commit/4c47ae5bb0a666d712aeb7cdc8a9003ef1ffd62b))
+* **#475:** add a light haptic tick to nav bar taps ([#487](https://github.com/mandrecode/tempo/issues/487)) ([a0d6251](https://github.com/mandrecode/tempo/commit/a0d6251b90d47eee756eac82927a1c2efde264cb))
+* **#476:** remove the default-tab and enable/disable-tabs options ([#491](https://github.com/mandrecode/tempo/issues/491)) ([35d4a2b](https://github.com/mandrecode/tempo/commit/35d4a2b09ef38dd12ce541aefa34228d12460eac))
+* **#482:** remove the in-app what's new sheet ([#483](https://github.com/mandrecode/tempo/issues/483)) ([0e4bf7f](https://github.com/mandrecode/tempo/commit/0e4bf7f0551f5fcaaef0ddc0c670d316dfdf4059))
+
+
+### Bug Fixes
+
+* **#470,#471:** even out section header actions and lift reorder cards ([#486](https://github.com/mandrecode/tempo/issues/486)) ([7023077](https://github.com/mandrecode/tempo/commit/7023077ce56f3c59576d54757e6d74895d75d9d0))
+* **#472:** give attachment rows the tonal fill of the editor's added items ([#485](https://github.com/mandrecode/tempo/issues/485)) ([5f0dcbc](https://github.com/mandrecode/tempo/commit/5f0dcbc86125d1c8036005740422f13164d5ec55))
+* **#473:** make the backdrop blur follow a dragged sheet without lag ([#484](https://github.com/mandrecode/tempo/issues/484)) ([48adb38](https://github.com/mandrecode/tempo/commit/48adb38802992f0aac02b8f0f5d1e92682181bd4))
+* address code-review findings on the stack ([#495](https://github.com/mandrecode/tempo/issues/495)) ([7e8c080](https://github.com/mandrecode/tempo/commit/7e8c080fd81961eb20c7f95a4e9bf22ad459c9b5))
+
 ## [1.17.0](https://github.com/mandrecode/tempo/compare/v1.16.2...v1.17.0) (2026-10-27)
 
 
