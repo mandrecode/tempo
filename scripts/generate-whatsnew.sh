@@ -7,8 +7,9 @@
 # Usage: ./scripts/generate-whatsnew.sh [version]
 #   version  Optional. If omitted, extracts the first (latest) version block.
 #
-# The output is written to distribution/whatsnew/whatsnew-en-US
-# and distribution/whatsnew/whatsnew-es-ES (Spanish headers, same entries).
+# The output is written to build/whatsnew/whatsnew-en-US and
+# build/whatsnew/whatsnew-es-ES (Spanish headers, same entries). It is a
+# publish-time artifact, so it lives under the gitignored build/ directory.
 #
 # Play Store limit: 500 characters per locale.
 
@@ -16,7 +17,7 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 CHANGELOG="$REPO_ROOT/CHANGELOG.md"
-WHATSNEW_DIR="$REPO_ROOT/distribution/whatsnew"
+WHATSNEW_DIR="$REPO_ROOT/build/whatsnew"
 OUTPUT_EN="$WHATSNEW_DIR/whatsnew-en-US"
 OUTPUT_ES="$WHATSNEW_DIR/whatsnew-es-ES"
 MAX_CHARS=490
