@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.1](https://github.com/mandrecode/tempo/compare/v1.18.0...v1.18.1) (2026-10-28)
+
+
+### Bug Fixes
+
+* keep the rail title clear of the desktop caption bar ([#497](https://github.com/mandrecode/tempo/issues/497)) ([2c416aa](https://github.com/mandrecode/tempo/commit/2c416aafa8b384f205b7ea055913feb7b2303514))
+
 ## [1.18.0](https://github.com/mandrecode/tempo/compare/v1.17.0...v1.18.0) (2026-10-27)
 
 
