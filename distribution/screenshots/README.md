@@ -14,9 +14,15 @@ distribution/screenshots/
   expanded/  expanded_...
   desktop/   desktop_...
   xr/        xr_...
+  play-store/
+    phone/ medium/ expanded/ desktop/ xr/
+               {en,es}_{1_focus_today,2_focus_session,3_routines_today,4_tasks_personal,5_private}.png
 ```
 
-4 views × light/dark × 2 locales × 5 form factors = 80 images.
+4 views × light/dark × 2 locales × 5 form factors = 80 raw captures, and
+5 designed listing images × 2 locales × 5 form factors = 50 under `play-store/`.
+The raw captures are the input; the `play-store/` images are what gets uploaded
+(see [Designed listing images](#designed-listing-images)).
 
 The four views are one story told in order: the day as Focus sees it, a session
 started on it, and then Routines and Tasks with that session still running.
@@ -48,34 +54,16 @@ Two things about the Tasks shot are load-bearing:
 - `android` CLI, `adb`, `avdmanager` (Android SDK)
 - `python3` with [cryptography](https://pypi.org/project/cryptography/) (used to
   encrypt the seed backup); for XR captures also
-  [Pillow](https://pypi.org/project/Pillow/). Install into a venv if the system
+  [Pillow](https://pypi.org/project/Pillow/)
+- Google Chrome, for rendering the designed listing images (headless; any
+  recent version). Install the Python packages into a venv if the system
   blocks a global `pip install` — `python3 -m venv /tmp/venv &&
   /tmp/venv/bin/pip install cryptography Pillow`
 - A debug build: `./gradlew assembleDebug`
 
-**Before building, temporarily drop the "(Debug)" suffix.** Two different
-things put `R.string.app_name` on screen, and both would otherwise read
-"Tempo (Debug)":
-
-- **Desktop** draws real OS window chrome — a caption bar carrying the
-  app's launcher label — around the app.
-- **Expanded/big tablet** has no window chrome, but its labeled navigation
-  rail prints the app name as its own header (`PersistentFloatingBar.kt`
-  renders `app_name` when `isExpandedRail`).
-
-Phone and Medium tablet get the icon-only rail and no chrome, so they are
-unaffected; XR's chrome pill has no text label either way.
-
-```bash
-# In app/build.gradle.kts, buildTypes { debug { ... } }:
-#   resValue("string", "app_name", "Tempo (Debug)")
-# temporarily becomes:
-#   resValue("string", "app_name", "Tempo")
-./gradlew assembleDebug
-# ...capture desktop and expanded sets (both locales)...
-# then revert the resValue change and rebuild before committing, so
-# normal debug builds still show "(Debug)" as usual.
-```
+Debug builds no longer carry a "(Debug)" suffix on `app_name`, so the build
+needs no temporary edit before capturing: Desktop's window caption and the
+expanded tablet's labeled rail header both read "Tempo" as they are.
 
 ## How seeding works (and why it's not SQL any more)
 
@@ -120,9 +108,8 @@ Four scripts, composed by a fifth:
   wipes the target device's app data, grants the notification/exact-alarm
   permissions the app would otherwise prompt for (screenshot capture
   skips onboarding), sets the theme, sets the **app's per-app language**
-  (see below) to match, marks the current what's-new entry as seen so its
-  bottom sheet doesn't cover the first screenshot, then generates and
-  imports the backup via the two scripts above.
+  (see below) to match, then generates and imports the backup via the two
+  scripts above.
 - **`scripts/capture-screenshot-set.py <serial> <out-dir> <prefix> <en|es>`**
   — navigates the seeded app (Focus/Today → start a session from the "Up
   next" card → Routines/Today → Tasks/Personal-category) and screenshots
@@ -132,6 +119,13 @@ Four scripts, composed by a fifth:
   looked up per locale in the script's `NAV` dict. The start button is
   matched on the *verb* of `focus_session_start` plus a digit, because the
   rest of its label is the session length from Settings.
+
+  Current `android layout` releases return one entry per window, each with
+  its nodes nested under `content`, upper-case `interactions` flags and
+  package-qualified resource ids. Both scripts flatten that, normalise the
+  flags and ids, and search **only the focused window** — on XR the dump
+  carries every window in the scene (home environment, System UI, a stray
+  Gboard settings screen), whose labels would otherwise match first.
 
   The Focus tab only answers to the content-desc "Focus" while nothing is
   running — once a session starts it relabels itself to the time left — so
@@ -211,10 +205,31 @@ android emulator create Large_Desktop     # profile exists in --list-profiles
 avdmanager create avd -n Pixel_Tablet \
   -d pixel_tablet \
   -k "system-images;android-37.1;google_apis_ps16k;arm64-v8a"
-# Pixel_10 and XR_Headset should already exist per AGENTS.md /
-# android-cli conventions; if not, `android emulator create pixel_10`
-# and check `android emulator create --list-profiles` for an XR profile.
+# Pixel_10 should already exist per AGENTS.md / android-cli conventions; if
+# not, `android emulator create pixel_10`. The `android` CLI has no XR
+# profile, so XR_Headset also goes through avdmanager (from
+# `android sdk install cmdline-tools/latest`), after installing its image:
+android sdk install "system-images/android-34/google-xr/arm64-v8a"
+avdmanager create avd -n XR_Headset -d xr_headset_device \
+  -k "system-images;android-34;google-xr;arm64-v8a"
 ```
+
+### Emulator GPU mode
+
+Launch every AVD with `-gpu host` (`emulator -avd <name> -gpu host`, or the
+same flag through `android emulator start` if your version passes it on).
+Left to choose for itself, the emulator falls back to software rendering
+(SwiftShader) for these large displays; on a loaded machine the 2560×1600
+tablets then took 15–25 s to draw a frame, the keyboard hit ANRs, and the
+import and capture steps timed out waiting for screens that hadn't drawn yet.
+On host GPU the same cold start takes about 6 s.
+
+That includes XR. Earlier emulator releases rendered icon glyphs as noise on
+XR under `-gpu host` (nav rail, Settings rows, the window-chrome close button)
+while text stayed fine; on emulator 37.2 the glyphs render correctly, and the
+software renderer instead left System UI hung ("System UI isn't responding")
+with the app never reaching the scene. Check the first XR capture's icons
+before trusting a run on a different emulator version.
 
 `Medium_Tablet` and `Pixel_Tablet` end up with the **same** physical spec
 (2560×1600 @ 320dpi — apparently pinned by the Google Play tablet system
@@ -281,12 +296,12 @@ done
 adb -s emulator-5554 emu kill
 
 # --- Android XR ---
-# Do NOT launch this one with `-gpu host`. It renders icon glyphs as garbage
-# noise (nav rail, Settings rows, even the window-chrome close button) and can
-# produce an entirely blank frame — while text still renders fine, so the
-# result looks plausible enough to miss. Use the default GPU mode below. It is
-# slower: expect one locale to take longer than a 10-minute timeout, so run
-# each theme separately if you're driving this from a script with a deadline.
+# See "Emulator GPU mode" above: host GPU, and check the icons on the first
+# capture. XR is still the slowest by far — expect one locale to take longer
+# than a 10-minute timeout, so run each theme separately if you're driving this
+# from a script with a deadline. Once a session is running its countdown keeps
+# the UI busy, and `android layout` can fail repeatedly with "Could not obtain
+# idle state"; the capture script retries, but a theme may still need a re-run.
 android emulator start XR_Headset
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
@@ -311,6 +326,46 @@ Then curate: review the resulting 8 images per form factor per locale,
 replace sample data as needed by editing `generate-seed-backup.py`, and pick
 the best up to 8 per Play Console's per-listing limit (currently
 splitting evenly between light and dark).
+
+## Designed listing images
+
+`scripts/compose-store-screenshots.py` turns the raw captures into the images
+that actually go on the listing (GitHub issue #181): a headline, a supporting
+line and two feature chips around the capture, framed in a device. Run it after
+any re-capture:
+
+```bash
+python3 scripts/compose-store-screenshots.py                    # everything
+python3 scripts/compose-store-screenshots.py --only phone --locale es
+python3 scripts/compose-store-screenshots.py --keep-html /tmp/pages   # keep the HTML to tweak in a browser
+```
+
+Each image is an HTML page rendered by headless Chrome (`--chrome PATH` if it
+isn't at the default macOS location) at the exact size Play wants, using the
+app's own Google Sans Flex from `res/font/` dialed as `Type.kt` dials it (round,
+wide, heavy for headlines) and the Tempo palette from `Color.kt`.
+
+| Form factor | Canvas | Frame |
+|---|---|---|
+| Phone | 1080×1920 (9:16) | phone, chips over its lower half |
+| Medium tablet | 1440×2560 (9:16) | tablet, portrait |
+| Expanded tablet | 2560×1440 (16:9) | tablet, text column on the left |
+| Desktop | 2560×1440 (16:9) | monitor on a stand |
+| XR | 2560×1440 (16:9) | the 2558×1439 crop, bezel-less with a glow, like a panel in space |
+
+The five images tell the raw set's story and add a closer:
+
+1. **Focus** — the day on one screen (light)
+2. **Focus sessions** — a running session (dark)
+3. **Routines** — habit chains (light)
+4. **Tasks** — the Personal category (dark)
+5. **Privacy** — Focus in light and dark side by side, with the privacy chips
+
+Light and dark alternate so the carousel shows both themes without repeating a
+screen. The copy lives in the script's `COPY` dict, one entry per locale; keep
+it in step with the listing text in `distribution/listing/` and with what the
+captures actually show — a chip that names something the capture doesn't show
+(e.g. a countdown in a nav bar the session sheet covers) reads as a false claim.
 
 ## Play Store technical requirements (as of writing)
 

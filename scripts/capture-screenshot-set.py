@@ -82,7 +82,35 @@ def adb(serial, *args, check=True):
     return subprocess.run(["adb", "-s", serial, *args], capture_output=True, text=True, check=check)
 
 
-def dump_layout(serial, retries=8, delay=1.5):
+def focused_windows(nodes):
+    """When the dump is split per window, keep only the focused one(s). On XR
+    every window in the scene is reported — the home environment, System UI,
+    a Gboard settings screen left open — and their labels ("Settings") would
+    otherwise match before the app's own. Dialogs and the system file picker
+    take focus while they're up, so they're still what gets searched."""
+    focused = [n for n in nodes if n.get("focused")]
+    return focused or nodes
+
+
+def flatten(nodes):
+    """Newer `android layout` releases nest each window's nodes under its own
+    `content` list (system bars, then the app) instead of returning one flat
+    list, and spell `interactions` in upper case. Flatten either shape and
+    lower-case the flags so lookups see every node the same way."""
+    out = []
+    for n in nodes:
+        if "interactions" in n:
+            n["interactions"] = [i.lower() for i in n["interactions"]]
+        out.append(n)
+        out.extend(flatten(n.get("content", [])))
+        out.extend(flatten(n.get("children", [])))
+    return out
+
+
+# Generous retries: once a session is running its countdown redraws every
+# second, and on a slow emulator (XR especially) `android layout` can fail
+# several times in a row to find the UI idle long enough to dump it.
+def dump_layout(serial, retries=20, delay=1.5):
     with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
         path = f.name
     try:
@@ -102,7 +130,7 @@ def dump_layout(serial, retries=8, delay=1.5):
                 ) from e
             try:
                 with open(path) as f:
-                    return json.load(f)
+                    return flatten(focused_windows(json.load(f)))
             except json.JSONDecodeError as e:
                 stderr = result.stderr.strip()
                 last_err = f"{e} (stderr: {stderr})" if stderr else str(e)
