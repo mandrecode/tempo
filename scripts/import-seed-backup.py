@@ -20,12 +20,11 @@ passphrase dialog -> Merge/Replace dialog (Replace) -> success dialog -> OK.
 Usage: import-seed-backup.py <device-serial> <file-name-on-device> <passphrase> <en|es>
   e.g. import-seed-backup.py emulator-5554 tempo_seed.json hunter2 es
 """
-import json
-import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
+
+from android_ui import MissingAndroidCli, adb, dump_layout, tap_center
 
 PKG = "com.mandrecode.tempo.debug"
 ACTIVITY = "com.mandrecode.tempo.MainActivity"
@@ -71,69 +70,6 @@ PICKER_ITEM_TITLE_ID = "title"
 PICKER_CONFIRM_ID = "action_menu_select"
 
 
-class MissingAndroidCli(RuntimeError):
-    """Not a transient UI hiccup — retrying the import can't conjure the CLI."""
-
-
-def adb(serial, *args, check=True):
-    return subprocess.run(["adb", "-s", serial, *args], capture_output=True, text=True, check=check)
-
-
-def focused_windows(nodes):
-    """When the dump is split per window, keep only the focused one(s). On XR
-    every window in the scene is reported — the home environment, System UI,
-    a Gboard settings screen left open — and their labels ("Settings") would
-    otherwise match before the app's own. Dialogs and the system file picker
-    take focus while they're up, so they're still what gets searched."""
-    focused = [n for n in nodes if n.get("focused")]
-    return focused or nodes
-
-
-def flatten(nodes):
-    """Newer `android layout` releases nest each window's nodes under its own
-    `content` list (system bars, then the app) instead of returning one flat
-    list, and spell `interactions` in upper case. Flatten either shape and
-    lower-case the flags so lookups see every node the same way."""
-    out = []
-    for n in nodes:
-        if "interactions" in n:
-            n["interactions"] = [i.lower() for i in n["interactions"]]
-        out.append(n)
-        out.extend(flatten(n.get("content", [])))
-        out.extend(flatten(n.get("children", [])))
-    return out
-
-
-def dump_layout(serial, retries=8, delay=1.5):
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        path = f.name
-    try:
-        last_err = None
-        for _ in range(retries):
-            try:
-                result = subprocess.run(
-                    ["android", "layout", "--device", serial, "-o", path],
-                    capture_output=True,
-                    text=True,
-                )
-            except FileNotFoundError as e:
-                raise MissingAndroidCli(
-                    "The `android` CLI was not found on PATH. It's required to inspect the "
-                    "app's UI tree for navigation — install the Android SDK's `android` CLI "
-                    "(see AGENTS.md's android-cli conventions) and try again.",
-                ) from e
-            try:
-                with open(path) as f:
-                    return flatten(focused_windows(json.load(f)))
-            except json.JSONDecodeError as e:
-                stderr = result.stderr.strip()
-                last_err = f"{e} (stderr: {stderr})" if stderr else str(e)
-                time.sleep(delay)
-        raise RuntimeError(f"Could not get a UI dump after {retries} retries: {last_err}")
-    finally:
-        Path(path).unlink(missing_ok=True)
-
-
 def match(node, desc=None, text=None, res_id=None, password=False):
     if desc is not None and node.get("content-desc") != desc:
         return False
@@ -160,11 +96,6 @@ def find_label(nodes, label):
     """content-desc is the more reliable accessibility label, but the expanded
     tablet and desktop rails set only plain text on nav items, so fall back to it."""
     return find(nodes, desc=label) or find(nodes, text=label)
-
-
-def tap_center(serial, center):
-    x, y = center.strip("[]").split(",")
-    adb(serial, "shell", "input", "tap", x.strip(), y.strip())
 
 
 def tap(serial, settle=1.0, **kwargs):

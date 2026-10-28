@@ -21,10 +21,12 @@ Output: distribution/screenshots/play-store/<form-factor>/<locale>_<n>_<view>.pn
 import argparse
 import html
 import math
+import os
 import shutil
 import subprocess
 import sys
 import tempfile
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
@@ -57,44 +59,76 @@ SLIDES = [
 ]
 SLIDE_RAW = {"5_private": "1_focus_today"}
 
-# Copy. `<em>` marks the part of the headline that gets the accent colour and
-# the wavy underline — the app's own wavy-divider motif.
-COPY = {
-    "en": [
-        {"eyebrow": "Focus", "title": "Your whole day, <em>on one screen</em>",
-         "body": "Tasks, habits and routines due now, with what to do next up front.",
-         "chips": ["Up next, picked for you", "Nothing overdue slips by"]},
-        {"eyebrow": "Focus sessions", "title": "One tap to <em>deep focus</em>",
-         "body": "Start a timer on anything. The countdown follows you around the app.",
-         "chips": ["25-minute sessions", "Pause or finish in one tap"]},
-        {"eyebrow": "Routines", "title": "Chain habits into <em>routines</em>",
-         "body": "Link habits that flow one into the next, and watch your streaks grow.",
-         "chips": ["Habits to build or quit", "Habit chains"]},
-        {"eyebrow": "Tasks", "title": "To-dos that <em>stay sorted</em>",
-         "body": "Categories, sections, priorities and due dates, captured in seconds.",
-         "chips": ["Priorities & due dates", "Categories & sections"]},
-        {"eyebrow": "Privacy", "title": "Private, offline, <em>yours</em>",
-         "body": "Encrypted on your device. No accounts, no ads, no tracking.",
-         "chips": ["Encrypted at rest", "Works offline", "No ads", "Light & dark"]},
-    ],
-    "es": [
-        {"eyebrow": "Enfoque", "title": "Todo tu día, <em>en una pantalla</em>",
-         "body": "Tareas, hábitos y rutinas de hoy, con lo siguiente siempre a mano.",
-         "chips": ["Lo siguiente, elegido por ti", "Nada vencido se escapa"]},
-        {"eyebrow": "Sesiones de enfoque", "title": "Un toque y a <em>concentrarte</em>",
-         "body": "Pon un temporizador a lo que sea. La cuenta atrás te acompaña por toda la app.",
-         "chips": ["Sesiones de 25 minutos", "Pausa o termina con un toque"]},
-        {"eyebrow": "Rutinas", "title": "Encadena hábitos en <em>rutinas</em>",
-         "body": "Une hábitos que fluyen uno tras otro y mira crecer tus rachas.",
-         "chips": ["Hábitos a crear o a dejar", "Cadenas de hábitos"]},
-        {"eyebrow": "Tareas", "title": "Tus pendientes, <em>en orden</em>",
-         "body": "Categorías, secciones, prioridades y fechas, anotadas en segundos.",
-         "chips": ["Prioridades y fechas", "Categorías y secciones"]},
-        {"eyebrow": "Privacidad", "title": "Privada, sin conexión, <em>tuya</em>",
-         "body": "Cifrada en tu dispositivo. Sin cuentas, sin anuncios, sin rastreo.",
-         "chips": ["Cifrado en reposo", "Funciona sin conexión", "Sin anuncios", "Claro y oscuro"]},
-    ],
-}
+# Copy, one entry per slide with both locales side by side so neither can be
+# edited without the other in view. `<em>` marks the part of the headline that
+# gets the accent colour and the wavy underline — the app's own wavy-divider
+# motif.
+#
+# The voice is the app's own: headlines reuse onboarding lines where one fits
+# ("Today, not everything", "Work in sessions", "Clear your head…"), and every
+# term matches what the screen shows — Spanish says Enfoque, atrasado,
+# Completar/Pausar/Parar, Construir/Dejar and rachas because values-es does.
+# Keep claims to what the capture underneath proves or a setting allows: Focus
+# lists tasks only, and the session length is the user's choice, not 25 min.
+# The same story is told in distribution/listing/; change both together.
+COPY = [
+    {
+        "en": {"eyebrow": "Focus", "title": "Today, <em>not everything</em>",
+               "body": "What's due today and anything overdue, with the next task worth starting up front.",
+               "chips": ["Up next, picked for you", "Overdue stays in sight"]},
+        "es": {"eyebrow": "Enfoque", "title": "Hoy, <em>no todo</em>",
+               "body": "Lo que toca hoy y lo que se te pasó, con la siguiente tarea que merece la pena empezar a mano.",
+               "chips": ["A continuación, elegido para ti", "Lo atrasado, siempre a la vista"]},
+    },
+    {
+        "en": {"eyebrow": "Focus sessions", "title": "Work in <em>sessions</em>",
+               "body": "Start a timer on any task. Tempo counts it down and tells you when it's time for a break.",
+               "chips": ["Choose your session length", "Mark done, pause or stop"]},
+        "es": {"eyebrow": "Sesiones de enfoque", "title": "Trabaja por <em>sesiones</em>",
+               "body": "Pon un temporizador en cualquier tarea. Tempo lo cuenta y te avisa cuando toca descansar.",
+               "chips": ["Elige cuánto dura cada sesión", "Completar, pausar o parar"]},
+    },
+    {
+        "en": {"eyebrow": "Routines", "title": "Keep the <em>rhythm</em>",
+               "body": "Chain habits that flow one into the next, and watch your streaks grow.",
+               "chips": ["Habits to build or quit", "Habit chains"]},
+        "es": {"eyebrow": "Rutinas", "title": "Mantén el <em>ritmo</em>",
+               "body": "Encadena hábitos que fluyen uno tras otro y mira cómo crecen tus rachas.",
+               "chips": ["Hábitos para construir o dejar", "Cadenas de hábitos"]},
+    },
+    {
+        "en": {"eyebrow": "Tasks", "title": "Clear your head, <em>plan your day</em>",
+               "body": "Capture what needs doing, then sort it with categories, sections, priorities and due dates.",
+               "chips": ["Priorities & due dates", "Categories & sections"]},
+        "es": {"eyebrow": "Tareas", "title": "Despeja tu mente, <em>organiza tu día</em>",
+               "body": "Anota lo que tienes que hacer y ordénalo con categorías, secciones, prioridades y fechas.",
+               "chips": ["Prioridades y fechas", "Categorías y secciones"]},
+    },
+    {
+        "en": {"eyebrow": "Privacy", "title": "Your data <em>stays yours</em>",
+               "body": "Encrypted on your device and fully offline. No accounts, no ads, no tracking.",
+               "chips": ["Encrypted at rest", "Works offline", "No ads", "Light & dark"]},
+        "es": {"eyebrow": "Privacidad", "title": "Tus datos, <em>solo tuyos</em>",
+               "body": "Cifrados en tu dispositivo y sin conexión. Sin cuentas, sin anuncios, sin rastreo.",
+               "chips": ["Cifrado en reposo", "Funciona sin conexión", "Sin anuncios", "Claro y oscuro"]},
+    },
+]
+LOCALES = ("en", "es")
+
+
+def check_copy():
+    """Both locales must tell the same story: same slides, same fields, the same
+    number of chips and one accent per headline. Catches a slide edited in one
+    language only before it reaches a render."""
+    assert len(COPY) == len(SLIDES), "one COPY entry per slide"
+    for i, slide in enumerate(COPY):
+        assert set(slide) == set(LOCALES), f"slide {i + 1}: locales {sorted(slide)}"
+        en = slide["en"]
+        for loc in LOCALES:
+            c = slide[loc]
+            assert set(c) == set(en), f"slide {i + 1} {loc}: fields differ from en"
+            assert len(c["chips"]) == len(en["chips"]), f"slide {i + 1} {loc}: chip count differs from en"
+            assert c["title"].count("<em>") == 1, f"slide {i + 1} {loc}: headline needs exactly one <em>"
 
 # Tempo brand palette (Color.kt). A light slide sits on the primary container
 # fading to the light background; a dark one on the dark background with a glow
@@ -176,13 +210,13 @@ def build_page(ff, locale, idx, raw_paths):
     slide_id, themes = SLIDES[idx]
     # The duo slide carries both themes; it sits on dark so the light phone pops.
     theme = THEMES["dark" if len(themes) > 1 else themes[0]]
-    copy = COPY[locale][idx]
+    copy = COPY[idx][locale]
     portrait = spec["layout"] == "portrait"
     u = W / 1080 if portrait else H / 1440  # scale unit
 
     title_size = (92 if portrait else 84) * u
     body_size = (38 if portrait else 40) * u
-    eyebrow_size = (30 if portrait else 30) * u
+    eyebrow_size = 30 * u
     chip_size = (30 if portrait else 32) * u
 
     uris = [p.as_uri() for p in raw_paths]
@@ -194,17 +228,16 @@ def build_page(ff, locale, idx, raw_paths):
         dev_w = W * (0.70 if kind == "phone" else 0.84)
         top = 640 * u
         if is_duo:
+            # The chips sit in a grid above the pair, so the devices start lower
+            # than a single device would; the back one sits a little lower still.
             w2 = dev_w * 0.82
             devices = (
                 device_html(kind, uris[0], w2,
-                            f"position:absolute;left:{W * 0.06}px;top:{top + 80 * u}px;transform:rotate(-6deg)")
+                            f"position:absolute;left:{W * 0.06}px;top:{top + 260 * u}px;transform:rotate(-6deg)")
                 + device_html(kind, uris[1], w2,
-                              f"position:absolute;right:{W * 0.06}px;top:{top + 20 * u}px;transform:rotate(5deg)")
+                              f"position:absolute;right:{W * 0.06}px;top:{top + 200 * u}px;transform:rotate(5deg)")
             )
             chip_block = f'<div class="chipgrid" style="top:{top - 40 * u}px">{chips_html(copy["chips"])}</div>'
-            # the duo pushes its chips above the devices, so move devices down
-            devices = devices.replace(f"top:{top + 80 * u}px", f"top:{top + 260 * u}px").replace(
-                f"top:{top + 20 * u}px", f"top:{top + 200 * u}px")
         else:
             devices = device_html(kind, uris[0], dev_w,
                                   f"position:absolute;left:{(W - dev_w) / 2}px;top:{top}px")
@@ -319,26 +352,32 @@ p.body {{ font-size: {body_size}px; line-height: 1.32; color: {t['body']}; max-w
 
 def render(chrome, html_path, png_path, size):
     W, H = size
-    subprocess.run(
-        [chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
-         "--allow-file-access-from-files", f"--window-size={W},{H}", "--default-background-color=00000000",
-         "--virtual-time-budget=3000", f"--screenshot={png_path}", html_path.as_uri()],
-        check=True, capture_output=True,
-    )
+    # Each render gets its own throwaway profile: Chrome instances running at
+    # once otherwise contend for the default one and exit with status 2.
+    with tempfile.TemporaryDirectory() as profile:
+        subprocess.run(
+            [chrome, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1",
+             f"--user-data-dir={profile}", "--no-first-run",
+             "--allow-file-access-from-files", f"--window-size={W},{H}", "--default-background-color=00000000",
+             "--virtual-time-budget=3000", f"--screenshot={png_path}", html_path.as_uri()],
+            check=True, capture_output=True,
+        )
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--chrome", default=DEFAULT_CHROME)
     ap.add_argument("--only", default=",".join(FORM_FACTORS))
-    ap.add_argument("--locale", choices=["en", "es"], action="append")
+    ap.add_argument("--locale", choices=LOCALES, action="append")
     ap.add_argument("--keep-html", type=Path)
     args = ap.parse_args()
     if not Path(args.chrome).exists() and not shutil.which(args.chrome):
         sys.exit(f"Chrome not found at {args.chrome} — pass --chrome")
-    locales = args.locale or ["en", "es"]
+    check_copy()
+    locales = args.locale or list(LOCALES)
     work = args.keep_html or Path(tempfile.mkdtemp())
     work.mkdir(parents=True, exist_ok=True)
+    jobs = []
     for ff in args.only.split(","):
         out_dir = OUT / ff
         out_dir.mkdir(parents=True, exist_ok=True)
@@ -353,8 +392,14 @@ def main():
                 page = work / f"{ff}_{locale}_{slide_id}.html"
                 page.write_text(build_page(ff, locale, idx, raws), encoding="utf-8")
                 png = out_dir / f"{locale}_{slide_id}.png"
-                render(args.chrome, page, png, FORM_FACTORS[ff]["size"])
-                print(png.relative_to(REPO))
+                jobs.append((page, png, FORM_FACTORS[ff]["size"]))
+    # Each render is a separate headless Chrome, mostly start-up time, so run a
+    # few at once rather than paying for fifty cold starts back to back.
+    with ThreadPoolExecutor(max_workers=min(6, os.cpu_count() or 1)) as pool:
+        futures = {pool.submit(render, args.chrome, page, png, size): png for page, png, size in jobs}
+        for future in as_completed(futures):
+            future.result()
+            print(futures[future].relative_to(REPO))
 
 
 if __name__ == "__main__":

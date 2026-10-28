@@ -96,7 +96,9 @@ Four scripts, composed by a fifth:
   3-member habit chain), with category names, task titles/descriptions, and
   habit titles translated per locale. Every date is computed relative to
   `--today` (defaults to the real current date), so re-running later doesn't
-  produce stale "Today" tasks or broken streaks. It also emits a `settings`
+  produce stale "Today" tasks or broken streaks. Focus lists only tasks due
+  today plus overdue ones, so four tasks are dated today and one yesterday —
+  enough to fill the hero Focus shot and show its Overdue section. It also emits a `settings`
   block carrying `--theme`, since Replace-mode imports apply that section and
   would otherwise overwrite the theme seeded into `theme_prefs.xml`.
 - **`scripts/import-seed-backup.py <serial> <file-name> <passphrase> <en|es>`**
@@ -125,7 +127,13 @@ Four scripts, composed by a fifth:
   package-qualified resource ids. Both scripts flatten that, normalise the
   flags and ids, and search **only the focused window** — on XR the dump
   carries every window in the scene (home environment, System UI, a stray
-  Gboard settings screen), whose labels would otherwise match first.
+  Gboard settings screen), whose labels would otherwise match first. That
+  parsing lives once, in `scripts/android_ui.py`, which both scripts import.
+
+  The capture runs with **SystemUI demo mode** on (`set_demo_mode`): a 9:41
+  clock, full battery and Wi-Fi, and no notification or work-profile icons,
+  so every status bar in the set matches. It is switched off again when the
+  run ends, even if a step fails.
 
   The Focus tab only answers to the content-desc "Focus" while nothing is
   running — once a session starts it relabels itself to the time left — so
@@ -301,7 +309,9 @@ adb -s emulator-5554 emu kill
 # than a 10-minute timeout, so run each theme separately if you're driving this
 # from a script with a deadline. Once a session is running its countdown keeps
 # the UI busy, and `android layout` can fail repeatedly with "Could not obtain
-# idle state"; the capture script retries, but a theme may still need a re-run.
+# idle state"; the capture script retries, and for the session sheet (whose
+# progress ring never stops) falls back to a fixed settle. A theme may still
+# need a re-run.
 android emulator start XR_Headset
 adb -s emulator-5554 install -r "$APK"
 adb -s emulator-5554 shell cmd overlay enable com.android.internal.systemui.navbar.gestural
@@ -355,17 +365,32 @@ wide, heavy for headlines) and the Tempo palette from `Color.kt`.
 
 The five images tell the raw set's story and add a closer:
 
-1. **Focus** — the day on one screen (light)
+1. **Focus** — today and overdue tasks, with Up next (light)
 2. **Focus sessions** — a running session (dark)
 3. **Routines** — habit chains (light)
 4. **Tasks** — the Personal category (dark)
 5. **Privacy** — Focus in light and dark side by side, with the privacy chips
 
 Light and dark alternate so the carousel shows both themes without repeating a
-screen. The copy lives in the script's `COPY` dict, one entry per locale; keep
-it in step with the listing text in `distribution/listing/` and with what the
-captures actually show — a chip that names something the capture doesn't show
-(e.g. a countdown in a nav bar the session sheet covers) reads as a false claim.
+screen.
+
+The copy lives in the script's `COPY` list: one entry per slide, English and
+Spanish side by side, and `check_copy()` refuses to render if the locales stop
+matching in shape (fields, chip count, one accented phrase per headline). Three
+rules keep it honest and in the app's voice:
+
+- **Claims match the capture and the app.** Focus lists tasks only (due today
+  and overdue), and the session length is a setting, so the copy says neither
+  "habits in Focus" nor "25-minute sessions". A chip that names something the
+  screen doesn't show reads as a false claim.
+- **The app's words, not new ones.** Headlines reuse onboarding lines where one
+  fits ("Today, not everything" / "Hoy, no todo", "Work in sessions" /
+  "Trabaja por sesiones"), and Spanish uses the terms `values-es` uses —
+  Enfoque, atrasado, Completar/Pausar/Parar, Construir/Dejar, rachas — in
+  Spain's Spanish, informal *tú*.
+- **Listing text tells the same story.** `distribution/listing/` (title, short
+  and full description, both locales) uses the same terms and claims; change
+  them together.
 
 ## Play Store technical requirements (as of writing)
 

@@ -170,12 +170,15 @@ def build_plaintext(today, locale, theme):
     #  repeatDays, monthDayOption, sortOrder, completedAt)
     task_rows = [
         (1, *task_text[0], False, 1, "HIGH", dt(today, 0, "09:00"), None, None, None, 0, None),
-        (2, *task_text[1], False, 1, "MEDIUM", None, None, None, None, 1, None),
+        # Focus lists only tasks due today plus overdue ones, so the hero Focus shot
+        # needs several dated for today and one from yesterday — the latter is what
+        # makes the Overdue section appear, which the listing copy points at.
+        (2, *task_text[1], False, 1, "MEDIUM", dt(today, 0, "11:00"), None, None, None, 1, None),
         (3, *task_text[2], True, 1, None, None, None, None, None, 2, dt(today, -1, "17:30")),
-        (4, *task_text[3], False, 2, "LOW", None, None, None, None, 3, None),
+        (4, *task_text[3], False, 2, "LOW", dt(today, 0, "18:00"), None, None, None, 3, None),
         (5, *task_text[4], False, 2, "MEDIUM", dt(today, 2, "12:00"), None, None, None, 4, None),
         (6, *task_text[5], True, 2, None, None, None, None, None, 5, dt(today, -2, "18:00")),
-        (7, *task_text[6], False, 3, "MEDIUM", None, None, None, None, 6, None),
+        (7, *task_text[6], False, 3, "MEDIUM", dt(today, -1, "16:00"), None, None, None, 6, None),
         (8, *task_text[7], True, 3, None, None, None, None, None, 7, dt(today, -3, "10:00")),
         (9, *task_text[8], False, 4, None, None, None, None, None, 8, None),
         (10, *task_text[9], False, 4, "HIGH", dt(today, 0, "19:00"), None, None, None, 9, None),
