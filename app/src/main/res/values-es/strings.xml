@@ -554,7 +554,7 @@
     <string name="onboarding_focus_title">Empieza con el día delante</string>
     <string name="onboarding_focus_description">Enfoque reúne las tareas para hoy y las tareas vencidas pendientes de todas tus categorías, con un temporizador para trabajar por sesiones.</string>
     <string name="onboarding_focus_today_concept_title">Hoy, no todo</string>
-    <string name="onboarding_focus_today_concept_description">Focus solo enseña lo de hoy, junto a lo que se te pasó y lo que merece la pena empezar ahora.</string>
+    <string name="onboarding_focus_today_concept_description">Enfoque solo enseña lo de hoy, junto a lo que se te pasó y lo que merece la pena empezar ahora.</string>
     <string name="onboarding_focus_session_concept_title">Trabaja por sesiones</string>
     <string name="onboarding_focus_session_concept_description">Pon un temporizador en una tarea y Tempo lo cuenta, y te avisa cuando toca descansar.</string>
     <string name="onboarding_tasks_title">Despeja tu mente y organiza tu día</string>

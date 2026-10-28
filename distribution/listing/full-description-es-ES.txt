@@ -1,30 +1,33 @@
-Encuentra tu ritmo con Tempo, el planificador diario minimalista pensado para tu tranquilidad.
+Encuentra tu ritmo con Tempo, la app de hábitos y planificación diaria pensada para tu tranquilidad, que pone el día de hoy en una sola pantalla.
 
-Tempo no es una simple lista de tareas. Reúne el día de hoy en una sola pantalla y lo respalda con potentes <b>Cadenas de Hábitos</b> y un sencillo <b>Gestor de Tareas</b> para ayudarte a ganar impulso sin estrés. Ya sea que estés creando una rutina matutina, siguiendo tu entrenamiento u organizando tu día, Tempo no se interpone en tu camino: te deja avanzar.
+Tempo no es otra lista de tareas interminable. Enfoque solo te enseña lo que toca hoy, junto a lo que se te pasó y la siguiente tarea que merece la pena empezar. Rutinas mantiene el ritmo de tus hábitos con las <b>Cadenas de hábitos</b>, y Tareas guarda todo lo demás, ordenado a tu manera. Tanto si estás creando una rutina matutina como si quieres dejar un hábito u organizar tu día, Tempo no se interpone: te deja avanzar.
 
 <b>🔗 FUNCIONES PRINCIPALES</b>
 
-🎯 <b>Enfoque: el día de hoy, con su temporizador</b>
-Una pestaña para todo lo que toca ahora: tareas, hábitos y cadenas juntos, con lo que se te haya pasado y lo que merece la pena empezar a continuación. Pon en marcha una sesión de enfoque sobre cualquiera de ellos con un solo toque, y la cuenta atrás te acompaña mientras te mueves por la app. ¿Tareas sueltas sin fecha? Ponles una desde Enfoque sin perder el hilo.
+🎯 <b>Enfoque: hoy, no todo</b>
+Las tareas para hoy y lo que tengas atrasado, juntas en un solo sitio, con lo que merece la pena empezar a mano. ¿Tareas sueltas sin fecha? Ponles una desde Enfoque sin perder el hilo.
 
-🔄 <b>Cadenas de Hábitos — conecta tus rutinas</b>
-Crea secuencias de hábitos que fluyen naturalmente uno tras otro. Armar una "Cadena Matutina" es más fácil que gestionar recordatorios sueltos: el rastreador de hábitos más inteligente para quienes piensan en rutinas, no en casillas aisladas.
+⏱️ <b>Sesiones de enfoque: trabaja por sesiones</b>
+Pon un temporizador en cualquier tarea con un solo toque. Tempo lo cuenta, te avisa cuando toca descansar y la cuenta atrás te acompaña mientras te mueves por la app. Elige cuánto dura cada sesión y completa, pausa o para la tarea cuando quieras.
 
-✅ <b>Tareas y listas de pendientes simples</b>
-Anota tus tareas al instante. Organízalas con categorías, prioridades y fechas límite. Es el gestor de tareas y organizador diario perfecto para tu vida ocupada.
+🔄 <b>Cadenas de hábitos: mantén el ritmo</b>
+Une hábitos que fluyen uno tras otro, para que tu «Rutina matutina» sea una sola cadena y no un montón de recordatorios sueltos. Sigue los hábitos que quieres construir y los que quieres dejar, y mira cómo crecen tus rachas: la app de hábitos para quien piensa en rutinas, no en casillas sueltas.
 
-🎨 <b>Diseño Material expresivo</b>
-Creado con los últimos estándares de Material You. Tempo se adapta a los colores de tu fondo de pantalla y ofrece una interfaz moderna y hermosa que encaja a la perfección en tu dispositivo Android.
+✅ <b>Tareas: despeja tu mente, organiza tu día</b>
+Anota lo que tienes que hacer en segundos y ordénalo con categorías, secciones, prioridades y fechas. Un gestor de tareas y planificador diario ligero para el día a día.
 
-🛡️ <b>Privacidad ante todo, sin conexión</b>
-Tempo funciona completamente sin conexión y cifra tus datos en el dispositivo, incluidas las copias de seguridad que exportes. Tus datos nunca salen de tu dispositivo. Sin cuentas, sin sincronización en la nube, sin rastreo: solo tú y tus objetivos.
+🎨 <b>Haz que Tempo sea tuyo</b>
+Basado en Material You, con animaciones expresivas. Empieza con la paleta característica de Tempo o adapta la app al fondo de pantalla en dispositivos compatibles, en modo claro u oscuro.
 
-<b>⭐ ¿POR QUÉ ELEGIR TEMPO?</b>
-⏱️ <b>Sesiones de enfoque</b>: un temporizador a un toque para lo que tengas entre manos
-🚫 <b>Sin distracciones</b>: sin anuncios, sin ruido
-🗓️ <b>Flexible</b>: crea rutinas para días específicos de la semana
-📊 <b>Visual</b>: indicadores de progreso y animaciones expresivas
-🔔 <b>Recordatorios amables</b>: notificaciones que ayudan, no que agobian
-🔐 <b>Cifrado y privado por diseño</b>: un verdadero rastreador de hábitos y app de productividad sin conexión
+🛡️ <b>Privado y sin conexión</b>
+Tempo funciona completamente sin conexión y cifra tus datos en el dispositivo, incluidas las copias de seguridad que exportes. Tus datos nunca salen de tu dispositivo. Sin cuentas, sin sincronización en la nube, sin anuncios, sin rastreo.
 
-Empieza en pequeño, crea cadenas y domina tu día con Tempo: tu temporizador de enfoque, rastreador de hábitos, creador de rutinas y lista de tareas, todo en uno.
+<b>⭐ ¿POR QUÉ TEMPO?</b>
+🎯 <b>Primero, hoy</b>: solo lo que toca ahora, nada más
+⏱️ <b>Temporizador de enfoque</b>: empiezas con un toque y te avisa cuando toca descansar
+🗓️ <b>Flexible</b>: rutinas para días concretos de la semana
+🔥 <b>Rachas</b>: mira cómo crece tu constancia, día a día
+🔔 <b>Recordatorios amables</b>: avisos que ayudan, no que agobian
+🔐 <b>Cifrado y privado</b>: una app de hábitos y productividad que funciona de verdad sin conexión
+
+Empieza poco a poco, crea cadenas y encuentra tu ritmo con Tempo: tu temporizador de enfoque, app de hábitos, creador de rutinas y lista de tareas, todo en uno.

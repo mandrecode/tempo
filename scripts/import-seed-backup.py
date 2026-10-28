@@ -20,12 +20,11 @@ passphrase dialog -> Merge/Replace dialog (Replace) -> success dialog -> OK.
 Usage: import-seed-backup.py <device-serial> <file-name-on-device> <passphrase> <en|es>
   e.g. import-seed-backup.py emulator-5554 tempo_seed.json hunter2 es
 """
-import json
-import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
+
+from android_ui import MissingAndroidCli, adb, dump_layout, tap_center
 
 PKG = "com.mandrecode.tempo.debug"
 ACTIVITY = "com.mandrecode.tempo.MainActivity"
@@ -71,50 +70,15 @@ PICKER_ITEM_TITLE_ID = "title"
 PICKER_CONFIRM_ID = "action_menu_select"
 
 
-class MissingAndroidCli(RuntimeError):
-    """Not a transient UI hiccup — retrying the import can't conjure the CLI."""
-
-
-def adb(serial, *args, check=True):
-    return subprocess.run(["adb", "-s", serial, *args], capture_output=True, text=True, check=check)
-
-
-def dump_layout(serial, retries=8, delay=1.5):
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        path = f.name
-    try:
-        last_err = None
-        for _ in range(retries):
-            try:
-                result = subprocess.run(
-                    ["android", "layout", "--device", serial, "-o", path],
-                    capture_output=True,
-                    text=True,
-                )
-            except FileNotFoundError as e:
-                raise MissingAndroidCli(
-                    "The `android` CLI was not found on PATH. It's required to inspect the "
-                    "app's UI tree for navigation — install the Android SDK's `android` CLI "
-                    "(see AGENTS.md's android-cli conventions) and try again.",
-                ) from e
-            try:
-                with open(path) as f:
-                    return json.load(f)
-            except json.JSONDecodeError as e:
-                stderr = result.stderr.strip()
-                last_err = f"{e} (stderr: {stderr})" if stderr else str(e)
-                time.sleep(delay)
-        raise RuntimeError(f"Could not get a UI dump after {retries} retries: {last_err}")
-    finally:
-        Path(path).unlink(missing_ok=True)
-
-
 def match(node, desc=None, text=None, res_id=None, password=False):
     if desc is not None and node.get("content-desc") != desc:
         return False
     if text is not None and node.get("text") != text:
         return False
-    if res_id is not None and node.get("resource-id") != res_id:
+    # Newer `android layout` releases report ids package-qualified
+    # ("com.google.android.documentsui:id/title"); older ones bare ("title").
+    rid = node.get("resource-id") or ""
+    if res_id is not None and rid != res_id and not rid.endswith(f":id/{res_id}"):
         return False
     if password and "password" not in node.get("interactions", []):
         return False
@@ -134,15 +98,12 @@ def find_label(nodes, label):
     return find(nodes, desc=label) or find(nodes, text=label)
 
 
-def tap_center(serial, center):
-    x, y = center.strip("[]").split(",")
-    adb(serial, "shell", "input", "tap", x.strip(), y.strip())
-
-
 def tap(serial, settle=1.0, **kwargs):
     """Always re-dumps before tapping: dialogs shift position when the IME opens,
-    so coordinates read before typing are stale by the time we act on them."""
-    node = find(dump_layout(serial), **kwargs)
+    so coordinates read before typing are stale by the time we act on them.
+    Waits for the element rather than reading once, since the system file
+    picker in particular can take several seconds to come up."""
+    node = wait_for(serial, timeout=20, **kwargs)
     if node is None:
         raise RuntimeError(f"Element not found: {kwargs}")
     tap_center(serial, node["center"])
@@ -164,11 +125,17 @@ def scroll_to(serial, max_swipes=10, **kwargs):
             None,
         )
         if scrollable is None:
-            break
+            # The dump doesn't always flag the Settings list as scrollable (seen
+            # on the expanded tablet, where Settings opens as a pane beside the
+            # rail). Fall back to the app window itself, swiping right of centre
+            # so the gesture lands in the content pane rather than on the rail.
+            scrollable = next((n for n in nodes if n.get("type") == "APPLICATION" and "bounds" in n), None)
+            if scrollable is None:
+                break
         top_left, bottom_right = scrollable["bounds"].split("][")
         x1, y1 = (int(v) for v in top_left.strip("[]").split(","))
         x2, y2 = (int(v) for v in bottom_right.strip("[]").split(","))
-        mid_x = (x1 + x2) // 2
+        mid_x = (x1 + x2) // 2 if "interactions" in scrollable else x1 + (x2 - x1) * 3 // 5
         adb(serial, "shell", "input", "swipe", str(mid_x), str(int(y2 * 0.85)),
             str(mid_x), str(int(y1 + (y2 - y1) * 0.2)), "300")
         time.sleep(1.0)
@@ -188,9 +155,13 @@ def wait_for(serial, timeout=60, **kwargs):
 def run_import(serial, file_name, passphrase, s):
     adb(serial, "shell", "am", "force-stop", PKG)
     adb(serial, "shell", "am", "start", "-n", f"{PKG}/{ACTIVITY}")
-    time.sleep(4)
-
-    settings = find_label(dump_layout(serial), s["settings"])
+    # Poll rather than sleep: a cold start after `pm clear` can take well over
+    # a fixed few seconds to draw its first frame on a busy emulator.
+    deadline = time.time() + 45
+    settings = None
+    while settings is None and time.time() < deadline:
+        time.sleep(1.5)
+        settings = find_label(dump_layout(serial), s["settings"])
     if settings is None:
         raise RuntimeError(f"Settings entry point not found: {s['settings']!r}")
     tap_center(serial, settings["center"])
