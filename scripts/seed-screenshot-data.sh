@@ -20,7 +20,6 @@ LOCALE="${3:-en}"
 PKG="com.mandrecode.tempo.debug"
 ACTIVITY="com.mandrecode.tempo.MainActivity"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 # Only ever encrypts a throwaway demo dataset on a disposable AVD; it is not a
 # credential and deliberately doesn't need to be secret.
@@ -108,26 +107,6 @@ adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/theme_prefs.xml\"
 <map>
     <string name="theme_mode">${THEME_MODE}</string>
     <boolean name="use_tempo_colors" value="true" />
-</map>
-EOF
-
-# Mark the current what's-new entry as already seen, or its bottom sheet opens
-# over the first screenshot (MainViewModel shows it whenever onboarding is
-# complete and the stored id differs from WhatsNewRegistry.latest, which is
-# every fresh install). Read the id from the registry rather than hardcoding
-# it, so shipping a new entry doesn't silently break the pipeline.
-# `sed` rather than `grep -oP`, which is GNU-only and absent on macOS.
-WHATS_NEW_ID="$(sed -n 's/.*id = "\([^"]*\)".*/\1/p' \
-  "${REPO_ROOT}/app/src/main/java/com/mandrecode/tempo/features/whatsnew/presentation/WhatsNewRegistry.kt" \
-  | head -1)"
-if [ -z "$WHATS_NEW_ID" ]; then
-  echo "Could not read WhatsNewRegistry.latest's id — the what's-new sheet would cover the first screenshot." >&2
-  exit 1
-fi
-adb -s "$SERIAL" shell "run-as $PKG sh -c \"cat > shared_prefs/whats_new_preferences.xml\"" <<EOF
-<?xml version='1.0' encoding='utf-8' standalone='yes' ?>
-<map>
-    <string name="last_seen_entry_id">${WHATS_NEW_ID}</string>
 </map>
 EOF
 

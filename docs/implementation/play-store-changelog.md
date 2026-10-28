@@ -6,7 +6,7 @@ listings, based on the technical `CHANGELOG.md` maintained by release-please.
 ## How It Works
 
 ```
-release-please (CHANGELOG.md) → generate-whatsnew.sh → distribution/whatsnew/
+release-please (CHANGELOG.md) → generate-whatsnew.sh → build/whatsnew/
 ```
 
 1. **release-please** creates a technical changelog in `CHANGELOG.md` from
@@ -25,30 +25,32 @@ release-please (CHANGELOG.md) → generate-whatsnew.sh → distribution/whatsnew
    and any other section, the generated Play Store text keeps the breaking
    entry and omits the duplicate from non-breaking sections.
 
-   Output is written to `distribution/whatsnew/whatsnew-en-US`.
-3. **GitHub Actions workflows** pass `distribution/whatsnew/` to the
+   Output is written to `build/whatsnew/whatsnew-en-US` and
+   `build/whatsnew/whatsnew-es-ES` (Spanish headers over the same entries).
+   It is generated at publish time and never committed.
+3. **`publish.yml`** passes `build/whatsnew/` to the
    `r0adkll/upload-google-play` action via `whatsNewDirectory`, so release
    notes are uploaded alongside the AAB. The publish workflow also fails if
    generated changelog files still contain GitHub issue/PR links.
 
-## Directory Structure
+## Output
 
 ```
-distribution/
+build/
 └── whatsnew/
-    ├── whatsnew-en-US    # English (auto-generated, editable)
-    └── whatsnew-es-ES    # Spanish (manual translation required)
+    ├── whatsnew-en-US    # English
+    └── whatsnew-es-ES    # Spanish headers, English entries
 ```
 
-Each file must stay under **500 characters** (Play Store limit).
+The script truncates each file to stay under **500 characters** (Play Store
+limit).
 
 ## Usage
 
 ### Automatic (CI/CD)
 
-Both `ci.yml` (build-release job) and `promote-to-production.yml` run the
-script automatically before uploading to Google Play. No manual action is
-needed for English release notes.
+`publish.yml` runs the script for the release's version before uploading to
+Google Play. No manual action is needed.
 
 ### Manual (Local)
 
@@ -60,16 +62,15 @@ needed for English release notes.
 ./scripts/generate-whatsnew.sh 0.1.7
 ```
 
-After running, review `distribution/whatsnew/whatsnew-en-US` and translate
-`distribution/whatsnew/whatsnew-es-ES` manually.
+Running it locally only previews the text in `build/whatsnew/`; publish
+regenerates it from the tagged `CHANGELOG.md`.
 
 ## Adding a New Language
 
-1. Create a new file in `distribution/whatsnew/` named `whatsnew-<locale>`
-   (e.g., `whatsnew-fr-FR` for French).
-2. Write the translated release notes (≤ 500 characters).
-3. The `upload-google-play` action picks up all files in the directory
-   automatically.
+1. Add an output file and section labels for the locale (e.g.
+   `whatsnew-fr-FR`) to `scripts/generate-whatsnew.sh`.
+2. The `upload-google-play` action picks up every `whatsnew-<locale>` file in
+   `build/whatsnew/` automatically.
 
 ## Customizing Release Notes
 
@@ -82,8 +83,8 @@ user-friendliness. Common adjustments:
   (e.g., dependency updates, code style fixes)
 - **Highlight key features** by moving them to the top of the list
 
-Edit `distribution/whatsnew/whatsnew-en-US` directly after running the script,
-or edit the file in the release-please PR before merging.
+The text comes from commit subjects, so the place to improve it is the
+conventional commit subject (PR title) itself.
 
 ## Future Automation Ideas
 

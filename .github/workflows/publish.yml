@@ -109,7 +109,7 @@ jobs:
 
       - name: Validate changelog links are stripped
         run: |
-          if grep -R -n -E 'https://github\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+' distribution/whatsnew/; then
+          if grep -R -n -E 'https://github\.com/[^/]+/[^/]+/(issues|pull)/[0-9]+' build/whatsnew/; then
             echo "::error::Play Store changelog still contains GitHub issue/PR links."
             exit 1
           fi
@@ -121,4 +121,4 @@ jobs:
           packageName: com.mandrecode.tempo
           releaseFiles: app/build/outputs/bundle/release/tempo-${{ steps.version.outputs.version }}.aab
           tracks: alpha
-          whatsNewDirectory: distribution/whatsnew
+          whatsNewDirectory: build/whatsnew

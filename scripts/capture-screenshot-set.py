@@ -14,12 +14,11 @@ captured rather than after.
 Usage: capture-screenshot-set.py <device-serial> <output-dir> <prefix> <locale>
   e.g. capture-screenshot-set.py emulator-5554 distribution/screenshots/phone phone_en_light en
 """
-import json
-import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
+
+from android_ui import adb, dump_layout, tap_center
 
 PKG = "com.mandrecode.tempo.debug"
 ACTIVITY = "com.mandrecode.tempo.MainActivity"
@@ -39,6 +38,8 @@ CAPTURE_SETTLE_SECONDS = 3.0
 # screen rather than a failure. Every capture below therefore waits for a piece
 # of content only the finished screen has.
 READY_TIMEOUT_SECONDS = 90.0
+# See the session step in capture(): used only when its marker can't be read.
+SESSION_FALLBACK_SETTLE_SECONDS = 8.0
 READY_POLL_SECONDS = 2.0
 
 # Nav labels (Focus/Routines/Tasks) come from the app's own string resources,
@@ -78,40 +79,6 @@ NAV = {
 }
 
 
-def adb(serial, *args, check=True):
-    return subprocess.run(["adb", "-s", serial, *args], capture_output=True, text=True, check=check)
-
-
-def dump_layout(serial, retries=8, delay=1.5):
-    with tempfile.NamedTemporaryFile(suffix=".json", delete=False) as f:
-        path = f.name
-    try:
-        last_err = None
-        for _ in range(retries):
-            try:
-                result = subprocess.run(
-                    ["android", "layout", "--device", serial, "-o", path],
-                    capture_output=True,
-                    text=True,
-                )
-            except FileNotFoundError as e:
-                raise RuntimeError(
-                    "The `android` CLI was not found on PATH. It's required to inspect the "
-                    "app's UI tree for navigation — install the Android SDK's `android` CLI "
-                    "(see AGENTS.md's android-cli conventions) and try again.",
-                ) from e
-            try:
-                with open(path) as f:
-                    return json.load(f)
-            except json.JSONDecodeError as e:
-                stderr = result.stderr.strip()
-                last_err = f"{e} (stderr: {stderr})" if stderr else str(e)
-                time.sleep(delay)
-        raise RuntimeError(f"Could not get a UI dump after {retries} retries: {last_err}")
-    finally:
-        Path(path).unlink(missing_ok=True)
-
-
 def find_center(nodes, desc=None, text=None, text_prefix=None):
     # content-desc is the more reliable accessibility label, but some form
     # factors (e.g. desktop windowing) only set plain text on nav items, so
@@ -133,12 +100,6 @@ def find_center(nodes, desc=None, text=None, text_prefix=None):
             if value.startswith(text_prefix) and any(c.isdigit() for c in value):
                 return n["center"]
     raise RuntimeError(f"Element not found: desc={desc!r} text={text!r} text_prefix={text_prefix!r}")
-
-
-def tap_center(serial, center):
-    # center is a string like "[540,2227]"
-    x, y = center.strip("[]").split(",")
-    adb(serial, "shell", "input", "tap", x.strip(), y.strip())
 
 
 def wait_for(serial, desc=None, text=None, text_prefix=None, timeout=READY_TIMEOUT_SECONDS):
@@ -169,6 +130,47 @@ def tap(serial, desc=None, text=None, text_prefix=None, settle=1.0):
     time.sleep(settle)
 
 
+def set_demo_mode(serial, on):
+    """SystemUI demo mode, so every capture's status bar reads the same: 9:41,
+    full battery and Wi-Fi, no notification icons and no work-profile badge.
+    (The running session's own notification needs hide_session_notification
+    on top.) Without it each image
+    shows whatever the emulator's clock and icons happened to be, and the set
+    reads as unpolished side by side in the Play carousel."""
+    def demo(*extras):
+        adb(serial, "shell", "am", "broadcast", "-a", "com.android.systemui.demo", *extras, check=False)
+
+    if not on:
+        demo("-e", "command", "exit")
+        return
+    adb(serial, "shell", "settings", "put", "global", "sysui_demo_allowed", "1", check=False)
+    demo("-e", "command", "enter")
+    demo("-e", "command", "clock", "-e", "hhmm", "0941")
+    demo("-e", "command", "battery", "-e", "level", "100", "-e", "plugged", "false")
+    # `fully` marks the network as validated; without it demo mode draws the
+    # Wi-Fi icon with a "no internet" exclamation mark.
+    demo("-e", "command", "network", "-e", "wifi", "show", "-e", "level", "4", "-e", "fully", "true")
+    # Mobile is hidden rather than set to full: demo mode draws it as a half-empty
+    # "3G" in white whatever the bar's tint, so it clashes on light screens.
+    demo("-e", "command", "network", "-e", "mobile", "hide")
+    demo("-e", "command", "notifications", "-e", "visible", "false")
+    demo("-e", "command", "status", "-e", "managed_profile", "hide")
+
+
+def hide_session_notification(serial):
+    """Snooze the running session's notification so it leaves the status bar.
+    It is an ongoing (on Android 16, promoted Live Update) notification, which
+    demo mode's "hide notifications" leaves in place — every shot after the
+    session starts would otherwise carry its icon by the clock. Snoozing only
+    takes it off screen; the session itself keeps running."""
+    listing = adb(serial, "shell", "cmd", "notification", "list", check=False).stdout
+    for key in listing.split():
+        if f"|{PKG}|" in key:
+            # Quoted: the key is `user|pkg|id|tag|uid`, and the device shell would
+            # otherwise read each `|` as a pipe.
+            adb(serial, "shell", "cmd", "notification", "snooze", "--for", "3600000", f"'{key}'", check=False)
+
+
 def screencap(serial, out_path: Path):
     time.sleep(CAPTURE_SETTLE_SECONDS)
     adb(serial, "shell", "screencap", "-p", "/sdcard/_shot.png")
@@ -191,6 +193,14 @@ def main():
     adb(serial, "shell", "am", "force-stop", PKG)
     adb(serial, "shell", "am", "start", "-n", f"{PKG}/{ACTIVITY}")
     time.sleep(4)
+    set_demo_mode(serial, True)
+    try:
+        capture(serial, out, prefix, nav)
+    finally:
+        set_demo_mode(serial, False)
+
+
+def capture(serial, out, prefix, nav):
 
     # 1. Focus / Today — the day before anything has been started, so the
     #    "Up next" card still offers the session the next shot then runs.
@@ -207,7 +217,15 @@ def main():
     # 2. A running session. Starting one from the "Up next" card opens the
     #    session view over the day by itself — no second tap to expand it.
     tap(serial, text_prefix=nav["start"], settle=2.0)
-    wait_for(serial, text=nav["focusing"])
+    try:
+        wait_for(serial, text=nav["focusing"])
+    except RuntimeError:
+        # The session sheet's progress ring never stops animating, and on XR
+        # `android layout` can fail to find the UI idle for as long as it is on
+        # screen. The tap that opened it already succeeded, so fall back to a
+        # settle long enough for the slowest form factor rather than giving up.
+        time.sleep(SESSION_FALLBACK_SETTLE_SECONDS)
+    hide_session_notification(serial)
     screencap(serial, out / f"{prefix}_2_focus_session.png")
     # Back to the day underneath. The session keeps running; that is the whole
     # point of the two shots that follow.
