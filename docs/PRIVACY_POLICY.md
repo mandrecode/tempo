@@ -1,6 +1,6 @@
 # Privacy Policy for Tempo
 
-**Last Updated: July 21, 2026**
+**Last Updated: October 29, 2026**
 
 This Privacy Policy describes how your personal information is handled in the **Tempo** mobile
 application ("the App").
@@ -58,4 +58,4 @@ new Privacy Policy within the App or on our official website/listing.
 ### 6. Contact Us
 
 If you have any questions or suggestions about our Privacy Policy, do not hesitate to contact us at:
-mandrecode@protonmail.com
+mandrecode@gmail.com
