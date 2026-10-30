@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.2](https://github.com/sherrerapiqueras/tempo/compare/v1.18.1...v1.18.2) (2026-10-30)
+
+
+### Bug Fixes
+
+* **#501:** keep the screen in place when an editor docks ([#503](https://github.com/sherrerapiqueras/tempo/issues/503)) ([ccbae62](https://github.com/sherrerapiqueras/tempo/commit/ccbae622baf5e5e41458264175209b363c353626))
+
 ## [1.18.1](https://github.com/mandrecode/tempo/compare/v1.18.0...v1.18.1) (2026-10-28)
 
 
