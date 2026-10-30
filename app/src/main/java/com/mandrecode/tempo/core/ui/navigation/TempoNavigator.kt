@@ -43,7 +43,7 @@ internal class TempoNavigator(
             }
 
     val currentRoute: NavKey
-        get() = activeBackStack.last { it !is EditorRoute }
+        get() = activeBackStack.last()
 
     val topLevelRoute: NavKey
         get() =
@@ -58,17 +58,6 @@ internal class TempoNavigator(
     fun navigate(route: NavKey) {
         if (activeBackStack.lastOrNull() != route) {
             activeBackStack.add(route)
-        }
-    }
-
-    fun setEditorVisible(
-        route: EditorRoute,
-        visible: Boolean,
-    ) {
-        val isVisible = activeBackStack.lastOrNull() == route
-        when {
-            visible && !isVisible -> activeBackStack.add(route)
-            !visible && isVisible -> activeBackStack.removeAt(activeBackStack.lastIndex)
         }
     }
 

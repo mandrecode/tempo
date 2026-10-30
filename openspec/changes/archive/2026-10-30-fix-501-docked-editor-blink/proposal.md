@@ -30,6 +30,6 @@ _None._
 
 ## Impact
 
-- UI navigation: `core/ui/navigation/EditorSupportingPaneScene.kt` (the scene strategy NavDisplay uses for top-level screens and their docked editors); possibly `core/ui/navigation/OnboardingNavigationTransitions.kt` if a transition guard is still needed.
-- Tests: unit tests for the scene strategy; the existing instrumented `DockedEditorPaneTest` keeps covering the pane.
+- UI navigation: the editor marker routes (`TasksEditorRoute`, `RoutinesEditorRoute`), `TempoNavigator.setEditorVisible` and the custom supporting-pane scene strategy are removed; `NavDisplay` uses its default single-pane scene. `TasksScreen` and `RoutinesScreen` no longer report the docked state to navigation. Entry metadata constants move to `core/ui/navigation/NavEntryMetadata.kt`.
+- Tests: the scene strategy has no replacement to test; unit tests now pin the transition choice (tab switch cut, onboarding hand-off); the existing instrumented `DockedEditorPaneTest` keeps covering the pane.
 - Manual validation on the Pixel Tablet (1280 dp, Tasks and Routines) and a Large Desktop window, with screen recordings before and after; a phone checks the bottom-sheet path is unaffected.

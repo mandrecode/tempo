@@ -70,7 +70,6 @@ fun TasksScreen(
     topBar: @Composable () -> Unit = {},
     showAddTaskRailButton: Boolean = false,
     onFloatingBarStateChange: (TasksFloatingBarState) -> Unit = {},
-    onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
@@ -135,10 +134,6 @@ fun TasksScreen(
     val contentBias = animatedDockedContentBias(isEditorDocked)
     var contentBlockTop by remember { mutableStateOf(0.dp) }
     var editorDismissRequestKey by remember { mutableIntStateOf(0) }
-    val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
-    LaunchedEffect(isDockedEditor, uiState.taskForm.isVisible) {
-        currentOnDockedEditorVisibilityChange(isEditorDocked)
-    }
     val onAddTask =
         remember(viewModel) {
             { viewModel.onEvent(TasksContract.UiEvent.ShowTaskDialog()) }

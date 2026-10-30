@@ -1,9 +1,9 @@
 # Tasks
 
-## 1. Scene strategy
+## 1. Navigation
 
-- [x] 1.1 Change `EditorSupportingPaneSceneStrategy` to return one scene type keyed by the main entry's `contentKey` for a top-level route alone and for a top-level route with its supported editor on top, with correct `entries` and `previousEntries`; unsupported stacks still return `null`. Verify with new unit tests in `app/src/test/.../core/ui/navigation/` asserting the scene class and key are equal before and after the editor route is pushed, differ across tabs, and are `null` for onboarding.
-- [x] 1.2 Confirm `navigationTransition` still classifies tab switches and onboarding hand-off with the new scene (main route read from `entries.first()`); add or adjust unit tests for both cases and verify they pass with `./gradlew testDebugUnitTest`.
+- [x] 1.1 Remove the editor marker routes, `setEditorVisible`, the screens' docked-state callbacks and the custom scene strategy, so `NavDisplay` uses its default single-pane scene; verify no references remain and the app builds. (Replaces the first approach, one scene keyed by the main entry, after review.)
+- [x] 1.2 Confirm `navigationTransition` still classifies tab switches and onboarding hand-off; pin both with `NavigationTransitionTest` (exact hand-off transition, not just "some animation") and verify with `./gradlew testDebugUnitTest`.
 
 ## 2. Device validation
 

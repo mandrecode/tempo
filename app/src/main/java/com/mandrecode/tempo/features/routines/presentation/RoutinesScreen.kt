@@ -69,7 +69,6 @@ fun RoutinesScreen(
     topBar: @Composable (isVacationModeActive: Boolean) -> Unit = {},
     showAddHabitRailButton: Boolean = false,
     onFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit = {},
-    onDockedEditorVisibilityChange: (Boolean) -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     HoldSplashWhileFirstLoad(isLoading = uiState.isLoading)
@@ -128,10 +127,6 @@ fun RoutinesScreen(
     val contentBias = animatedDockedContentBias(isEditorDocked)
     var contentBlockTop by remember { mutableStateOf(0.dp) }
     var editorDismissRequestKey by remember { mutableIntStateOf(0) }
-    val currentOnDockedEditorVisibilityChange by rememberUpdatedState(onDockedEditorVisibilityChange)
-    LaunchedEffect(isDockedEditor, uiState.habitForm.isVisible) {
-        currentOnDockedEditorVisibilityChange(isEditorDocked)
-    }
     val onContentEvent: (RoutinesContract.UiEvent) -> Unit = { event ->
         handleRoutinesContentEvent(
             event = event,

@@ -13,26 +13,23 @@ When an editor docks, the screen (`TasksScreen`, `RoutinesScreen`) shows the pan
 - Keep tab switches, onboarding hand-off and any future screen changes on their existing transitions.
 
 **Non-Goals:**
-- Replacing the editor route mechanism (the back stack entry stays; other code may rely on it, and #502 will reuse it).
-- Any change to `DockedEditorPane` motion.
+- Any change to `DockedEditorPane` motion, or to how editor state is owned (it stays in each screen's view model).
 
 ## Decisions
 
-### One scene class for a top-level screen, with or without its editor
+### Remove the editor marker routes
 
-`EditorSupportingPaneSceneStrategy` returns a single scene type (renamed to reflect it, for example `TopLevelScene`) whenever the top of the stack is a top-level main route alone, or a supporting editor route above one. Its `key` is the main entry's `contentKey` in both cases; `entries` is `[main]` or `[main, editor]`; `previousEntries` is the stack below the main entry plus, when an editor is open, the main entry, so `NavDisplay`'s back target stays correct. Content draws the main entry at the same call site in both shapes and the editor entry after it, so the main entry's composition is reused, not moved.
+The editor routes carried no state: their entries drew nothing, the form lives in the view model, the docked sheet handles Back and Escape itself, and the draft survives resizes through the screen's movable content. They only mirrored the pane's visibility into the back stack, and that mirroring is what turned docking into a scene change. They are removed, with `setEditorVisible`, the screens' `onDockedEditorVisibilityChange` callbacks and the custom scene strategy. `NavDisplay` falls back to its default single-pane scene for every stack, so opening or closing an editor never reaches navigation. The metadata that marks top-level tab entries, still needed to recognise a tab switch, is renamed `TOP_LEVEL_ROUTE_METADATA`.
 
-Because `AnimatedSceneKey` is equal before and after docking, `AnimatedContent` does not start a transition; it recomposes the same slot with the new scene.
+This supersedes the #151 design's plan to promote the editor into the back stack; that plan was never fully realised (the routes ended up as empty markers) and no spec requires back-stack participation.
 
-Stacks the strategy doesn't recognise (onboarding, anything without the main-route metadata) return `null` and keep the single-pane fallback, so their transitions are unchanged. A tab switch changes the main entry, hence the key, so `navigationTransition` still sees it as a tab switch: the main route is read from `entries.first()`, which stays the main entry.
+**Alternative considered, and first implemented: one scene class keyed by the main entry.** The strategy returned the same scene with or without the editor, so `NavDisplay` saw no change. It worked on device, but review found it relied on `NavDisplay`'s internal scene identity (`AnimatedSceneKey(scene::class, scene.key)`), changed which entries `NavDisplay` considered "previous" (enabling its own back handling while an editor was open), and left every future editor route (#502) to fit the special case. Removing the routes fixes the cause instead.
 
-**Alternative considered: a no-op transition when only the editor changes.** In `navigationTransition`, return `EnterTransition.None togetherWith ExitTransition.None` when both scenes share a main entry. It's two lines, but `NavDisplay` still swaps scenes: the main entry is moved into a new scene, a transition runs (lifecycle drops to `STARTED` until it settles), and correctness depends on every future transition spec remembering the guard. Rejected in favour of removing the scene change.
-
-**Alternative considered: dropping the editor routes.** The pane would no longer touch navigation at all, but it changes what the back stack represents and would have to be redone for #502. Out of scope for a bug fix.
+**Alternative considered: a no-op transition when only the editor changes.** A guard in `navigationTransition`; still a scene swap underneath, with the lifecycle capped at `STARTED` until it settles. Rejected.
 
 ## Risks / Trade-offs
 
-- [Scene key collision: two different stacks producing the same key] → the key is the main entry's `contentKey`, unique per top-level route; an editor never appears without its main route below it, and unsupported pairs fall back to `null`.
-- [Predictive Back on the editor] → the docked sheet's own handler consumes the gesture before `NavDisplay`, as today; verified manually on the tablet with the back gesture and the Back key.
-- [Screenshot or instrumented tests assuming a fade] → none reference the scene transition today (`DockedEditorPaneTest` exercises the pane only); covered by the unit tests below.
-- [The emulator's screen recorder drops frames, so a blink can be missed] → record each case more than once and compare against the before-fix recordings, which caught it every time.
+- [Something relied on the editor route being on the back stack] → none found: `currentRoute` skipped it explicitly, no test, spec or notification path references it, and the floating bar reads `currentRoute`/`topLevelRoute`.
+- [Back while an editor is docked] → handled by the docked sheet's own `PredictiveBackHandler`, as before; with no editor route, `NavDisplay` no longer has a previous entry to compete for Back. Verified on the tablet with the Back key, the back gesture and re-tapping the open task.
+- [A saved back stack from an older build containing an editor route] → saved navigation state doesn't survive an app update, so no migration is needed.
+- [The emulator's screen recorder drops frames, so a blink can be missed] → each case recorded more than once and compared against the before-fix recordings, which caught it every time.
