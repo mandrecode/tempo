@@ -35,11 +35,8 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
-import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.ui.NavDisplay
 import com.mandrecode.tempo.core.domain.model.TempoTab
-import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
-import com.mandrecode.tempo.core.ui.adaptive.rememberSheetPlacement
 import com.mandrecode.tempo.core.ui.glass.GlassBackdropSource
 import com.mandrecode.tempo.core.ui.glass.ProvideGlassBackdrop
 import com.mandrecode.tempo.core.ui.glass.rememberGlassBackdrop
@@ -66,16 +63,6 @@ object SettingsRoute : NavKey
  */
 @Serializable
 object FocusSessionRoute : NavKey
-
-@Serializable
-object RoutinesEditorRoute : EditorRoute {
-    override fun supports(mainRoute: NavKey): Boolean = mainRoute == RoutinesRoute
-}
-
-@Serializable
-object TasksEditorRoute : EditorRoute {
-    override fun supports(mainRoute: NavKey): Boolean = mainRoute == TasksRoute
-}
 
 @Serializable
 data class OnboardingRoute(
@@ -167,7 +154,6 @@ fun TempoNavHost(
         onRouteChange = onRouteChange,
     )
 
-    val editorPaneEnabled = rememberSheetPlacement() == SheetPlacement.DockedPane
     val activeEntries =
         rememberActiveEntries(
             navigator = navigator,
@@ -179,15 +165,12 @@ fun TempoNavHost(
             onRoutinesFloatingBarStateChange = { routinesFloatingBarState = it },
             onTasksFloatingBarStateChange = { tasksFloatingBarState = it },
             onOpenTaskInTasks = openTaskInTasks,
-            includeEditorEntries = editorPaneEnabled,
         )
-    val editorSceneStrategy = rememberEditorSupportingPaneSceneStrategy()
     val insetPaddingModifier = rememberHorizontalInsetPadding()
 
     GlassChromeLayers(
         entries = activeEntries,
         navigator = navigator,
-        editorSceneStrategy = editorSceneStrategy,
         onOpenTaskInTasks = openTaskInTasks,
         modifier = modifier,
     ) {
@@ -216,7 +199,6 @@ fun TempoNavHost(
 private fun GlassChromeLayers(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
-    editorSceneStrategy: SceneStrategy<NavKey>,
     onOpenTaskInTasks: (Long) -> Unit,
     modifier: Modifier = Modifier,
     chrome: @Composable () -> Unit,
@@ -231,7 +213,6 @@ private fun GlassChromeLayers(
                 TempoNavDisplay(
                     entries = entries,
                     navigator = navigator,
-                    editorSceneStrategy = editorSceneStrategy,
                     modifier = insetPaddingModifier,
                 )
 
@@ -311,14 +292,14 @@ private fun BoxScope.SlideOverlays(
 private fun TempoNavDisplay(
     entries: List<NavEntry<NavKey>>,
     navigator: TempoNavigator,
-    editorSceneStrategy: SceneStrategy<NavKey>,
     modifier: Modifier = Modifier,
 ) {
+    // The default single-pane scene throughout: a docked editor is drawn by its screen and never
+    // reaches navigation, so docking can't be mistaken for a change of screen (#501).
     NavDisplay(
         entries = entries,
         modifier = modifier.fillMaxSize(),
         onBack = { navigator.pop() },
-        sceneStrategies = listOf(editorSceneStrategy),
         transitionSpec = { navigationTransition(initialScene = initialState, targetScene = targetState) },
         popTransitionSpec = { navigationPopTransition(initialScene = initialState, targetScene = targetState) },
     )
@@ -333,7 +314,6 @@ private fun rememberActiveEntries(
     onRoutinesFloatingBarStateChange: (RoutinesFloatingBarState) -> Unit,
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
-    includeEditorEntries: Boolean,
 ): List<NavEntry<NavKey>> {
     val decorators =
         listOf<NavEntryDecorator<NavKey>>(
@@ -366,12 +346,7 @@ private fun rememberActiveEntries(
         }
     // Settings slides in as its own overlay (SettingsSlideOverlay) rather than as a NavDisplay
     // scene, so its entry never reaches NavDisplay here regardless of which section is active.
-    val entriesWithoutSettings = sectionEntries.filterNot { it.metadata.containsKey(SETTINGS_ROUTE_METADATA) }
-    return if (includeEditorEntries) {
-        entriesWithoutSettings
-    } else {
-        entriesWithoutSettings.filterNot { it.metadata.containsKey(EDITOR_ROUTE_METADATA) }
-    }
+    return sectionEntries.filterNot { it.metadata.containsKey(SETTINGS_ROUTE_METADATA) }
 }
 
 @Composable
@@ -384,13 +359,13 @@ private fun rememberNavEntryProvider(
     onTasksFloatingBarStateChange: (TasksFloatingBarState) -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
 ) = entryProvider<NavKey> {
-    entry<FocusRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to FocusRoute)) {
+    entry<FocusRoute>(metadata = mapOf(TOP_LEVEL_ROUTE_METADATA to FocusRoute)) {
         FocusDestination(
             navigator = navigator,
             onFloatingBarStateChange = onFocusFloatingBarStateChange,
         )
     }
-    entry<RoutinesRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to RoutinesRoute)) {
+    entry<RoutinesRoute>(metadata = mapOf(TOP_LEVEL_ROUTE_METADATA to RoutinesRoute)) {
         RoutinesDestination(
             navigator = navigator,
             pendingNotificationAction = pendingNotificationAction,
@@ -398,7 +373,7 @@ private fun rememberNavEntryProvider(
             onFloatingBarStateChange = onRoutinesFloatingBarStateChange,
         )
     }
-    entry<TasksRoute>(metadata = mapOf(EDITOR_MAIN_ROUTE_METADATA to TasksRoute)) {
+    entry<TasksRoute>(metadata = mapOf(TOP_LEVEL_ROUTE_METADATA to TasksRoute)) {
         TasksDestination(
             navigator = navigator,
             pendingNotificationAction = pendingNotificationAction,
@@ -420,8 +395,6 @@ private fun rememberNavEntryProvider(
     entry<FocusSessionRoute>(metadata = mapOf(SETTINGS_ROUTE_METADATA to true)) {
         FocusSessionDestination(navigator = navigator, onOpenTaskInTasks = onOpenTaskInTasks)
     }
-    entry<RoutinesEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to RoutinesEditorRoute)) {}
-    entry<TasksEditorRoute>(metadata = mapOf(EDITOR_ROUTE_METADATA to TasksEditorRoute)) {}
 }
 
 @Composable

@@ -98,9 +98,6 @@ internal fun RoutinesDestination(
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-        onDockedEditorVisibilityChange = { visible ->
-            navigator.setEditorVisible(RoutinesEditorRoute, visible)
-        },
     )
 }
 
@@ -123,9 +120,6 @@ internal fun TasksDestination(
         onFloatingBarStateChange = onFloatingBarStateChange,
         pendingNotificationAction = pendingNotificationAction,
         onConsumePendingNotificationAction = onConsumePendingNotificationAction,
-        onDockedEditorVisibilityChange = { visible ->
-            navigator.setEditorVisible(TasksEditorRoute, visible)
-        },
     )
 }
 
