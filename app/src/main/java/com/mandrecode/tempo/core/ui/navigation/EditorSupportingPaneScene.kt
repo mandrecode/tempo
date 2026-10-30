@@ -17,36 +17,52 @@ internal fun rememberEditorSupportingPaneSceneStrategy(): SceneStrategy<NavKey> 
     return strategy
 }
 
-private class EditorSupportingPaneSceneStrategy : SceneStrategy<NavKey> {
+/**
+ * One scene for a top-level screen, whether or not its docked editor is open (#501).
+ *
+ * NavDisplay animates whenever the scene's class or key changes. The screen draws its docked pane
+ * itself and the editor entry draws nothing, so opening the editor must not count as a scene change:
+ * a crossfade would empty the outgoing scene (an entry is drawn in one scene at a time) while the
+ * same screen faded in, blinking the whole window and hiding the pane's own slide-in. Keying by the
+ * main entry alone keeps the scene identical across docking; switching tabs still changes the key.
+ */
+internal class EditorSupportingPaneSceneStrategy : SceneStrategy<NavKey> {
     override fun SceneStrategyScope<NavKey>.calculateScene(entries: List<NavEntry<NavKey>>): Scene<NavKey>? {
-        if (entries.size < 2) return null
-        val mainEntry = entries[entries.lastIndex - 1]
-        val editorEntry = entries.last()
+        val topEntry = entries.lastOrNull()
+        val belowEntry = entries.getOrNull(entries.lastIndex - 1)
+        val previous = entries.dropLast(1)
+        return when {
+            topEntry == null -> null
+            topEntry.metadata.containsKey(EDITOR_MAIN_ROUTE_METADATA) ->
+                EditorSupportingPaneScene(mainEntry = topEntry, editorEntry = null, previousEntries = previous)
+            belowEntry != null && isSupportedEditor(editorEntry = topEntry, mainEntry = belowEntry) ->
+                EditorSupportingPaneScene(mainEntry = belowEntry, editorEntry = topEntry, previousEntries = previous)
+            else -> null
+        }
+    }
+
+    private fun isSupportedEditor(
+        editorEntry: NavEntry<NavKey>,
+        mainEntry: NavEntry<NavKey>,
+    ): Boolean {
         val editorRoute = editorEntry.metadata[EDITOR_ROUTE_METADATA] as? EditorRoute
         val mainRoute = mainEntry.metadata[EDITOR_MAIN_ROUTE_METADATA] as? NavKey
-        return if (editorRoute != null && mainRoute != null && editorRoute.supports(mainRoute)) {
-            EditorSupportingPaneScene(
-                mainEntry = mainEntry,
-                editorEntry = editorEntry,
-                previousEntries = entries.dropLast(2),
-            )
-        } else {
-            null
-        }
+        return editorRoute != null && mainRoute != null && editorRoute.supports(mainRoute)
     }
 }
 
-private data class EditorSupportingPaneScene(
+internal data class EditorSupportingPaneScene(
     val mainEntry: NavEntry<NavKey>,
-    val editorEntry: NavEntry<NavKey>,
+    val editorEntry: NavEntry<NavKey>?,
     override val previousEntries: List<NavEntry<NavKey>>,
 ) : Scene<NavKey> {
-    override val key: Any = mainEntry.contentKey to editorEntry.contentKey
-    override val entries: List<NavEntry<NavKey>> = listOf(mainEntry, editorEntry)
+    override val key: Any = mainEntry.contentKey
+    override val entries: List<NavEntry<NavKey>> = listOfNotNull(mainEntry, editorEntry)
     override val content: @Composable () -> Unit = {
         Box(modifier = Modifier.fillMaxSize()) {
+            // The same call site with or without the editor, so the screen's composition is kept.
             mainEntry.Content()
-            editorEntry.Content()
+            editorEntry?.Content()
         }
     }
 }
