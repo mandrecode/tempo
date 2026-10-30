@@ -17,22 +17,30 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.mandrecode.tempo.core.ui.adaptive.SheetPlacement
 import com.mandrecode.tempo.core.ui.components.TempoModalBottomSheet
 import com.mandrecode.tempo.core.ui.theme.inputTitle
 import com.mandrecode.tempo.features.focus.domain.model.FocusSession
 import com.mandrecode.tempo.features.focus.domain.model.TaskFocusToday
 import com.mandrecode.tempo.features.focus.presentation.components.ReplaceSessionDialog
 import com.mandrecode.tempo.features.focus.presentation.components.SessionBody
+import com.mandrecode.tempo.features.tasks.domain.model.Task
 
 /**
  * Entry point for the session sheet: resolves state and closes itself when the session ends, so the
  * caller only has to say how to dismiss it.
+ *
+ * On a large window Focus docks it beside the agenda instead (#502): [placement] is then
+ * [SheetPlacement.DockedPane], and [onEditTask] hands a subtask's editor to Focus, whose pane it
+ * takes over. Without [onEditTask] the subtask editor opens as a sheet over this one.
  */
 @Composable
 fun FocusSessionRoute(
     onBack: () -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    placement: SheetPlacement = SheetPlacement.BottomSheet,
+    onEditTask: ((Task) -> Unit)? = null,
     viewModel: FocusViewModel = viewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -70,10 +78,18 @@ fun FocusSessionRoute(
         ReplaceSessionDialog(pending = pending, onEvent = viewModel::onEvent)
     }
 
+    val onEvent: (FocusContract.UiEvent) -> Unit = { event ->
+        val editTask = event as? FocusContract.UiEvent.EditTask
+        if (onEditTask != null && editTask != null) onEditTask(editTask.task) else viewModel.onEvent(event)
+    }
+
     uiState.taskEditor?.let { target ->
         FocusTaskEditor(
             target = target,
             onDismiss = { viewModel.onEvent(FocusContract.UiEvent.DismissEditor) },
+            // Only reached as a sheet: a docked session hands its editor to Focus's pane.
+            placement = SheetPlacement.BottomSheet,
+            dismissRequestKey = 0,
         )
     }
 
@@ -82,16 +98,18 @@ fun FocusSessionRoute(
             session = session,
             title = session?.taskTitle ?: entry?.task?.title.orEmpty(),
             uiState = uiState,
-            onEvent = viewModel::onEvent,
+            onEvent = onEvent,
             onDismiss = currentOnBack,
             onOpenTaskInTasks = onOpenTaskInTasks,
+            placement = placement,
             modifier = modifier,
         )
     }
 }
 
 /**
- * The running session, as a bottom sheet opened to its full height.
+ * The running session, as a bottom sheet opened to its full height, or docked beside the Focus
+ * agenda on a large window.
  *
  * A sheet rather than a slide-in screen of its own. Everything else in this app that shows you one
  * item — a task, a habit, the length of a break — arrives as a sheet from the bottom, and the
@@ -107,8 +125,9 @@ fun FocusSessionSheet(
     onDismiss: () -> Unit,
     onOpenTaskInTasks: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    placement: SheetPlacement = SheetPlacement.BottomSheet,
 ) {
-    TempoModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier) { _ ->
+    TempoModalBottomSheet(onDismissRequest = onDismiss, modifier = modifier, placement = placement) { _ ->
         val task = uiState.sessionEntry?.task
 
         // The style the task and habit editors give their titles, so a session reads as another
